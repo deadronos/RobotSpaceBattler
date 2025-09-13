@@ -1,0 +1,199 @@
+# Sensible cross-platform .gitignore for a general project
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+Icon
+
+# Windows image file caches
+*.stackdump
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+node_modules/
+# If you use pnpm
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+out/
+release/
+
+# Coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Env files, secrets
+.env
+.env.*.local
+.env.local
+.env.test
+.env.production
+secrets.json
+*.key
+*.pem
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.code-workspace
+
+# JetBrains Rider / IntelliJ
+out/
+/*.iml
+.gradle/
+
+# Visual Studio
+.vs/
+*.user
+*.userosscache
+*.suo
+*.sdf
+*.dbmdl
+*.VC.db
+*.VC.opendb
+*.pdb
+*.cache
+
+# Visual Studio Code user/local settings
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.pyre/
+.mypy_cache/
+.python-version
+pip-log.txt
+pip-delete-this-directory.txt
+venv/
+ENV/
+env/
+.venv/
+
+# Django stuff
+*.log
+local_settings.py
+db.sqlite3
+media/
+
+# C/C++
+*.o
+*.obj
+*.so
+*.a
+*.lib
+*.dll
+*.exe
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven
+target/
+
+# Gradle
+.gradle/
+build/
+
+# Go
+/bin/
+$obj/
+
+# Rust
+/target/
+**/*.rs.bk
+
+# Dotnet
+bin/
+obj/
+
+# Unity (common Unity exclusions)
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+Builds/
+UserSettings/
+MemoryCaptures/
+*.pidb
+*.booproj
+*.svd
+*.unityproj
+*.tmp
+*.userprefs
+sysinfo.txt
+
+# MonoDevelop
+*.userprefs
+
+# macOS
+/.fseventsd
+/.Spotlight-V100
+.AppleDouble
+.Icon
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Containers
+docker-compose.override.yml
+.envrc
+
+# Certificates
+*.cer
+*.crt
+
+# Generated files
+dist/
+coverage/
+
+# Ignore node install scripts cache
+.npm/
+
+# Other
+*.log
+*.tmp
+
+# Keep the gitignore itself tracked
+!.gitignore
