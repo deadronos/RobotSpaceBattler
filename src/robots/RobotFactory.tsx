@@ -1,32 +1,28 @@
 import React, { useRef, useEffect } from 'react'
-import { RigidBody } from '@react-three/rapier'
+import { RigidBody, RapierRigidBody } from '@react-three/rapier'
 import * as THREE from 'three'
+import { Entity, world } from '../ecs/miniplexStore'
 
 type Props = {
-  team: 'red' | 'blue'
-  initialPos?: THREE.Vector3
-  onRigidBodyReady?: (rb: any) => void
+  entity: Entity
 }
 
-export default function Robot({ team, initialPos = new THREE.Vector3(), onRigidBodyReady }: Props) {
-  const ref = useRef<any>(null)
+export default function Robot({ entity }: Props) {
+  const ref = useRef<RapierRigidBody>(null)
 
   useEffect(() => {
     if (!ref.current) return
-    // expose rapier API once available
-    const api = ref.current.rigidBody
-    if (api && typeof onRigidBodyReady === 'function') {
-      // react-three/rapier provides api as .rigidBody on ref current
-      onRigidBodyReady(api)
-    }
-  }, [ref.current])
+    // Update the entity with its rigid body reference
+    world.update(entity, { rigidBody: ref.current })
+  }, [entity, ref.current])
 
-  const color = team === 'red' ? '#ff6b6b' : '#6ba0ff'
+  const color = entity.team === 'red' ? '#ff6b6b' : '#6ba0ff'
+  const position = new THREE.Vector3().fromArray(entity.position!)
 
   return (
     <RigidBody
       ref={ref}
-      position={[initialPos.x, initialPos.y, initialPos.z]}
+      position={position}
       restitution={0.0}
       friction={1.0}
       colliders="capsule"
