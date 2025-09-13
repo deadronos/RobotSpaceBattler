@@ -3,6 +3,7 @@
 - Overview: see [overview.md](./overview.md)
 - Quick start: see root [README.md](../README.md)
 - Architecture & systems: see root [SPEC.md](../SPEC.md)
+- Dependency deep dive: [DEPENDENCIES-deep-dive.md](./DEPENDENCIES-deep-dive.md)
 - Agent guidance: [AGENTS.md](../AGENTS.md) and [.github/copilot-instructions.md](../.github/copilot-instructions.md)
 - Testing:
   - Unit: Vitest setup in [tests/](../tests/) and config in [vitest.config.ts](../vitest.config.ts)
@@ -24,7 +25,7 @@
 
 ## Common Tasks
 
-- Run dev server: `npm run dev` (http://localhost:5173)
+- Run dev server: `npm run dev` ([http://localhost:5173](http://localhost:5173))
 - Build / preview: `npm run build` / `npm run preview`
 - Lint / format: `npm run lint` / `npm run format`
 - Tests: `npm run test` (coverage: `npm run test:coverage`)

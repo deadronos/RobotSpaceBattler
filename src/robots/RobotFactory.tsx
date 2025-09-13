@@ -1,5 +1,6 @@
-import React, { useRef, useLayoutEffect } from 'react'
-import { RigidBody, CapsuleCollider } from '@react-three/rapier'
+/* eslint-disable no-unused-vars */
+import { CapsuleCollider,RigidBody } from '@react-three/rapier'
+import React, { useCallback,useRef } from 'react'
 import * as THREE from 'three'
 
 type Props = {
@@ -12,28 +13,29 @@ type Props = {
 export default function Robot({ team, initialPos = new THREE.Vector3(), onRigidBodyReady, muzzleFlash }: Props) {
   const ref = useRef<any>(null)
 
-  useLayoutEffect(() => {
-    if (!ref.current) return
-    // expose rapier API once available
-    const api = ref.current.rigidBody
-    if (api && typeof onRigidBodyReady === 'function') {
-      // react-three/rapier provides api as .rigidBody on ref current
-      onRigidBodyReady(api)
+  // Use a callback ref so we can read the attached rigidBody as soon as
+  // the underlying RigidBody mounts. This is more reliable than a timing-
+  // sensitive effect across versions of react-three/rapier.
+  const setRef = useCallback((node: any) => {
+    ref.current = node
+    if (node?.rigidBody && typeof onRigidBodyReady === 'function') {
+      onRigidBodyReady(node.rigidBody)
     }
-    // run once after mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [onRigidBodyReady])
 
   const color = team === 'red' ? '#ff6b6b' : '#6ba0ff'
 
   return (
     <RigidBody
-      ref={ref}
+      ref={setRef}
       position={[initialPos.x, initialPos.y, initialPos.z]}
       restitution={0.0}
       friction={1.0}
       colliders={false}
-      mass={3}
+      mass={4}
+      enabledRotations={[false, true, false]}
+      linearDamping={0.5}
+      angularDamping={1.0}
     >
       {/* explicit capsule collider for stable ground contact */}
       <CapsuleCollider args={[0.6, 0.35]} />

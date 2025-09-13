@@ -1,7 +1,8 @@
-import React, { Suspense } from 'react'
+import { Html,OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Html } from '@react-three/drei'
 import { Physics } from '@react-three/rapier'
+import React, { Suspense } from 'react'
+
 import Simulation from './Simulation'
 
 export default function Scene() {

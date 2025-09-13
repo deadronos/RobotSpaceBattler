@@ -1,5 +1,6 @@
+/* eslint-disable no-unused-vars */
+import { BallCollider,RigidBody } from '@react-three/rapier'
 import React, { useLayoutEffect, useRef } from 'react'
-import { RigidBody, BallCollider } from '@react-three/rapier'
 
 type Vec3 = { x: number; y: number; z: number }
 
@@ -9,11 +10,11 @@ type Props = {
   position: Vec3
   velocity: Vec3
   radius?: number
-  onRigidBodyReady?: (rb: any) => void
-  onHit?: (otherRb: any) => void
+  onRigidBodyReady?: (_rb: any) => void
+  onHit?: (...args: any[]) => void
 }
 
-export default function Projectile({ id, team, position, velocity, radius = 0.1, onRigidBodyReady, onHit }: Props) {
+export default function Projectile({ id: _id, team, position, velocity, radius = 0.1, onRigidBodyReady, onHit }: Props) {
   const ref = useRef<any>(null)
 
   useLayoutEffect(() => {
@@ -40,7 +41,7 @@ export default function Projectile({ id, team, position, velocity, radius = 0.1,
       }}
     >
       <BallCollider args={[radius]} />
-      <group position={[position.x, position.y, position.z]}>
+  <group data-id={_id} position={[position.x, position.y, position.z]}>
         <mesh>
           <sphereGeometry args={[radius, 8, 8]} />
           <meshStandardMaterial color={team === 'red' ? 'orange' : 'lightblue'} emissive={team === 'red' ? 'orange' : 'lightblue'} emissiveIntensity={1.5} />

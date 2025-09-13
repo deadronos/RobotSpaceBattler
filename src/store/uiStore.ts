@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { create } from 'zustand'
 
 type Team = 'red' | 'blue'
@@ -22,7 +23,7 @@ const useUI = create<UIState>((set) => ({
   blueAlive: 0,
   redKills: 0,
   blueKills: 0,
-  setCounts: (redAlive, blueAlive) => set(() => ({ redAlive, blueAlive })),
+  setCounts: (_redAlive, _blueAlive) => set(() => ({ redAlive: _redAlive, blueAlive: _blueAlive })),
   addKill: (team) =>
     set((s) =>
       team === 'red'

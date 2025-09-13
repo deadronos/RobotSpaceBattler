@@ -22,10 +22,11 @@ This guide applies to the entire repository. It explains how the project is orga
 - `npm run preview` — serve the built app locally
 - `npm run lint` — ESLint over `src`
 - `npm run format` — Prettier write format for source files
-- `npm run test` — run Vitest unit tests (jsdom)
-- `npm run test:coverage` — Vitest with coverage report
+-- `npm run test` — run Vitest unit tests once (non-interactive, CI-friendly)
+-- `npm run test:watch` — run Vitest in interactive watch mode (re-runs on file changes)
+-- `npm run test:coverage` — Vitest with coverage report
 - `npm run playwright:install` — install Playwright browsers
-- `npm run playwright:test` — run Playwright E2E tests (spins up dev server)
+- `npm run playwright:test` — run Playwright E2E tests (spins up dev server on port 5174)
 
 - ## Coding Style & Naming Conventions
 

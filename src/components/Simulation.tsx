@@ -1,12 +1,13 @@
-import React, { useEffect } from 'react'
-import { RigidBody, RapierRigidBody, RigidBodyProps, CuboidCollider } from '@react-three/rapier'
 import { useFrame } from '@react-three/fiber'
+import { CuboidCollider,RapierRigidBody, RigidBody } from '@react-three/rapier'
+import React, { useEffect, useRef } from 'react'
 import * as THREE from 'three'
+
+import store from '../ecs/miniplexStore'
 import Robot from '../robots/RobotFactory'
 import useUI from '../store/uiStore'
-import store from '../ecs/miniplexStore'
-import Projectile from './Projectile'
 import { syncRigidBodiesToECS } from '../systems/physicsSync'
+import Projectile from './Projectile'
 
 type Entity = {
   id: string
@@ -32,6 +33,7 @@ function createRobotEntity(id: string, team: 'red' | 'blue', pos: THREE.Vector3)
 
 export default function Simulation() {
   const { paused } = useUI()
+  const didSpawnRef = useRef(false)
 
   function spawnProjectile(owner: Entity, from: THREE.Vector3, dir: THREE.Vector3, damage = 4) {
     const id = `proj-${owner.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
@@ -53,17 +55,22 @@ export default function Simulation() {
   }
 
   useEffect(() => {
+    if (didSpawnRef.current) return
+    didSpawnRef.current = true
     // spawn 10 red and 10 blue robots in two zones with stable ids
     const spacing = 3
     for (let i = 0; i < 10; i++) {
       const rx = -12 + (i % 5) * spacing
       const rz = -5 + Math.floor(i / 5) * spacing
-      createRobotEntity(`red-${i}`, 'red', new THREE.Vector3(rx, 1, rz))
+      // avoid duplicates if store already contains id (defensive)
+      if (![...store.entities.values()].some(e => e.id === `red-${i}`))
+        createRobotEntity(`red-${i}`, 'red', new THREE.Vector3(rx, 1, rz))
     }
     for (let i = 0; i < 10; i++) {
       const rx = 12 - (i % 5) * spacing
       const rz = 5 - Math.floor(i / 5) * spacing
-      createRobotEntity(`blue-${i}`, 'blue', new THREE.Vector3(rx, 1, rz))
+      if (![...store.entities.values()].some(e => e.id === `blue-${i}`))
+        createRobotEntity(`blue-${i}`, 'blue', new THREE.Vector3(rx, 1, rz))
     }
   }, [])
 
