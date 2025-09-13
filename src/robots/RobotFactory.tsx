@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { CapsuleCollider, RigidBody } from "@react-three/rapier";
 import React, { useCallback, useRef } from "react";
 import * as THREE from "three";

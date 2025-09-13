@@ -25,6 +25,7 @@ This guide applies to the entire repository. It explains how the project is orga
 -- `npm run test` — run Vitest unit tests once (non-interactive, CI-friendly)
 -- `npm run test:watch` — run Vitest in interactive watch mode (re-runs on file changes)
 -- `npm run test:coverage` — Vitest with coverage report
+- `npm run ci:test` — run coverage once with CI=true (cross-platform helper for CI pipelines)
 - `npm run playwright:install` — install Playwright browsers
 - `npm run playwright:test` — run Playwright E2E tests (spins up dev server on port 5174)
 

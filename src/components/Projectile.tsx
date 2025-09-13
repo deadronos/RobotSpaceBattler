@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { BallCollider, RigidBody } from "@react-three/rapier";
 import React, { useLayoutEffect, useRef } from "react";
 
