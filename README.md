@@ -1,6 +1,7 @@
 # Space Station Auto-Battler (Prototype)
 
 This repository is a starter/skeleton for a 3D team-vs-team auto-battler:
+
 - 10 vs 10 humanoid robots (red vs blue)
 - Procedurally-generated robot meshes (replaceable with glTF later via gltfjsx)
 - Rapier physics via @react-three/rapier
@@ -9,6 +10,7 @@ This repository is a starter/skeleton for a 3D team-vs-team auto-battler:
 - Vite, Vitest, Playwright, ESLint, Prettier
 
 Quick start:
+
 1. Install
    - npm install
 2. Development
@@ -19,6 +21,7 @@ Quick start:
    - npx playwright test
 
 What this skeleton includes:
+
 - Basic scene with directional + ambient light and shadows
 - Physics playground and robot spawner (10 red / 10 blue)
 - Simple steer-to-target AI, per-frame updates
@@ -26,5 +29,16 @@ What this skeleton includes:
 - Test scaffolding (Vitest + Playwright)
 
 Notes:
+
 - Replace procedural robots with gltfjsx-generated components from Blender exports for richer visuals.
 - See SPEC.md for architecture, systems, pitfalls, and recommendations.
+
+## Maintenance
+
+Update dependency documentation (docs/DEPENDENCIES.md):
+
+```powershell
+npm run docs:deps
+```
+
+This regenerates the dependency catalog from package.json and installed package metadata.

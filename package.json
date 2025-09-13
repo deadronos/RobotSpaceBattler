@@ -8,6 +8,7 @@
     "preview": "vite preview",
     "lint": "eslint --ext .ts,.tsx src",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "docs:deps": "node scripts/generate-dependency-docs.cjs",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "playwright:install": "playwright install",
