@@ -1,19 +1,19 @@
 /* eslint-disable no-unused-vars */
-import { create } from 'zustand'
+import { create } from "zustand";
 
-type Team = 'red' | 'blue'
+type Team = "red" | "blue";
 
 type UIState = {
-  paused: boolean
-  togglePause: () => void
+  paused: boolean;
+  togglePause: () => void;
 
-  redAlive: number
-  blueAlive: number
-  redKills: number
-  blueKills: number
-  setCounts: (redAlive: number, blueAlive: number) => void
-  addKill: (team: Team) => void
-}
+  redAlive: number;
+  blueAlive: number;
+  redKills: number;
+  blueKills: number;
+  setCounts: (redAlive: number, blueAlive: number) => void;
+  addKill: (team: Team) => void;
+};
 
 const useUI = create<UIState>((set) => ({
   paused: false,
@@ -23,13 +23,14 @@ const useUI = create<UIState>((set) => ({
   blueAlive: 0,
   redKills: 0,
   blueKills: 0,
-  setCounts: (_redAlive, _blueAlive) => set(() => ({ redAlive: _redAlive, blueAlive: _blueAlive })),
+  setCounts: (_redAlive, _blueAlive) =>
+    set(() => ({ redAlive: _redAlive, blueAlive: _blueAlive })),
   addKill: (team) =>
     set((s) =>
-      team === 'red'
+      team === "red"
         ? { redKills: s.redKills + 1 }
-        : { blueKills: s.blueKills + 1 }
-    )
-}))
+        : { blueKills: s.blueKills + 1 },
+    ),
+}));
 
-export default useUI
+export default useUI;

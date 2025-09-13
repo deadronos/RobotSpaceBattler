@@ -1,9 +1,9 @@
-import { Html,OrbitControls } from '@react-three/drei'
-import { Canvas } from '@react-three/fiber'
-import { Physics } from '@react-three/rapier'
-import React, { Suspense } from 'react'
+import { Html, OrbitControls } from "@react-three/drei";
+import { Canvas } from "@react-three/fiber";
+import { Physics } from "@react-three/rapier";
+import React, { Suspense } from "react";
 
-import Simulation from './Simulation'
+import Simulation from "./Simulation";
 
 export default function Scene() {
   return (
@@ -23,7 +23,7 @@ export default function Scene() {
       <Suspense
         fallback={
           <Html center>
-            <div style={{ color: 'white' }}>Loading...</div>
+            <div style={{ color: "white" }}>Loading...</div>
           </Html>
         }
       >
@@ -33,5 +33,5 @@ export default function Scene() {
       </Suspense>
       <OrbitControls />
     </Canvas>
-  )
+  );
 }

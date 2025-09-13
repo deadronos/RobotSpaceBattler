@@ -1,29 +1,37 @@
 /* eslint-disable no-unused-vars */
-import { CapsuleCollider,RigidBody } from '@react-three/rapier'
-import React, { useCallback,useRef } from 'react'
-import * as THREE from 'three'
+import { CapsuleCollider, RigidBody } from "@react-three/rapier";
+import React, { useCallback, useRef } from "react";
+import * as THREE from "three";
 
 type Props = {
-  team: 'red' | 'blue'
-  initialPos?: THREE.Vector3
-  onRigidBodyReady?: (rb: any) => void
-  muzzleFlash?: boolean
-}
+  team: "red" | "blue";
+  initialPos?: THREE.Vector3;
+  onRigidBodyReady?: (rb: any) => void;
+  muzzleFlash?: boolean;
+};
 
-export default function Robot({ team, initialPos = new THREE.Vector3(), onRigidBodyReady, muzzleFlash }: Props) {
-  const ref = useRef<any>(null)
+export default function Robot({
+  team,
+  initialPos = new THREE.Vector3(),
+  onRigidBodyReady,
+  muzzleFlash,
+}: Props) {
+  const ref = useRef<any>(null);
 
   // Use a callback ref so we can read the attached rigidBody as soon as
   // the underlying RigidBody mounts. This is more reliable than a timing-
   // sensitive effect across versions of react-three/rapier.
-  const setRef = useCallback((node: any) => {
-    ref.current = node
-    if (node?.rigidBody && typeof onRigidBodyReady === 'function') {
-      onRigidBodyReady(node.rigidBody)
-    }
-  }, [onRigidBodyReady])
+  const setRef = useCallback(
+    (node: any) => {
+      ref.current = node;
+      if (node?.rigidBody && typeof onRigidBodyReady === "function") {
+        onRigidBodyReady(node.rigidBody);
+      }
+    },
+    [onRigidBodyReady],
+  );
 
-  const color = team === 'red' ? '#ff6b6b' : '#6ba0ff'
+  const color = team === "red" ? "#ff6b6b" : "#6ba0ff";
 
   return (
     <RigidBody
@@ -65,7 +73,11 @@ export default function Robot({ team, initialPos = new THREE.Vector3(), onRigidB
         {muzzleFlash && (
           <mesh position={[1.2, 0.9, 0.2]} castShadow>
             <sphereGeometry args={[0.12, 8, 8]} />
-            <meshStandardMaterial color={team === 'red' ? 'orange' : 'skyblue'} emissive={team === 'red' ? 'orange' : 'skyblue'} emissiveIntensity={2} />
+            <meshStandardMaterial
+              color={team === "red" ? "orange" : "skyblue"}
+              emissive={team === "red" ? "orange" : "skyblue"}
+              emissiveIntensity={2}
+            />
           </mesh>
         )}
         {/* legs */}
@@ -79,5 +91,5 @@ export default function Robot({ team, initialPos = new THREE.Vector3(), onRigidB
         </mesh>
       </group>
     </RigidBody>
-  )
+  );
 }
