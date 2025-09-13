@@ -17,8 +17,8 @@ Developer workflows (explicit commands)
 - Install dependencies: `npm install`.
 - Dev server: `npm run dev` (Vite, default port set in `vite.config.ts` => 5173).
 - Build: `npm run build`.
-- Unit tests: `npm run test` (Vitest).
-- Playwright E2E: install browsers `npm run playwright:install`, run `npm run playwright:test` (or `npx playwright test`). Playwright tests expect the dev server on port 5173 (see `playwright/tests/smoke.spec.ts`).
+-- Unit tests: `npm run test` (Vitest, runs once). Use `npm run test:watch` for interactive watch mode.
+- Playwright E2E: install browsers `npm run playwright:install`, run `npm run playwright:test` (or `npx playwright test`). Playwright tests expect the dev server on port 5174 (see `playwright/tests/smoke.spec.ts`).
 - Lint / format: `npm run lint`, `npm run format`.
 
 Project-specific conventions & patterns
@@ -37,7 +37,7 @@ Files to inspect for common tasks
 
 Editing & testing notes for agents
 - Hot-reload friendly: modify components and use `npm run dev` to see changes in the browser at http://localhost:5173.
-- Playwright smoke test assumes the dev server runs on port 5173. When adding tests, prefer selectors already used (`#status`, `canvas`).
+- Playwright smoke test assumes the dev server runs on port 5174. When adding tests, prefer selectors already used (`#status`, `canvas`).
 - When changing physics or ECS code, run unit tests and the Playwright smoke to catch regressions quickly.
 
 Examples
