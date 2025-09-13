@@ -1,22 +1,22 @@
 import React, { useEffect } from 'react'
-import { RigidBody, RigidBodyApi, RigidBodyProps } from '@react-three/rapier'
+import { RigidBody, RapierRigidBody, RigidBodyProps } from '@react-three/rapier'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { createStore, createEntity } from 'miniplex'
+import { World } from 'miniplex'
 import Robot from '../robots/RobotFactory'
 import useUI from '../store/uiStore'
 
 type Entity = {
-  id: string
+  id?: string
   team: 'red' | 'blue'
-  rb?: RigidBodyApi
+  position: number[]
+  rb?: RapierRigidBody
 }
 
-const store = createStore<Entity>()
+const store = new World<Entity>()
 
 function createRobotEntity(team: 'red' | 'blue', pos: THREE.Vector3) {
-  const id = createEntity(store, { team, position: pos.toArray() })
-  return id
+  store.add({ team, position: pos.toArray() })
 }
 
 export default function Simulation() {
@@ -40,7 +40,7 @@ export default function Simulation() {
   // A very small, naive global AI loop to apply impulses toward nearest enemy
   useFrame((_, delta) => {
     if (paused) return
-    const entities = store.query().filter(e => !!e)
+    const entities = [...store.entities.values()].filter(e => !!e)
     entities.forEach((e) => {
       // each entity will look for the nearest enemy and apply a small force toward them
       // we store RigidBodyApi on the miniplex entity when the Robot registers it
@@ -86,14 +86,14 @@ export default function Simulation() {
       </mesh>
 
       {/* Spawn robots from the store as React objects */}
-      {store.query().map((e) => (
+      {[...store.entities.values()].map((e) => (
         <Robot
           key={e.id}
           team={e.team}
           initialPos={new THREE.Vector3(...(e as any).position)}
           onRigidBodyReady={(rb) => {
             // attach rapier api to the entity so AI system can access it
-            const ent = store.get(e.id)
+            const ent = [...store.entities.values()].find(ent => ent.id === e.id)
             if (ent) {
               ent.rb = rb
             }
