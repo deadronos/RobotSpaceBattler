@@ -1,75 +1,45 @@
 # Repository Guidelines
 
-This guide applies to the entire repository. It explains how the project is organized, how to build and test it, and the conventions to follow when contributing.
+> A quick, actionable contributor guide for RobotSpaceBattler.
 
 ## Project Structure & Module Organization
-
-- `src/` — application code
-  - `components/` React UI and scene components
+- `src/` – app code
+  - `components/` UI and scenes (React)
   - `ecs/` entity/component/system helpers
   - `robots/` robot generation and helpers
   - `store/` Zustand UI/simulation state
-  - Key entries: `main.tsx`, `App.tsx`, `components/Simulation.tsx`
-- `tests/` — unit tests (Vitest) and setup (`tests/setup.ts`)
-- `playwright/tests/` — end-to-end specs (Playwright)
-- `dist/` — production build output (generated)
+  - Entrypoints: `main.tsx`, `App.tsx`, `components/Simulation.tsx`
+- `tests/` – Vitest unit tests (`tests/setup.ts` for jsdom/shims)
+- `playwright/tests/` – E2E specs
+- `dist/` – production build output (generated)
 - Root configs: `vite.config.ts`, `vitest.config.ts`, `playwright.config.ts`, `eslintrc.cjs`, `prettierrc.txt`, `tsconfig.json`, `index.html`
 
 ## Build, Test, and Development Commands
+- `npm run dev` – start Vite dev server (port 5173)
+- `npm run build` – build to `dist/`
+- `npm run preview` – serve production build
+- `npm run lint` – ESLint over `src`
+- `npm run format` – Prettier write format
+- `npm run test` / `test:watch` / `test:coverage` – Vitest
+- `npm run ci:test` – coverage once with `CI=true`
+- `npm run playwright:install` then `npm run playwright:test` – E2E (dev server on 5174)
 
-- `npm run dev` — start Vite dev server (default port 5173)
-- `npm run build` — production build to `dist/`
-- `npm run preview` — serve the built app locally
-- `npm run lint` — ESLint over `src`
-- `npm run format` — Prettier write format for source files
--- `npm run test` — run Vitest unit tests once (non-interactive, CI-friendly)
--- `npm run test:watch` — run Vitest in interactive watch mode (re-runs on file changes)
--- `npm run test:coverage` — Vitest with coverage report
-- `npm run ci:test` — run coverage once with CI=true (cross-platform helper for CI pipelines)
-- `npm run playwright:install` — install Playwright browsers
-- `npm run playwright:test` — run Playwright E2E tests (spins up dev server on port 5174)
+## Coding Style & Naming Conventions
+- TypeScript + React. Indent 2 spaces; single quotes; semicolons; trailing commas (es5); `printWidth: 100`.
+- Lint: ESLint (TS, React) with `eslint-config-prettier`.
+- Naming: Components PascalCase (`RobotPanel.tsx`); functions/vars camelCase; types/interfaces PascalCase.
+- Files: UI in `src/components`, game logic in `src/ecs`/`src/robots`, state in `src/store`.
 
-- ## Coding Style & Naming Conventions
-
-- Language: TypeScript + React. Indent 2 spaces; single quotes; semicolons; trailing commas (es5); `printWidth: 100` (see `prettierrc.txt`).
-- Linting: ESLint (`eslint:recommended`, React, TypeScript) + `eslint-config-prettier`.
-- Naming: React components PascalCase (`Scene.tsx`), variables/functions camelCase, types/interfaces PascalCase.
-- Files: Components in `src/components`, game logic in `src/ecs`/`src/robots`, state in `src/store`.
-
- 
 ## Testing Guidelines
-
-- Unit: Vitest + Testing Library (`tests/`). Name tests `*.test.ts`/`*.test.tsx`. Keep pure logic testable; prefer deterministic inputs.
-- Setup: `tests/setup.ts` configures jsdom and shims (e.g., `ResizeObserver`).
-- Coverage: use `npm run test:coverage` and aim for meaningful coverage on core systems and UI logic.
-- E2E: Playwright specs in `playwright/tests` (e.g., `smoke.spec.ts`). Install browsers first, then `npm run playwright:test`.
-
-Notes for agents and physics/ECS
-
-- Rapier RigidBody is authoritative for physical transforms — systems should set/read RigidBody velocity/linvel rather than directly mutating mesh transforms. See `SPEC.md` for more detail on sync rules.
-  
-  Example (preferred):
-
-  ```ts
-  // prefer: set linear velocity on the RigidBody (physics authoritative)
-  const body = rigidBodyRef.current
-  if (body) {
-    // set linear velocity (x, y, z)
-    body.setLinvel({ x: 1, y: 0, z: 0 })
-  }
-  ```
-
-  ```ts
-  // avoid: directly mutating mesh.position when using Rapier
-  // (this can cause desync and non-physical behavior)
-  mesh.position.x += 1 // not recommended when a RigidBody controls transform
-  ```
-
-- AI/automation agents: also read `.github/copilot-instructions.md` (new) for a concise agent-focused orientation; keep that file in sync with `AGENTS.md` when you change workflows or entry points.
+- Frameworks: Vitest + Testing Library; Playwright for E2E.
+- Name unit tests `*.test.ts`/`*.test.tsx` under `tests/`.
+- Run coverage: `npm run test:coverage`. Aim for meaningful coverage on core systems and UI logic.
 
 ## Commit & Pull Request Guidelines
+- Commits: imperative, concise subject (≤72 chars). Example: `ecs: add robot spawn system`.
+- PRs: describe changes, link issues, add screenshots/GIFs for UI changes, and note any `SPEC.md` impacts.
+- Before opening: `npm run format && npm run lint && npm run test` (and `npm run playwright:test` when relevant).
 
-- Commits: imperative, concise subject (≤72 chars), optionally with scope (e.g., `ecs:`). Example: `Add robot spawn system and tests`.
-- PRs: include a clear description, linked issues, and screenshots/GIFs for UI/visual changes. Note impacts to `SPEC.md` if architecture changes.
-- Before submitting: run `npm run format && npm run lint && npm run test` and, when relevant, `npm run playwright:test`.
-
+## Agent-Specific Notes
+- Rapier RigidBody is authoritative for transforms. Prefer `RigidBody.setLinvel({ x, y, z })` over mutating mesh positions to avoid desync.
+- Also see `.github/copilot-instructions.md` for a concise agent orientation and keep it in sync with this guide.
