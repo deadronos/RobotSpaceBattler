@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 
 import useUI from "../store/uiStore";
 import Simulation from "./Simulation";
-
 export default function Scene() {
   const [DreiHtml, setDreiHtml] = useState<React.ComponentType<{ center?: boolean; children?: React.ReactNode }> | null>(null);
   const [OrbitControlsComp, setOrbitControlsComp] =
@@ -206,19 +205,60 @@ export default function Scene() {
                     // runtime shapes if the Physics wrapper errors at mount time.
                     setRuntimeCandidates(candidates);
                     setCandidateIndex(0);
-                    setRapierModule(chosen);
+                    // Some Rapier builds nest the low-level symbols under
+                    // properties like `raw`, `Module` or `default`. Prefer a
+                    // nested shape that actually exposes `raweventqueue_new` so
+                    // we pass the correct runtime into the wrapper.
+                    const unwrapNested = (obj: unknown) => {
+                      // Try a set of plausible nested access paths and return the
+                      // first object that exposes `raweventqueue_new`. Also record
+                      // attempted paths for richer diagnostics.
+                      const attempts: string[] = [];
+                      const tryPath = (root: unknown, path: string) => {
+                        try {
+                          if (!root) return undefined;
+                          const parts = path.split('.').filter(Boolean);
+                          let cur: any = root;
+                          for (const p of parts) {
+                            if (typeof cur !== 'object' || cur === null) return undefined;
+                            cur = cur[p];
+                          }
+                          if (cur && (cur as Record<string, unknown>)['raweventqueue_new']) return cur as unknown;
+                        } catch {
+                          // ignore
+                        }
+                        return undefined;
+                      };
+                      if (!obj) return obj;
+                      const candidatesToTry = ['','raw','Module','default','default.Module','default.raw','Rapier','Rapier.raw','rapier','rapier.default','Module.raw'];
+                      for (const p of candidatesToTry) {
+                        const label = p === '' ? '<self>' : p;
+                        attempts.push(label);
+                        const found = tryPath(obj, p);
+                        if (found) {
+                          // stash attemptedPaths for later debug output via closure
+                          (unwrapNested as any).__attempts = attempts;
+                          return found;
+                        }
+                      }
+                      (unwrapNested as any).__attempts = attempts;
+                      return obj;
+                    };
+                    const chosenUnwrapped = unwrapNested(chosen);
+                    setRapierModule(chosenUnwrapped);
                     setPhysicsAvailable(true);
                     try {
                       const wrapperKeys = Object.keys(rapierWrapperTyped as Record<string, unknown>);
                         const hasRawEventQueue = Boolean(
-                          (chosen && (chosen as Record<string, unknown>)['raweventqueue_new']) ||
+                          (chosenUnwrapped && (chosenUnwrapped as Record<string, unknown>)['raweventqueue_new']) ||
                           (rapierWrapperTyped && (rapierWrapperTyped as Record<string, unknown>)['raweventqueue_new'])
                         );
                         // Only pass the rapier module into Physics when the chosen
                         // candidate exposes the low-level symbol; otherwise allow
                         // the wrapper to initialize its own runtime.
                         setShouldPassRapier(hasRawEventQueue);
-                        setRapierDebug(`wrapper-loaded; chosen:${chosenName}; hasRawevent:${hasRawEventQueue}; candidates:[${perCandidateKeys.join('|')}]; wrapperKeys:${wrapperKeys.join(',')}`);
+                        const attempts = (unwrapNested as any).__attempts as string[] | undefined;
+                        setRapierDebug(`wrapper-loaded; chosen:${chosenName}; hasRawevent:${hasRawEventQueue}; attempts:${JSON.stringify(attempts ?? [])}; candidates:[${perCandidateKeys.join('|')}]; wrapperKeys:${wrapperKeys.join(',')}`);
                     } catch {
                       try { setRapierDebug(`wrapper-loaded; chosen:${chosenName}; candidates:[${perCandidateKeys.join('|')}]`); } catch { /* ignore */ }
                     }
@@ -330,14 +370,15 @@ export default function Scene() {
             setPhysicsAvailable(false);
             setRapierModule(null);
           } },
-          React.createElement(
-            PhysicsComp as React.ComponentType<{ gravity?: number[]; rapier?: unknown }>,
-            // Pass the candidate runtime into Physics so the wrapper can use
-            // it to initialize. If this causes an error, the error boundary
-            // will attempt the next candidate in `runtimeCandidates`.
-            { gravity: [0, -9.81, 0], rapier: rapierModule },
-            React.createElement(Simulation, { physics: true, rapierComponents }),
-          )
+            React.createElement(
+              PhysicsComp as React.ComponentType<{ gravity?: number[]; rapier?: unknown }>,
+              // Pass the (possibly unwrapped) candidate runtime into Physics so
+              // the wrapper can use it to initialize. Prefer passing only the
+              // runtime that actually exposes the low-level symbol; otherwise
+              // allow the wrapper to initialize its own runtime.
+              { gravity: [0, -9.81, 0], rapier: shouldPassRapier ? rapierModule : undefined },
+              React.createElement(Simulation, { physics: true, rapierComponents }),
+            )
         )
       ) : (
         // If Rapier isn't ready, render the Simulation component without physics.
