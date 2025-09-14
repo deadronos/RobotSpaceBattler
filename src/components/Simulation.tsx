@@ -1,40 +1,16 @@
 import { useFrame } from "@react-three/fiber";
-import {
-  CuboidCollider,
-  RapierRigidBody,
-  RigidBody,
-} from "@react-three/rapier";
+import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 import store from "../ecs/miniplexStore";
+import type { Entity } from "../ecs/types";
 import Robot from "../robots/RobotFactory";
 import useUI from "../store/uiStore";
 import { syncRigidBodiesToECS } from "../systems/physicsSync";
 import Projectile from "./Projectile";
 
-type Entity = {
-  id: string;
-  team: "red" | "blue";
-  position: number[];
-  rb?: RapierRigidBody;
-  health?: { hp: number; maxHp: number };
-  weapon?: {
-    cooldown: number;
-    fireRate: number;
-    range: number;
-    damage: number;
-    projectileSpeed: number;
-    projectileTTL: number;
-  };
-  projectile?: {
-    ttl: number;
-    damage: number;
-    radius: number;
-    velocity: { x: number; y: number; z: number };
-  };
-  fx?: { muzzleTimer?: number };
-};
+// Entity type is imported from ecs/types
 
 function createRobotEntity(
   id: string,
@@ -113,13 +89,15 @@ export default function Simulation() {
     syncRigidBodiesToECS();
 
     // Projectile TTL and out-of-bounds cleanup
-    for (const p of [...store.entities.values()]) {
+    const allEntities = [...store.entities.values()] as unknown as Entity[];
+    for (const p of allEntities) {
       if (!p || !p.projectile) continue;
       p.projectile.ttl -= delta;
       // Use RB translation if present for bounds check
-      const pos = p.rb
-        ? p.rb.translation()
-        : { x: p.position[0], y: p.position[1], z: p.position[2] };
+      const pos =
+        p.rb && p.rb.translation
+          ? p.rb.translation()
+          : { x: p.position[0], y: p.position[1], z: p.position[2] };
       const OOB =
         Math.abs(pos.x) > 200 ||
         Math.abs(pos.z) > 200 ||
@@ -131,14 +109,14 @@ export default function Simulation() {
     }
 
     // Muzzle flash timers
-    for (const ent of [...store.entities.values()]) {
+    for (const ent of allEntities) {
       if (ent && ent.fx && ent.fx.muzzleTimer && ent.fx.muzzleTimer > 0) {
         ent.fx.muzzleTimer = Math.max(0, ent.fx.muzzleTimer - delta);
       }
     }
 
     // remove dead entities from the store (very simple cleanup) and update UI
-    const ents = [...store.entities.values()];
+    const ents = allEntities;
     const ui = useUI.getState();
     for (const ent of ents) {
       if (ent && ent.health && ent.health.hp <= 0) {
@@ -156,7 +134,7 @@ export default function Simulation() {
     ).length;
     ui.setCounts(redAlive, blueAlive);
 
-    const entities = [...store.entities.values()].filter((e) => !!e);
+    const entities = allEntities.filter((e) => !!e);
     entities.forEach((e) => {
       // each entity will look for the nearest enemy and apply a small force toward them
       // we store RigidBodyApi on the miniplex entity when the Robot registers it
@@ -167,10 +145,20 @@ export default function Simulation() {
       // compute nearest by distance using the RigidBody world transform if available
       let best: Entity | undefined;
       let bestDist = Number.POSITIVE_INFINITY;
-      const a = e.rb.translation();
+      const a =
+        e.rb && e.rb.translation
+          ? e.rb.translation()
+          : { x: e.position[0], y: e.position[1], z: e.position[2] };
       for (const enemy of enemies) {
         if (!enemy.rb) continue;
-        const b = enemy.rb.translation();
+        const b =
+          enemy.rb && enemy.rb.translation
+            ? enemy.rb.translation()
+            : {
+                x: enemy.position[0],
+                y: enemy.position[1],
+                z: enemy.position[2],
+              };
         const dx = a.x - b.x;
         const dz = a.z - b.z;
         const d2 = dx * dx + dz * dz;
@@ -181,16 +169,24 @@ export default function Simulation() {
       }
       if (!best || !best.rb) return;
       // steer: compute direction and set a modest linear velocity toward target
-      const from = e.rb.translation();
-      const to = best.rb.translation();
+      const from =
+        e.rb && e.rb.translation
+          ? e.rb.translation()
+          : { x: e.position[0], y: e.position[1], z: e.position[2] };
+      const to =
+        best.rb && best.rb.translation
+          ? best.rb.translation()
+          : { x: best.position[0], y: best.position[1], z: best.position[2] };
       const dir = { x: to.x - from.x, y: 0, z: to.z - from.z };
       const len = Math.sqrt(dir.x * dir.x + dir.z * dir.z) || 1;
       const speed = 4; // tuning value
       const vx = (dir.x / len) * speed;
       const vz = (dir.z / len) * speed;
       // set target linear velocity while preserving Y velocity
-      const current = e.rb.linvel();
-      e.rb.setLinvel({ x: vx, y: current.y, z: vz }, true);
+      const current =
+        e.rb && e.rb.linvel ? e.rb.linvel() : { x: 0, y: 0, z: 0 };
+      if (e.rb && e.rb.setLinvel)
+        e.rb.setLinvel({ x: vx, y: current.y, z: vz }, true);
 
       // Weapon cooldown and in-range fire check
       if (e.weapon) {
@@ -243,13 +239,13 @@ export default function Simulation() {
           <Robot
             key={e.id}
             team={e.team}
-            initialPos={new THREE.Vector3(...(e as any).position)}
+            initialPos={new THREE.Vector3(...(e.position as number[]))}
             muzzleFlash={!!e.fx?.muzzleTimer && e.fx.muzzleTimer > 0}
             onRigidBodyReady={(rb) => {
               // attach rapier api to the entity so AI system can access it
               const ent = [...store.entities.values()].find(
                 (ent) => ent.id === e.id,
-              );
+              ) as Entity | undefined;
               if (ent) {
                 ent.rb = rb;
               }
@@ -268,17 +264,26 @@ export default function Simulation() {
             position={{ x: p.position[0], y: p.position[1], z: p.position[2] }}
             velocity={p.projectile!.velocity}
             onRigidBodyReady={(rb) => {
-              (p as any).rb = rb;
-              rb.setTranslation(
-                { x: p.position[0], y: p.position[1], z: p.position[2] },
-                true,
-              );
-              rb.setLinvel(p.projectile!.velocity, true);
+              p.rb = rb;
+              const rbApi = rb;
+              if (rbApi) {
+                try {
+                  rbApi.setTranslation?.(
+                    { x: p.position[0], y: p.position[1], z: p.position[2] },
+                    true,
+                  );
+                  rbApi.setLinvel?.(p.projectile!.velocity, true);
+                } catch {
+                  // ignore runtime differences in RAPier API shape
+                }
+              }
             }}
             onHit={(other) => {
               // find entity by matching rigid body reference
               const ents = [...store.entities.values()];
-              const victim = ents.find((e) => (e as any).rb === other);
+              const victim = ents.find(
+                (e) => (e as unknown as { rb?: unknown }).rb === other,
+              );
               if (victim && victim.team !== p.team && victim.health) {
                 victim.health.hp -= p.projectile!.damage;
                 store.remove(p);

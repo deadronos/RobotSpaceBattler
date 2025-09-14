@@ -1,7 +1,8 @@
 import { BallCollider, RigidBody } from "@react-three/rapier";
 import React, { useLayoutEffect, useRef } from "react";
 
-type Vec3 = { x: number; y: number; z: number };
+import type { RapierApi, Vec3 } from "../ecs/types";
+import { extractRapierApi } from "../ecs/types";
 
 type Props = {
   id: string;
@@ -9,8 +10,8 @@ type Props = {
   position: Vec3;
   velocity: Vec3;
   radius?: number;
-  onRigidBodyReady?: (_rb: any) => void;
-  onHit?: (...args: any[]) => void;
+  onRigidBodyReady?: (_rb: RapierApi) => void;
+  onHit?: (other: unknown) => void;
 };
 
 export default function Projectile({
@@ -22,13 +23,20 @@ export default function Projectile({
   onRigidBodyReady,
   onHit,
 }: Props) {
-  const ref = useRef<any>(null);
+  const ref = useRef<unknown>(null);
 
   useLayoutEffect(() => {
-    const rb = ref.current?.rigidBody;
+    const rb = extractRapierApi(ref.current);
     if (rb) {
-      rb.setTranslation({ x: position.x, y: position.y, z: position.z }, true);
-      rb.setLinvel({ x: velocity.x, y: velocity.y, z: velocity.z }, true);
+      try {
+        rb.setTranslation?.(
+          { x: position.x, y: position.y, z: position.z },
+          true,
+        );
+        rb.setLinvel?.({ x: velocity.x, y: velocity.y, z: velocity.z }, true);
+      } catch {
+        // ignore runtime shape differences
+      }
       onRigidBodyReady?.(rb);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -36,14 +44,16 @@ export default function Projectile({
 
   return (
     <RigidBody
-      ref={ref}
+      ref={(node) => {
+        ref.current = node;
+      }}
       type="dynamic"
       ccd
       colliders={false}
       gravityScale={0}
       enabledRotations={[false, false, false]}
-      // @ts-ignore: event typing differences across versions
-      onCollisionEnter={(e: any) => {
+      // event typing differences across versions - keep handler typed loosely
+      onCollisionEnter={(e: { other: unknown }) => {
         onHit?.(e.other);
       }}
     >

@@ -2,10 +2,13 @@ import { CapsuleCollider, RigidBody } from "@react-three/rapier";
 import React, { useCallback, useRef } from "react";
 import * as THREE from "three";
 
+import type { RapierApi } from "../ecs/types";
+import { extractRapierApi } from "../ecs/types";
+
 type Props = {
   team: "red" | "blue";
   initialPos?: THREE.Vector3;
-  onRigidBodyReady?: (rb: any) => void;
+  onRigidBodyReady?: (rb: RapierApi) => void;
   muzzleFlash?: boolean;
 };
 
@@ -15,16 +18,21 @@ export default function Robot({
   onRigidBodyReady,
   muzzleFlash,
 }: Props) {
-  const ref = useRef<any>(null);
+  const ref = useRef<unknown>(null);
 
   // Use a callback ref so we can read the attached rigidBody as soon as
   // the underlying RigidBody mounts. This is more reliable than a timing-
   // sensitive effect across versions of react-three/rapier.
   const setRef = useCallback(
-    (node: any) => {
+    (node: unknown) => {
       ref.current = node;
-      if (node?.rigidBody && typeof onRigidBodyReady === "function") {
-        onRigidBodyReady(node.rigidBody);
+      try {
+        const rb = extractRapierApi(node);
+        if (rb && typeof onRigidBodyReady === "function") {
+          onRigidBodyReady(rb);
+        }
+      } catch {
+        // ignore
       }
     },
     [onRigidBodyReady],

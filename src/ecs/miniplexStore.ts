@@ -1,8 +1,9 @@
 // Minimal example store export for possible later use
 import { World } from "miniplex";
 
-// Export a single World instance used by the simulation. Using a shared
-// World makes it easier to reason about entities and to add systems that
-// operate on the same store instance.
-export const store = new World<any>();
+import type { Entity } from "./types";
+
+// Export a single World instance used by the simulation. Use the Entity type
+// so consumers get properly typed entries instead of unknown.
+export const store = new World<Entity>();
 export default store;
