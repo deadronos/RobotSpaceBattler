@@ -3,12 +3,14 @@ import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-import store from "../ecs/miniplexStore";
 import type { Entity } from "../ecs/types";
+import store from "../ecs/miniplexStore";
 import Robot from "../robots/RobotFactory";
 import useUI from "../store/uiStore";
 import { syncRigidBodiesToECS } from "../systems/physicsSync";
+import { cleanupProjectiles } from "../systems/projectileCleanup";
 import Projectile from "./Projectile";
+import { handleProjectileHit } from "../systems/projectileOnHit";
 
 // Entity type is imported from ecs/types
 
@@ -88,25 +90,10 @@ export default function Simulation() {
     // Physics sync: mirror RB translations back into ECS positions
     syncRigidBodiesToECS();
 
-    // Projectile TTL and out-of-bounds cleanup
-    const allEntities = [...store.entities.values()] as unknown as Entity[];
-    for (const p of allEntities) {
-      if (!p || !p.projectile) continue;
-      p.projectile.ttl -= delta;
-      // Use RB translation if present for bounds check
-      const pos =
-        p.rb && p.rb.translation
-          ? p.rb.translation()
-          : { x: p.position[0], y: p.position[1], z: p.position[2] };
-      const OOB =
-        Math.abs(pos.x) > 200 ||
-        Math.abs(pos.z) > 200 ||
-        pos.y < -10 ||
-        pos.y > 100;
-      if (p.projectile.ttl <= 0 || OOB) {
-        store.remove(p);
-      }
-    }
+  // Projectile TTL and out-of-bounds cleanup
+  // extracted into systems/projectileCleanup for testability
+  const allEntities = [...store.entities.values()] as unknown as Entity[];
+  cleanupProjectiles(delta, store);
 
     // Muzzle flash timers
     for (const ent of allEntities) {
@@ -279,15 +266,7 @@ export default function Simulation() {
               }
             }}
             onHit={(other) => {
-              // find entity by matching rigid body reference
-              const ents = [...store.entities.values()];
-              const victim = ents.find(
-                (e) => (e as unknown as { rb?: unknown }).rb === other,
-              );
-              if (victim && victim.team !== p.team && victim.health) {
-                victim.health.hp -= p.projectile!.damage;
-                store.remove(p);
-              }
+              handleProjectileHit(p as Entity, other, store)
             }}
           />
         ))}
