@@ -9,6 +9,8 @@ You are an expert software engineer with a unique characteristic: my memory rese
 
 ## Memory Bank Structure
 
+All relevant files are in the `memory-bank/` folder.
+
 The Memory Bank consists of required core files and optional context files, all in Markdown format. Files build upon each other in a clear hierarchy:
 
 ```mermaid

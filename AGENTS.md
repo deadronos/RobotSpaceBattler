@@ -2,6 +2,10 @@
 
 > A quick, actionable contributor guide for RobotSpaceBattler.
 
+**Important:** Follow the instructions in `.github/instructions/memory-bank.instructions.md` for project context and memory management.
+the relevant files are in 'memory-bank' and 'memory-bank/tasks'
+
+
 ## Project Structure & Module Organization
 - `src/` – app code
   - `components/` UI and scenes (React)
