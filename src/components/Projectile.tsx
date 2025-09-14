@@ -12,6 +12,7 @@ type Props = {
   radius?: number;
   onRigidBodyReady?: (_rb: RapierApi) => void;
   onHit?: (other: unknown) => void;
+  physics?: boolean;
 };
 
 export default function Projectile({
@@ -22,6 +23,7 @@ export default function Projectile({
   radius = 0.1,
   onRigidBodyReady,
   onHit,
+  physics = true,
 }: Props) {
   const ref = useRef<unknown>(null);
 
@@ -41,6 +43,21 @@ export default function Projectile({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (!physics) {
+    return (
+      <group data-id={_id} position={[position.x, position.y, position.z]}>
+        <mesh>
+          <sphereGeometry args={[radius, 8, 8]} />
+          <meshStandardMaterial
+            color={team === "red" ? "orange" : "lightblue"}
+            emissive={team === "red" ? "orange" : "lightblue"}
+            emissiveIntensity={1.5}
+          />
+        </mesh>
+      </group>
+    );
+  }
 
   return (
     <RigidBody

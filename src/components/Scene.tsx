@@ -1,7 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import React, { Suspense, useEffect, useState } from "react";
-import useUI from "../store/uiStore";
 
+import useUI from "../store/uiStore";
 import Simulation from "./Simulation";
 
 export default function Scene() {
@@ -12,7 +12,7 @@ export default function Scene() {
     useState<React.ComponentType<unknown> | null>(null);
   const setDreiLoading = useUI((s) => s.setDreiLoading);
   const [PhysicsComp, setPhysicsComp] = useState<React.ComponentType<unknown> | null>(null);
-  const [rapierModule, setRapierModule] = useState<unknown | null>(null);
+  const [RapierModule, setRapierModule] = useState<unknown | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -23,11 +23,20 @@ export default function Scene() {
       try {
         if (typeof window !== "undefined") {
           try {
-            // First ensure the Rapier wasm/runtime is initialized by importing the
-            // core @dimforge/rapier3d package. Use /* @vite-ignore */ to prevent Vite
-            // from attempting to pre-transform the wasm module during optimization.
+            // First ensure the Rapier wasm/runtime is imported and initialized.
+            // Use /* @vite-ignore */ to avoid Vite pre-transform heuristics if the
+            // wasm package would otherwise be transformed incorrectly.
             // @vite-ignore
             const rapierPkg = await import(/* @vite-ignore */ "@dimforge/rapier3d");
+
+            // Some builds expose an init function (or default.init). Call it if present
+            // so the wasm module is fully initialized before react-three-rapier uses it.
+            const maybeInit = (rapierPkg as any)?.init ?? (rapierPkg as any)?.default?.init;
+            if (typeof maybeInit === "function") {
+              // init may return a promise
+              await maybeInit();
+            }
+
             if (mounted) setRapierModule(rapierPkg);
 
             // Now import the react-three-rapier wrapper and obtain the Physics component.
@@ -93,12 +102,13 @@ export default function Scene() {
         return <DreiHtmlWrapper />;
       })()}
       {PhysicsComp ? (
-        React.createElement(PhysicsComp as any, { gravity: [0, -9.81, 0] }, <Simulation />)
+        // When Physics wrapper is available, render Simulation inside it (physics enabled).
+        React.createElement(PhysicsComp as any, { gravity: [0, -9.81, 0] }, <Simulation physics={true} />)
       ) : (
         // If Rapier isn't ready, render the Simulation component without physics.
         // This keeps tests and server environments from crashing; the Simulation
-        // should tolerate missing physics in test mode.
-        <Simulation />
+        // will render a non-physics fallback when physics=false.
+        <Simulation physics={false} />
       )}
 
       {OrbitControlsComp ? <OrbitControlsComp /> : null}

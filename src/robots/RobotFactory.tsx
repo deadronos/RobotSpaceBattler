@@ -10,6 +10,7 @@ type Props = {
   initialPos?: THREE.Vector3;
   onRigidBodyReady?: (rb: RapierApi) => void;
   muzzleFlash?: boolean;
+  physics?: boolean;
 };
 
 export default function Robot({
@@ -17,6 +18,7 @@ export default function Robot({
   initialPos = new THREE.Vector3(),
   onRigidBodyReady,
   muzzleFlash,
+  physics = true,
 }: Props) {
   const ref = useRef<unknown>(null);
 
@@ -39,6 +41,49 @@ export default function Robot({
   );
 
   const color = team === "red" ? "#ff6b6b" : "#6ba0ff";
+
+  if (!physics) {
+    return (
+      <group position={[initialPos.x, initialPos.y, initialPos.z]}>
+        <group castShadow receiveShadow>
+          <mesh position={[0, 0.9, 0]} castShadow>
+            <boxGeometry args={[0.9, 1.2, 0.6]} />
+            <meshStandardMaterial color={color} />
+          </mesh>
+          <mesh position={[0, 1.8, 0]} castShadow>
+            <boxGeometry args={[0.5, 0.5, 0.5]} />
+            <meshStandardMaterial color="#222" />
+          </mesh>
+          <mesh position={[-0.9, 0.9, 0]} castShadow>
+            <cylinderGeometry args={[0.12, 0.12, 0.8, 8]} />
+            <meshStandardMaterial color="#999" />
+          </mesh>
+          <mesh position={[0.9, 0.9, 0.2]} castShadow>
+            <boxGeometry args={[0.6, 0.2, 0.2]} />
+            <meshStandardMaterial color="#222" />
+          </mesh>
+          {muzzleFlash && (
+            <mesh position={[1.2, 0.9, 0.2]} castShadow>
+              <sphereGeometry args={[0.12, 8, 8]} />
+              <meshStandardMaterial
+                color={team === "red" ? "orange" : "skyblue"}
+                emissive={team === "red" ? "orange" : "skyblue"}
+                emissiveIntensity={2}
+              />
+            </mesh>
+          )}
+          <mesh position={[-0.25, 0.1, 0]} castShadow>
+            <boxGeometry args={[0.4, 0.8, 0.4]} />
+            <meshStandardMaterial color="#333" />
+          </mesh>
+          <mesh position={[0.25, 0.1, 0]} castShadow>
+            <boxGeometry args={[0.4, 0.8, 0.4]} />
+            <meshStandardMaterial color="#333" />
+          </mesh>
+        </group>
+      </group>
+    );
+  }
 
   return (
     <RigidBody

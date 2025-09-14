@@ -36,7 +36,11 @@ function createRobotEntity(
   });
 }
 
-export default function Simulation() {
+type Props = {
+  physics?: boolean;
+};
+
+export default function Simulation({ physics = true }: Props) {
   const { paused } = useUI();
   const didSpawnRef = useRef(false);
 
@@ -86,9 +90,9 @@ export default function Simulation() {
 
   // A very small, naive global AI loop to apply impulses toward nearest enemy
   useFrame((_, delta) => {
-    if (paused) return;
-    // Physics sync: mirror RB translations back into ECS positions
-    syncRigidBodiesToECS();
+  if (paused) return;
+  // Physics sync: mirror RB translations back into ECS positions
+  if (physics) syncRigidBodiesToECS();
 
     // Projectile TTL and out-of-bounds cleanup
     // extracted into systems/projectileCleanup for testability
@@ -103,7 +107,7 @@ export default function Simulation() {
     }
 
     // remove dead entities from the store (very simple cleanup) and update UI
-    const ents = allEntities;
+  const ents = allEntities;
     const ui = useUI.getState();
     for (const ent of ents) {
       if (ent && ent.health && ent.health.hp <= 0) {
@@ -125,7 +129,7 @@ export default function Simulation() {
     entities.forEach((e) => {
       // each entity will look for the nearest enemy and apply a small force toward them
       // we store RigidBodyApi on the miniplex entity when the Robot registers it
-      if (!e.rb) return;
+      if (!physics || !e.rb) return;
       // find nearest enemy using RigidBody translations (authoritative source)
       const enemies = entities.filter((x) => x.team !== e.team && x !== e);
       if (enemies.length === 0) return;
@@ -194,82 +198,111 @@ export default function Simulation() {
         }
       }
     });
+
   });
 
   return (
-    <>
-      {/* Ground / floor (visual + collider) */}
-      <RigidBody type="fixed" colliders={false} position={[0, 0, 0]}>
-        <CuboidCollider args={[60, 0.5, 60]} friction={1} restitution={0} />
-        <mesh receiveShadow rotation-x={-Math.PI / 2}>
-          <planeGeometry args={[120, 120]} />
-          <meshStandardMaterial color="#11151d" />
-        </mesh>
-      </RigidBody>
+      <>
+        {/* Ground / floor (visual + collider) */}
+        {physics ? (
+          <RigidBody type="fixed" colliders={false} position={[0, 0, 0]}>
+            <CuboidCollider args={[60, 0.5, 60]} friction={1} restitution={0} />
+            <mesh receiveShadow rotation-x={-Math.PI / 2}>
+              <planeGeometry args={[120, 120]} />
+              <meshStandardMaterial color="#11151d" />
+            </mesh>
+          </RigidBody>
+        ) : (
+          <mesh receiveShadow rotation-x={-Math.PI / 2}>
+            <planeGeometry args={[120, 120]} />
+            <meshStandardMaterial color="#11151d" />
+          </mesh>
+        )}
 
-      {/* Boundary walls to keep robots in arena */}
-      <RigidBody type="fixed" colliders={false}>
-        {/* +X wall */}
-        <CuboidCollider args={[1, 5, 60]} position={[60, 5, 0]} />
-        {/* -X wall */}
-        <CuboidCollider args={[1, 5, 60]} position={[-60, 5, 0]} />
-        {/* +Z wall */}
-        <CuboidCollider args={[60, 5, 1]} position={[0, 5, 60]} />
-        {/* -Z wall */}
-        <CuboidCollider args={[60, 5, 1]} position={[0, 5, -60]} />
-      </RigidBody>
+        {/* Boundary walls to keep robots in arena */}
+        {physics ? (
+          <RigidBody type="fixed" colliders={false}>
+            {/* +X wall */}
+            <CuboidCollider args={[1, 5, 60]} position={[60, 5, 0]} />
+            {/* -X wall */}
+            <CuboidCollider args={[1, 5, 60]} position={[-60, 5, 0]} />
+            {/* +Z wall */}
+            <CuboidCollider args={[60, 5, 1]} position={[0, 5, 60]} />
+            {/* -Z wall */}
+            <CuboidCollider args={[60, 5, 1]} position={[0, 5, -60]} />
+          </RigidBody>
+        ) : (
+          <group>
+            <mesh position={[60, 5, 0]}>
+              <boxGeometry args={[2, 10, 120]} />
+              <meshStandardMaterial color="#000" transparent opacity={0.01} />
+            </mesh>
+            <mesh position={[-60, 5, 0]}>
+              <boxGeometry args={[2, 10, 120]} />
+              <meshStandardMaterial color="#000" transparent opacity={0.01} />
+            </mesh>
+            <mesh position={[0, 5, 60]}>
+              <boxGeometry args={[120, 10, 2]} />
+              <meshStandardMaterial color="#000" transparent opacity={0.01} />
+            </mesh>
+            <mesh position={[0, 5, -60]}>
+              <boxGeometry args={[120, 10, 2]} />
+              <meshStandardMaterial color="#000" transparent opacity={0.01} />
+            </mesh>
+          </group>
+        )}
 
-      {/* Spawn robots from the store as React objects */}
-      {[...store.entities.values()]
-        .filter((e) => !e.projectile)
-        .map((e) => (
-          <Robot
-            key={e.id}
-            team={e.team}
-            initialPos={new THREE.Vector3(...(e.position as number[]))}
-            muzzleFlash={!!e.fx?.muzzleTimer && e.fx.muzzleTimer > 0}
-            onRigidBodyReady={(rb) => {
-              // attach rapier api to the entity so AI system can access it
-              const ent = [...store.entities.values()].find(
-                (ent) => ent.id === e.id,
-              ) as Entity | undefined;
-              if (ent) {
-                ent.rb = rb;
-              }
-            }}
-          />
-        ))}
-
-      {/* Projectiles as ECS entities with rapier sensors */}
-      {[...store.entities.values()]
-        .filter((e) => !!e.projectile)
-        .map((p) => (
-          <Projectile
-            key={p.id}
-            id={p.id}
-            team={p.team}
-            position={{ x: p.position[0], y: p.position[1], z: p.position[2] }}
-            velocity={p.projectile!.velocity}
-            onRigidBodyReady={(rb) => {
-              p.rb = rb;
-              const rbApi = rb;
-              if (rbApi) {
-                try {
-                  rbApi.setTranslation?.(
-                    { x: p.position[0], y: p.position[1], z: p.position[2] },
-                    true,
-                  );
-                  rbApi.setLinvel?.(p.projectile!.velocity, true);
-                } catch {
-                  // ignore runtime differences in RAPier API shape
+        {/* Spawn robots from the store as React objects */}
+        {[...store.entities.values()]
+          .filter((e) => !e.projectile)
+          .map((e) => (
+            <Robot
+              key={e.id}
+              team={e.team}
+              initialPos={new THREE.Vector3(...(e.position as number[]))}
+              muzzleFlash={!!e.fx?.muzzleTimer && e.fx.muzzleTimer > 0}
+              onRigidBodyReady={(rb) => {
+                // attach rapier api to the entity so AI system can access it
+                const ent = [...store.entities.values()].find(
+                  (ent) => ent.id === e.id,
+                ) as Entity | undefined;
+                if (ent) {
+                  ent.rb = rb;
                 }
-              }
-            }}
-            onHit={(other) => {
-              handleProjectileHit(p as Entity, other, store);
-            }}
-          />
-        ))}
-    </>
-  );
+              }}
+            />
+          ))}
+
+        {/* Projectiles as ECS entities with rapier sensors */}
+        {[...store.entities.values()]
+          .filter((e) => !!e.projectile)
+          .map((p) => (
+            <Projectile
+              key={p.id}
+              id={p.id}
+              team={p.team}
+              position={{ x: p.position[0], y: p.position[1], z: p.position[2] }}
+              velocity={p.projectile!.velocity}
+              onRigidBodyReady={(rb) => {
+                p.rb = rb;
+                const rbApi = rb;
+                if (rbApi) {
+                  try {
+                    rbApi.setTranslation?.(
+                      { x: p.position[0], y: p.position[1], z: p.position[2] },
+                      true,
+                    );
+                    rbApi.setLinvel?.(p.projectile!.velocity, true);
+                  } catch {
+                    // ignore runtime differences in RAPier API shape
+                  }
+                }
+              }}
+              onHit={(other) => {
+                handleProjectileHit(p as Entity, other, store);
+              }}
+            />
+          ))}
+      </>
+    );
 }
