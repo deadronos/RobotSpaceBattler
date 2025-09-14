@@ -1,4 +1,3 @@
-import { BallCollider, RigidBody } from "@react-three/rapier";
 import React, { useLayoutEffect, useRef } from "react";
 
 import type { RapierApi, Vec3 } from "../ecs/types";
@@ -13,6 +12,10 @@ type Props = {
   onRigidBodyReady?: (_rb: RapierApi) => void;
   onHit?: (other: unknown) => void;
   physics?: boolean;
+  rapierComponents?: {
+    RigidBody?: React.ComponentType<unknown>;
+    BallCollider?: React.ComponentType<unknown>;
+  } | null;
 };
 
 export default function Projectile({
@@ -24,6 +27,7 @@ export default function Projectile({
   onRigidBodyReady,
   onHit,
   physics = true,
+  rapierComponents = null,
 }: Props) {
   const ref = useRef<unknown>(null);
 
@@ -60,42 +64,41 @@ export default function Projectile({
   }
 
   return (
-    <RigidBody
-      ref={(node) => {
-        ref.current = node;
-      }}
-      type="dynamic"
-      ccd
-      colliders={false}
-      gravityScale={0}
-      enabledRotations={[false, false, false]}
-      // event typing differences across versions - keep handler typed loosely
-      onCollisionEnter={(e: { other: unknown }) => {
-        onHit?.(e.other);
-      }}
-    >
-      <BallCollider args={[radius]} />
-      <group data-id={_id} position={[position.x, position.y, position.z]}>
-        <mesh>
-          <sphereGeometry args={[radius, 8, 8]} />
-          <meshStandardMaterial
-            color={team === "red" ? "orange" : "lightblue"}
-            emissive={team === "red" ? "orange" : "lightblue"}
-            emissiveIntensity={1.5}
-          />
-        </mesh>
-        {/* simple fake trail (stretched thin cylinder) */}
-        <mesh position={[0, 0, -0.3]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.02, 0.02, 0.6, 6]} />
-          <meshStandardMaterial
-            color={team === "red" ? "orange" : "lightblue"}
-            emissive={team === "red" ? "orange" : "lightblue"}
-            emissiveIntensity={1.2}
-            opacity={0.8}
-            transparent
-          />
-        </mesh>
-      </group>
-    </RigidBody>
+    rapierComponents && rapierComponents.RigidBody ? (
+      React.createElement(
+        rapierComponents.RigidBody,
+        ({ ref: (node: unknown) => { ref.current = node; }, type: 'dynamic', ccd: true, colliders: false, gravityScale: 0, enabledRotations: [false, false, false], onCollisionEnter: (e: { other: unknown }) => { onHit?.(e.other); } } as unknown as Record<string, unknown>),
+        rapierComponents.BallCollider ? React.createElement(rapierComponents.BallCollider, ({ args: [radius] } as unknown as Record<string, unknown>)) : null,
+        React.createElement(
+          'group',
+          ({ 'data-id': _id, position: [position.x, position.y, position.z] } as unknown as Record<string, unknown>),
+          React.createElement(
+            'mesh',
+            null,
+            React.createElement('sphereGeometry', { args: [radius, 8, 8] }),
+            React.createElement('meshStandardMaterial', {
+              color: team === 'red' ? 'orange' : 'lightblue',
+              emissive: team === 'red' ? 'orange' : 'lightblue',
+              emissiveIntensity: 1.5,
+            }),
+          ),
+          React.createElement(
+            'mesh',
+            ({ position: [0, 0, -0.3], rotation: [Math.PI / 2, 0, 0] } as unknown as Record<string, unknown>),
+            React.createElement('cylinderGeometry', { args: [0.02, 0.02, 0.6, 6] }),
+            React.createElement('meshStandardMaterial', {
+              color: team === 'red' ? 'orange' : 'lightblue',
+              emissive: team === 'red' ? 'orange' : 'lightblue',
+              emissiveIntensity: 1.2,
+              opacity: 0.8,
+              transparent: true,
+            }),
+          ),
+        ),
+      )
+    ) : (
+      // safety fallback
+      <group data-id={_id} position={[position.x, position.y, position.z]} />
+    )
   );
 }

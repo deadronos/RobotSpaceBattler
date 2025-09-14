@@ -1,5 +1,4 @@
 import { useFrame } from "@react-three/fiber";
-import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 
@@ -38,9 +37,16 @@ function createRobotEntity(
 
 type Props = {
   physics?: boolean;
+  // runtime-provided Rapier components to avoid static imports that can
+  // cause multiple module instances (and context mismatch).
+  rapierComponents?: {
+    RigidBody?: React.ComponentType<unknown>;
+    CuboidCollider?: React.ComponentType<unknown>;
+    CapsuleCollider?: React.ComponentType<unknown>;
+    BallCollider?: React.ComponentType<unknown>;
+  } | null;
 };
-
-export default function Simulation({ physics = true }: Props) {
+export default function Simulation({ physics = true, rapierComponents = null }: Props) {
   const { paused } = useUI();
   const didSpawnRef = useRef(false);
 
@@ -204,14 +210,16 @@ export default function Simulation({ physics = true }: Props) {
   return (
       <>
         {/* Ground / floor (visual + collider) */}
-        {physics ? (
-          <RigidBody type="fixed" colliders={false} position={[0, 0, 0]}>
-            <CuboidCollider args={[60, 0.5, 60]} friction={1} restitution={0} />
+        {physics && rapierComponents && rapierComponents.RigidBody && rapierComponents.CuboidCollider ? (
+          React.createElement(
+            rapierComponents.RigidBody,
+            ({ type: "fixed", colliders: false, position: [0, 0, 0] } as unknown as Record<string, unknown>),
+            React.createElement(rapierComponents.CuboidCollider, ({ args: [60, 0.5, 60], friction: 1, restitution: 0 } as unknown as Record<string, unknown>)),
             <mesh receiveShadow rotation-x={-Math.PI / 2}>
               <planeGeometry args={[120, 120]} />
               <meshStandardMaterial color="#11151d" />
-            </mesh>
-          </RigidBody>
+            </mesh>,
+          )
         ) : (
           <mesh receiveShadow rotation-x={-Math.PI / 2}>
             <planeGeometry args={[120, 120]} />
@@ -220,17 +228,15 @@ export default function Simulation({ physics = true }: Props) {
         )}
 
         {/* Boundary walls to keep robots in arena */}
-        {physics ? (
-          <RigidBody type="fixed" colliders={false}>
-            {/* +X wall */}
-            <CuboidCollider args={[1, 5, 60]} position={[60, 5, 0]} />
-            {/* -X wall */}
-            <CuboidCollider args={[1, 5, 60]} position={[-60, 5, 0]} />
-            {/* +Z wall */}
-            <CuboidCollider args={[60, 5, 1]} position={[0, 5, 60]} />
-            {/* -Z wall */}
-            <CuboidCollider args={[60, 5, 1]} position={[0, 5, -60]} />
-          </RigidBody>
+        {physics && rapierComponents && rapierComponents.RigidBody && rapierComponents.CuboidCollider ? (
+          React.createElement(
+            rapierComponents.RigidBody,
+            ({ type: "fixed", colliders: false } as unknown as Record<string, unknown>),
+            React.createElement(rapierComponents.CuboidCollider, ({ args: [1, 5, 60], position: [60, 5, 0] } as unknown as Record<string, unknown>)),
+            React.createElement(rapierComponents.CuboidCollider, ({ args: [1, 5, 60], position: [-60, 5, 0] } as unknown as Record<string, unknown>)),
+            React.createElement(rapierComponents.CuboidCollider, ({ args: [60, 5, 1], position: [0, 5, 60] } as unknown as Record<string, unknown>)),
+            React.createElement(rapierComponents.CuboidCollider, ({ args: [60, 5, 1], position: [0, 5, -60] } as unknown as Record<string, unknown>)),
+          )
         ) : (
           <group>
             <mesh position={[60, 5, 0]}>
@@ -261,6 +267,7 @@ export default function Simulation({ physics = true }: Props) {
               team={e.team}
               initialPos={new THREE.Vector3(...(e.position as number[]))}
               muzzleFlash={!!e.fx?.muzzleTimer && e.fx.muzzleTimer > 0}
+          rapierComponents={rapierComponents}
               onRigidBodyReady={(rb) => {
                 // attach rapier api to the entity so AI system can access it
                 const ent = [...store.entities.values()].find(
@@ -282,6 +289,7 @@ export default function Simulation({ physics = true }: Props) {
               id={p.id}
               team={p.team}
               position={{ x: p.position[0], y: p.position[1], z: p.position[2] }}
+              rapierComponents={rapierComponents}
               velocity={p.projectile!.velocity}
               onRigidBodyReady={(rb) => {
                 p.rb = rb;
