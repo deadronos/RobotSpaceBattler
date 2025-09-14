@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react-swc'
 
 // plugins we'll add
 import svgr from 'vite-plugin-svgr'
+import wasm from 'vite-plugin-wasm'
 import glsl from 'vite-plugin-glsl'
 import checker from 'vite-plugin-checker'
 import AutoImport from 'unplugin-auto-import/vite'
@@ -11,6 +12,7 @@ import { setupPlugins as responsiveSetupPlugins } from '@responsive-image/vite-p
 
 export default defineConfig({
   plugins: [
+    wasm(),
     react(),
     svgr(),
     glsl(),

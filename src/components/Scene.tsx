@@ -1,6 +1,6 @@
 import { Canvas } from "@react-three/fiber";
-import { Physics } from "@react-three/rapier";
 import React, { Suspense, useEffect, useState } from "react";
+import useUI from "../store/uiStore";
 
 import Simulation from "./Simulation";
 
@@ -10,24 +10,54 @@ export default function Scene() {
   );
   const [OrbitControlsComp, setOrbitControlsComp] =
     useState<React.ComponentType<unknown> | null>(null);
+  const setDreiLoading = useUI((s) => s.setDreiLoading);
+  const [PhysicsComp, setPhysicsComp] = useState<React.ComponentType<unknown> | null>(null);
+  const [rapierModule, setRapierModule] = useState<unknown | null>(null);
 
   useEffect(() => {
     let mounted = true;
     // dynamically import heavy drei bits only when Scene mounts
-    Promise.all([
-      import("@react-three/drei").then((m) => m.Html),
-      import("@react-three/drei").then((m) => m.OrbitControls),
-    ]).then(([HtmlComp, OrbitComp]) => {
-      if (!mounted) return;
-      setDreiHtml(() => HtmlComp as unknown as React.ComponentType<unknown>);
-      setOrbitControlsComp(
-        () => OrbitComp as unknown as React.ComponentType<unknown>,
-      );
-    });
+    // signal loading start
+    setDreiLoading(true);
+    (async () => {
+      try {
+        if (typeof window !== "undefined") {
+          try {
+            // First ensure the Rapier wasm/runtime is initialized by importing the
+            // core @dimforge/rapier3d package. Use /* @vite-ignore */ to prevent Vite
+            // from attempting to pre-transform the wasm module during optimization.
+            // @vite-ignore
+            const rapierPkg = await import(/* @vite-ignore */ "@dimforge/rapier3d");
+            if (mounted) setRapierModule(rapierPkg);
+
+            // Now import the react-three-rapier wrapper and obtain the Physics component.
+            // @vite-ignore
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            const rapierWrapper = await import(/* @vite-ignore */ "@react-three/rapier");
+            if (mounted && rapierWrapper?.Physics) setPhysicsComp(() => (rapierWrapper.Physics as unknown) as React.ComponentType<unknown>);
+          } catch (err) {
+            window?.console?.warn?.("Failed to load rapier packages (physics disabled).", err);
+          }
+        }
+
+        const [HtmlComp, OrbitComp] = await Promise.all([
+          import("@react-three/drei").then((m) => m.Html),
+          import("@react-three/drei").then((m) => m.OrbitControls),
+        ]);
+
+        if (!mounted) return;
+        setDreiHtml(() => HtmlComp as unknown as React.ComponentType<unknown>);
+        setOrbitControlsComp(() => OrbitComp as unknown as React.ComponentType<unknown>);
+      } finally {
+        // signal loading finished
+        if (mounted) setDreiLoading(false);
+      }
+    })();
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [setDreiLoading]);
 
   return (
     <Canvas shadows camera={{ position: [0, 20, 30], fov: 50 }}>
@@ -45,17 +75,15 @@ export default function Scene() {
       />
       {/* helper wrapper to render dynamically loaded Html with minimal lint exceptions */}
       {(() => {
-        if (!DreiHtml)
-          return (
-            <Suspense fallback={<div className="loadingText">Loading...</div>}>
-              <div />
-            </Suspense>
-          );
+        // While drei Html is loading, render nothing inside the Canvas (DOMs are not allowed here).
+        if (!DreiHtml) return null;
         const DreiHtmlWrapper: React.FC = () => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const Comp = DreiHtml as any;
           return (
-            <Suspense fallback={<div className="loadingText">Loading...</div>}>
+            // When Html is available, it's safe to render DOM inside it. Keep Suspense fallback null
+            // because DOM fallback content would otherwise be rendered directly inside the Canvas.
+            <Suspense fallback={null}>
               <Comp center>
                 <div className="loadingText">Loading...</div>
               </Comp>
@@ -64,9 +92,14 @@ export default function Scene() {
         };
         return <DreiHtmlWrapper />;
       })()}
-      <Physics gravity={[0, -9.81, 0]}>
+      {PhysicsComp ? (
+        React.createElement(PhysicsComp as any, { gravity: [0, -9.81, 0] }, <Simulation />)
+      ) : (
+        // If Rapier isn't ready, render the Simulation component without physics.
+        // This keeps tests and server environments from crashing; the Simulation
+        // should tolerate missing physics in test mode.
         <Simulation />
-      </Physics>
+      )}
 
       {OrbitControlsComp ? <OrbitControlsComp /> : null}
     </Canvas>

@@ -6,6 +6,10 @@ type UIState = {
   paused: boolean;
   togglePause: () => void;
 
+  // whether dynamic drei Html (or other heavy scene UI) is loading
+  dreiLoading: boolean;
+  setDreiLoading: (loading: boolean) => void;
+
   redAlive: number;
   blueAlive: number;
   redKills: number;
@@ -17,6 +21,9 @@ type UIState = {
 const useUI = create<UIState>((set) => ({
   paused: false,
   togglePause: () => set((s) => ({ paused: !s.paused })),
+
+  dreiLoading: false,
+  setDreiLoading: (loading: boolean) => set(() => ({ dreiLoading: loading })),
 
   redAlive: 0,
   blueAlive: 0,
