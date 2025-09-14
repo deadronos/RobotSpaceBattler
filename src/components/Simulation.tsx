@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 import store from "../ecs/miniplexStore";
+import { markEntityDestroying } from "../utils/rapierCleanup";
 import type { Entity } from "../ecs/types";
 import Robot from "../robots/RobotFactory";
 import useUI from "../store/uiStore";
@@ -119,6 +120,15 @@ export default function Simulation({ physics = true, rapierComponents = null }: 
       if (ent && ent.health && ent.health.hp <= 0) {
         if (ent.team === "red") ui.addKill("blue");
         else ui.addKill("red");
+        try {
+          // Mark entity as destroying and clear Rapier refs before removal.
+          try { markEntityDestroying(ent); } catch {
+            // fallback: best-effort deletion
+            try { delete (ent as any).rb; } catch {}
+            try { delete (ent as any).collider; } catch {}
+            try { (ent as any).__destroying = true; } catch {}
+          }
+        } catch {}
         store.remove(ent);
       }
     }
@@ -262,8 +272,9 @@ export default function Simulation({ physics = true, rapierComponents = null }: 
         {[...store.entities.values()]
           .filter((e) => !e.projectile)
           .map((e) => (
-            <Robot
+        <Robot
               key={e.id}
+          id={e.id}
               team={e.team}
               initialPos={new THREE.Vector3(...(e.position as number[]))}
               muzzleFlash={!!e.fx?.muzzleTimer && e.fx.muzzleTimer > 0}
@@ -300,7 +311,14 @@ export default function Simulation({ physics = true, rapierComponents = null }: 
                       { x: p.position[0], y: p.position[1], z: p.position[2] },
                       true,
                     );
-                    rbApi.setLinvel?.(p.projectile!.velocity, true);
+                    // Pass a fresh object to Rapier to avoid aliasing of
+                    // store-managed objects which can trigger wasm ownership
+                    // errors in some react-three-rapier/rapier builds.
+                    const vel = p.projectile!.velocity;
+                    rbApi.setLinvel?.(
+                      { x: vel.x, y: vel.y, z: vel.z },
+                      true,
+                    );
                   } catch {
                     // ignore runtime differences in RAPier API shape
                   }
@@ -313,4 +331,60 @@ export default function Simulation({ physics = true, rapierComponents = null }: 
           ))}
       </>
     );
+}
+
+// Non-Canvas fallback for environments without WebGL / R3F. This component
+// performs minimal ECS bootstrapping (spawning entities) but does not render
+// any r3f elements or call r3f hooks, so it is safe to mount outside a
+// <Canvas>. It keeps the UI working (counts/status) in headless/CI runs.
+export function SimulationFallback({ physics = false }: { physics?: boolean }) {
+  useEffect(() => {
+    // spawn robots if not already present
+    const spacing = 3;
+    for (let i = 0; i < 10; i++) {
+      const rx = -12 + (i % 5) * spacing;
+      const rz = -5 + Math.floor(i / 5) * spacing;
+      const id = `red-${i}`;
+      const exists = [...store.entities.values()].some((e: any) => e.id === id);
+      if (!exists) {
+        store.add({
+          id,
+          team: 'red',
+          position: [rx, 1, rz],
+          health: { hp: 10, maxHp: 10 },
+          weapon: { cooldown: 0, fireRate: 2, range: 12, damage: 2, projectileSpeed: 25, projectileTTL: 3 },
+          fx: {},
+        });
+      }
+    }
+    for (let i = 0; i < 10; i++) {
+      const rx = 12 - (i % 5) * spacing;
+      const rz = 5 - Math.floor(i / 5) * spacing;
+      const id = `blue-${i}`;
+      const exists = [...store.entities.values()].some((e: any) => e.id === id);
+      if (!exists) {
+        store.add({
+          id,
+          team: 'blue',
+          position: [rx, 1, rz],
+          health: { hp: 10, maxHp: 10 },
+          weapon: { cooldown: 0, fireRate: 2, range: 12, damage: 2, projectileSpeed: 25, projectileTTL: 3 },
+          fx: {},
+        });
+      }
+    }
+
+    // Update UI counts once after spawn
+    try {
+      const ui = useUI.getState();
+      const redAlive = [...store.entities.values()].filter((e: any) => e.team === 'red' && e.health).length;
+      const blueAlive = [...store.entities.values()].filter((e: any) => e.team === 'blue' && e.health).length;
+      ui.setCounts(redAlive, blueAlive);
+    } catch {
+      // ignore if UI store unavailable
+    }
+  }, []);
+
+  // No visual output for the fallback; the UI outside the Canvas shows status.
+  return null;
 }

@@ -1,10 +1,12 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useRef, useEffect } from "react";
 import * as THREE from "three";
 
 import type { RapierApi } from "../ecs/types";
 import { extractRapierApi } from "../ecs/types";
+import store from "../ecs/miniplexStore";
 
 type Props = {
+  id?: string;
   team: "red" | "blue";
   initialPos?: THREE.Vector3;
   onRigidBodyReady?: (rb: RapierApi) => void;
@@ -17,6 +19,7 @@ type Props = {
 };
 
 export default function Robot({
+  id,
   team,
   initialPos = new THREE.Vector3(),
   onRigidBodyReady,
@@ -43,6 +46,36 @@ export default function Robot({
     },
     [onRigidBodyReady],
   );
+
+  // cleanup on unmount: clear any lingering rapier API references on the
+  // backing ECS entity so that rapid unmount/remount sequences do not leave
+  // stale references which may be used concurrently by Rapier's wasm layer.
+  useEffect(() => {
+    return () => {
+      try {
+        if (!id) return;
+        const ent = [...store.entities.values()].find((e: any) => e.id === id);
+        if (ent) {
+          try {
+            // lazy dynamic import to avoid circular import during tests
+            import('../utils/rapierCleanup').then((mod) => {
+              try { mod.markEntityDestroying(ent); } catch {}
+            }).catch(() => {
+              try { delete (ent as any).rb; } catch {}
+              try { delete (ent as any).collider; } catch {}
+              try { (ent as any).__destroying = true; } catch {}
+            });
+          } catch {
+            try { delete (ent as any).rb; } catch {}
+            try { delete (ent as any).collider; } catch {}
+            try { (ent as any).__destroying = true; } catch {}
+          }
+        }
+      } catch {
+        // swallow cleanup errors
+      }
+    };
+  }, [id]);
 
   const color = team === "red" ? "#ff6b6b" : "#6ba0ff";
 

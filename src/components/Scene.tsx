@@ -2,7 +2,7 @@ import { Canvas } from "@react-three/fiber";
 import React, { useEffect, useState } from "react";
 
 import useUI from "../store/uiStore";
-import Simulation from "./Simulation";
+import Simulation, { SimulationFallback } from "./Simulation";
 export default function Scene() {
   const [DreiHtml, setDreiHtml] = useState<React.ComponentType<{ center?: boolean; children?: React.ReactNode }> | null>(null);
   const [OrbitControlsComp, setOrbitControlsComp] =
@@ -17,6 +17,7 @@ export default function Scene() {
   const [runtimeCandidates, setRuntimeCandidates] = useState<{ name: string; obj: unknown }[] | null>(null);
   const [candidateIndex, setCandidateIndex] = useState<number>(0);
   const [shouldPassRapier, setShouldPassRapier] = useState<boolean>(false);
+  const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
 
   // Error boundary to catch errors thrown by the Physics wrapper at mount time
   type PhysicsErrorBoundaryProps = {
@@ -64,7 +65,55 @@ export default function Scene() {
     }
   }
 
+  // Error boundary to catch Canvas / WebGL errors (e.g. WebGL context creation)
+  class CanvasErrorBoundary extends React.Component<{ setRapierDebug: (msg: string | null) => void; children?: React.ReactNode }, { hasError: boolean; msg?: string }> {
+    constructor(props: { setRapierDebug: (msg: string | null) => void; children?: React.ReactNode }) {
+      super(props);
+      this.state = { hasError: false };
+    }
+    componentDidCatch(error: unknown) {
+      try {
+        const e = error as { message?: unknown; stack?: unknown };
+        const stack = e && e.stack ? String(e.stack).slice(0, 1000) : undefined;
+        const msg = e && e.message ? String(e.message) : String(error);
+        this.props.setRapierDebug?.(`canvas-render-error:${msg}; stack:${stack ?? '<no-stack>'}`);
+      } catch {
+        // ignore
+      }
+      try {
+        const w = typeof window !== 'undefined' ? (window as unknown as { console?: { error?: (...args: unknown[]) => void } }) : undefined;
+        if (w && w.console && typeof w.console.error === 'function') w.console.error('Canvas render error', error);
+      } catch {
+        // noop
+      }
+      this.setState({ hasError: true, msg: (error as { message?: unknown })?.message ? String((error as { message?: unknown })!.message) : String(error) });
+    }
+    render() {
+      if (this.state.hasError) {
+        // Render a non-Canvas fallback so the app stays usable in environments
+        // without WebGL (CI/headless). The Simulation component supports a
+        // non-physics/non-webgl fallback via its props.
+        return React.createElement(Simulation, { physics: false, rapierComponents: null });
+      }
+      return this.props.children as React.ReactNode;
+    }
+  }
+
   useEffect(() => {
+    // Quick synchronous feature-detect for WebGL availability. We run this
+    // inside an effect so it's client-only and doesn't run during SSR.
+    try {
+      if (typeof window === 'undefined') {
+        setWebglSupported(false);
+      } else {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || (canvas.getContext as any)('experimental-webgl');
+        setWebglSupported(Boolean(gl));
+      }
+    } catch {
+      setWebglSupported(false);
+    }
+
     let mounted = true;
     // dynamically import heavy drei bits only when Scene mounts
     // signal loading start
@@ -323,8 +372,41 @@ export default function Scene() {
     };
   }, [setDreiLoading, setPhysicsAvailable, setRapierDebug]);
 
+  // Listen for WebGL context loss and gracefully fall back to the
+  // non-WebGL Simulation so the app doesn't repeatedly attempt to create
+  // a context and doesn't leave Rapier in a half-destroyed state.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = (ev: Event) => {
+      try {
+        setRapierDebug?.('webgl-context-lost');
+        setWebglSupported(false);
+        // disable physics to prevent wasm destroy races
+        setPhysicsAvailable(false);
+        setRapierModule(null);
+      } catch {
+        // ignore
+      }
+    };
+    window.addEventListener('webglcontextlost', handler as EventListener);
+    return () => {
+      window.removeEventListener('webglcontextlost', handler as EventListener);
+    };
+  }, [setRapierDebug, setPhysicsAvailable]);
+
+  // If we deterministically detect WebGL is unavailable, avoid mounting the
+  // Canvas entirely and render a fallback Simulation. If detection hasn't
+  // completed (null) we optimistically render the CanvasErrorBoundary so the
+  // app can still attempt to create a context; the boundary will catch errors.
+  if (webglSupported === false) {
+    // Render a non-r3f fallback that does minimal ECS bootstrapping but
+    // doesn't mount any r3f hooks/components.
+    return React.createElement(SimulationFallback, { physics: false });
+  }
+
   return (
-    <Canvas shadows camera={{ position: [0, 20, 30], fov: 50 }}>
+    <CanvasErrorBoundary setRapierDebug={setRapierDebug}>
+      <Canvas shadows camera={{ position: [0, 20, 30], fov: 50 }}>
       <ambientLight intensity={0.4} />
       <directionalLight
         castShadow
@@ -388,6 +470,7 @@ export default function Scene() {
       )}
 
       {OrbitControlsComp ? <OrbitControlsComp /> : null}
-    </Canvas>
+      </Canvas>
+    </CanvasErrorBoundary>
   );
 }

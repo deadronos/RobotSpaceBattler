@@ -1,7 +1,8 @@
-import React, { useLayoutEffect, useRef } from "react";
+import React, { useLayoutEffect, useRef, useEffect } from "react";
 
 import type { RapierApi, Vec3 } from "../ecs/types";
 import { extractRapierApi } from "../ecs/types";
+import store from "../ecs/miniplexStore";
 
 type Props = {
   id: string;
@@ -30,16 +31,21 @@ export default function Projectile({
   rapierComponents = null,
 }: Props) {
   const ref = useRef<unknown>(null);
-
   useLayoutEffect(() => {
     const rb = extractRapierApi(ref.current);
     if (rb) {
       try {
+        // Create fresh plain objects before calling into wasm to avoid
+        // potential aliasing/ownership issues when a reference to a
+        // JS object managed by React is reused elsewhere.
         rb.setTranslation?.(
           { x: position.x, y: position.y, z: position.z },
           true,
         );
-        rb.setLinvel?.({ x: velocity.x, y: velocity.y, z: velocity.z }, true);
+        rb.setLinvel?.(
+          { x: velocity.x, y: velocity.y, z: velocity.z },
+          true,
+        );
       } catch {
         // ignore runtime shape differences
       }
@@ -47,6 +53,30 @@ export default function Projectile({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // cleanup on unmount: clear ECS references associated with this projectile
+  useEffect(() => {
+    return () => {
+      try {
+        const ent = [...store.entities.values()].find((e: any) => e.id === _id);
+        if (ent) {
+          try {
+            import('../utils/rapierCleanup').then((m) => { try { m.markEntityDestroying(ent); } catch {} }).catch(() => {
+              try { delete (ent as any).rb; } catch {}
+              try { delete (ent as any).collider; } catch {}
+              try { (ent as any).__destroying = true; } catch {}
+            });
+          } catch {
+            try { delete (ent as any).rb; } catch {}
+            try { delete (ent as any).collider; } catch {}
+            try { (ent as any).__destroying = true; } catch {}
+          }
+        }
+      } catch {
+        // ignore
+      }
+    };
+  }, [_id]);
 
   if (!physics) {
     return (
