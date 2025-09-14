@@ -3,14 +3,14 @@ import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-import type { Entity } from "../ecs/types";
 import store from "../ecs/miniplexStore";
+import type { Entity } from "../ecs/types";
 import Robot from "../robots/RobotFactory";
 import useUI from "../store/uiStore";
 import { syncRigidBodiesToECS } from "../systems/physicsSync";
 import { cleanupProjectiles } from "../systems/projectileCleanup";
-import Projectile from "./Projectile";
 import { handleProjectileHit } from "../systems/projectileOnHit";
+import Projectile from "./Projectile";
 
 // Entity type is imported from ecs/types
 

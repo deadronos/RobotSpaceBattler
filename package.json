@@ -9,6 +9,7 @@
     "build:analyze": "vite build --mode production",
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --config eslint.config.cjs",
+  "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --config eslint.config.cjs --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "docs:deps": "node scripts/generate-dependency-docs.cjs",
     "test": "vitest run",

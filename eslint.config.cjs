@@ -53,7 +53,6 @@ module.exports = [
   // base JS recommended rules
   js.configs.recommended,
   // reintroduce recommended rules from commonly used plugins as flat-config objects
-  tsRecommended,
   mapSafeToEntry(safeRecommendedFrom(reactPlugin)),
   mapSafeToEntry(safeRecommendedFrom(jsxA11yPlugin)),
   mapSafeToEntry(safeRecommendedFrom(importPlugin)),
@@ -79,7 +78,7 @@ module.exports = [
       'simple-import-sort': require('eslint-plugin-simple-import-sort'),
       'unused-imports': require('eslint-plugin-unused-imports')
     },
-    rules: {
+    rules: Object.assign({}, (tsRecommended && tsRecommended.rules) ? tsRecommended.rules : {}, {
       // react hooks plugin rules
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
@@ -93,7 +92,7 @@ module.exports = [
       // keep import resolution rules reasonably strict
       'import/no-unresolved': 'error',
       'import/no-extraneous-dependencies': ['error', { devDependencies: ['**/*.test.*', 'playwright/**', 'tests/**'] }]
-    },
+    }),
     settings: {
       react: { version: 'detect' },
       'import/resolver': {

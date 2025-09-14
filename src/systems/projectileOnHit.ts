@@ -1,5 +1,6 @@
-import type { Entity } from '../ecs/types'
 import type { World } from 'miniplex'
+
+import type { Entity } from '../ecs/types'
 
 // Handle a projectile hitting another rigid body (other). The Simulation
 // onHit handler searches entities by matching `rb === other`. This helper
