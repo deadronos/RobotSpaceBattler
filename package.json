@@ -9,7 +9,7 @@
     "build:analyze": "vite build --mode production",
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --config eslint.config.cjs",
-  "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --config eslint.config.cjs --fix",
+    "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --config eslint.config.cjs --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "docs:deps": "node scripts/generate-dependency-docs.cjs",
     "test": "vitest run",
@@ -23,10 +23,10 @@
   "lint-staged": {
     "src/**/*.{ts,tsx,js,jsx}": [
       "eslint --fix",
-      "prettier --write"
+      "npm run format"
     ],
     "**/*.{md,json}": [
-      "prettier --write"
+      "npm run format"
     ]
   },
   "dependencies": {
@@ -43,6 +43,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",
+    "@responsive-image/vite-plugin": "latest",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@types/react": "^19.1.13",
@@ -50,6 +51,8 @@
     "@typescript-eslint/eslint-plugin": "^8.43.0",
     "@typescript-eslint/parser": "^8.43.0",
     "@vitejs/plugin-react-swc": "^4.0.1",
+    "@vitest/coverage-v8": "^3.2.4",
+    "cross-env": "^7.0.3",
     "eslint": "^9.35.0",
     "eslint-config-auto": "^0.9.0",
     "eslint-config-prettier": "^10.1.8",
@@ -69,16 +72,13 @@
     "lint-staged": "^16.1.6",
     "playwright": "^1.55.0",
     "prettier": "^3.6.2",
-    "typescript": "^5.9.2",
-    "vite": "^7.1.5",
-    "vite-plugin-svgr": "latest",
-    "vite-plugin-glsl": "latest",
-    "vite-plugin-checker": "latest",
-    "unplugin-auto-import": "latest",
     "rollup-plugin-visualizer": "latest",
-    "@responsive-image/vite-plugin": "latest",
-    "vitest": "^3.2.4",
-    "@vitest/coverage-v8": "^3.2.4",
-    "cross-env": "^7.0.3"
+    "typescript": "^5.9.2",
+    "unplugin-auto-import": "latest",
+    "vite": "^7.1.5",
+    "vite-plugin-checker": "latest",
+    "vite-plugin-glsl": "latest",
+    "vite-plugin-svgr": "latest",
+    "vitest": "^3.2.4"
   }
 }

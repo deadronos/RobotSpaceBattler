@@ -90,10 +90,10 @@ export default function Simulation() {
     // Physics sync: mirror RB translations back into ECS positions
     syncRigidBodiesToECS();
 
-  // Projectile TTL and out-of-bounds cleanup
-  // extracted into systems/projectileCleanup for testability
-  const allEntities = [...store.entities.values()] as unknown as Entity[];
-  cleanupProjectiles(delta, store);
+    // Projectile TTL and out-of-bounds cleanup
+    // extracted into systems/projectileCleanup for testability
+    const allEntities = [...store.entities.values()] as unknown as Entity[];
+    cleanupProjectiles(delta, store);
 
     // Muzzle flash timers
     for (const ent of allEntities) {
@@ -266,7 +266,7 @@ export default function Simulation() {
               }
             }}
             onHit={(other) => {
-              handleProjectileHit(p as Entity, other, store)
+              handleProjectileHit(p as Entity, other, store);
             }}
           />
         ))}
