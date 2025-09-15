@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 import store from '../ecs/miniplexStore';
-import type { Entity } from '../ecs/types';
+import type { Entity, RapierApi } from '../ecs/types';
 import Robot from '../robots/RobotFactory';
 import useUI from '../store/uiStore';
 import { syncRigidBodiesToECS } from '../systems/physicsSync';
@@ -42,13 +42,31 @@ export default function Simulation({ physics = true }: Props) {
   const { paused } = useUI();
   const didSpawnRef = useRef(false);
 
-  function spawnProjectile(
+  // --- small helpers ------------------------------------------------------
+
+  const getTranslation = (rb: RapierApi | undefined, fallback: number[]) =>
+    rb && rb.translation
+      ? rb.translation()
+      : { x: fallback[0], y: fallback[1], z: fallback[2] };
+
+  const getLinvel = (rb: RapierApi | undefined) =>
+    rb && rb.linvel ? rb.linvel() : { x: 0, y: 0, z: 0 };
+
+  const setXZVelocity = (rb: RapierApi | undefined, vx: number, vz: number) => {
+    if (!rb || !rb.setLinvel) return;
+    const current = getLinvel(rb);
+    rb.setLinvel({ x: vx, y: current.y, z: vz }, true);
+  };
+
+  const spawnProjectile = (
     owner: Entity,
     from: THREE.Vector3,
     dir: THREE.Vector3,
     damage = 4,
-  ) {
-    const id = `proj-${owner.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  ) => {
+    const id = `proj-${owner.id}-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 6)}`;
     store.add({
       id,
       team: owner.team,
@@ -64,7 +82,9 @@ export default function Simulation({ physics = true }: Props) {
         },
       },
     });
-  }
+  };
+
+  const SPEED = 4; // movement tuning
 
   useEffect(() => {
     if (didSpawnRef.current) return;
@@ -86,7 +106,7 @@ export default function Simulation({ physics = true }: Props) {
     }
   }, []);
 
-  // A very small, naive global AI loop to apply impulses toward nearest enemy
+  // Per-frame systems: physics sync, projectile cleanup, AI, and UI updates
   useFrame((_, delta) => {
     if (paused) return;
     // Physics sync: mirror RB translations back into ECS positions
@@ -149,7 +169,7 @@ export default function Simulation({ physics = true }: Props) {
     ).length;
     ui.setCounts(redAlive, blueAlive);
 
-    const entities = allEntities.filter((e) => !!e);
+    const entities = allEntities.filter(Boolean);
     entities.forEach((e) => {
       // each entity will look for the nearest enemy and apply a small force toward them
       // we store RigidBodyApi on the miniplex entity when the Robot registers it
@@ -160,20 +180,10 @@ export default function Simulation({ physics = true }: Props) {
       // compute nearest by distance using the RigidBody world transform if available
       let best: Entity | undefined;
       let bestDist = Number.POSITIVE_INFINITY;
-      const a =
-        e.rb && e.rb.translation
-          ? e.rb.translation()
-          : { x: e.position[0], y: e.position[1], z: e.position[2] };
+      const a = getTranslation(e.rb, e.position);
       for (const enemy of enemies) {
         if (!enemy.rb) continue;
-        const b =
-          enemy.rb && enemy.rb.translation
-            ? enemy.rb.translation()
-            : {
-                x: enemy.position[0],
-                y: enemy.position[1],
-                z: enemy.position[2],
-              };
+        const b = getTranslation(enemy.rb, enemy.position);
         const dx = a.x - b.x;
         const dz = a.z - b.z;
         const d2 = dx * dx + dz * dz;
@@ -184,24 +194,13 @@ export default function Simulation({ physics = true }: Props) {
       }
       if (!best || !best.rb) return;
       // steer: compute direction and set a modest linear velocity toward target
-      const from =
-        e.rb && e.rb.translation
-          ? e.rb.translation()
-          : { x: e.position[0], y: e.position[1], z: e.position[2] };
-      const to =
-        best.rb && best.rb.translation
-          ? best.rb.translation()
-          : { x: best.position[0], y: best.position[1], z: best.position[2] };
+      const from = getTranslation(e.rb, e.position);
+      const to = getTranslation(best.rb, best.position);
       const dir = { x: to.x - from.x, y: 0, z: to.z - from.z };
       const len = Math.sqrt(dir.x * dir.x + dir.z * dir.z) || 1;
-      const speed = 4; // tuning value
-      const vx = (dir.x / len) * speed;
-      const vz = (dir.z / len) * speed;
-      // set target linear velocity while preserving Y velocity
-      const current =
-        e.rb && e.rb.linvel ? e.rb.linvel() : { x: 0, y: 0, z: 0 };
-      if (e.rb && e.rb.setLinvel)
-        e.rb.setLinvel({ x: vx, y: current.y, z: vz }, true);
+      const vx = (dir.x / len) * SPEED;
+      const vz = (dir.z / len) * SPEED;
+      setXZVelocity(e.rb, vx, vz);
 
       // Weapon cooldown and in-range fire check
       if (e.weapon) {
@@ -226,50 +225,9 @@ export default function Simulation({ physics = true }: Props) {
 
   return (
     <>
-      {/* Ground / floor (visual + collider) */}
-      {physics ? (
-        <RigidBody type="fixed" colliders={false} position={[0, 0, 0]}>
-          <CuboidCollider args={[60, 0.5, 60]} friction={1} restitution={0} />
-          <mesh receiveShadow rotation-x={-Math.PI / 2}>
-            <planeGeometry args={[120, 120]} />
-            <meshStandardMaterial color="#11151d" />
-          </mesh>
-        </RigidBody>
-      ) : (
-        <mesh receiveShadow rotation-x={-Math.PI / 2}>
-          <planeGeometry args={[120, 120]} />
-          <meshStandardMaterial color="#11151d" />
-        </mesh>
-      )}
+      <Ground physics={physics} />
 
-      {/* Boundary walls to keep robots in arena */}
-      {physics ? (
-        <RigidBody type="fixed" colliders={false}>
-          <CuboidCollider args={[1, 5, 60]} position={[60, 5, 0]} />
-          <CuboidCollider args={[1, 5, 60]} position={[-60, 5, 0]} />
-          <CuboidCollider args={[60, 5, 1]} position={[0, 5, 60]} />
-          <CuboidCollider args={[60, 5, 1]} position={[0, 5, -60]} />
-        </RigidBody>
-      ) : (
-        <group>
-          <mesh position={[60, 5, 0]}>
-            <boxGeometry args={[2, 10, 120]} />
-            <meshStandardMaterial color="#000" transparent opacity={0.01} />
-          </mesh>
-          <mesh position={[-60, 5, 0]}>
-            <boxGeometry args={[2, 10, 120]} />
-            <meshStandardMaterial color="#000" transparent opacity={0.01} />
-          </mesh>
-          <mesh position={[0, 5, 60]}>
-            <boxGeometry args={[120, 10, 2]} />
-            <meshStandardMaterial color="#000" transparent opacity={0.01} />
-          </mesh>
-          <mesh position={[0, 5, -60]}>
-            <boxGeometry args={[120, 10, 2]} />
-            <meshStandardMaterial color="#000" transparent opacity={0.01} />
-          </mesh>
-        </group>
-      )}
+      <Walls physics={physics} />
 
       {/* Spawn robots from the store as React objects */}
       {[...store.entities.values()]
@@ -411,4 +369,59 @@ export function SimulationFallback(): null {
 
   // No visual output for the fallback; the UI outside the Canvas shows status.
   return null;
+}
+
+// --- presentational helpers -----------------------------------------------
+
+function Ground({ physics }: { physics: boolean }) {
+  if (!physics) {
+    return (
+      <mesh receiveShadow rotation-x={-Math.PI / 2}>
+        <planeGeometry args={[120, 120]} />
+        <meshStandardMaterial color="#11151d" />
+      </mesh>
+    );
+  }
+  return (
+    <RigidBody type="fixed" colliders={false} position={[0, 0, 0]}>
+      <CuboidCollider args={[60, 0.5, 60]} friction={1} restitution={0} />
+      <mesh receiveShadow rotation-x={-Math.PI / 2}>
+        <planeGeometry args={[120, 120]} />
+        <meshStandardMaterial color="#11151d" />
+      </mesh>
+    </RigidBody>
+  );
+}
+
+function Walls({ physics }: { physics: boolean }) {
+  if (!physics) {
+    return (
+      <group>
+        <mesh position={[60, 5, 0]}>
+          <boxGeometry args={[2, 10, 120]} />
+          <meshStandardMaterial color="#000" transparent opacity={0.01} />
+        </mesh>
+        <mesh position={[-60, 5, 0]}>
+          <boxGeometry args={[2, 10, 120]} />
+          <meshStandardMaterial color="#000" transparent opacity={0.01} />
+        </mesh>
+        <mesh position={[0, 5, 60]}>
+          <boxGeometry args={[120, 10, 2]} />
+          <meshStandardMaterial color="#000" transparent opacity={0.01} />
+        </mesh>
+        <mesh position={[0, 5, -60]}>
+          <boxGeometry args={[120, 10, 2]} />
+          <meshStandardMaterial color="#000" transparent opacity={0.01} />
+        </mesh>
+      </group>
+    );
+  }
+  return (
+    <RigidBody type="fixed" colliders={false}>
+      <CuboidCollider args={[1, 5, 60]} position={[60, 5, 0]} />
+      <CuboidCollider args={[1, 5, 60]} position={[-60, 5, 0]} />
+      <CuboidCollider args={[60, 5, 1]} position={[0, 5, 60]} />
+      <CuboidCollider args={[60, 5, 1]} position={[0, 5, -60]} />
+    </RigidBody>
+  );
 }

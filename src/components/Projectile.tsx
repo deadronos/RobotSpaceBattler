@@ -17,6 +17,32 @@ type Props = {
   physics?: boolean;
 };
 
+// Small, focused visual for the projectile to avoid duplication.
+function ProjectileVisual({ radius, color }: { radius: number; color: string }) {
+  return (
+    <>
+      <mesh>
+        <sphereGeometry args={[radius, 8, 8]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={1.5}
+        />
+      </mesh>
+      <mesh position={[0, 0, -0.3]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.02, 0.02, 0.6, 6]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={1.2}
+          opacity={0.8}
+          transparent
+        />
+      </mesh>
+    </>
+  );
+}
+
 export default function Projectile({
   id: _id,
   team,
@@ -28,21 +54,15 @@ export default function Projectile({
   physics = true,
 }: Props) {
   const ref = useRef<unknown>(null);
+  const color = team === 'red' ? 'orange' : 'lightblue';
   useLayoutEffect(() => {
     const rb = extractRapierApi(ref.current);
     if (rb) {
-      try {
-        // Create fresh plain objects before calling into wasm to avoid
-        // potential aliasing/ownership issues when a reference to a
-        // JS object managed by React is reused elsewhere.
-        rb.setTranslation?.(
-          { x: position.x, y: position.y, z: position.z },
-          true,
-        );
-        rb.setLinvel?.({ x: velocity.x, y: velocity.y, z: velocity.z }, true);
-      } catch {
-        // ignore runtime shape differences
-      }
+      // Create fresh plain objects before calling into wasm to avoid
+      // potential aliasing/ownership issues when a reference to a
+      // JS object managed by React is reused elsewhere.
+  try { rb.setTranslation?.({ x: position.x, y: position.y, z: position.z }, true); } catch { /* ignore */ }
+  try { rb.setLinvel?.({ x: velocity.x, y: velocity.y, z: velocity.z }, true); } catch { /* ignore */ }
       onRigidBodyReady?.(rb);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -54,28 +74,15 @@ export default function Projectile({
       try {
         const ent = [...store.entities.values()].find(
           (e) => (e as { id?: string }).id === _id,
-        );
-        if (ent) {
-          try {
-            markEntityDestroying(ent as unknown as Record<string, unknown>);
-          } catch {
-            try {
-              delete (ent as unknown as Record<string, unknown>).rb;
-            } catch {
-              /* ignore */
-            }
-            try {
-              delete (ent as unknown as Record<string, unknown>).collider;
-            } catch {
-              /* ignore */
-            }
-            try {
-              (ent as unknown as Record<string, unknown>).__destroying =
-                true as unknown as never;
-            } catch {
-              /* ignore */
-            }
-          }
+        ) as unknown as Record<string, unknown> | undefined;
+        if (!ent) return;
+        try {
+          markEntityDestroying(ent);
+        } catch {
+          // Fallback manual cleanup if utils path changes or throws
+          try { delete (ent as Record<string, unknown>).rb; } catch { /* ignore */ }
+          try { delete (ent as Record<string, unknown>).collider; } catch { /* ignore */ }
+          try { (ent as Record<string, unknown>).__destroying = true as unknown as never; } catch { /* ignore */ }
         }
       } catch {
         // ignore
@@ -86,14 +93,7 @@ export default function Projectile({
   if (!physics) {
     return (
       <group data-id={_id} position={[position.x, position.y, position.z]}>
-        <mesh>
-          <sphereGeometry args={[radius, 8, 8]} />
-          <meshStandardMaterial
-            color={team === "red" ? "orange" : "lightblue"}
-            emissive={team === "red" ? "orange" : "lightblue"}
-            emissiveIntensity={1.5}
-          />
-        </mesh>
+        <ProjectileVisual radius={radius} color={color} />
       </group>
     );
   }
@@ -113,25 +113,9 @@ export default function Projectile({
       }}
    >
       <BallCollider args={[radius]} />
-      <group data-id={_id} position={[position.x, position.y, position.z]}>
-        <mesh>
-          <sphereGeometry args={[radius, 8, 8]} />
-          <meshStandardMaterial
-            color={team === 'red' ? 'orange' : 'lightblue'}
-            emissive={team === 'red' ? 'orange' : 'lightblue'}
-            emissiveIntensity={1.5}
-          />
-        </mesh>
-        <mesh position={[0, 0, -0.3]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.02, 0.02, 0.6, 6]} />
-          <meshStandardMaterial
-            color={team === 'red' ? 'orange' : 'lightblue'}
-            emissive={team === 'red' ? 'orange' : 'lightblue'}
-            emissiveIntensity={1.2}
-            opacity={0.8}
-            transparent
-          />
-        </mesh>
+      {/* RigidBody owns the transform; keep visuals at local origin */}
+      <group data-id={_id} position={[0, 0, 0]}>
+        <ProjectileVisual radius={radius} color={color} />
       </group>
     </RigidBody>
   );
