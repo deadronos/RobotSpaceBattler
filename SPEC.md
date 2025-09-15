@@ -1,238 +1,115 @@
 # Spec & Concept — Space Station Auto-Battler (10v10 prototype)
 
-This file focuses on the weapons & combat model and how it maps to the project's ECS, systems, tests, and deterministic simulation goals. It expands the existing high-level spec with concrete data shapes, system responsibilities, user stories, and implementation milestones for guns, lasers, and rockets.
+Overview
 
-## High-level goals
+- Objective: A deterministic-feeling 3D auto-battler with two AI teams (red vs blue) fighting inside a space-station-like environment with shadows, lighting, lasers/guns/rockets and humanoid robots.
+- Tech: TypeScript, React, react-three-fiber, @react-three/rapier, @react-three/drei, miniplex (ECS), zustand (state), vite, vitest, playwright, eslint, prettier.
 
-- Offer three distinct weapon families with predictable, testable behavior: guns (hitscan), lasers (beam/hitscan), rockets (projectiles/AoE).
-- Use a unified Weapon ECS so systems share logic (cooldowns, ammo, ownership) while letting specialized systems resolve fire modes.
-- Maintain determinism for unit tests and replays via a seeded RNG and fixed iteration ordering.
-- Keep physics authoritative for projectile motion and collisions (Rapier RigidBody).
+Primary goals for the prototype
 
-## Weapon families (behavior summary)
+- Show 10 vs 10 AI robots active simultaneously with physics interaction.
+- Proper lighting + shadows in a contained scene.
+- Clear separation of responsibility: rendering, physics, game logic (ECS), AI.
+- Testable UI / basic e2e test.
 
-- Guns (hitscan): short-to-medium range, instantaneous or near-instant damage application, affected by spread and accuracy, uses ammo and reloads. Suitable for close-quarters and rapid exchanges.
-- Lasers (beam/continuous): long-range, accurate or chargeable beams that apply damage over time (ticks) while channeling. Consume energy or have a charge mechanic. Visuals: continuous beam or rapid pulses.
-- Rockets (projectiles): spawn physical projectile entities with velocity. Travel time and AoE on impact. May support homing. Require careful collision handling (ray-sweep) to avoid tunnelling.
+High-level architecture
 
-## Determinism & testability
+- Renderer layer: react-three-fiber Canvas + Drei helpers for controls, camera, and simple helpers.
+- Physics layer: @react-three/rapier's Physics wrapper and RigidBody components.
+- ECS: miniplex holds component bags for entities; systems iterate entity ids and perform logic.
+- State: zustand for UI state (pause, simulation speed, selected debug flags).
+- AI: simple steering and firing behavior in a separate "AI system".
+- Prefabs: procedural robot generator for now, later gltfjsx-generated components.
 
-- All randomness (spread, critical hits, aim jitter, homing noise) must use `src/utils/seededRng.ts`.
-- Systems that produce events must do so in a deterministic order (weaponSystem -> specialisedSystem -> damageSystem), and any per-frame iteration order should be stable.
-- Provide a "deterministic mode" toggle in `Simulation` for CI tests: fixed timestep and fixed RNG seed.
+Main entities & components
 
-## ECS: components and data shapes
+- Entity: unique id (miniplex).
+- Components:
+  - Transform: position, rotation
+  - RigidBodyRef: ref to rapier RigidBody (for setting velocity/forces)
+  - Team: 'red' | 'blue'
+  - Health: hp, maxHp, alive
+  - Weapon: cooldown, projectilePrefab, range, power
+  - RobotStats: speed, turnSpeed
+  - Target: current target entity id
+  - Render: reference to mesh for visual debugging
 
-Suggested TypeScript interfaces (add as `src/ecs/weapons.ts`):
+Systems
 
-```ts
-// ...example only - add to src/ecs/weapons.ts
-export type WeaponType = 'gun' | 'laser' | 'rocket'
+- Spawn System: create entities (robots) with components
+- Physics Sync System: read RigidBody transforms and write to ECS transform (or vice versa)
+- Movement System: simple steering to target using RigidBody.setLinvel / applyImpulse
+- Weapon System: trigger projectile spawn when cooldown ready and within range
+- Projectile System: physics-based projectiles with collision detection and damage application
+- AISystem: selects targets, picks behaviors (seek, flee, group)
+- Health System: process damage, death, remove entity or play ragdoll
+- Render System: optional visual effects, particle spawners
+- Debugging/Telemetry System: collection of stats for UI
 
-export interface WeaponComponent {
-  id: string
-  type: WeaponType
-  ownerId: number
-  team: 'red' | 'blue'
-  range: number
-  cooldown: number // seconds
-  lastFiredAt?: number
-  power: number // base damage
-  accuracy?: number // 0..1
-  spread?: number // radians
-  ammo?: { clip: number; clipSize: number; reserve: number }
-  energyCost?: number
-  projectilePrefab?: string
-  aoeRadius?: number
-  beamParams?: { duration?: number; width?: number; tickInterval?: number }
-  flags?: { continuous?: boolean; chargeable?: boolean; burst?: boolean; homing?: boolean }
-}
+AI approach
 
-export interface WeaponStateComponent {
-  firing?: boolean
-  reloading?: boolean
-  chargeStart?: number
-  cooldownRemaining?: number
-}
+- Start simple: nearest-enemy or random pick within cone + cooldown for retargeting
+- Use steering velocities (smooth orientation changes)
+- Make AI logic deterministic as possible for reproducible testing (fixed seed RNG for prototypes)
+- Offload heavy AI to a worker if scale grows
 
-export interface ProjectileComponent {
-  sourceWeaponId: string
-  damage: number
-  team: 'red'|'blue'
-  aoeRadius?: number
-  lifespan: number
-  spawnTime: number
-  speed?: number
-  homing?: { turnSpeed: number; targetId?: number }
-}
+Rendering & lighting
 
-export interface BeamComponent {
-  sourceWeaponId: string
-  origin: [number, number, number]
-  direction: [number, number, number]
-  length: number
-  width: number
-  activeUntil: number
-  tickDamage: number
-  tickInterval: number
-  lastTickAt: number
-}
+- Use a directional light for sun/overhead and ambient light for base illumination
+- Enable shadows on directional light and meshes (careful with shadow map size/performance)
+- Consider baked ambient occlusion for static station geometry later
+- Postprocessing (optional): Bloom for lasers, SSAO for depth, Film/Chromatic aberration for stylization
 
-export interface DamageEvent {
-  sourceId: number
-  weaponId?: string
-  targetId?: number
-  position?: [number, number, number]
-  damage: number
-}
-```
+Physics decisions & pitfalls
 
-Design note: components are intentionally small and composable; `WeaponComponent` is declarative while `WeaponStateComponent` is ephemeral runtime state.
+- Rapier performs well, but CPU & memory scale matters.
+- Rapier bodies per-entity is fine for hundreds, but use simple colliders (capsules/boxes) for robots.
+- Avoid using many concatenated constraints / complex compound colliders early.
+- Projectile collisions at high speed might tunnel through thin colliders; increase solver or perform sweep tests / raycasting before applying position.
+- Synchronize transforms carefully: choose authoritative source (physics or ECS). Use RigidBody as source of truth for physical position.
 
-## Systems (responsibilities and contract)
+Performance & scaling
 
-- weaponSystem (coordinator)
-  - Inputs: WeaponComponent, WeaponStateComponent, owner Transform, Target component, RNG
-  - Responsibilities: manage cooldowns, ammo, charge, and when conditions are met route to the correct specialised system (hitscan, beam, projectile).
-  - Outputs: WeaponFired events with context (muzzle position, direction, weapon id)
+- Instancing: use GPU instancing if many identical robot meshes are drawn.
+- LOD: use simpler meshes/physics at distance.
+- Throttle AI tick rate (e.g., run heavy AI every 200ms instead of every frame).
+- Use Web Workers for simulation or expensive pathfinding when scaling beyond small numbers.
+- Pool projectiles to avoid GC churn.
 
-- hitscanSystem
-  - Inputs: WeaponFired events for 'gun' and instant 'laser' weapons
-  - Responsibilities: perform raycasts (using Rapier or scene raycast) with spread/accuracy applied via seeded RNG; resolve first hit, emit DamageEvent and Impact event for FX.
-  - Determinism: raycast order and RNG seed must be consistent.
+Testing & determinism
 
-- beamSystem
-  - Inputs: start/stop fire commands for beam/continuous weapons
-  - Responsibilities: create BeamComponent entities, perform tick raycasts at beam tick intervals, apply tick damage via DamageEvent. Handle energy drain/interrupts.
+- Unit test critical pure logic (target selection, damage calculation).
+- E2E: Playwright smoke tests to ensure app loads and simulation starts.
+- Consider a deterministic simulation mode (fixed timestep, fixed RNG seed) for replay and debugging.
 
-- projectileSystem
-  - Inputs: WeaponFired events for 'rocket' and similar
-  - Responsibilities: spawn projectile entity with RigidBodyRef, apply initial velocity, monitor collisions via Rapier events or ray-sweeps, apply direct hit or AoE on impact, remove or recycle projectile.
-  - Notes: for high-speed projectiles, perform a raycast from prevPos to nextPos each tick to avoid tunnelling.
+Developer tools & recommended plugins
 
-- damageSystem / healthSystem
-  - Inputs: DamageEvent
-  - Responsibilities: apply damage to Health component, handle death, trigger knockback or death events.
+- Vite
+  - @vitejs/plugin-react or @vitejs/plugin-react-swc
+  - vite-plugin-checker (TypeScript + ESLint feedback)
+- ESLint
+  - @typescript-eslint/parser, plugin, eslint-plugin-react
+  - eslint-config-prettier to avoid conflicts with Prettier
+- Prettier: formatting
+- Vitest: unit tests with jsdom + @testing-library/react
+- Playwright: end-to-end tests and visual checks
 
-- fxSystem (non-authoritative)
-  - Inputs: Impact, Explosion, WeaponFired events
-  - Responsibilities: spawn muzzle flash, impact decals, explosion particles, trails.
+Future features
 
-## Event ordering and determinism
+- Replace procedural robots with glTF characters via gltfjsx.
+- Add projectiles with muzzle flash, trails (use @react-three/postprocessing/effects).
+- Weapons: hitscan lasers vs physical rockets with explosion area damage.
+- Navmesh / pathfinding for complex station interior.
+- Networking: client-server authoritative for multiplayer replays or remote matches.
 
-- Establish a fixed pipeline order each frame:
-  1. AI decisions (select target / movement intent)
-  2. Movement system (apply velocities)
-  3. weaponSystem (decide who fires)
-  4. specialised weapon resolvers (hitscan/beam/projectile) — spawn events/entities
-  5. physics step (rapier)
-  6. projectileSystem collision checks & damage application
-  7. damageSystem application and cleanup
-  8. fxSystem spawn actions
+Common pitfalls & recommendations
 
-- In deterministic mode, use a single seeded RNG instance per frame and consume values in the same order. Avoid implicit Math.random.
+- Mixing physics and transform updates: always pick one source of truth and avoid setting transforms directly on Mesh when using a RigidBody.
+- CPU bound AI: offload or throttle updates.
+- Shadows: high-resolution shadow maps cost performance; progressively tune shadow camera size and resolution.
+- Colliders and scale: ensure consistent unit scale (1 unit ~ 1 meter) for rapier physics stability.
+- Projectile tunneling: use raycasts/sweeps for fast projectiles.
+- Memory churn: reuse objects, pool projectiles and ephemeral effects.
 
-
-## User stories & combat flows (detailed)
-
-Below are concrete user stories describing how fights should feel and how to test them.
-
-1. Distinct weapon feel
-
-- As an observer I want to instantly recognize weapon type by visuals and timing.
-- Acceptance: guns show tracers/instant hits, lasers show beams or pulses with ticked damage, rockets show travel and AoE explosion.
-
-1. Engagement ranges and AI behavior
-
-- As an observer I want robots to prefer engagement distances that suit their weapon archetype.
-- Behavior:
-  - Gun bots try to close until within optimal range and then strafe while firing.
-  - Laser bots favor distance, use cover and channel beams for sustained damage.
-  - Rocket bots keep mid-range and use arcs/AoE to control choke points.
-- Acceptance: in simulated matches robots with different weapon archetypes show distinct positioning and movement patterns; unit tests assert movement intents change when entering preferred range.
-
-1. AoE and friendly-fire policy
-
-- As a game designer I want AoE (rockets) to affect multiple entities; friendly-fire is toggled by game mode.
-- Acceptance: in tests rocket explosion damages all entities inside radius; when friendly-fire off, allies are skipped.
-
-1. Charge & interruption (lasers)
-
-- As a designer I want lasers to optionally charge before releasing and be interrupted by movement/disable.
-- Acceptance: charging sets a visible state and if target dies or owner is stunned the charge cancels and no beam spawns.
-
-1. Deterministic unit tests
-
-- As a developer I want to reproduce combat sequences for regression testing.
-- Acceptance: tests that seed RNG and run a fixed-step simulation produce identical sequences (weapon fired frames, projectile hits, deaths).
-
-## Example combat vignette (combination of systems)
-
-- Setup: Blue Laser-Scout (long-range, channeling laser) + Red Rocket-Launcher (AoE) + Red Gunner.
-- Flow (frame-level):
-  1. AI: Laser-Scout picks Red Rocket as target at long distance.
-  2. Laser-Scout begins charge (weaponSystem records chargeStart).
-  3. Red Rocket detects Laser-Scout and launches rocket (projectileSystem spawns RigidBody with velocity).
-  4. During rocket flight, Laser-Scout finishes charge and begins beam ticks (beamSystem spawns BeamComponent). Beam tick reduces rocket hp if rockets are destructible; otherwise damages launcher on impact.
-  5. Rocket reaches proximity and explodes (projectileSystem handles AoE); damageSystem applies AoE damage and possibly kills Laser-Scout.
-
-This shows interplay: channel vs missile tradeoffs, AoE, and projectile travel time.
-
-## Edge cases & mitigations
-
-- Projectile tunnelling: run a ray-sweep each physics frame between prevPos and newPos for each projectile. If collision found, handle impact immediately.
-- Missing RigidBodyRef: if expected physics object missing, fallback to kinematic projectile with manual position updates (less accurate but safe).
-- Event flooding: pool short-lived event objects and projectile entities to reduce allocation pressure.
-
-## Mapping to repo (concrete file & test suggestions)
-
-- Add `src/ecs/weapons.ts` (interfaces shown above).
-- Ensure `src/utils/seededRng.ts` exposes a reproducible RNG factory (e.g., create(seed): Rng) and prefer passing Rng instances into systems.
-- Update `src/components/Simulation.tsx` to support deterministic mode (fixed seed & timestep) and pass the `rng` to systems.
-- Systems to adjust or confirm behavior:
-  - `src/systems/WeaponSystem.ts` (coordinator) — ensure it delegates and emits WeaponFired events instead of performing raycasts itself.
-  - `src/systems/HitscanSystem.ts` — ensure it consumes WeaponFired and uses the passed RNG for spread
-  - `src/systems/ProjectileSystem.ts` — add ray-sweep check and AoE handling (overlap query on explosion)
-  - `src/systems/BeamSystem.ts` — implement beam tick intervals and energy drain/interrupts
-
-## Tests to add (Vitest + Playwright)
-
-- Unit:
-  - `tests/weapon-cooldown.test.ts` — cooldown and ammo/reload semantics
-  - `tests/hitscan-determinism.test.ts` — deterministic raycast outcomes with seeded RNG
-  - `tests/projectile-aoe.test.ts` — rocket explosion damages all valid targets in radius; friendly-fire toggle
-  - `tests/beam-tick.test.ts` — beam channeling applies tickDamage at intervals, stops when energy empty or interrupted
-
-- E2E / Playwright:
-  - Deterministic smoke: run a short seeded 10v10 match and assert that the simulation progresses (elements exist, #status updated) and optionally capture event logs for manual diffing.
-
-## Implementation milestones (prioritized)
-
-1. Weapon ECS & Coordinator (low-risk)
-   - Create `src/ecs/weapons.ts`, wire `WeaponSystem` to emit WeaponFired events.
-   - Tests: cooldown & ammo.
-2. Hitscan & Laser (mid)
-   - Implement `hitscanSystem` and `beamSystem` with seeded RNG usage and beam tick throttling.
-   - Tests: deterministic hits and beam ticks.
-3. Projectiles & Rockets (mid-hard)
-   - Projectile lifecycle, ray-sweep anti-tunnel, AoE explosion.
-   - Tests: projectile-aoe & collision robustness.
-4. AI weapon-aware movement & scenarios (polish)
-   - AI chooses engagement distance per weapon archetype and basic group tactics.
-   - Playwright deterministic smoke runs.
-
-## Acceptance criteria for the prototype
-
-- Visual differentiation: each weapon family has distinct visuals and timing.
-- Deterministic tests: seeded runs produce the same event sequences.
-- No missed collisions for high-speed projectiles in unit tests (ray-sweep active).
-- AI uses weapon archetype to influence spacing and tactics.
-
-## Next-steps (how I can help)
-
-- I can add `src/ecs/weapons.ts` and a starter unit test (fast). Call out which file you'd like me to edit first and I'll implement + run tests.
-- I can open PR-style patches for `WeaponSystem` -> `HitscanSystem` wiring if you'd prefer full example code.
-
----
-
-This updated spec focuses on creating testable, deterministic weapon behavior with clear responsibilities and a path to implement guns, lasers, and rockets in the existing architecture. If you want, I can start by adding the `src/ecs/weapons.ts` file and a small deterministic unit test now.
+Conclusion
+Start with the prototype below, get a working 10v10 simulation, then iterate on visuals, AI complexity, and performance optimizations. Replace procedural assets with Blender exports (gltf + gltfjsx) when you want polished visuals
