@@ -1,427 +1,151 @@
 import { useFrame } from '@react-three/fiber';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
-import React, { useEffect, useRef } from 'react';
-import * as THREE from 'three';
+import React, { useEffect, useMemo } from 'react';
 
-import store from '../ecs/miniplexStore';
-import type { Entity, RapierApi } from '../ecs/types';
-import Robot from '../robots/RobotFactory';
-import useUI from '../store/uiStore';
-import { syncRigidBodiesToECS } from '../systems/physicsSync';
-import { cleanupProjectiles } from '../systems/projectileCleanup';
-import { handleProjectileHit } from '../systems/projectileOnHit';
-import { markEntityDestroying } from '../utils/rapierCleanup';
-import Projectile from './Projectile';
+import { createRobotEntity, type Entity, resetWorld, world } from '../ecs/miniplexStore';
+import { Robot } from '../robots/robotPrefab';
+import { useUI } from '../store/uiStore';
 
-// Entity type is imported from ecs/types
+const TEAM_SIZE = 10;
+const ARENA_SIZE = 20; // half-extent
 
-function createRobotEntity(
-  id: string,
-  team: "red" | "blue",
-  pos: THREE.Vector3,
-) {
-  store.add({
-    id,
-    team,
-    position: pos.toArray(),
-    health: { hp: 10, maxHp: 10 },
-    weapon: {
-      cooldown: 0,
-      fireRate: 2,
-      range: 12,
-      damage: 2,
-      projectileSpeed: 25,
-      projectileTTL: 3,
-    }, // fireRate shots/sec
-    fx: {},
-  });
+function distanceSquared(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  const dz = a.z - b.z;
+  return dx * dx + dy * dy + dz * dz;
 }
 
-type Props = { physics?: boolean };
-export default function Simulation({ physics = true }: Props) {
-  const { paused } = useUI();
-  const didSpawnRef = useRef(false);
+type RigidLike = {
+  translation: () => { x: number; y: number; z: number };
+  linvel: () => { x: number; y: number; z: number };
+  setLinvel: (v: { x: number; y: number; z: number }, wake: boolean) => void;
+};
 
-  // --- small helpers ------------------------------------------------------
+function pickNearestEnemy(self: Entity, enemies: Entity[]) {
+  const rigid = self.rigid as unknown as RigidLike | null;
+  if (!rigid) return undefined;
+  const p = rigid.translation();
+  let best: { e: Entity; d2: number } | undefined;
+  for (const e of enemies) {
+    const r = e.rigid as unknown as RigidLike | null;
+    if (!r) continue;
+    const d2 = distanceSquared(p, r.translation());
+    if (!best || d2 < best.d2) best = { e, d2 };
+  }
+  return best?.e;
+}
 
-  const getTranslation = (rb: RapierApi | undefined, fallback: number[]) =>
-    rb && rb.translation
-      ? rb.translation()
-      : { x: fallback[0], y: fallback[1], z: fallback[2] };
+export default function Simulation() {
+  const paused = useUI((s) => s.paused);
+  const speed = useUI((s) => s.speed);
 
-  const getLinvel = (rb: RapierApi | undefined) =>
-    rb && rb.linvel ? rb.linvel() : { x: 0, y: 0, z: 0 };
-
-  const setXZVelocity = (rb: RapierApi | undefined, vx: number, vz: number) => {
-    if (!rb || !rb.setLinvel) return;
-    const current = getLinvel(rb);
-    rb.setLinvel({ x: vx, y: current.y, z: vz }, true);
-  };
-
-  const spawnProjectile = (
-    owner: Entity,
-    from: THREE.Vector3,
-    dir: THREE.Vector3,
-    damage = 4,
-  ) => {
-    const id = `proj-${owner.id}-${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2, 6)}`;
-    store.add({
-      id,
-      team: owner.team,
-      position: [from.x, from.y, from.z],
-      projectile: {
-        ttl: owner.weapon?.projectileTTL ?? 3,
-        damage,
-        radius: 0.1,
-        velocity: {
-          x: dir.x * (owner.weapon?.projectileSpeed ?? 25),
-          y: dir.y * (owner.weapon?.projectileSpeed ?? 25),
-          z: dir.z * (owner.weapon?.projectileSpeed ?? 25),
-        },
-      },
-    });
-  };
-
-  const SPEED = 4; // movement tuning
-
-  useEffect(() => {
-    if (didSpawnRef.current) return;
-    didSpawnRef.current = true;
-    // spawn 10 red and 10 blue robots in two zones with stable ids
-    const spacing = 3;
-    for (let i = 0; i < 10; i++) {
-      const rx = -12 + (i % 5) * spacing;
-      const rz = -5 + Math.floor(i / 5) * spacing;
-      // avoid duplicates if store already contains id (defensive)
-      if (![...store.entities.values()].some((e) => e.id === `red-${i}`))
-        createRobotEntity(`red-${i}`, "red", new THREE.Vector3(rx, 1, rz));
+  // Spawn once
+  const robots = useMemo(() => {
+    resetWorld();
+    const spawn: Entity[] = [];
+    for (let i = 0; i < TEAM_SIZE; i++) {
+      spawn.push(
+        createRobotEntity({
+          team: 'red',
+          position: [-8 + (i % 5) * 2, 0.6, -6 + Math.floor(i / 5) * 2],
+        }),
+      );
     }
-    for (let i = 0; i < 10; i++) {
-      const rx = 12 - (i % 5) * spacing;
-      const rz = 5 - Math.floor(i / 5) * spacing;
-      if (![...store.entities.values()].some((e) => e.id === `blue-${i}`))
-        createRobotEntity(`blue-${i}`, "blue", new THREE.Vector3(rx, 1, rz));
+    for (let i = 0; i < TEAM_SIZE; i++) {
+      spawn.push(
+        createRobotEntity({
+          team: 'blue',
+          position: [8 - (i % 5) * 2, 0.6, 6 - Math.floor(i / 5) * 2],
+        }),
+      );
     }
+    return spawn;
   }, []);
 
-  // Per-frame systems: physics sync, projectile cleanup, AI, and UI updates
-  useFrame((_, delta) => {
+  // Simple per-frame systems
+  useFrame((_, dt) => {
     if (paused) return;
-    // Physics sync: mirror RB translations back into ECS positions
-    if (physics) syncRigidBodiesToECS();
+    const step = Math.min(dt * speed, 0.05);
 
-    // Projectile TTL and out-of-bounds cleanup
-    // extracted into systems/projectileCleanup for testability
-    const allEntities = [...store.entities.values()] as unknown as Entity[];
-    cleanupProjectiles(delta, store);
+    const entities = Array.from(world.entities);
+    const red = entities.filter((e) => e.team === 'red' && e.alive !== false && e.rigid);
+    const blue = entities.filter((e) => e.team === 'blue' && e.alive !== false && e.rigid);
 
-    // Muzzle flash timers
-    for (const ent of allEntities) {
-      if (ent && ent.fx && ent.fx.muzzleTimer && ent.fx.muzzleTimer > 0) {
-        ent.fx.muzzleTimer = Math.max(0, ent.fx.muzzleTimer - delta);
-      }
+    // AI + Movement
+    for (const e of red) {
+      const target = pickNearestEnemy(e, blue);
+  steerTowards(e, target);
+      tryAttack(e, target, step);
     }
-
-    // remove dead entities from the store (very simple cleanup) and update UI
-    const ents = allEntities;
-    const ui = useUI.getState();
-    for (const ent of ents) {
-      if (ent && ent.health && ent.health.hp <= 0) {
-        if (ent.team === "red") ui.addKill("blue");
-        else ui.addKill("red");
-        try {
-          // Mark entity as destroying and clear Rapier refs before removal.
-          try {
-            markEntityDestroying(ent);
-          } catch {
-            // fallback: best-effort deletion
-            try {
-              delete (ent as unknown as Record<string, unknown>).rb;
-            } catch {
-              /* ignore */
-            }
-            try {
-              delete (ent as unknown as Record<string, unknown>).collider;
-            } catch {
-              /* ignore */
-            }
-            try {
-              (ent as unknown as Record<string, unknown>).__destroying =
-                true as unknown as never;
-            } catch {
-              /* ignore */
-            }
-          }
-        } catch {
-          /* ignore */
-        }
-        store.remove(ent);
-      }
+    for (const e of blue) {
+      const target = pickNearestEnemy(e, red);
+  steerTowards(e, target);
+      tryAttack(e, target, step);
     }
-    // update alive counts after removals
-    const redAlive = [...store.entities.values()].filter(
-      (e) => e.team === "red" && e.health,
-    ).length;
-    const blueAlive = [...store.entities.values()].filter(
-      (e) => e.team === "blue" && e.health,
-    ).length;
-    ui.setCounts(redAlive, blueAlive);
-
-    const entities = allEntities.filter(Boolean);
-    entities.forEach((e) => {
-      // each entity will look for the nearest enemy and apply a small force toward them
-      // we store RigidBodyApi on the miniplex entity when the Robot registers it
-      if (!physics || !e.rb) return;
-      // find nearest enemy using RigidBody translations (authoritative source)
-      const enemies = entities.filter((x) => x.team !== e.team && x !== e);
-      if (enemies.length === 0) return;
-      // compute nearest by distance using the RigidBody world transform if available
-      let best: Entity | undefined;
-      let bestDist = Number.POSITIVE_INFINITY;
-      const a = getTranslation(e.rb, e.position);
-      for (const enemy of enemies) {
-        if (!enemy.rb) continue;
-        const b = getTranslation(enemy.rb, enemy.position);
-        const dx = a.x - b.x;
-        const dz = a.z - b.z;
-        const d2 = dx * dx + dz * dz;
-        if (d2 < bestDist) {
-          bestDist = d2;
-          best = enemy as Entity;
-        }
-      }
-      if (!best || !best.rb) return;
-      // steer: compute direction and set a modest linear velocity toward target
-      const from = getTranslation(e.rb, e.position);
-      const to = getTranslation(best.rb, best.position);
-      const dir = { x: to.x - from.x, y: 0, z: to.z - from.z };
-      const len = Math.sqrt(dir.x * dir.x + dir.z * dir.z) || 1;
-      const vx = (dir.x / len) * SPEED;
-      const vz = (dir.z / len) * SPEED;
-      setXZVelocity(e.rb, vx, vz);
-
-      // Weapon cooldown and in-range fire check
-      if (e.weapon) {
-        e.weapon.cooldown = Math.max(0, e.weapon.cooldown - delta);
-        const dist2 = dir.x * dir.x + dir.z * dir.z;
-        const range2 = e.weapon.range * e.weapon.range;
-        if (e.weapon.cooldown <= 0 && dist2 <= range2) {
-          const fireDir = new THREE.Vector3(dir.x, 0, dir.z).normalize();
-          spawnProjectile(
-            e as Entity,
-            new THREE.Vector3(from.x, from.y + 1, from.z),
-            fireDir,
-            e.weapon.damage,
-          );
-          e.weapon.cooldown = 1 / e.weapon.fireRate;
-          if (!e.fx) e.fx = {};
-          e.fx.muzzleTimer = 0.05;
-        }
-      }
-    });
   });
 
-  return (
-    <>
-      <Ground physics={physics} />
-
-      <Walls physics={physics} />
-
-      {/* Spawn robots from the store as React objects */}
-      {[...store.entities.values()]
-        .filter((e) => !e.projectile)
-        .map((e) => (
-          <Robot
-            key={e.id}
-            id={e.id}
-            team={e.team}
-            initialPos={new THREE.Vector3(...(e.position as number[]))}
-            muzzleFlash={!!e.fx?.muzzleTimer && e.fx.muzzleTimer > 0}
-            // Ensure robots render visually when physics are disabled.
-            physics={physics}
-            onRigidBodyReady={(rb) => {
-              // attach rapier api to the entity so AI system can access it
-              const ent = [...store.entities.values()].find(
-                (ent) => ent.id === e.id,
-              ) as Entity | undefined;
-              if (ent) {
-                ent.rb = rb;
-              }
-            }}
-          />
-        ))}
-
-      {/* Projectiles as ECS entities with rapier sensors */}
-      {[...store.entities.values()]
-        .filter((e) => !!e.projectile)
-        .map((p) => (
-          <Projectile
-            key={p.id}
-            id={p.id}
-            team={p.team}
-            position={{ x: p.position[0], y: p.position[1], z: p.position[2] }}
-            // Render projectile visuals when physics disabled
-            physics={physics}
-            velocity={p.projectile!.velocity}
-            onRigidBodyReady={(rb) => {
-              p.rb = rb;
-              const rbApi = rb;
-              if (rbApi) {
-                try {
-                  rbApi.setTranslation?.(
-                    { x: p.position[0], y: p.position[1], z: p.position[2] },
-                    true,
-                  );
-                  // Pass a fresh object to Rapier to avoid aliasing of
-                  // store-managed objects which can trigger wasm ownership
-                  // errors in some react-three-rapier/rapier builds.
-                  const vel = p.projectile!.velocity;
-                  rbApi.setLinvel?.({ x: vel.x, y: vel.y, z: vel.z }, true);
-                } catch {
-                  // ignore runtime differences in RAPier API shape
-                }
-              }
-            }}
-            onHit={(other) => {
-              handleProjectileHit(p as Entity, other, store);
-            }}
-          />
-        ))}
-    </>
-  );
-}
-
-// Non-Canvas fallback for environments without WebGL / R3F. This component
-// performs minimal ECS bootstrapping (spawning entities) but does not render
-// any r3f elements or call r3f hooks, so it is safe to mount outside a
-// <Canvas>. It keeps the UI working (counts/status) in headless/CI runs.
-export function SimulationFallback(): null {
   useEffect(() => {
-    // spawn robots if not already present
-    const spacing = 3;
-    for (let i = 0; i < 10; i++) {
-      const rx = -12 + (i % 5) * spacing;
-      const rz = -5 + Math.floor(i / 5) * spacing;
-      const id = `red-${i}`;
-      const exists = [...store.entities.values()].some(
-        (e: Entity) => e.id === id,
-      );
-      if (!exists) {
-        store.add({
-          id,
-          team: "red",
-          position: [rx, 1, rz],
-          health: { hp: 10, maxHp: 10 },
-          weapon: {
-            cooldown: 0,
-            fireRate: 2,
-            range: 12,
-            damage: 2,
-            projectileSpeed: 25,
-            projectileTTL: 3,
-          },
-          fx: {},
-        });
-      }
-    }
-    for (let i = 0; i < 10; i++) {
-      const rx = 12 - (i % 5) * spacing;
-      const rz = 5 - Math.floor(i / 5) * spacing;
-      const id = `blue-${i}`;
-      const exists = [...store.entities.values()].some(
-        (e: Entity) => e.id === id,
-      );
-      if (!exists) {
-        store.add({
-          id,
-          team: "blue",
-          position: [rx, 1, rz],
-          health: { hp: 10, maxHp: 10 },
-          weapon: {
-            cooldown: 0,
-            fireRate: 2,
-            range: 12,
-            damage: 2,
-            projectileSpeed: 25,
-            projectileTTL: 3,
-          },
-          fx: {},
-        });
-      }
-    }
-
-    // Update UI counts once after spawn
-    try {
-      const ui = useUI.getState();
-      const redAlive = [...store.entities.values()].filter(
-        (e: Entity) => e.team === "red" && e.health,
-      ).length;
-      const blueAlive = [...store.entities.values()].filter(
-        (e: Entity) => e.team === "blue" && e.health,
-      ).length;
-      ui.setCounts(redAlive, blueAlive);
-    } catch {
-      // ignore if UI store unavailable
-    }
+    return () => {
+      resetWorld();
+    };
   }, []);
 
-  // No visual output for the fallback; the UI outside the Canvas shows status.
-  return null;
-}
-
-// --- presentational helpers -----------------------------------------------
-
-function Ground({ physics }: { physics: boolean }) {
-  if (!physics) {
-    return (
-      <mesh receiveShadow rotation-x={-Math.PI / 2}>
-        <planeGeometry args={[120, 120]} />
-        <meshStandardMaterial color="#11151d" />
-      </mesh>
-    );
-  }
   return (
-    <RigidBody type="fixed" colliders={false} position={[0, 0, 0]}>
-      <CuboidCollider args={[60, 0.5, 60]} friction={1} restitution={0} />
-      <mesh receiveShadow rotation-x={-Math.PI / 2}>
-        <planeGeometry args={[120, 120]} />
-        <meshStandardMaterial color="#11151d" />
-      </mesh>
-    </RigidBody>
+    <group>
+      {/* Arena floor */}
+      <RigidBody type="fixed" colliders={false}>
+        <mesh receiveShadow rotation-x={-Math.PI / 2} position={[0, 0, 0]}>
+          <planeGeometry args={[ARENA_SIZE * 2, ARENA_SIZE * 2, 1, 1]} />
+          <meshStandardMaterial color="#202531" />
+        </mesh>
+        <CuboidCollider args={[ARENA_SIZE, 0.1, ARENA_SIZE]} position={[0, -0.05, 0]} />
+      </RigidBody>
+
+      {/* Robots */}
+      {robots.map((e, i) => (
+        <Robot key={i} entity={e} />
+      ))}
+    </group>
   );
 }
 
-function Walls({ physics }: { physics: boolean }) {
-  if (!physics) {
-    return (
-      <group>
-        <mesh position={[60, 5, 0]}>
-          <boxGeometry args={[2, 10, 120]} />
-          <meshStandardMaterial color="#000" transparent opacity={0.01} />
-        </mesh>
-        <mesh position={[-60, 5, 0]}>
-          <boxGeometry args={[2, 10, 120]} />
-          <meshStandardMaterial color="#000" transparent opacity={0.01} />
-        </mesh>
-        <mesh position={[0, 5, 60]}>
-          <boxGeometry args={[120, 10, 2]} />
-          <meshStandardMaterial color="#000" transparent opacity={0.01} />
-        </mesh>
-        <mesh position={[0, 5, -60]}>
-          <boxGeometry args={[120, 10, 2]} />
-          <meshStandardMaterial color="#000" transparent opacity={0.01} />
-        </mesh>
-      </group>
-    );
+function steerTowards(self: Entity, target: Entity | undefined) {
+  const rb = self.rigid as unknown as RigidLike | null;
+  if (!rb || !self.speed) return;
+  if (!target) {
+    // slow down
+    const lv = rb.linvel();
+    rb.setLinvel({ x: lv.x * 0.95, y: lv.y, z: lv.z * 0.95 }, true);
+    return;
   }
-  return (
-    <RigidBody type="fixed" colliders={false}>
-      <CuboidCollider args={[1, 5, 60]} position={[60, 5, 0]} />
-      <CuboidCollider args={[1, 5, 60]} position={[-60, 5, 0]} />
-      <CuboidCollider args={[60, 5, 1]} position={[0, 5, 60]} />
-      <CuboidCollider args={[60, 5, 1]} position={[0, 5, -60]} />
-    </RigidBody>
-  );
+  const p = rb.translation();
+  const tp = (target.rigid as unknown as RigidLike).translation();
+  const dx = tp.x - p.x;
+  const dz = tp.z - p.z;
+  const len = Math.hypot(dx, dz) || 1;
+  const vx = (dx / len) * self.speed;
+  const vz = (dz / len) * self.speed;
+  rb.setLinvel({ x: vx, y: 0, z: vz }, true);
+}
+
+function tryAttack(self: Entity, target: Entity | undefined, dt: number) {
+  if (!self.cooldown && self.cooldown !== 0) return;
+  self.cooldownLeft = Math.max(0, (self.cooldownLeft ?? 0) - dt);
+  if (!target || !self.power || !self.range) return;
+
+  const rb = self.rigid as unknown as RigidLike | null;
+  const trb = target.rigid as unknown as RigidLike | null;
+  if (!rb || !trb) return;
+  const d2 = distanceSquared(rb.translation(), trb.translation());
+  if (d2 <= self.range * self.range && (self.cooldownLeft ?? 0) <= 0) {
+    // Apply damage
+    target.hp = Math.max(0, (target.hp ?? 0) - self.power);
+    target.alive = (target.hp ?? 0) > 0;
+    self.cooldownLeft = self.cooldown;
+    if (!target.alive) {
+      // Stop the dead body
+      trb.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    }
+  }
 }
