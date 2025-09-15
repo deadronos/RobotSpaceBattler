@@ -1,8 +1,8 @@
 import type { World } from 'miniplex';
-import type { Rng } from '../utils/seededRng';
 
-import type { Entity } from '../ecs/miniplexStore';
-import type { BeamComponent, WeaponComponent, DamageEvent } from '../ecs/weapons';
+import { getEntityById, type Entity } from '../ecs/miniplexStore';
+import type { BeamComponent, DamageEvent, WeaponComponent } from '../ecs/weapons';
+import type { Rng } from '../utils/seededRng';
 import type { WeaponFiredEvent } from './WeaponSystem';
 
 /**
@@ -12,7 +12,7 @@ import type { WeaponFiredEvent } from './WeaponSystem';
 export function beamSystem(
   world: World<Entity>,
   dt: number,
-  rng: Rng,
+  _rng: Rng,
   weaponFiredEvents: WeaponFiredEvent[],
   events: { damage: DamageEvent[] }
 ) {
@@ -20,14 +20,14 @@ export function beamSystem(
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== 'laser') continue;
 
-    // Find the weapon that fired to get beam parameters
-    const weaponEntity = Array.from(world.entities).find(e => {
-      const entity = e as Entity & { weapon?: WeaponComponent };
-      return entity.weapon?.id === fireEvent.weaponId;
-    });
+    const owner = getEntityById(fireEvent.ownerId) as Entity & {
+      weapon?: WeaponComponent;
+      position?: [number, number, number];
+      team?: string;
+    } | undefined;
 
-    if (!weaponEntity) continue;
-    const weapon = (weaponEntity as Entity & { weapon: WeaponComponent }).weapon;
+    const weapon = owner?.weapon;
+    if (!owner || !weapon) continue;
 
     // Create beam entity
     const beamEntity: Entity & { beam: BeamComponent } = {
@@ -36,6 +36,7 @@ export function beamSystem(
       team: weapon.team,
       beam: {
         sourceWeaponId: fireEvent.weaponId,
+        ownerId: fireEvent.ownerId,
         origin: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
         direction: [fireEvent.direction[0], fireEvent.direction[1], fireEvent.direction[2]],
         length: weapon.range || 50,
@@ -73,7 +74,7 @@ export function beamSystem(
       
       for (const hit of hits) {
         events.damage.push({
-          sourceId: parseInt(beam.sourceWeaponId),
+          sourceId: beam.ownerId,
           weaponId: beam.sourceWeaponId,
           targetId: hit.targetId,
           position: hit.position,
@@ -84,7 +85,7 @@ export function beamSystem(
 
     // Update beam origin if weapon moved (for continuous beams)
     // This would require tracking the weapon owner's position
-    updateBeamOrigin(beam, world);
+    updateBeamOrigin(beam);
   }
 }
 
@@ -152,18 +153,25 @@ function performBeamRaycast(
   return hits;
 }
 
-function updateBeamOrigin(beam: BeamComponent, world: World<Entity>) {
-  // Find the weapon owner to update beam origin position
-  // This would be more sophisticated in a real implementation
-  for (const entity of world.entities) {
-    const e = entity as Entity & { 
-      weapon?: WeaponComponent;
-      position?: [number, number, number];
-    };
-    
-    if (e.weapon?.id === beam.sourceWeaponId && e.position) {
-      beam.origin = [e.position[0], e.position[1], e.position[2]];
-      break;
-    }
+function updateBeamOrigin(beam: BeamComponent) {
+  const owner = getEntityById(beam.ownerId) as Entity & {
+    position?: [number, number, number];
+    rigid?: { translation: () => { x: number; y: number; z: number } };
+  } | undefined;
+
+  if (!owner) {
+    return;
+  }
+
+  if (owner.rigid) {
+    const translation = owner.rigid.translation();
+    beam.origin = [translation.x, translation.y, translation.z];
+    return;
+  }
+
+  if (owner.position) {
+    beam.origin = [owner.position[0], owner.position[1], owner.position[2]];
   }
 }
+
+

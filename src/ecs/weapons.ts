@@ -29,6 +29,7 @@ export interface WeaponStateComponent {
 
 export interface ProjectileComponent {
   sourceWeaponId: string;
+  ownerId: number;
   damage: number;
   team: 'red' | 'blue';
   aoeRadius?: number;
@@ -40,6 +41,7 @@ export interface ProjectileComponent {
 
 export interface BeamComponent {
   sourceWeaponId: string;
+  ownerId: number;
   origin: [number, number, number];
   direction: [number, number, number];
   length: number;

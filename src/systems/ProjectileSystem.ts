@@ -1,7 +1,7 @@
 import type { World } from 'miniplex';
 
-import type { Entity } from '../ecs/miniplexStore';
-import type { DamageEvent,ProjectileComponent, WeaponComponent } from '../ecs/weapons';
+import { getEntityById, type Entity } from '../ecs/miniplexStore';
+import type { DamageEvent, ProjectileComponent, WeaponComponent } from '../ecs/weapons';
 import type { Rng } from '../utils/seededRng';
 import type { WeaponFiredEvent } from './WeaponSystem';
 
@@ -26,14 +26,14 @@ export function projectileSystem(
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== 'rocket') continue;
 
-    // Find the weapon that fired to get projectile parameters
-    const weaponEntity = Array.from(world.entities).find((e) => {
-      const entity = e as Entity & { weapon?: WeaponComponent };
-      return entity.weapon?.id === fireEvent.weaponId;
-    });
+    const owner = getEntityById(fireEvent.ownerId) as Entity & {
+      weapon?: WeaponComponent;
+      team?: string;
+      position?: [number, number, number];
+    } | undefined;
 
-    if (!weaponEntity) continue;
-    const weapon = (weaponEntity as Entity & { weapon: WeaponComponent }).weapon;
+    const weapon = owner?.weapon;
+    if (!owner || !weapon) continue;
 
     // Create projectile entity
     const projectileEntity: Entity & {
@@ -45,13 +45,14 @@ export function projectileSystem(
       team: weapon.team,
       projectile: {
         sourceWeaponId: fireEvent.weaponId,
+        ownerId: fireEvent.ownerId,
         damage: weapon.power,
         team: weapon.team,
         aoeRadius: weapon.aoeRadius,
         lifespan: 5.0, // 5 seconds default
         spawnTime: Date.now(),
         speed: 20, // m/s default
-        homing: weapon.flags?.homing ? { turnSpeed: 2.0 } : undefined,
+        homing: weapon.flags?.homing ? { turnSpeed: 2.0, targetId: fireEvent.targetId } : undefined,
       },
       velocity: [0, 0, 0], // Will be set below
     };
@@ -101,11 +102,11 @@ export function projectileSystem(
     if (hit) {
       if (projectile.aoeRadius && projectile.aoeRadius > 0) {
         // AoE damage
-        applyAoEDamage(position, projectile.aoeRadius, projectile.damage, projectile.team, world, events);
+        applyAoEDamage(position, projectile.aoeRadius, projectile.damage, projectile.team, projectile.ownerId, world, events);
       } else {
         // Direct hit damage
         events.damage.push({
-          sourceId: parseInt(projectile.sourceWeaponId),
+          sourceId: projectile.ownerId,
           weaponId: projectile.sourceWeaponId,
           targetId: hit.targetId,
           position: [position[0], position[1], position[2]],
@@ -183,6 +184,7 @@ function applyAoEDamage(
   radius: number,
   damage: number,
   sourceTeam: string,
+  sourceId: number,
   world: World<Entity>,
   events: { damage: DamageEvent[] }
 ) {
@@ -208,7 +210,7 @@ function applyAoEDamage(
       const finalDamage = damage * falloffFactor;
 
       events.damage.push({
-        sourceId: 0, // TODO: Get from weapon source
+        sourceId,
         targetId: e.id as unknown as number,
         position: [center[0], center[1], center[2]],
         damage: finalDamage,
@@ -247,9 +249,9 @@ function updateHomingBehavior(
 
   // Steer towards target
   if (homing.targetId) {
-    const target = Array.from(world.entities).find(
-      (e) => (e.id as unknown as number) === homing.targetId
-    ) as Entity & { position?: [number, number, number] };
+    const target = getEntityById(homing.targetId) as Entity & {
+      position?: [number, number, number];
+    } | undefined;
 
     if (target?.position) {
       const [tx, ty, tz] = target.position;
@@ -283,3 +285,4 @@ function updateHomingBehavior(
     }
   }
 }
+

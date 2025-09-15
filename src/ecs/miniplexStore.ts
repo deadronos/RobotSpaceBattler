@@ -57,6 +57,13 @@ export type Entity = Partial<
 
 export const world = new World<Entity>();
 
+let nextEntityId = 1;
+const entityLookup = new Map<number, Entity>();
+
+export function getEntityById(id: number) {
+  return entityLookup.get(id);
+}
+
 // Helper queries
 export function getRobots() {
   return Array.from(world.entities).filter((e) => e.team && e.rigid);
@@ -78,13 +85,30 @@ export function createRobotEntity(init: Partial<Entity>): Entity {
     ...init,
   };
 
-  return world.add(entity);
+  if (typeof entity.id !== 'number') {
+    entity.id = nextEntityId++;
+  }
+
+  const added = world.add(entity);
+
+  if (typeof added.id === 'number') {
+    entityLookup.set(added.id, added);
+  }
+
+  return added;
 }
 
 export function removeEntity(e: Entity) {
+  if (typeof e.id === 'number') {
+    entityLookup.delete(e.id);
+  }
   world.remove(e);
 }
 
 export function resetWorld() {
-  for (const e of [...world.entities]) world.remove(e);
+  for (const e of [...world.entities]) {
+    removeEntity(e);
+  }
+  entityLookup.clear();
+  nextEntityId = 1;
 }

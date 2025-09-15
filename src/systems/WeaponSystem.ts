@@ -1,12 +1,12 @@
 import type { World } from 'miniplex';
-import type { Rng } from '../utils/seededRng';
 
-import type { Entity } from '../ecs/miniplexStore';
+import { getEntityById, type Entity } from '../ecs/miniplexStore';
 import type {
+  DamageEvent,
   WeaponComponent,
   WeaponStateComponent,
-  DamageEvent,
 } from '../ecs/weapons';
+import type { Rng } from '../utils/seededRng';
 
 export interface WeaponFiredEvent {
   weaponId: string;
@@ -14,7 +14,24 @@ export interface WeaponFiredEvent {
   type: 'gun' | 'laser' | 'rocket';
   origin: [number, number, number];
   direction: [number, number, number];
+  targetId?: number;
   timestamp: number;
+}
+
+ type RigidBodyLike = {
+  translation: () => { x: number; y: number; z: number };
+};
+
+function getEntityPosition(entity: Entity & { position?: [number, number, number] }): [number, number, number] | undefined {
+  const rigid = entity.rigid as unknown as RigidBodyLike | null;
+  if (rigid) {
+    const { x, y, z } = rigid.translation();
+    return [x, y, z];
+  }
+  if (entity.position) {
+    return [entity.position[0], entity.position[1], entity.position[2]];
+  }
+  return undefined;
 }
 
 /**
@@ -33,6 +50,8 @@ export function weaponSystem(
       weaponState?: WeaponStateComponent;
       position?: [number, number, number];
       team?: 'red' | 'blue';
+      rigid?: unknown;
+      targetId?: number;
     };
     
     const { weapon, weaponState: state, position, team } = e;
@@ -52,7 +71,6 @@ export function weaponSystem(
 
     // Handle charging (for chargeable weapons like lasers)
     if (state.chargeStart && weapon.flags?.chargeable) {
-      const chargeTime = Date.now() - state.chargeStart;
       // Charging logic would go here
     }
 
@@ -63,21 +81,49 @@ export function weaponSystem(
                    !state.reloading;
 
     if (canFire) {
+      if (typeof weapon.ownerId !== 'number' && typeof e.id === 'number') {
+        weapon.ownerId = e.id;
+      }
+
+      const ownerId = typeof weapon.ownerId === 'number' ? weapon.ownerId : undefined;
+      if (ownerId === undefined) {
+        continue;
+      }
+
       // Set cooldown
       state.cooldownRemaining = weapon.cooldown;
       weapon.lastFiredAt = Date.now();
 
-      // Calculate firing direction (simplified - towards target)
-      // In a real implementation, this would use the AI's target selection
-      const direction: [number, number, number] = [1, 0, 0]; // placeholder
+      const origin = getEntityPosition(e) ?? position;
+
+      let direction: [number, number, number] = [1, 0, 0];
+      let targetId: number | undefined = typeof e.targetId === 'number' ? e.targetId : undefined;
+      if (targetId !== undefined) {
+        const targetEntity = getEntityById(targetId);
+        if (targetEntity) {
+          const targetPosition = getEntityPosition(targetEntity);
+          if (targetPosition) {
+            const dx = targetPosition[0] - origin[0];
+            const dy = targetPosition[1] - origin[1];
+            const dz = targetPosition[2] - origin[2];
+            const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            if (length > 1e-5) {
+              direction = [dx / length, dy / length, dz / length];
+            }
+          }
+        } else {
+          targetId = undefined;
+        }
+      }
 
       // Emit weapon fired event
       events.weaponFired.push({
         weaponId: weapon.id,
-        ownerId: weapon.ownerId,
+        ownerId,
         type: weapon.type,
-        origin: [position[0], position[1], position[2]],
+        origin: [origin[0], origin[1], origin[2]],
         direction,
+        targetId,
         timestamp: Date.now(),
       });
 
@@ -96,3 +142,4 @@ export function weaponSystem(
     }
   }
 }
+

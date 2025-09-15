@@ -1,10 +1,12 @@
-# Progress — RobotSpaceBattler
+# Progress - RobotSpaceBattler
 
 ## What works
 
 - Core simulation loop and renderer (Three.js + react-three-fiber)
 - Procedural robot generation and basic AI
-- Weapons ECS (in progress)\n- Projectile and beam entities render with Rapier bodies tied to ECS state
+- Weapons ECS (in progress)
+- Projectile and beam entities render with Rapier bodies tied to ECS state
+- Weapon events carry target ids for hitscan/beam/projectile systems
 - Seeded RNG utility for deterministic tests
 - Physics sync and projectile cleanup systems
 - Unit tests for core systems (Vitest)

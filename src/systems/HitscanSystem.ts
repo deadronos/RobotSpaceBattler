@@ -1,8 +1,8 @@
 import type { World } from 'miniplex';
-import type { Rng } from '../utils/seededRng';
 
-import type { Entity } from '../ecs/miniplexStore';
-import type { WeaponComponent, DamageEvent } from '../ecs/weapons';
+import { type Entity,getEntityById } from '../ecs/miniplexStore';
+import type { DamageEvent,WeaponComponent } from '../ecs/weapons';
+import type { Rng } from '../utils/seededRng';
 import type { WeaponFiredEvent } from './WeaponSystem';
 
 interface ImpactEvent {
@@ -24,24 +24,33 @@ export function hitscanSystem(
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== 'gun') continue;
 
-    // Find the weapon that fired
-    const weaponEntity = Array.from(world.entities).find(e => {
-      const entity = e as Entity & { weapon?: WeaponComponent };
-      return entity.weapon?.id === fireEvent.weaponId;
-    });
+    const owner = getEntityById(fireEvent.ownerId) as Entity & {
+      weapon?: WeaponComponent;
+      team?: string;
+      position?: [number, number, number];
+    } | undefined;
 
-    if (!weaponEntity) continue;
-    const weapon = (weaponEntity as Entity & { weapon: WeaponComponent }).weapon;
+    const weapon = owner?.weapon;
+    if (!owner || !weapon) continue;
 
-    // Apply spread/accuracy using seeded RNG
     const spreadAngle = weapon.spread || 0;
     const accuracy = weapon.accuracy || 1.0;
-    
-    const spread = spreadAngle * (1 - accuracy) * (rng() - 0.5) * 2;
-    const direction = applySpread(fireEvent.direction, spread, rng);
 
-    // Perform raycast (simplified - in real implementation would use Rapier or Three.js raycaster)
-    const hit = performRaycast(fireEvent.origin, direction, weapon.range || 100, world);
+    const spread = spreadAngle * (1 - accuracy) * (rng() - 0.5) * 2;
+    const direction = applySpread(fireEvent.direction, spread);
+
+    const targetEntity =
+      fireEvent.targetId !== undefined ? getEntityById(fireEvent.targetId) : undefined;
+
+    const hit = performRaycast(
+      fireEvent.origin,
+      direction,
+      weapon.range || 100,
+      world,
+      targetEntity,
+      fireEvent.ownerId,
+      owner.team
+    );
 
     if (hit) {
       // Apply damage
@@ -64,9 +73,8 @@ export function hitscanSystem(
 }
 
 function applySpread(
-  direction: [number, number, number], 
-  spread: number, 
-  rng: Rng
+  direction: [number, number, number],
+  spread: number
 ): [number, number, number] {
   // Simple spread application - rotate direction by spread amount
   const [x, y, z] = direction;
@@ -83,39 +91,66 @@ function performRaycast(
   origin: [number, number, number],
   direction: [number, number, number],
   maxDistance: number,
-  world: World<Entity>
+  world: World<Entity>,
+  preferredTarget: Entity | undefined,
+  ownerId: number,
+  ownerTeam?: string
 ): { position: [number, number, number]; normal: [number, number, number]; targetId?: number } | null {
-  // Simplified raycast - in real implementation would use Rapier's raycast
-  // For now, just check against entity positions within range
-  
   const [ox, oy, oz] = origin;
   const [dx, dy, dz] = direction;
-  
+
+  const attemptHit = (candidate: Entity & {
+    position?: [number, number, number];
+    team?: string;
+    weapon?: WeaponComponent;
+  }) => {
+    if (!candidate.position) return null;
+    if (typeof candidate.id === 'number' && candidate.id === ownerId) return null;
+    if (candidate.weapon) return null;
+    if (ownerTeam && candidate.team === ownerTeam) return null;
+
+    const [ex, ey, ez] = candidate.position;
+    const toTarget = [ex - ox, ey - oy, ez - oz];
+    const distance = Math.sqrt(toTarget[0] * toTarget[0] + toTarget[1] * toTarget[1] + toTarget[2] * toTarget[2]);
+
+    if (distance > maxDistance) return null;
+
+    const dot = (toTarget[0] * dx + toTarget[1] * dy + toTarget[2] * dz) / distance;
+    if (dot > 0.99) {
+      return {
+        position: candidate.position,
+        normal: [-dx, -dy, -dz],
+        targetId: candidate.id as unknown as number,
+      };
+    }
+
+    return null;
+  };
+
+  if (preferredTarget) {
+    const preferredHit = attemptHit(preferredTarget as Entity & {
+      position?: [number, number, number];
+      team?: string;
+      weapon?: WeaponComponent;
+    });
+    if (preferredHit) {
+      return preferredHit;
+    }
+  }
+
   for (const entity of world.entities) {
-    const e = entity as Entity & { 
-      position?: [number, number, number]; 
+    const candidate = entity as Entity & {
+      position?: [number, number, number];
       team?: string;
       weapon?: WeaponComponent;
     };
-    // Skip weapon owners
-    if (!e.position || !e.team || e.weapon) continue;
-    
-    const [ex, ey, ez] = e.position;
-    const toTarget = [ex - ox, ey - oy, ez - oz];
-    const distance = Math.sqrt(toTarget[0] * toTarget[0] + toTarget[1] * toTarget[1] + toTarget[2] * toTarget[2]);
-    
-    if (distance > maxDistance) continue;
-    
-    // Improved angle check with tighter hit detection for spread testing
-    const dot = (toTarget[0] * dx + toTarget[1] * dy + toTarget[2] * dz) / distance;
-    if (dot > 0.99) { // Much tighter hit cone to test spread properly
-      return {
-        position: e.position,
-        normal: [-dx, -dy, -dz], // Simple normal
-        targetId: e.id as unknown as number,
-      };
+
+    const hit = attemptHit(candidate);
+    if (hit) {
+      return hit;
     }
   }
-  
+
   return null;
 }
+

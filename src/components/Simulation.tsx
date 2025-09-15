@@ -110,7 +110,7 @@ export default function Simulation() {
       robot.weapon = {
         id: `weapon_red_${i}`,
         type: weaponType,
-        ownerId: robot.id as unknown as number,
+        ownerId: robot.id as number,
         team: 'red',
         range: weaponType === 'gun' ? 15 : weaponType === 'laser' ? 25 : 20,
         cooldown: weaponType === 'gun' ? 0.5 : weaponType === 'laser' ? 1.5 : 2.0,
@@ -147,7 +147,7 @@ export default function Simulation() {
       robot.weapon = {
         id: `weapon_blue_${i}`,
         type: weaponType,
-        ownerId: robot.id as unknown as number,
+        ownerId: robot.id as number,
         team: 'blue',
         range: weaponType === 'gun' ? 15 : weaponType === 'laser' ? 25 : 20,
         cooldown: weaponType === 'gun' ? 0.5 : weaponType === 'laser' ? 1.5 : 2.0,
@@ -281,24 +281,31 @@ function setWeaponFiring(self: Entity, target: Entity | undefined) {
   if (!weaponEntity.weapon || !weaponEntity.weaponState) return;
 
   const rb = self.rigid as unknown as RigidLike | null;
-  if (!rb || !target) {
+  const targetId = target && typeof target.id === 'number' ? target.id : undefined;
+
+  if (!rb || !targetId) {
     weaponEntity.weaponState.firing = false;
+    weaponEntity.targetId = undefined;
     return;
   }
 
   const trb = target.rigid as unknown as RigidLike | null;
   if (!trb) {
     weaponEntity.weaponState.firing = false;
+    weaponEntity.targetId = undefined;
     return;
   }
+
+  weaponEntity.targetId = targetId;
 
   // Check if target is in range
   const d2 = distanceSquared(rb.translation(), trb.translation());
   const range = weaponEntity.weapon.range || 10;
-  
+
   if (d2 <= range * range) {
     weaponEntity.weaponState.firing = true;
   } else {
     weaponEntity.weaponState.firing = false;
+    weaponEntity.targetId = undefined;
   }
 }

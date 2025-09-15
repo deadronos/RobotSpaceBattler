@@ -26,7 +26,7 @@ A unified weapon model reduces duplication between hitscan, projectile, and beam
 
 ## Progress Tracking
 
-**Overall Status:** In Progress - 35%
+**Overall Status:** In Progress - 45%
 
 ### Subtasks
 | ID | Description | Status | Updated | Notes |
@@ -34,10 +34,10 @@ A unified weapon model reduces duplication between hitscan, projectile, and beam
 | 6.1 | Draft weapons design doc | Complete | 2025-09-15 | |
 | 6.2 | Define weapon ECS components | In Progress | 2025-09-15 | |
 | 6.3 | Implement seeded RNG helper | Complete | 2025-09-15 | via TASK002 |
-| 6.4 | Implement WeaponSystem skeleton | In Progress | 2025-09-15 | |
-| 6.5 | Implement HitscanSystem skeleton | In Progress | 2025-09-15 | |
-| 6.6 | Implement ProjectileSystem skeleton | In Progress | 2025-09-16 | Added Rapier-backed projectile entities with ECS sync. |
-| 6.7 | Implement BeamSystem skeleton | In Progress | 2025-09-16 | Added beam render component to visualise active beams. |
+| 6.4 | Implement WeaponSystem skeleton | In Progress | 2025-09-16 | Added target-aware aiming and WeaponFiredEvent target wiring. |
+| 6.5 | Implement HitscanSystem skeleton | In Progress | 2025-09-16 | Uses firing target to narrow raycast checks. |
+| 6.6 | Implement ProjectileSystem skeleton | In Progress | 2025-09-16 | Added Rapier-backed projectile entities with ECS sync and owner/target propagation. |
+| 6.7 | Implement BeamSystem skeleton | In Progress | 2025-09-16 | Added beam visuals and owner-aware spawning. |
 | 6.8 | Add unit tests for seeded RNG | Complete | 2025-09-15 | |
 | 6.9 | Integrate systems into Simulation | In Progress | 2025-09-16 | Projectiles/beams now spawn with visual + physics actors in Simulation. |
 | 6.10 | Document usage and examples | In Progress | 2025-09-15 | |
@@ -49,4 +49,11 @@ A unified weapon model reduces duplication between hitscan, projectile, and beam
 - Created weapons design doc (`docs/weapons.md`).
 - Added weapon component definitions and system skeletons.
 - Implemented seeded RNG helper with tests.
-\n### 2025-09-16\n- Promoted projectile and beam entities to renderable Rapier/Three nodes.\n- Hooked Simulation to render ECS projectiles/beams and keep state synced.\n- Updated ProjectileSystem to read/write Rapier transforms instead of manual integration.\n
+
+### 2025-09-16
+- Promoted projectile and beam entities to renderable Rapier/Three nodes.
+- Hooked Simulation to render ECS projectiles/beams and keep state synced.
+- Updated ProjectileSystem to read/write Rapier transforms instead of manual integration.
+- WeaponSystem now derives aim vectors from tracked targets and emits targetId.
+- Hitscan/Beam/Projectile systems pull weapon owners via miniplex lookup and reuse event target ids.
+- Robot factory now assigns numeric entity ids for stable owner/source identifiers.
