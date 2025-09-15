@@ -1,13 +1,26 @@
 import { useFrame } from '@react-three/fiber';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 
 import { createRobotEntity, type Entity, resetWorld, world } from '../ecs/miniplexStore';
 import { Robot } from '../robots/robotPrefab';
 import { useUI } from '../store/uiStore';
+import { createSeededRng, type Rng } from '../utils/seededRng';
+
+// Import weapon systems
+import { weaponSystem, type WeaponFiredEvent } from '../systems/WeaponSystem';
+import { hitscanSystem } from '../systems/HitscanSystem';
+import { beamSystem } from '../systems/BeamSystem';
+import { projectileSystem } from '../systems/ProjectileSystem';
+import { damageSystem, type DeathEvent } from '../systems/DamageSystem';
+import type { DamageEvent, WeaponComponent, WeaponStateComponent } from '../ecs/weapons';
 
 const TEAM_SIZE = 10;
 const ARENA_SIZE = 20; // half-extent
+
+// Deterministic mode configuration
+const DETERMINISTIC_SEED = 12345;
+const FIXED_TIMESTEP = 1/60; // 60 FPS
 
 function distanceSquared(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) {
   const dx = a.x - b.x;
@@ -39,50 +52,141 @@ function pickNearestEnemy(self: Entity, enemies: Entity[]) {
 export default function Simulation() {
   const paused = useUI((s) => s.paused);
   const speed = useUI((s) => s.speed);
+  const frameCountRef = useRef(0);
+  const rngRef = useRef<Rng | null>(null);
 
-  // Spawn once
+  // Initialize deterministic RNG
+  useEffect(() => {
+    rngRef.current = createSeededRng(DETERMINISTIC_SEED);
+  }, []);
+
+  // Spawn once with weapon configurations
   const robots = useMemo(() => {
     resetWorld();
     const spawn: Entity[] = [];
+    
+    // Red team robots with different weapon types
     for (let i = 0; i < TEAM_SIZE; i++) {
-      spawn.push(
-        createRobotEntity({
-          team: 'red',
-          position: [-8 + (i % 5) * 2, 0.6, -6 + Math.floor(i / 5) * 2],
-        }),
-      );
+      const weaponType: 'gun' | 'laser' | 'rocket' = 
+        i % 3 === 0 ? 'gun' : 
+        i % 3 === 1 ? 'laser' : 'rocket';
+      
+      const robot = createRobotEntity({
+        team: 'red',
+        position: [-8 + (i % 5) * 2, 0.6, -6 + Math.floor(i / 5) * 2],
+      }) as Entity & { weapon?: WeaponComponent; weaponState?: WeaponStateComponent };
+
+      // Add weapon component
+      robot.weapon = {
+        id: `weapon_red_${i}`,
+        type: weaponType,
+        ownerId: robot.id as unknown as number,
+        team: 'red',
+        range: weaponType === 'gun' ? 15 : weaponType === 'laser' ? 25 : 20,
+        cooldown: weaponType === 'gun' ? 0.5 : weaponType === 'laser' ? 1.5 : 2.0,
+        power: weaponType === 'gun' ? 15 : weaponType === 'laser' ? 8 : 25,
+        accuracy: weaponType === 'gun' ? 0.8 : weaponType === 'laser' ? 0.95 : 0.7,
+        spread: weaponType === 'gun' ? 0.1 : 0,
+        ammo: weaponType === 'gun' ? { clip: 10, clipSize: 10, reserve: 50 } : undefined,
+        aoeRadius: weaponType === 'rocket' ? 3 : undefined,
+        beamParams: weaponType === 'laser' ? { duration: 1000, width: 0.1, tickInterval: 100 } : undefined,
+        flags: weaponType === 'laser' ? { continuous: true } : undefined,
+      };
+
+      robot.weaponState = {
+        firing: false,
+        reloading: false,
+        cooldownRemaining: 0,
+      };
+
+      spawn.push(robot);
     }
+    
+    // Blue team robots with different weapon types
     for (let i = 0; i < TEAM_SIZE; i++) {
-      spawn.push(
-        createRobotEntity({
-          team: 'blue',
-          position: [8 - (i % 5) * 2, 0.6, 6 - Math.floor(i / 5) * 2],
-        }),
-      );
+      const weaponType: 'gun' | 'laser' | 'rocket' = 
+        i % 3 === 0 ? 'rocket' : 
+        i % 3 === 1 ? 'gun' : 'laser';
+      
+      const robot = createRobotEntity({
+        team: 'blue',
+        position: [8 - (i % 5) * 2, 0.6, 6 - Math.floor(i / 5) * 2],
+      }) as Entity & { weapon?: WeaponComponent; weaponState?: WeaponStateComponent };
+
+      // Add weapon component
+      robot.weapon = {
+        id: `weapon_blue_${i}`,
+        type: weaponType,
+        ownerId: robot.id as unknown as number,
+        team: 'blue',
+        range: weaponType === 'gun' ? 15 : weaponType === 'laser' ? 25 : 20,
+        cooldown: weaponType === 'gun' ? 0.5 : weaponType === 'laser' ? 1.5 : 2.0,
+        power: weaponType === 'gun' ? 15 : weaponType === 'laser' ? 8 : 25,
+        accuracy: weaponType === 'gun' ? 0.8 : weaponType === 'laser' ? 0.95 : 0.7,
+        spread: weaponType === 'gun' ? 0.1 : 0,
+        ammo: weaponType === 'gun' ? { clip: 10, clipSize: 10, reserve: 50 } : undefined,
+        aoeRadius: weaponType === 'rocket' ? 3 : undefined,
+        beamParams: weaponType === 'laser' ? { duration: 1000, width: 0.1, tickInterval: 100 } : undefined,
+        flags: weaponType === 'laser' ? { continuous: true } : undefined,
+      };
+
+      robot.weaponState = {
+        firing: false,
+        reloading: false,
+        cooldownRemaining: 0,
+      };
+
+      spawn.push(robot);
     }
+    
     return spawn;
   }, []);
 
-  // Simple per-frame systems
+  // Deterministic per-frame systems
   useFrame((_, dt) => {
-    if (paused) return;
-    const step = Math.min(dt * speed, 0.05);
+    if (paused || !rngRef.current) return;
+    
+    // Use fixed timestep for determinism
+    const step = FIXED_TIMESTEP;
+    frameCountRef.current++;
+    
+    // Create fresh RNG for this frame (deterministic)
+    const frameRng = createSeededRng(DETERMINISTIC_SEED + frameCountRef.current);
 
     const entities = Array.from(world.entities);
     const red = entities.filter((e) => e.team === 'red' && e.alive !== false && e.rigid);
     const blue = entities.filter((e) => e.team === 'blue' && e.alive !== false && e.rigid);
 
-    // AI + Movement
+    // Event containers for weapon systems
+    const events = {
+      weaponFired: [] as WeaponFiredEvent[],
+      damage: [] as DamageEvent[],
+      death: [] as DeathEvent[],
+      impact: [] as any[],
+    };
+
+    // 1. AI decisions and movement
     for (const e of red) {
       const target = pickNearestEnemy(e, blue);
-  steerTowards(e, target);
-      tryAttack(e, target, step);
+      steerTowards(e, target);
+      setWeaponFiring(e, target);
     }
     for (const e of blue) {
       const target = pickNearestEnemy(e, red);
-  steerTowards(e, target);
-      tryAttack(e, target, step);
+      steerTowards(e, target);
+      setWeaponFiring(e, target);
     }
+
+    // 2. Weapon systems (deterministic pipeline)
+    weaponSystem(world, step, frameRng, events);
+    hitscanSystem(world, frameRng, events.weaponFired, events);
+    beamSystem(world, step, frameRng, events.weaponFired, events);
+    projectileSystem(world, step, frameRng, events.weaponFired, events);
+    
+    // 3. Damage application
+    damageSystem(world, events.damage, events);
+
+    // 4. TODO: FX system would go here
   });
 
   useEffect(() => {
@@ -129,23 +233,33 @@ function steerTowards(self: Entity, target: Entity | undefined) {
   rb.setLinvel({ x: vx, y: 0, z: vz }, true);
 }
 
-function tryAttack(self: Entity, target: Entity | undefined, dt: number) {
-  if (!self.cooldown && self.cooldown !== 0) return;
-  self.cooldownLeft = Math.max(0, (self.cooldownLeft ?? 0) - dt);
-  if (!target || !self.power || !self.range) return;
+function setWeaponFiring(self: Entity, target: Entity | undefined) {
+  const weaponEntity = self as Entity & { 
+    weapon?: WeaponComponent; 
+    weaponState?: WeaponStateComponent 
+  };
+  
+  if (!weaponEntity.weapon || !weaponEntity.weaponState) return;
 
   const rb = self.rigid as unknown as RigidLike | null;
+  if (!rb || !target) {
+    weaponEntity.weaponState.firing = false;
+    return;
+  }
+
   const trb = target.rigid as unknown as RigidLike | null;
-  if (!rb || !trb) return;
+  if (!trb) {
+    weaponEntity.weaponState.firing = false;
+    return;
+  }
+
+  // Check if target is in range
   const d2 = distanceSquared(rb.translation(), trb.translation());
-  if (d2 <= self.range * self.range && (self.cooldownLeft ?? 0) <= 0) {
-    // Apply damage
-    target.hp = Math.max(0, (target.hp ?? 0) - self.power);
-    target.alive = (target.hp ?? 0) > 0;
-    self.cooldownLeft = self.cooldown;
-    if (!target.alive) {
-      // Stop the dead body
-      trb.setLinvel({ x: 0, y: 0, z: 0 }, true);
-    }
+  const range = weaponEntity.weapon.range || 10;
+  
+  if (d2 <= range * range) {
+    weaponEntity.weaponState.firing = true;
+  } else {
+    weaponEntity.weaponState.firing = false;
   }
 }

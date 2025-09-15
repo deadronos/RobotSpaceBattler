@@ -1,51 +1,60 @@
 import type { Entity } from './miniplexStore';
 
-export type WeaponType = 'hitscan' | 'projectile' | 'beam';
-
-export interface DamageProfile {
-  base: number;
-  falloff?: { start: number; end: number };
-  armorPiercing?: number;
-}
+export type WeaponType = 'gun' | 'laser' | 'rocket';
 
 export interface WeaponComponent {
   id: string;
   type: WeaponType;
-  damage: DamageProfile;
-  cooldownMs: number;
-  spread?: number;
-  range?: number;
+  ownerId: number;
+  team: 'red' | 'blue';
+  range: number;
+  cooldown: number; // seconds
+  lastFiredAt?: number;
+  power: number; // base damage
+  accuracy?: number; // 0..1
+  spread?: number; // radians
+  ammo?: { clip: number; clipSize: number; reserve: number };
+  energyCost?: number;
   projectilePrefab?: string;
-  owner?: Entity;
-  team?: string;
-}
-
-export interface CooldownComponent {
-  remainingMs: number;
-}
-
-export interface AmmoComponent {
-  clip: number;
-  reserve: number;
-  perShot: number;
-}
-
-export interface ProjectileComponent {
-  owner?: Entity;
-  damage: DamageProfile;
-  lifetimeMs: number;
-  speed: number;
   aoeRadius?: number;
-}
-
-export interface BeamComponent {
-  owner?: Entity;
-  durationMs: number;
-  damagePerSecond: number;
+  beamParams?: { duration?: number; width?: number; tickInterval?: number };
+  flags?: { continuous?: boolean; chargeable?: boolean; burst?: boolean; homing?: boolean };
 }
 
 export interface WeaponStateComponent {
-  isFiring?: boolean;
-  isReloading?: boolean;
-  isCharging?: boolean;
+  firing?: boolean;
+  reloading?: boolean;
+  chargeStart?: number;
+  cooldownRemaining?: number;
+}
+
+export interface ProjectileComponent {
+  sourceWeaponId: string;
+  damage: number;
+  team: 'red' | 'blue';
+  aoeRadius?: number;
+  lifespan: number;
+  spawnTime: number;
+  speed?: number;
+  homing?: { turnSpeed: number; targetId?: number };
+}
+
+export interface BeamComponent {
+  sourceWeaponId: string;
+  origin: [number, number, number];
+  direction: [number, number, number];
+  length: number;
+  width: number;
+  activeUntil: number;
+  tickDamage: number;
+  tickInterval: number;
+  lastTickAt: number;
+}
+
+export interface DamageEvent {
+  sourceId: number;
+  weaponId?: string;
+  targetId?: number;
+  position?: [number, number, number];
+  damage: number;
 }
