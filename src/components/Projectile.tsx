@@ -14,8 +14,10 @@ type Props = {
   onHit?: (other: unknown) => void;
   physics?: boolean;
   rapierComponents?: {
-    RigidBody?: React.ComponentType<unknown>;
-    BallCollider?: React.ComponentType<unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    RigidBody?: React.ComponentType<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    BallCollider?: React.ComponentType<any>;
   } | null;
 };
 
@@ -143,18 +145,18 @@ export default function Projectile({
         onCollisionEnter: (e: { other: unknown }) => {
           onHit?.(e.other);
         },
-      } as unknown as Record<string, unknown>,
+      },
       rapierComponents.BallCollider
         ? React.createElement(rapierComponents.BallCollider, {
             args: [radius],
-          } as unknown as Record<string, unknown>)
+          })
         : null,
       React.createElement(
         "group",
         {
           "data-id": _id,
           position: [position.x, position.y, position.z],
-        } as unknown as Record<string, unknown>,
+        },
         React.createElement(
           "mesh",
           null,
@@ -170,7 +172,7 @@ export default function Projectile({
           {
             position: [0, 0, -0.3],
             rotation: [Math.PI / 2, 0, 0],
-          } as unknown as Record<string, unknown>,
+          },
           React.createElement("cylinderGeometry", {
             args: [0.02, 0.02, 0.6, 6],
           }),
