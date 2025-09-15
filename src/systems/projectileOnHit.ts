@@ -1,6 +1,7 @@
 import type { World } from "miniplex";
 
 import type { Entity } from "../ecs/types";
+import { markEntityDestroying } from "../utils/rapierCleanup";
 
 // Handle a projectile hitting another rigid body (other). The Simulation
 // onHit handler searches entities by matching `rb === other`. This helper
@@ -21,22 +22,7 @@ export function handleProjectileHit(
       if (proj.projectile) proj.projectile.ttl = 0;
       // mark as destroying to clear any stored rapier refs
       try {
-        // dynamic import to avoid circular deps and make this util optional
-        // for tests.
-
-        import("../utils/rapierCleanup")
-          .then((m) => {
-            try {
-              m.markEntityDestroying(
-                proj as unknown as Record<string, unknown>,
-              );
-            } catch {
-              /* ignore */
-            }
-          })
-          .catch(() => {
-            /* ignore */
-          });
+        markEntityDestroying(proj as unknown as Record<string, unknown>);
       } catch {
         /* ignore */
       }

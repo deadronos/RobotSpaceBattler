@@ -1,8 +1,10 @@
-import React, { useEffect, useLayoutEffect, useRef } from "react";
+import { BallCollider, RigidBody } from '@react-three/rapier';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
 
-import store from "../ecs/miniplexStore";
-import type { RapierApi, Vec3 } from "../ecs/types";
-import { extractRapierApi } from "../ecs/types";
+import store from '../ecs/miniplexStore';
+import type { RapierApi, Vec3 } from '../ecs/types';
+import { extractRapierApi } from '../ecs/types';
+import { markEntityDestroying } from '../utils/rapierCleanup';
 
 type Props = {
   id: string;
@@ -13,12 +15,6 @@ type Props = {
   onRigidBodyReady?: (_rb: RapierApi) => void;
   onHit?: (other: unknown) => void;
   physics?: boolean;
-  rapierComponents?: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    RigidBody?: React.ComponentType<any>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    BallCollider?: React.ComponentType<any>;
-  } | null;
 };
 
 export default function Projectile({
@@ -30,7 +26,6 @@ export default function Projectile({
   onRigidBodyReady,
   onHit,
   physics = true,
-  rapierComponents = null,
 }: Props) {
   const ref = useRef<unknown>(null);
   useLayoutEffect(() => {
@@ -62,34 +57,7 @@ export default function Projectile({
         );
         if (ent) {
           try {
-            import("../utils/rapierCleanup")
-              .then((m) => {
-                try {
-                  m.markEntityDestroying(
-                    ent as unknown as Record<string, unknown>,
-                  );
-                } catch {
-                  // ignore nested cleanup errors
-                }
-              })
-              .catch(() => {
-                try {
-                  delete (ent as unknown as Record<string, unknown>).rb;
-                } catch {
-                  /* ignore */
-                }
-                try {
-                  delete (ent as unknown as Record<string, unknown>).collider;
-                } catch {
-                  /* ignore */
-                }
-                try {
-                  (ent as unknown as Record<string, unknown>).__destroying =
-                    true as unknown as never;
-                } catch {
-                  /* ignore */
-                }
-              });
+            markEntityDestroying(ent as unknown as Record<string, unknown>);
           } catch {
             try {
               delete (ent as unknown as Record<string, unknown>).rb;
@@ -130,64 +98,41 @@ export default function Projectile({
     );
   }
 
-  return rapierComponents && rapierComponents.RigidBody ? (
-    React.createElement(
-      rapierComponents.RigidBody,
-      {
-        ref: (node: unknown) => {
-          ref.current = node;
-        },
-        type: "dynamic",
-        ccd: true,
-        colliders: false,
-        gravityScale: 0,
-        enabledRotations: [false, false, false],
-        onCollisionEnter: (e: { other: unknown }) => {
-          onHit?.(e.other);
-        },
-      },
-      rapierComponents.BallCollider
-        ? React.createElement(rapierComponents.BallCollider, {
-            args: [radius],
-          })
-        : null,
-      React.createElement(
-        "group",
-        {
-          "data-id": _id,
-          position: [position.x, position.y, position.z],
-        },
-        React.createElement(
-          "mesh",
-          null,
-          React.createElement("sphereGeometry", { args: [radius, 8, 8] }),
-          React.createElement("meshStandardMaterial", {
-            color: team === "red" ? "orange" : "lightblue",
-            emissive: team === "red" ? "orange" : "lightblue",
-            emissiveIntensity: 1.5,
-          }),
-        ),
-        React.createElement(
-          "mesh",
-          {
-            position: [0, 0, -0.3],
-            rotation: [Math.PI / 2, 0, 0],
-          },
-          React.createElement("cylinderGeometry", {
-            args: [0.02, 0.02, 0.6, 6],
-          }),
-          React.createElement("meshStandardMaterial", {
-            color: team === "red" ? "orange" : "lightblue",
-            emissive: team === "red" ? "orange" : "lightblue",
-            emissiveIntensity: 1.2,
-            opacity: 0.8,
-            transparent: true,
-          }),
-        ),
-      ),
-    )
-  ) : (
-    // safety fallback
-    <group data-id={_id} position={[position.x, position.y, position.z]} />
+  return (
+    <RigidBody
+      ref={(node: unknown) => {
+        ref.current = node;
+      }}
+      type="dynamic"
+      ccd
+      colliders={false}
+      gravityScale={0}
+      enabledRotations={[false, false, false]}
+      onCollisionEnter={(e: { other: unknown }) => {
+        onHit?.(e.other);
+      }}
+   >
+      <BallCollider args={[radius]} />
+      <group data-id={_id} position={[position.x, position.y, position.z]}>
+        <mesh>
+          <sphereGeometry args={[radius, 8, 8]} />
+          <meshStandardMaterial
+            color={team === 'red' ? 'orange' : 'lightblue'}
+            emissive={team === 'red' ? 'orange' : 'lightblue'}
+            emissiveIntensity={1.5}
+          />
+        </mesh>
+        <mesh position={[0, 0, -0.3]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.02, 0.02, 0.6, 6]} />
+          <meshStandardMaterial
+            color={team === 'red' ? 'orange' : 'lightblue'}
+            emissive={team === 'red' ? 'orange' : 'lightblue'}
+            emissiveIntensity={1.2}
+            opacity={0.8}
+            transparent
+          />
+        </mesh>
+      </group>
+    </RigidBody>
   );
 }

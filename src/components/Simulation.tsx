@@ -1,16 +1,17 @@
-import { useFrame } from "@react-three/fiber";
-import React, { useEffect, useRef } from "react";
-import * as THREE from "three";
+import { useFrame } from '@react-three/fiber';
+import { CuboidCollider, RigidBody } from '@react-three/rapier';
+import React, { useEffect, useRef } from 'react';
+import * as THREE from 'three';
 
-import store from "../ecs/miniplexStore";
-import type { Entity } from "../ecs/types";
-import Robot from "../robots/RobotFactory";
-import useUI from "../store/uiStore";
-import { syncRigidBodiesToECS } from "../systems/physicsSync";
-import { cleanupProjectiles } from "../systems/projectileCleanup";
-import { handleProjectileHit } from "../systems/projectileOnHit";
-import { markEntityDestroying } from "../utils/rapierCleanup";
-import Projectile from "./Projectile";
+import store from '../ecs/miniplexStore';
+import type { Entity } from '../ecs/types';
+import Robot from '../robots/RobotFactory';
+import useUI from '../store/uiStore';
+import { syncRigidBodiesToECS } from '../systems/physicsSync';
+import { cleanupProjectiles } from '../systems/projectileCleanup';
+import { handleProjectileHit } from '../systems/projectileOnHit';
+import { markEntityDestroying } from '../utils/rapierCleanup';
+import Projectile from './Projectile';
 
 // Entity type is imported from ecs/types
 
@@ -36,25 +37,8 @@ function createRobotEntity(
   });
 }
 
-type Props = {
-  physics?: boolean;
-  // runtime-provided Rapier components to avoid static imports that can
-  // cause multiple module instances (and context mismatch).
-  rapierComponents?: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    RigidBody?: React.ComponentType<any>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    CuboidCollider?: React.ComponentType<any>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    CapsuleCollider?: React.ComponentType<any>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    BallCollider?: React.ComponentType<any>;
-  } | null;
-};
-export default function Simulation({
-  physics = true,
-  rapierComponents = null,
-}: Props) {
+type Props = { physics?: boolean };
+export default function Simulation({ physics = true }: Props) {
   const { paused } = useUI();
   const didSpawnRef = useRef(false);
 
@@ -243,27 +227,14 @@ export default function Simulation({
   return (
     <>
       {/* Ground / floor (visual + collider) */}
-      {physics &&
-      rapierComponents &&
-      rapierComponents.RigidBody &&
-      rapierComponents.CuboidCollider ? (
-        React.createElement(
-          rapierComponents.RigidBody,
-          {
-            type: "fixed",
-            colliders: false,
-            position: [0, 0, 0],
-          },
-          React.createElement(rapierComponents.CuboidCollider, {
-            args: [60, 0.5, 60],
-            friction: 1,
-            restitution: 0,
-          }),
+      {physics ? (
+        <RigidBody type="fixed" colliders={false} position={[0, 0, 0]}>
+          <CuboidCollider args={[60, 0.5, 60]} friction={1} restitution={0} />
           <mesh receiveShadow rotation-x={-Math.PI / 2}>
             <planeGeometry args={[120, 120]} />
             <meshStandardMaterial color="#11151d" />
-          </mesh>,
-        )
+          </mesh>
+        </RigidBody>
       ) : (
         <mesh receiveShadow rotation-x={-Math.PI / 2}>
           <planeGeometry args={[120, 120]} />
@@ -272,30 +243,13 @@ export default function Simulation({
       )}
 
       {/* Boundary walls to keep robots in arena */}
-      {physics &&
-      rapierComponents &&
-      rapierComponents.RigidBody &&
-      rapierComponents.CuboidCollider ? (
-        React.createElement(
-          rapierComponents.RigidBody,
-          { type: "fixed", colliders: false },
-          React.createElement(rapierComponents.CuboidCollider, {
-            args: [1, 5, 60],
-            position: [60, 5, 0],
-          }),
-          React.createElement(rapierComponents.CuboidCollider, {
-            args: [1, 5, 60],
-            position: [-60, 5, 0],
-          }),
-          React.createElement(rapierComponents.CuboidCollider, {
-            args: [60, 5, 1],
-            position: [0, 5, 60],
-          }),
-          React.createElement(rapierComponents.CuboidCollider, {
-            args: [60, 5, 1],
-            position: [0, 5, -60],
-          }),
-        )
+      {physics ? (
+        <RigidBody type="fixed" colliders={false}>
+          <CuboidCollider args={[1, 5, 60]} position={[60, 5, 0]} />
+          <CuboidCollider args={[1, 5, 60]} position={[-60, 5, 0]} />
+          <CuboidCollider args={[60, 5, 1]} position={[0, 5, 60]} />
+          <CuboidCollider args={[60, 5, 1]} position={[0, 5, -60]} />
+        </RigidBody>
       ) : (
         <group>
           <mesh position={[60, 5, 0]}>
@@ -327,12 +281,8 @@ export default function Simulation({
             team={e.team}
             initialPos={new THREE.Vector3(...(e.position as number[]))}
             muzzleFlash={!!e.fx?.muzzleTimer && e.fx.muzzleTimer > 0}
-            // Ensure robots render visually when physics are disabled or
-            // rapier components aren't ready yet.
-            physics={Boolean(
-              physics && rapierComponents && rapierComponents.RigidBody,
-            )}
-            rapierComponents={rapierComponents}
+            // Ensure robots render visually when physics are disabled.
+            physics={physics}
             onRigidBodyReady={(rb) => {
               // attach rapier api to the entity so AI system can access it
               const ent = [...store.entities.values()].find(
@@ -354,11 +304,8 @@ export default function Simulation({
             id={p.id}
             team={p.team}
             position={{ x: p.position[0], y: p.position[1], z: p.position[2] }}
-            // Render projectile visuals without physics until rapier components are ready
-            physics={Boolean(
-              physics && rapierComponents && rapierComponents.RigidBody,
-            )}
-            rapierComponents={rapierComponents}
+            // Render projectile visuals when physics disabled
+            physics={physics}
             velocity={p.projectile!.velocity}
             onRigidBodyReady={(rb) => {
               p.rb = rb;

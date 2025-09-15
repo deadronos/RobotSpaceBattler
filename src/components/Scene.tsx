@@ -1,7 +1,7 @@
 import { OrbitControls } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import { BallCollider,CapsuleCollider, CuboidCollider, Physics, RigidBody } from '@react-three/rapier';
-import React, { useEffect, useMemo, useState } from 'react';
+import { Physics } from '@react-three/rapier';
+import React, { useEffect, useState } from 'react';
 
 import useUI from '../store/uiStore';
 import Simulation, { SimulationFallback } from './Simulation';
@@ -36,8 +36,7 @@ export default function Scene(): React.ReactElement {
   const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
   const [showControls, setShowControls] = useState(false);
 
-  // Memoize the rapier components bag so the Simulation props are stable.
-  const rapierComponents = useMemo(() => ({ RigidBody, CuboidCollider, CapsuleCollider, BallCollider }), []);
+  // All Rapier components are statically imported and used directly in children.
 
   // Simple error-boundary that catches errors inside the Physics tree and
   // falls back to a non-R3F SimulationFallback. Implemented as a class
@@ -203,7 +202,7 @@ export default function Scene(): React.ReactElement {
           }}
         >
           <Physics gravity={[0, -9.81, 0]}>
-            <Simulation physics={true} rapierComponents={rapierComponents} />
+            <Simulation physics={true} />
           </Physics>
         </PhysicsErrorBoundary>
 
