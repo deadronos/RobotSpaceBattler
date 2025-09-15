@@ -277,13 +277,10 @@ export default function Scene() {
             React.createElement(Simulation, {
               physics: true,
               rapierComponents: {
-                RigidBody: RigidBody as unknown as React.ComponentType<unknown>,
-                CuboidCollider:
-                  CuboidCollider as unknown as React.ComponentType<unknown>,
-                CapsuleCollider:
-                  CapsuleCollider as unknown as React.ComponentType<unknown>,
-                BallCollider:
-                  BallCollider as unknown as React.ComponentType<unknown>,
+                RigidBody,
+                CuboidCollider,
+                CapsuleCollider,
+                BallCollider,
               },
             }),
           ),

@@ -41,10 +41,14 @@ type Props = {
   // runtime-provided Rapier components to avoid static imports that can
   // cause multiple module instances (and context mismatch).
   rapierComponents?: {
-    RigidBody?: React.ComponentType<unknown>;
-    CuboidCollider?: React.ComponentType<unknown>;
-    CapsuleCollider?: React.ComponentType<unknown>;
-    BallCollider?: React.ComponentType<unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    RigidBody?: React.ComponentType<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    CuboidCollider?: React.ComponentType<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    CapsuleCollider?: React.ComponentType<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    BallCollider?: React.ComponentType<any>;
   } | null;
 };
 export default function Simulation({
@@ -249,12 +253,12 @@ export default function Simulation({
             type: "fixed",
             colliders: false,
             position: [0, 0, 0],
-          } as unknown as Record<string, unknown>,
+          },
           React.createElement(rapierComponents.CuboidCollider, {
             args: [60, 0.5, 60],
             friction: 1,
             restitution: 0,
-          } as unknown as Record<string, unknown>),
+          }),
           <mesh receiveShadow rotation-x={-Math.PI / 2}>
             <planeGeometry args={[120, 120]} />
             <meshStandardMaterial color="#11151d" />
@@ -274,26 +278,23 @@ export default function Simulation({
       rapierComponents.CuboidCollider ? (
         React.createElement(
           rapierComponents.RigidBody,
-          { type: "fixed", colliders: false } as unknown as Record<
-            string,
-            unknown
-          >,
+          { type: "fixed", colliders: false },
           React.createElement(rapierComponents.CuboidCollider, {
             args: [1, 5, 60],
             position: [60, 5, 0],
-          } as unknown as Record<string, unknown>),
+          }),
           React.createElement(rapierComponents.CuboidCollider, {
             args: [1, 5, 60],
             position: [-60, 5, 0],
-          } as unknown as Record<string, unknown>),
+          }),
           React.createElement(rapierComponents.CuboidCollider, {
             args: [60, 5, 1],
             position: [0, 5, 60],
-          } as unknown as Record<string, unknown>),
+          }),
           React.createElement(rapierComponents.CuboidCollider, {
             args: [60, 5, 1],
             position: [0, 5, -60],
-          } as unknown as Record<string, unknown>),
+          }),
         )
       ) : (
         <group>

@@ -13,8 +13,10 @@ type Props = {
   muzzleFlash?: boolean;
   physics?: boolean;
   rapierComponents?: {
-    RigidBody?: React.ComponentType<unknown>;
-    CapsuleCollider?: React.ComponentType<unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    RigidBody?: React.ComponentType<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    CapsuleCollider?: React.ComponentType<any>;
   } | null;
 };
 
@@ -174,12 +176,12 @@ export default function Robot({
           enabledRotations: [false, true, false],
           linearDamping: 0.5,
           angularDamping: 1.0,
-        } as unknown as Record<string, unknown>,
+        },
         // explicit capsule collider for stable ground contact
         rapierComponents.CapsuleCollider
           ? React.createElement(rapierComponents.CapsuleCollider, {
               args: [0.6, 0.35],
-            } as unknown as Record<string, unknown>)
+            })
           : null,
         // simple procedural humanoid-ish robot made with boxes and cylinders
         React.createElement(
