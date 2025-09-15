@@ -4,7 +4,7 @@
 
 - Core simulation loop and renderer (Three.js + react-three-fiber)
 - Procedural robot generation and basic AI
-- Weapons ECS (in progress)
+- Weapons ECS (in progress)\n- Projectile and beam entities render with Rapier bodies tied to ECS state
 - Seeded RNG utility for deterministic tests
 - Physics sync and projectile cleanup systems
 - Unit tests for core systems (Vitest)
@@ -28,3 +28,4 @@
 - Playwright smoke test expects dev server on port 5174, Vite default is 5173
 - Some systems lack full unit test coverage
 - No multiplayer/networking support (out of scope)
+

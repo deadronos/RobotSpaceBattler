@@ -1,19 +1,28 @@
 import { useFrame } from '@react-three/fiber';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
+import type { Query } from 'miniplex';
 import React, { useEffect, useMemo, useRef } from 'react';
 
+import { useEcsQuery } from '../ecs/hooks';
 import { createRobotEntity, type Entity, resetWorld, world } from '../ecs/miniplexStore';
+import type {
+  BeamComponent,
+  DamageEvent,
+  ProjectileComponent,
+  WeaponComponent,
+  WeaponStateComponent,
+} from '../ecs/weapons';
 import { Robot } from '../robots/robotPrefab';
 import { useUI } from '../store/uiStore';
-import { createSeededRng, type Rng } from '../utils/seededRng';
-
-// Import weapon systems
-import { weaponSystem, type WeaponFiredEvent } from '../systems/WeaponSystem';
-import { hitscanSystem } from '../systems/HitscanSystem';
 import { beamSystem } from '../systems/BeamSystem';
-import { projectileSystem } from '../systems/ProjectileSystem';
 import { damageSystem, type DeathEvent } from '../systems/DamageSystem';
-import type { DamageEvent, WeaponComponent, WeaponStateComponent } from '../ecs/weapons';
+import { hitscanSystem } from '../systems/HitscanSystem';
+import { projectileSystem } from '../systems/ProjectileSystem';
+import type { WeaponFiredEvent } from '../systems/WeaponSystem';
+import { weaponSystem } from '../systems/WeaponSystem';
+import { createSeededRng, type Rng } from '../utils/seededRng';
+import { Beam } from './Beam';
+import { Projectile } from './Projectile';
 
 const TEAM_SIZE = 10;
 const ARENA_SIZE = 20; // half-extent
@@ -35,6 +44,17 @@ type RigidLike = {
   setLinvel: (v: { x: number; y: number; z: number }, wake: boolean) => void;
 };
 
+type ProjectileEntity = Entity & {
+  projectile: ProjectileComponent;
+  position: [number, number, number];
+  velocity?: [number, number, number];
+};
+
+type BeamEntity = Entity & {
+  beam: BeamComponent;
+};
+
+
 function pickNearestEnemy(self: Entity, enemies: Entity[]) {
   const rigid = self.rigid as unknown as RigidLike | null;
   if (!rigid) return undefined;
@@ -51,9 +71,19 @@ function pickNearestEnemy(self: Entity, enemies: Entity[]) {
 
 export default function Simulation() {
   const paused = useUI((s) => s.paused);
-  const speed = useUI((s) => s.speed);
   const frameCountRef = useRef(0);
   const rngRef = useRef<Rng | null>(null);
+  const projectileQuery = useMemo(
+    () => world.with('projectile', 'position') as unknown as Query<ProjectileEntity>,
+    []
+  );
+  const beamQuery = useMemo(
+    () => world.with('beam') as unknown as Query<BeamEntity>,
+    []
+  );
+  const projectiles = useEcsQuery(projectileQuery);
+  const beams = useEcsQuery(beamQuery);
+
 
   // Initialize deterministic RNG
   useEffect(() => {
@@ -143,7 +173,7 @@ export default function Simulation() {
   }, []);
 
   // Deterministic per-frame systems
-  useFrame((_, dt) => {
+  useFrame(() => {
     if (paused || !rngRef.current) return;
     
     // Use fixed timestep for determinism
@@ -162,7 +192,7 @@ export default function Simulation() {
       weaponFired: [] as WeaponFiredEvent[],
       damage: [] as DamageEvent[],
       death: [] as DeathEvent[],
-      impact: [] as any[],
+      impact: [] as unknown[],
     };
 
     // 1. AI decisions and movement
@@ -209,6 +239,15 @@ export default function Simulation() {
       {/* Robots */}
       {robots.map((e, i) => (
         <Robot key={i} entity={e} />
+      ))}
+      {projectiles.map((entity) => (
+        <Projectile
+          key={String(entity.id ?? `${entity.projectile.sourceWeaponId}_${entity.projectile.spawnTime}`)}
+          entity={entity}
+        />
+      ))}
+      {beams.map((entity) => (
+        <Beam key={String(entity.id ?? entity.beam.sourceWeaponId)} entity={entity} />
       ))}
     </group>
   );

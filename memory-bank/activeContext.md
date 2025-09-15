@@ -8,14 +8,15 @@
 ## Recent changes
 
 - Added seeded RNG helper and tests.
-- Drafted weapons ECS design doc and system skeletons.
+- Drafted weapons ECS design doc and system skeletons.\n- Projectiles and beams now spawn as physics-backed render entities.
 
 ## Next steps
 
-- Integrate weapon systems into `Simulation`.
+- Integrate weapon systems into Simulation.\n- Derive weapon aim vectors from targets so hitscan/projectiles connect.
 - Expand unit tests for cooldowns and projectile lifecycle.
 - Add more tasks to `memory-bank-/tasks/_index.md` as work items are discovered.
 
 ## Decisions
 
 - Rapier's RigidBody is authoritative for transforms; ECS components should read from Rapier each frame.
+

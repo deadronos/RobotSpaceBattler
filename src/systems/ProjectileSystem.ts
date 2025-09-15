@@ -1,9 +1,15 @@
 import type { World } from 'miniplex';
-import type { Rng } from '../utils/seededRng';
 
 import type { Entity } from '../ecs/miniplexStore';
-import type { ProjectileComponent, WeaponComponent, DamageEvent } from '../ecs/weapons';
+import type { DamageEvent,ProjectileComponent, WeaponComponent } from '../ecs/weapons';
+import type { Rng } from '../utils/seededRng';
 import type { WeaponFiredEvent } from './WeaponSystem';
+
+interface RigidBodyLike {
+  translation(): { x: number; y: number; z: number };
+  linvel(): { x: number; y: number; z: number };
+  setLinvel(velocity: { x: number; y: number; z: number }, wake: boolean): void;
+}
 
 /**
  * Projectile system for rocket weapons.
@@ -21,7 +27,7 @@ export function projectileSystem(
     if (fireEvent.type !== 'rocket') continue;
 
     // Find the weapon that fired to get projectile parameters
-    const weaponEntity = Array.from(world.entities).find(e => {
+    const weaponEntity = Array.from(world.entities).find((e) => {
       const entity = e as Entity & { weapon?: WeaponComponent };
       return entity.weapon?.id === fireEvent.weaponId;
     });
@@ -30,7 +36,7 @@ export function projectileSystem(
     const weapon = (weaponEntity as Entity & { weapon: WeaponComponent }).weapon;
 
     // Create projectile entity
-    const projectileEntity: Entity & { 
+    const projectileEntity: Entity & {
       projectile: ProjectileComponent;
       velocity: [number, number, number];
     } = {
@@ -60,14 +66,16 @@ export function projectileSystem(
 
   // Update existing projectiles
   for (const entity of world.entities) {
-    const e = entity as Entity & { 
+    const e = entity as Entity & {
       projectile?: ProjectileComponent;
       position?: [number, number, number];
       velocity?: [number, number, number];
+      rigid?: unknown;
     };
-    
+
     const { projectile, position, velocity } = e;
     if (!projectile || !position || !velocity) continue;
+    const rigid = e.rigid as unknown as RigidBodyLike | null;
 
     // Update lifetime
     const age = (Date.now() - projectile.spawnTime) / 1000;
@@ -76,15 +84,21 @@ export function projectileSystem(
       continue;
     }
 
-    // Update position
-    position[0] += velocity[0] * dt;
-    position[1] += velocity[1] * dt;
-    position[2] += velocity[2] * dt;
+    // Sync position with physics body when available
+    if (rigid) {
+      const translation = rigid.translation();
+      position[0] = translation.x;
+      position[1] = translation.y;
+      position[2] = translation.z;
+    } else {
+      position[0] += velocity[0] * dt;
+      position[1] += velocity[1] * dt;
+      position[2] += velocity[2] * dt;
+    }
 
     // Check for collisions (simplified)
     const hit = checkProjectileCollision(position, world, projectile.team);
     if (hit) {
-      // Apply damage
       if (projectile.aoeRadius && projectile.aoeRadius > 0) {
         // AoE damage
         applyAoEDamage(position, projectile.aoeRadius, projectile.damage, projectile.team, world, events);
@@ -99,17 +113,32 @@ export function projectileSystem(
         });
       }
 
-      // Remove projectile
       world.remove(entity);
+      continue;
     }
 
     // Handle homing behavior
-    if (projectile.homing && velocity) {
-      updateHomingBehavior(e as Entity & { 
-        projectile: ProjectileComponent;
-        position: [number, number, number];
-        velocity: [number, number, number];
-      }, world, dt, rng);
+    if (projectile.homing) {
+      updateHomingBehavior(
+        e as Entity & {
+          projectile: ProjectileComponent;
+          position: [number, number, number];
+          velocity: [number, number, number];
+        },
+        world,
+        dt,
+        rng,
+        rigid || undefined
+      );
+    } else if (rigid) {
+      const current = rigid.linvel();
+      if (
+        Math.abs(current.x - velocity[0]) > 0.0001 ||
+        Math.abs(current.y - velocity[1]) > 0.0001 ||
+        Math.abs(current.z - velocity[2]) > 0.0001
+      ) {
+        rigid.setLinvel({ x: velocity[0], y: velocity[1], z: velocity[2] }, true);
+      }
     }
 
     // Check bounds (remove if out of arena)
@@ -126,13 +155,13 @@ function checkProjectileCollision(
 ): { targetId: number } | null {
   // Simplified collision check - in real implementation would use Rapier ray sweep
   for (const entity of world.entities) {
-    const e = entity as Entity & { 
-      position?: [number, number, number]; 
+    const e = entity as Entity & {
+      position?: [number, number, number];
       team?: string;
       projectile?: ProjectileComponent;
       weapon?: WeaponComponent;
     };
-    
+
     // Skip other projectiles and weapon owners
     if (!e.position || !e.team || e.projectile || e.weapon) continue;
     if (e.team === projectileTeam) continue; // Skip friendly targets
@@ -140,12 +169,12 @@ function checkProjectileCollision(
     const [ex, ey, ez] = e.position;
     const [px, py, pz] = position;
     const distance = Math.sqrt((ex - px) ** 2 + (ey - py) ** 2 + (ez - pz) ** 2);
-    
-    if (distance < 1.0) { // Hit radius
+
+    if (distance < 1.0) {
       return { targetId: e.id as unknown as number };
     }
   }
-  
+
   return null;
 }
 
@@ -158,26 +187,26 @@ function applyAoEDamage(
   events: { damage: DamageEvent[] }
 ) {
   for (const entity of world.entities) {
-    const e = entity as Entity & { 
-      position?: [number, number, number]; 
+    const e = entity as Entity & {
+      position?: [number, number, number];
       team?: string;
       projectile?: ProjectileComponent;
       weapon?: WeaponComponent;
     };
-    
+
     // Skip projectiles and weapon owners
     if (!e.position || !e.team || e.projectile || e.weapon) continue;
     // TODO: Add friendly fire check based on game mode
-    
+
     const [ex, ey, ez] = e.position;
     const [cx, cy, cz] = center;
     const distance = Math.sqrt((ex - cx) ** 2 + (ey - cy) ** 2 + (ez - cz) ** 2);
-    
+
     if (distance <= radius) {
       // Distance-based damage falloff
-      const falloffFactor = 1 - (distance / radius);
+      const falloffFactor = 1 - distance / radius;
       const finalDamage = damage * falloffFactor;
-      
+
       events.damage.push({
         sourceId: 0, // TODO: Get from weapon source
         targetId: e.id as unknown as number,
@@ -189,53 +218,55 @@ function applyAoEDamage(
 }
 
 function updateHomingBehavior(
-  projectileEntity: Entity & { 
+  projectileEntity: Entity & {
     projectile: ProjectileComponent;
     position: [number, number, number];
     velocity: [number, number, number];
   },
   world: World<Entity>,
   dt: number,
-  rng: Rng
+  rng: Rng,
+  rigid?: RigidBodyLike
 ) {
   const { projectile, position, velocity } = projectileEntity;
-  if (!projectile.homing) return;
+  const homing = projectile.homing;
+  if (!homing) return;
 
   // Find target if not set
-  if (!projectile.homing.targetId) {
-    const targets = Array.from(world.entities).filter(e => {
+  if (!homing.targetId) {
+    const targets = Array.from(world.entities).filter((e) => {
       const entity = e as Entity & { team?: string; position?: [number, number, number] };
       return entity.team && entity.team !== projectile.team && entity.position;
     });
-    
+
     if (targets.length > 0) {
       const target = targets[Math.floor(rng() * targets.length)];
-      projectile.homing.targetId = target.id as unknown as number;
+      homing.targetId = target.id as unknown as number;
     }
   }
 
   // Steer towards target
-  if (projectile.homing.targetId) {
-    const target = Array.from(world.entities).find(e => 
-      (e.id as unknown as number) === projectile.homing!.targetId
+  if (homing.targetId) {
+    const target = Array.from(world.entities).find(
+      (e) => (e.id as unknown as number) === homing.targetId
     ) as Entity & { position?: [number, number, number] };
-    
+
     if (target?.position) {
       const [tx, ty, tz] = target.position;
       const [px, py, pz] = position;
-      
+
       const toTarget = [tx - px, ty - py, tz - pz];
       const distance = Math.sqrt(toTarget[0] ** 2 + toTarget[1] ** 2 + toTarget[2] ** 2);
-      
+
       if (distance > 0) {
         const normalized = [toTarget[0] / distance, toTarget[1] / distance, toTarget[2] / distance];
-        const turnSpeed = projectile.homing.turnSpeed;
-        
+        const turnSpeed = homing.turnSpeed;
+
         // Lerp velocity towards target direction
         velocity[0] = velocity[0] * (1 - turnSpeed * dt) + normalized[0] * turnSpeed * dt;
         velocity[1] = velocity[1] * (1 - turnSpeed * dt) + normalized[1] * turnSpeed * dt;
         velocity[2] = velocity[2] * (1 - turnSpeed * dt) + normalized[2] * turnSpeed * dt;
-        
+
         // Maintain speed
         const speed = projectile.speed || 20;
         const currentSpeed = Math.sqrt(velocity[0] ** 2 + velocity[1] ** 2 + velocity[2] ** 2);
@@ -243,6 +274,10 @@ function updateHomingBehavior(
           velocity[0] = (velocity[0] / currentSpeed) * speed;
           velocity[1] = (velocity[1] / currentSpeed) * speed;
           velocity[2] = (velocity[2] / currentSpeed) * speed;
+        }
+
+        if (rigid) {
+          rigid.setLinvel({ x: velocity[0], y: velocity[1], z: velocity[2] }, true);
         }
       }
     }

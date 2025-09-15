@@ -1,4 +1,3 @@
-import type { Entity } from './miniplexStore';
 
 export type WeaponType = 'gun' | 'laser' | 'rocket';
 
