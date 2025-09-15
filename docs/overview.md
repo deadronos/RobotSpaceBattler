@@ -11,6 +11,7 @@
 - `src/main.tsx`: boots React and mounts `App`.
 - `src/App.tsx`: lays out fullscreen scene; includes a pause/resume button and a status HUD.
 - `src/components/Scene.tsx`: creates the Three.js `Canvas`, lights, orbit controls; wraps `Simulation` in `Physics`.
+- Rapier bindings are imported statically (`@react-three/rapier` components and `Physics`). This avoids dynamic import races in headless/CI and ensures a single module instance.
 - `src/components/Simulation.tsx`: spawns robots, holds the per-frame AI/steering loop, renders ground and robots.
 
 ## Simulation & ECS

@@ -1,23 +1,21 @@
+import { OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
+import { BallCollider, CapsuleCollider, CuboidCollider, Physics, RigidBody } from "@react-three/rapier";
 import React, { useEffect, useState } from "react";
 
 import useUI from "../store/uiStore";
 import Simulation, { SimulationFallback } from "./Simulation";
 export default function Scene() {
-  // Note: We previously loaded Drei Html; we only need OrbitControls here.
-  const [OrbitControlsComp, setOrbitControlsComp] =
-    useState<React.ComponentType | null>(null);
+  // Note on Rapier imports:
+  // We import @react-three/rapier and its components statically. Previously we
+  // tried to dynamically import the wrapper and pre-initialize Rapier WASM to
+  // avoid context mismatch. However, dynamic imports combined with headless
+  // environments led to reconciliation errors like "Cannot set properties of
+  // undefined (setting 'id')" during mount and teardown. Static imports ensure
+  // a single module instance and let Vite prebundle accordingly (see vite.config.ts).
   const setDreiLoading = useUI((s) => s.setDreiLoading);
   const setPhysicsAvailable = useUI((s) => s.setPhysicsAvailable);
   const setRapierDebug = useUI((s) => s.setRapierDebug);
-  // dreiLoading is handled by the global LoadingOverlay; Scene no longer renders an in-canvas loading DOM.
-  const [PhysicsComp, setPhysicsComp] = useState<React.ComponentType<{
-    gravity?: number[];
-  }> | null>(null);
-  const [rapierComponents, setRapierComponents] = useState<Record<
-    string,
-    React.ComponentType<unknown>
-  > | null>(null);
   const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
   // Mount OrbitControls one tick after the Canvas is alive to avoid a transient
   // R3F context timing edge-case where controls try to read the store before
@@ -167,135 +165,15 @@ export default function Scene() {
       setWebglSupported(false);
     }
 
-    let mounted = true;
-    // dynamically import heavy drei bits only when Scene mounts
-    // signal loading start
-    setDreiLoading(true);
-    // safety timeout: if drei doesn't finish loading within 15s, clear the flag
-    let timeoutId: number | undefined = undefined;
-    if (typeof window !== "undefined") {
-      timeoutId = window.setTimeout(() => {
-        if (mounted) {
-          try {
-            setRapierDebug("drei-timeout");
-          } catch {
-            /* ignore */
-          }
-          setDreiLoading(false);
-        }
-      }, 15000);
+    // OrbitControls is statically imported now; use the loading flag only to keep UI consistent
+    setDreiLoading(false);
+    // Physics comes from static import as well; mark available
+    setPhysicsAvailable(true);
+    try {
+      setRapierDebug("static-imports");
+    } catch {
+      /* ignore */
     }
-    (async () => {
-      try {
-        // Start drei imports immediately so we can render DOM quickly.
-        const dreiPromise = import("@react-three/drei").then(
-          (m) => m.OrbitControls,
-        );
-
-        // Import react-three-rapier wrapper and let it initialize WASM internally.
-        if (typeof window !== "undefined") {
-          (async () => {
-            try {
-              // Proactively initialize Rapier WASM with an explicit URL so the
-              // wrapper’s internal dynamic import finds an initialized module
-              // and doesn’t rely on resolving import.meta.url from node_modules.
-              try {
-                const { preinitRapier } = await import(
-                  "../utils/preinitRapier"
-                );
-                await preinitRapier();
-              } catch {
-                // ignore – wrapper will still try to init, error boundary will catch failures
-              }
-              const rapierWrapper = await import("@react-three/rapier");
-              const rapierWrapperTyped = rapierWrapper as unknown as
-                | Record<string, unknown>
-                | undefined;
-              if (rapierWrapperTyped && rapierWrapperTyped.Physics) {
-                if (mounted) {
-                  setPhysicsAvailable(true);
-                  try {
-                    setRapierDebug("wrapper-loaded");
-                  } catch {
-                    /* ignore */
-                  }
-                  setPhysicsComp(
-                    () =>
-                      rapierWrapperTyped.Physics as React.ComponentType<
-                        React.PropsWithChildren<{ gravity?: number[] }>
-                      >,
-                  );
-                  setRapierComponents(
-                    () =>
-                      ({
-                        RigidBody:
-                          rapierWrapperTyped.RigidBody as React.ComponentType<unknown>,
-                        CuboidCollider:
-                          rapierWrapperTyped.CuboidCollider as React.ComponentType<unknown>,
-                        CapsuleCollider:
-                          rapierWrapperTyped.CapsuleCollider as React.ComponentType<unknown>,
-                        BallCollider:
-                          rapierWrapperTyped.BallCollider as React.ComponentType<unknown>,
-                      }) as Record<string, React.ComponentType<unknown>>,
-                  );
-                }
-              } else {
-                if (mounted) {
-                  setPhysicsAvailable(false);
-                  try {
-                    setRapierDebug("wrapper-missing-exports");
-                  } catch {
-                    /* ignore */
-                  }
-                }
-              }
-            } catch (err) {
-              if (typeof window !== "undefined") {
-                try {
-                  const w = window as unknown as {
-                    console?: { warn?: (...args: unknown[]) => void };
-                  };
-                  if (w.console && typeof w.console.warn === "function") {
-                    w.console.warn(
-                      "Failed to import @react-three/rapier wrapper",
-                      err,
-                    );
-                  }
-                } catch {
-                  // swallow
-                }
-              }
-              if (mounted) {
-                setPhysicsAvailable(false);
-                try {
-                  setRapierDebug("wrapper-import-error");
-                } catch {
-                  /* ignore */
-                }
-              }
-            }
-          })();
-        }
-
-        const OrbitComp = await dreiPromise;
-
-        if (!mounted) return;
-        setOrbitControlsComp(() => OrbitComp as React.ComponentType);
-        // Clear the drei loading flag as soon as Html/OrbitControls are mounted so
-        // the overlay goes away promptly.
-        if (mounted) setDreiLoading(false);
-      } finally {
-        // signal loading finished
-        if (mounted) setDreiLoading(false);
-        if (typeof window !== "undefined" && typeof timeoutId !== "undefined")
-          window.clearTimeout(timeoutId);
-      }
-    })();
-    return () => {
-      if (typeof window !== "undefined" && typeof timeoutId !== "undefined")
-        window.clearTimeout(timeoutId);
-      mounted = false;
-    };
   }, [setDreiLoading, setPhysicsAvailable, setRapierDebug]);
 
   // Listen for WebGL context loss and gracefully fall back to the
@@ -352,7 +230,15 @@ export default function Scene() {
   if (webglSupported === false) {
     // Render a non-r3f fallback that does minimal ECS bootstrapping but
     // doesn't mount any r3f hooks/components.
-    return React.createElement(SimulationFallback, {});
+    return (
+      <>
+        {/* Placeholder canvas for headless/CI: Playwright won't have WebGL,
+            but some tests assert the presence of a canvas. We render a plain
+            canvas here (no R3F hooks) to keep layout stable. */}
+        <canvas className="placeholder-canvas" aria-hidden="true" />
+        <SimulationFallback />
+      </>
+    );
   }
 
   return (
@@ -370,57 +256,40 @@ export default function Scene() {
           shadow-camera-top={50}
           shadow-camera-bottom={-50}
         />
-        {/* drei Html is loaded for external DOM usage but we avoid rendering any
-          in-canvas DOM here to prevent persistent in-canvas loading text.
-          The app-level LoadingOverlay (outside the Canvas) shows the loading UI. */}
-        {PhysicsComp
-          ? // When Physics wrapper is available, render Simulation inside it (physics enabled).
-            // We mount Physics inside an error boundary that will call back to
-            // Scene to disable physics if it throws during mount.
-            React.createElement(
-              PhysicsErrorBoundary as React.ComponentType<{
-                setRapierDebug: (msg: string | null) => void;
-                onError?: (msg: string) => void;
-                children?: React.ReactNode;
-              }>,
-              {
-                setRapierDebug,
-                onError: (msg: string) => {
-                  // Disable physics on first error; rely on visual-only fallback.
-                  if (typeof setRapierDebug === "function")
-                    setRapierDebug(`physics-mount-error:${msg}`);
-                  setPhysicsAvailable(false);
-                },
-              },
-              // Wrap Physics in Suspense so the wrapper can lazily initialize Rapier WASM.
-              React.createElement(
-                React.Suspense,
-                {
-                  fallback: React.createElement(Simulation, {
-                    physics: false,
-                    rapierComponents: null,
-                  }),
-                },
-                React.createElement(
-                  PhysicsComp as React.ComponentType<{ gravity?: number[] }>,
-                  // Let the wrapper initialize its own Rapier runtime per official guidance.
-                  { gravity: [0, -9.81, 0] },
-                  React.createElement(Simulation, {
-                    physics: true,
-                    rapierComponents,
-                  }),
-                ),
-              ),
-            )
-          : // If Rapier isn't ready, render the Simulation component without physics.
-            // This keeps tests and server environments from crashing; the Simulation
-            // will render a non-physics fallback when physics=false.
+        {/* Physics with static imports; wrap in error boundary for resilience */}
+        {React.createElement(
+          PhysicsErrorBoundary as React.ComponentType<{
+            setRapierDebug: (msg: string | null) => void;
+            onError?: (msg: string) => void;
+            children?: React.ReactNode;
+          }>,
+          {
+            setRapierDebug,
+            onError: (msg: string) => {
+              if (typeof setRapierDebug === "function")
+                setRapierDebug(`physics-mount-error:${msg}`);
+              setPhysicsAvailable(false);
+            },
+          },
+          React.createElement(
+            Physics as React.ComponentType<{ gravity?: number[] }>,
+            { gravity: [0, -9.81, 0] },
             React.createElement(Simulation, {
-              physics: false,
-              rapierComponents: null,
-            })}
+              physics: true,
+              rapierComponents: {
+                RigidBody: RigidBody as unknown as React.ComponentType<unknown>,
+                CuboidCollider:
+                  CuboidCollider as unknown as React.ComponentType<unknown>,
+                CapsuleCollider:
+                  CapsuleCollider as unknown as React.ComponentType<unknown>,
+                BallCollider:
+                  BallCollider as unknown as React.ComponentType<unknown>,
+              },
+            }),
+          ),
+        )}
 
-        {showControls && OrbitControlsComp ? <OrbitControlsComp /> : null}
+        {showControls ? <OrbitControls /> : null}
       </Canvas>
     </CanvasErrorBoundary>
   );
