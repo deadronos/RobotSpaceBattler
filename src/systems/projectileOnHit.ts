@@ -16,7 +16,21 @@ export function handleProjectileHit(
   );
   if (victim && victim.team !== proj.team && victim.health) {
     victim.health.hp -= proj.projectile!.damage;
-    storeRef.remove(proj);
+    // Defer removal to the cleanup system to avoid mutating Rapier world
+    // during collision callbacks (which can be in the middle of a physics step).
+    // Signal expiry by setting TTL to 0 and mark for defensive cleanup.
+    try {
+      if (proj.projectile) proj.projectile.ttl = 0;
+      // mark as destroying to clear any stored rapier refs
+      try {
+        // dynamic import to avoid circular deps and make this util optional
+        // for tests.
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        import('../utils/rapierCleanup').then((m) => {
+          try { m.markEntityDestroying(proj as unknown as any); } catch { /* ignore */ }
+        }).catch(() => { /* ignore */ });
+      } catch { /* ignore */ }
+    } catch { /* ignore */ }
   }
 }
 

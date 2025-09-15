@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react-swc'
 
 // plugins we'll add
 import svgr from 'vite-plugin-svgr'
-import wasm from 'vite-plugin-wasm'
 import glsl from 'vite-plugin-glsl'
 import checker from 'vite-plugin-checker'
 import AutoImport from 'unplugin-auto-import/vite'
@@ -12,7 +11,6 @@ import { setupPlugins as responsiveSetupPlugins } from '@responsive-image/vite-p
 
 export default defineConfig({
   plugins: [
-    wasm(),
     react(),
     svgr(),
     glsl(),
@@ -25,6 +23,12 @@ export default defineConfig({
       // keep other default config; customize in future if needed
     })
   ],
+  optimizeDeps: {
+    // Ensure Vite prebundles the Rapier compat module once so static and
+    // dynamic imports resolve to the same instance (avoids duplicate module
+    // closures where `init` runs in one and `EventQueue` is created in another).
+    include: ['@dimforge/rapier3d-compat']
+  },
   server: {
     port: 5173
   },
@@ -35,7 +39,7 @@ export default defineConfig({
           if (id.includes('node_modules')) {
             if (id.includes('three')) return 'vendor_three'
             if (id.includes('@react-three')) return 'vendor_r3'
-            if (id.includes('@dimforge/rapier3d') || id.includes('@react-three/rapier') || id.includes('rapier')) return 'vendor_rapier'
+            if (id.includes('@react-three/rapier') || id.includes('rapier')) return 'vendor_rapier'
             if (id.includes('miniplex')) return 'vendor_miniplex'
             return 'vendor'
           }

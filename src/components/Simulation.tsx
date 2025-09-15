@@ -3,13 +3,13 @@ import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 import store from "../ecs/miniplexStore";
-import { markEntityDestroying } from "../utils/rapierCleanup";
 import type { Entity } from "../ecs/types";
 import Robot from "../robots/RobotFactory";
 import useUI from "../store/uiStore";
 import { syncRigidBodiesToECS } from "../systems/physicsSync";
 import { cleanupProjectiles } from "../systems/projectileCleanup";
 import { handleProjectileHit } from "../systems/projectileOnHit";
+import { markEntityDestroying } from "../utils/rapierCleanup";
 import Projectile from "./Projectile";
 
 // Entity type is imported from ecs/types
@@ -122,13 +122,29 @@ export default function Simulation({ physics = true, rapierComponents = null }: 
         else ui.addKill("red");
         try {
           // Mark entity as destroying and clear Rapier refs before removal.
-          try { markEntityDestroying(ent); } catch {
+          try {
+            markEntityDestroying(ent);
+          } catch {
             // fallback: best-effort deletion
-            try { delete (ent as any).rb; } catch {}
-            try { delete (ent as any).collider; } catch {}
-            try { (ent as any).__destroying = true; } catch {}
+            try {
+              delete (ent as unknown as Record<string, unknown>).rb;
+            } catch {
+              /* ignore */
+            }
+            try {
+              delete (ent as unknown as Record<string, unknown>).collider;
+            } catch {
+              /* ignore */
+            }
+            try {
+              (ent as unknown as Record<string, unknown>).__destroying = true as unknown as never;
+            } catch {
+              /* ignore */
+            }
           }
-        } catch {}
+        } catch {
+          /* ignore */
+        }
         store.remove(ent);
       }
     }
@@ -272,13 +288,16 @@ export default function Simulation({ physics = true, rapierComponents = null }: 
         {[...store.entities.values()]
           .filter((e) => !e.projectile)
           .map((e) => (
-        <Robot
+            <Robot
               key={e.id}
-          id={e.id}
+              id={e.id}
               team={e.team}
               initialPos={new THREE.Vector3(...(e.position as number[]))}
               muzzleFlash={!!e.fx?.muzzleTimer && e.fx.muzzleTimer > 0}
-          rapierComponents={rapierComponents}
+              // Ensure robots render visually when physics are disabled or
+              // rapier components aren't ready yet.
+              physics={Boolean(physics && rapierComponents && rapierComponents.RigidBody)}
+              rapierComponents={rapierComponents}
               onRigidBodyReady={(rb) => {
                 // attach rapier api to the entity so AI system can access it
                 const ent = [...store.entities.values()].find(
@@ -300,6 +319,8 @@ export default function Simulation({ physics = true, rapierComponents = null }: 
               id={p.id}
               team={p.team}
               position={{ x: p.position[0], y: p.position[1], z: p.position[2] }}
+              // Render projectile visuals without physics until rapier components are ready
+              physics={Boolean(physics && rapierComponents && rapierComponents.RigidBody)}
               rapierComponents={rapierComponents}
               velocity={p.projectile!.velocity}
               onRigidBodyReady={(rb) => {
@@ -337,7 +358,7 @@ export default function Simulation({ physics = true, rapierComponents = null }: 
 // performs minimal ECS bootstrapping (spawning entities) but does not render
 // any r3f elements or call r3f hooks, so it is safe to mount outside a
 // <Canvas>. It keeps the UI working (counts/status) in headless/CI runs.
-export function SimulationFallback({ physics = false }: { physics?: boolean }) {
+export function SimulationFallback(): null {
   useEffect(() => {
     // spawn robots if not already present
     const spacing = 3;
@@ -345,7 +366,7 @@ export function SimulationFallback({ physics = false }: { physics?: boolean }) {
       const rx = -12 + (i % 5) * spacing;
       const rz = -5 + Math.floor(i / 5) * spacing;
       const id = `red-${i}`;
-      const exists = [...store.entities.values()].some((e: any) => e.id === id);
+      const exists = [...store.entities.values()].some((e: Entity) => e.id === id);
       if (!exists) {
         store.add({
           id,
@@ -361,7 +382,7 @@ export function SimulationFallback({ physics = false }: { physics?: boolean }) {
       const rx = 12 - (i % 5) * spacing;
       const rz = 5 - Math.floor(i / 5) * spacing;
       const id = `blue-${i}`;
-      const exists = [...store.entities.values()].some((e: any) => e.id === id);
+      const exists = [...store.entities.values()].some((e: Entity) => e.id === id);
       if (!exists) {
         store.add({
           id,
@@ -377,8 +398,8 @@ export function SimulationFallback({ physics = false }: { physics?: boolean }) {
     // Update UI counts once after spawn
     try {
       const ui = useUI.getState();
-      const redAlive = [...store.entities.values()].filter((e: any) => e.team === 'red' && e.health).length;
-      const blueAlive = [...store.entities.values()].filter((e: any) => e.team === 'blue' && e.health).length;
+      const redAlive = [...store.entities.values()].filter((e: Entity) => e.team === 'red' && e.health).length;
+      const blueAlive = [...store.entities.values()].filter((e: Entity) => e.team === 'blue' && e.health).length;
       ui.setCounts(redAlive, blueAlive);
     } catch {
       // ignore if UI store unavailable
