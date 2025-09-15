@@ -2,18 +2,18 @@
 
 ## Current focus
 
-- Stabilize simulation authority between Rapier RigidBody and the ECS.
-- Improve test coverage for core systems (spawning, physics sync, projectile lifecycle).
+- Build a unified weapons ECS (guns, lasers, rockets) on top of miniplex.
+- Maintain deterministic simulation utilities.
 
 ## Recent changes
 
-- Added memory-bank scaffolding and developer guidance.
-- Small refactors to `src/components/Simulation.tsx` to make systems easier to test (see commit history).
+- Added seeded RNG helper and tests.
+- Drafted weapons ECS design doc and system skeletons.
 
 ## Next steps
 
-- Add a deterministic RNG helper for seeded simulation tests.
-- Increase unit tests for `physicsSync` and AI tick systems.
+- Integrate weapon systems into `Simulation`.
+- Expand unit tests for cooldowns and projectile lifecycle.
 - Add more tasks to `memory-bank-/tasks/_index.md` as work items are discovered.
 
 ## Decisions
