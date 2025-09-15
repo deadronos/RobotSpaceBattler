@@ -48,6 +48,7 @@ export type Entity = Partial<
     Weapon &
     RobotStats &
     Target & {
+      id: string | number;
       team: Team;
     } &
     RigidBodyRef &
