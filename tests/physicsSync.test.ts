@@ -28,7 +28,8 @@ describe('syncRigidBodiesToECS', () => {
 
     fakeStore.entities.set('e1', ent)
 
-    syncRigidBodiesToECS()
+  // pass the fakeStore directly to avoid any runtime module resolution
+  syncRigidBodiesToECS(fakeStore)
 
     expect(ent.position).toEqual([1.5, -2.25, 3])
   })
@@ -37,7 +38,7 @@ describe('syncRigidBodiesToECS', () => {
     const ent: AnyEntity = { id: 'e2', position: [0, 0, 0] }
     fakeStore.entities.set('e2', ent)
 
-    syncRigidBodiesToECS()
+  syncRigidBodiesToECS(fakeStore)
 
     expect(ent.position).toEqual([0, 0, 0])
   })
@@ -50,7 +51,7 @@ describe('syncRigidBodiesToECS', () => {
     }
     fakeStore.entities.set('e3', ent)
 
-    expect(() => syncRigidBodiesToECS()).not.toThrow()
+  expect(() => syncRigidBodiesToECS(fakeStore)).not.toThrow()
     // position should remain unchanged because length < 3
     expect(ent.position).toEqual([0, 0])
   })

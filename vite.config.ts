@@ -23,6 +23,12 @@ export default defineConfig({
       // keep other default config; customize in future if needed
     })
   ],
+  optimizeDeps: {
+    // Ensure Vite prebundles the Rapier compat module once so static and
+    // dynamic imports resolve to the same instance (avoids duplicate module
+    // closures where `init` runs in one and `EventQueue` is created in another).
+    include: ['@dimforge/rapier3d-compat']
+  },
   server: {
     port: 5173
   },
@@ -33,7 +39,7 @@ export default defineConfig({
           if (id.includes('node_modules')) {
             if (id.includes('three')) return 'vendor_three'
             if (id.includes('@react-three')) return 'vendor_r3'
-            if (id.includes('@dimforge/rapier3d') || id.includes('@react-three/rapier') || id.includes('rapier')) return 'vendor_rapier'
+            if (id.includes('@react-three/rapier') || id.includes('rapier')) return 'vendor_rapier'
             if (id.includes('miniplex')) return 'vendor_miniplex'
             return 'vendor'
           }

@@ -9,8 +9,27 @@ export type RapierApi = {
 };
 
 export function extractRapierApi(node: unknown): RapierApi | undefined {
-  const maybe = node as { rigidBody?: RapierApi } | null;
-  return maybe?.rigidBody;
+  if (!node) return undefined;
+  // common shapes we see at runtime:
+  // - the wrapper places the api directly on the node: node.rigidBody
+  // - React refs may wrap it as { current: { rigidBody } }
+  // - some runtimes provide the api as the ref.current itself
+  try {
+    const asAny = node as any;
+    // direct property
+    if (asAny.rigidBody) return asAny.rigidBody as RapierApi;
+    // ref object from useRef({ current: ... }) or forwarded ref
+    if (asAny.current) {
+      const cur = asAny.current as any;
+      if (cur.rigidBody) return cur.rigidBody as RapierApi;
+      // sometimes the ref current is the api itself
+      return (cur as RapierApi) || undefined;
+    }
+    // node itself might already be the API
+    return (asAny as RapierApi) || undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export type Entity = {

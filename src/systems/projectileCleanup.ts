@@ -1,5 +1,6 @@
 import store from "../ecs/miniplexStore";
 import type { Entity } from "../ecs/types";
+import { markEntityDestroying } from "../utils/rapierCleanup";
 
 // Extracted projectile cleanup so it can be unit tested.
 export function cleanupProjectiles(delta: number, storeRef = store) {
@@ -17,6 +18,7 @@ export function cleanupProjectiles(delta: number, storeRef = store) {
       pos.y < -10 ||
       pos.y > 100;
     if (p.projectile.ttl <= 0 || OOB) {
+      try { markEntityDestroying(p as unknown as any); } catch { /* ignore */ }
       storeRef.remove(p);
     }
   }

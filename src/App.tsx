@@ -1,40 +1,21 @@
 import React from "react";
 
 import Scene from "./components/Scene";
-import useUI from "./store/uiStore";
+import LoadingOverlay from "./components/ui/LoadingOverlay";
+import PauseControl from "./components/ui/PauseControl";
+import StatusBox from "./components/ui/StatusBox";
+import DevDiagnostics from "./components/ui/DevDiagnostics";
 
 export default function App() {
-  const { paused, togglePause, redAlive, blueAlive, redKills, blueKills } =
-    useUI();
+  // UI state is now read inside each small component via the zustand store
 
   return (
-    <div style={{ height: "100vh", width: "100vw", position: "relative" }}>
+    <div className="app-root">
       <Scene />
-      <div style={{ position: "absolute", left: 12, top: 12 }}>
-        <button onClick={togglePause} style={{ padding: "8px 12px" }}>
-          {paused ? "Resume" : "Pause"}
-        </button>
-      </div>
-      <div
-        id="status"
-        style={{
-          position: "absolute",
-          right: 12,
-          top: 12,
-          padding: 8,
-          background: "rgba(0,0,0,0.4)",
-          borderRadius: 6,
-          color: "white",
-          lineHeight: 1.3,
-        }}
-      >
-        <div>
-          Space Station — {redAlive} vs {blueAlive}
-        </div>
-        <div>
-          Kills: Red {redKills} • Blue {blueKills}
-        </div>
-      </div>
+      <PauseControl />
+      <LoadingOverlay />
+  <StatusBox />
+  <DevDiagnostics />
     </div>
   );
 }

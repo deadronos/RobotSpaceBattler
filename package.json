@@ -30,7 +30,7 @@
     ]
   },
   "dependencies": {
-    "@dimforge/rapier3d": "^0.19.0",
+    "@dimforge/rapier3d-compat": "^0.15.0",
     "@react-three/drei": "^10.7.6",
     "@react-three/fiber": "^9.3.0",
     "@react-three/postprocessing": "^3.0.4",
@@ -40,6 +40,18 @@
     "react-dom": "^19.1.1",
     "three": "^0.180.0",
     "zustand": "^5.0.8"
+  },
+  "overrides": {
+    "@dimforge/rapier3d-compat": "0.15.0",
+    "@react-three/rapier": {
+      "@dimforge/rapier3d-compat": "0.15.0"
+    },
+    "@react-three/drei": {
+      "@dimforge/rapier3d-compat": "0.15.0"
+    },
+    "@types/three": {
+      "@dimforge/rapier3d-compat": "0.15.0"
+    }
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",
@@ -79,6 +91,7 @@
     "vite-plugin-checker": "latest",
     "vite-plugin-glsl": "latest",
     "vite-plugin-svgr": "latest",
+    "vite-plugin-wasm": "^3.5.0",
     "vitest": "^3.2.4"
   }
 }
