@@ -84,8 +84,10 @@ describe('cleanupProjectiles', () => {
 
     // Use the exported helper to perform hit handling
     handleProjectileHit(proj as any, victimRb as any, fakeStore as any)
-
+    // Damage should be applied immediately, but removal is deferred to cleanup
     expect(victim.health.hp).toBe(7)
+    // Run a cleanup tick to remove the projectile with ttl=0
+    cleanupProjectiles(0.016, fakeStore as any)
     expect(fakeStore.entities.has(proj.id)).toBe(false)
   })
 })

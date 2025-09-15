@@ -1,12 +1,11 @@
 /// <reference types="vite/client" />
 
-declare module '*.wasm?url' {
+declare module "*.wasm?url" {
   const url: string;
   export default url;
 }
 
-declare module '*.wasm' {
+declare module "*.wasm" {
   const url: string;
   export default url;
 }
-

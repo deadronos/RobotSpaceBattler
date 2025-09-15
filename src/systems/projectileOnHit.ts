@@ -11,9 +11,7 @@ export function handleProjectileHit(
   storeRef: World<Entity>,
 ) {
   const ents = [...storeRef.entities.values()];
-  const victim = ents.find(
-    (e) => (e as unknown as { rb?: unknown }).rb === other,
-  );
+  const victim = ents.find((e) => (e as { rb?: unknown }).rb === other);
   if (victim && victim.team !== proj.team && victim.health) {
     victim.health.hp -= proj.projectile!.damage;
     // Defer removal to the cleanup system to avoid mutating Rapier world
@@ -25,12 +23,26 @@ export function handleProjectileHit(
       try {
         // dynamic import to avoid circular deps and make this util optional
         // for tests.
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        import('../utils/rapierCleanup').then((m) => {
-          try { m.markEntityDestroying(proj as unknown as any); } catch { /* ignore */ }
-        }).catch(() => { /* ignore */ });
-      } catch { /* ignore */ }
-    } catch { /* ignore */ }
+
+        import("../utils/rapierCleanup")
+          .then((m) => {
+            try {
+              m.markEntityDestroying(
+                proj as unknown as Record<string, unknown>,
+              );
+            } catch {
+              /* ignore */
+            }
+          })
+          .catch(() => {
+            /* ignore */
+          });
+      } catch {
+        /* ignore */
+      }
+    } catch {
+      /* ignore */
+    }
   }
 }
 

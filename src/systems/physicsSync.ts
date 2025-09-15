@@ -1,4 +1,4 @@
-import store from '../ecs/miniplexStore';
+import store from "../ecs/miniplexStore";
 import type { Entity } from "../ecs/types";
 
 // Mirrors Rapier RigidBody translations back into ECS entity.position arrays.
@@ -7,7 +7,8 @@ import type { Entity } from "../ecs/types";
 export function syncRigidBodiesToECS(overrideStore?: { entities?: unknown }) {
   // Minimal runtime accessor for the store shape we use in systems/tests
   type MinimalStore = { entities?: unknown };
-  const minimal: MinimalStore = (overrideStore ?? (store as unknown)) as MinimalStore;
+  const minimal: MinimalStore = (overrideStore ??
+    (store as unknown)) as MinimalStore;
   // miniplex's World has entities as an array; older or alternative shapes
   // might expose a Map-like object; handle both defensively.
   let ents: Entity[] = [];
@@ -16,7 +17,7 @@ export function syncRigidBodiesToECS(overrideStore?: { entities?: unknown }) {
   } else if (minimal.entities) {
     type HasValues = { values: () => Iterable<unknown> };
     const hv = minimal.entities as HasValues;
-    if (typeof hv.values === 'function') {
+    if (typeof hv.values === "function") {
       ents = [...hv.values()] as Entity[];
     }
   }

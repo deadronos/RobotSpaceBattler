@@ -1,9 +1,9 @@
-import React, { useCallback, useRef, useEffect } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import * as THREE from "three";
 
+import store from "../ecs/miniplexStore";
 import type { RapierApi } from "../ecs/types";
 import { extractRapierApi } from "../ecs/types";
-import store from "../ecs/miniplexStore";
 
 type Props = {
   id?: string;
@@ -54,21 +54,57 @@ export default function Robot({
     return () => {
       try {
         if (!id) return;
-        const ent = [...store.entities.values()].find((e: any) => e.id === id);
+        const ent = [...store.entities.values()].find(
+          (e) => (e as { id?: string }).id === id,
+        );
         if (ent) {
           try {
             // lazy dynamic import to avoid circular import during tests
-            import('../utils/rapierCleanup').then((mod) => {
-              try { mod.markEntityDestroying(ent); } catch {}
-            }).catch(() => {
-              try { delete (ent as any).rb; } catch {}
-              try { delete (ent as any).collider; } catch {}
-              try { (ent as any).__destroying = true; } catch {}
-            });
+            import("../utils/rapierCleanup")
+              .then((mod) => {
+                try {
+                  mod.markEntityDestroying(
+                    ent as unknown as Record<string, unknown>,
+                  );
+                } catch {
+                  /* ignore */
+                }
+              })
+              .catch(() => {
+                try {
+                  delete (ent as unknown as Record<string, unknown>).rb;
+                } catch {
+                  /* ignore */
+                }
+                try {
+                  delete (ent as unknown as Record<string, unknown>).collider;
+                } catch {
+                  /* ignore */
+                }
+                try {
+                  (ent as unknown as Record<string, unknown>).__destroying =
+                    true as unknown as never;
+                } catch {
+                  /* ignore */
+                }
+              });
           } catch {
-            try { delete (ent as any).rb; } catch {}
-            try { delete (ent as any).collider; } catch {}
-            try { (ent as any).__destroying = true; } catch {}
+            try {
+              delete (ent as unknown as Record<string, unknown>).rb;
+            } catch {
+              /* ignore */
+            }
+            try {
+              delete (ent as unknown as Record<string, unknown>).collider;
+            } catch {
+              /* ignore */
+            }
+            try {
+              (ent as unknown as Record<string, unknown>).__destroying =
+                true as unknown as never;
+            } catch {
+              /* ignore */
+            }
           }
         }
       } catch {
@@ -128,60 +164,76 @@ export default function Robot({
     rapierComponents && rapierComponents.RigidBody ? (
       React.createElement(
         rapierComponents.RigidBody,
-        ({ ref: setRef, position: [initialPos.x, initialPos.y, initialPos.z], restitution: 0.0, friction: 1.0, colliders: false, mass: 4, enabledRotations: [false, true, false], linearDamping: 0.5, angularDamping: 1.0 } as unknown as Record<string, unknown>),
+        {
+          ref: setRef,
+          position: [initialPos.x, initialPos.y, initialPos.z],
+          restitution: 0.0,
+          friction: 1.0,
+          colliders: false,
+          mass: 4,
+          enabledRotations: [false, true, false],
+          linearDamping: 0.5,
+          angularDamping: 1.0,
+        } as unknown as Record<string, unknown>,
         // explicit capsule collider for stable ground contact
-        rapierComponents.CapsuleCollider ? React.createElement(rapierComponents.CapsuleCollider, ({ args: [0.6, 0.35] } as unknown as Record<string, unknown>)) : null,
+        rapierComponents.CapsuleCollider
+          ? React.createElement(rapierComponents.CapsuleCollider, {
+              args: [0.6, 0.35],
+            } as unknown as Record<string, unknown>)
+          : null,
         // simple procedural humanoid-ish robot made with boxes and cylinders
         React.createElement(
-          'group',
+          "group",
           { castShadow: true, receiveShadow: true },
           React.createElement(
-            'mesh',
+            "mesh",
             { position: [0, 0.9, 0], castShadow: true },
-            React.createElement('boxGeometry', { args: [0.9, 1.2, 0.6] }),
-            React.createElement('meshStandardMaterial', { color }),
+            React.createElement("boxGeometry", { args: [0.9, 1.2, 0.6] }),
+            React.createElement("meshStandardMaterial", { color }),
           ),
           React.createElement(
-            'mesh',
+            "mesh",
             { position: [0, 1.8, 0], castShadow: true },
-            React.createElement('boxGeometry', { args: [0.5, 0.5, 0.5] }),
-            React.createElement('meshStandardMaterial', { color: '#222' }),
+            React.createElement("boxGeometry", { args: [0.5, 0.5, 0.5] }),
+            React.createElement("meshStandardMaterial", { color: "#222" }),
           ),
           React.createElement(
-            'mesh',
+            "mesh",
             { position: [-0.9, 0.9, 0], castShadow: true },
-            React.createElement('cylinderGeometry', { args: [0.12, 0.12, 0.8, 8] }),
-            React.createElement('meshStandardMaterial', { color: '#999' }),
+            React.createElement("cylinderGeometry", {
+              args: [0.12, 0.12, 0.8, 8],
+            }),
+            React.createElement("meshStandardMaterial", { color: "#999" }),
           ),
           React.createElement(
-            'mesh',
+            "mesh",
             { position: [0.9, 0.9, 0.2], castShadow: true },
-            React.createElement('boxGeometry', { args: [0.6, 0.2, 0.2] }),
-            React.createElement('meshStandardMaterial', { color: '#222' }),
+            React.createElement("boxGeometry", { args: [0.6, 0.2, 0.2] }),
+            React.createElement("meshStandardMaterial", { color: "#222" }),
           ),
           muzzleFlash
             ? React.createElement(
-                'mesh',
+                "mesh",
                 { position: [1.2, 0.9, 0.2], castShadow: true },
-                React.createElement('sphereGeometry', { args: [0.12, 8, 8] }),
-                React.createElement('meshStandardMaterial', {
-                  color: team === 'red' ? 'orange' : 'skyblue',
-                  emissive: team === 'red' ? 'orange' : 'skyblue',
+                React.createElement("sphereGeometry", { args: [0.12, 8, 8] }),
+                React.createElement("meshStandardMaterial", {
+                  color: team === "red" ? "orange" : "skyblue",
+                  emissive: team === "red" ? "orange" : "skyblue",
                   emissiveIntensity: 2,
                 }),
               )
             : null,
           React.createElement(
-            'mesh',
+            "mesh",
             { position: [-0.25, 0.1, 0], castShadow: true },
-            React.createElement('boxGeometry', { args: [0.4, 0.8, 0.4] }),
-            React.createElement('meshStandardMaterial', { color: '#333' }),
+            React.createElement("boxGeometry", { args: [0.4, 0.8, 0.4] }),
+            React.createElement("meshStandardMaterial", { color: "#333" }),
           ),
           React.createElement(
-            'mesh',
+            "mesh",
             { position: [0.25, 0.1, 0], castShadow: true },
-            React.createElement('boxGeometry', { args: [0.4, 0.8, 0.4] }),
-            React.createElement('meshStandardMaterial', { color: '#333' }),
+            React.createElement("boxGeometry", { args: [0.4, 0.8, 0.4] }),
+            React.createElement("meshStandardMaterial", { color: "#333" }),
           ),
         ),
       )

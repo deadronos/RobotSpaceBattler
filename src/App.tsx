@@ -1,10 +1,10 @@
 import React from "react";
 
 import Scene from "./components/Scene";
+import DevDiagnostics from "./components/ui/DevDiagnostics";
 import LoadingOverlay from "./components/ui/LoadingOverlay";
 import PauseControl from "./components/ui/PauseControl";
 import StatusBox from "./components/ui/StatusBox";
-import DevDiagnostics from "./components/ui/DevDiagnostics";
 
 export default function App() {
   // UI state is now read inside each small component via the zustand store
@@ -14,8 +14,8 @@ export default function App() {
       <Scene />
       <PauseControl />
       <LoadingOverlay />
-  <StatusBox />
-  <DevDiagnostics />
+      <StatusBox />
+      <DevDiagnostics />
     </div>
   );
 }

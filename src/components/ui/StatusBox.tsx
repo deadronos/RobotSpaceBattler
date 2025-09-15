@@ -15,13 +15,21 @@ export default function StatusBox() {
   return (
     <div id="status" className="status-box">
       {!physicsAvailable ? (
-        <div className="status-warning">Physics unavailable — running fallback mode.{rapierDebug ? ` (${rapierDebug})` : ''}</div>
+        <div className="status-warning">
+          Physics unavailable — running fallback mode.
+          {rapierDebug ? ` (${rapierDebug})` : ""}
+        </div>
       ) : null}
       <div>
         Space Station — {redAlive} vs {blueAlive}
       </div>
       <div className="status-controls">
-        <button className="pause-button" onClick={() => setDevVisible(!devVisible)}>{devVisible ? 'Hide' : 'Show'} diagnostics</button>
+        <button
+          className="pause-button"
+          onClick={() => setDevVisible(!devVisible)}
+        >
+          {devVisible ? "Hide" : "Show"} diagnostics
+        </button>
       </div>
       <div>
         Kills: Red {redKills} • Blue {blueKills}

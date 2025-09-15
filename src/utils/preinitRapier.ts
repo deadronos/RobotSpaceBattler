@@ -5,14 +5,14 @@
 // Safe to call multiple times; Rapier’s init guards and returns early.
 export async function preinitRapier(): Promise<void> {
   try {
-    const rapier = (await import('@dimforge/rapier3d-compat')) as unknown as {
+    const rapier = (await import("@dimforge/rapier3d-compat")) as unknown as {
       init: (opts?: unknown) => Promise<unknown>;
     };
     // Let Vite resolve the wasm asset to a served URL.
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore – Vite adds default export for ?url imports
     const wasmUrlMod = await import(
-      '@dimforge/rapier3d-compat/rapier_wasm3d_bg.wasm?url'
+      "@dimforge/rapier3d-compat/rapier_wasm3d_bg.wasm?url"
     );
     const module_or_path: unknown =
       (wasmUrlMod && (wasmUrlMod.default || wasmUrlMod)) || undefined;
@@ -21,7 +21,7 @@ export async function preinitRapier(): Promise<void> {
   } catch {
     // As a fallback, try no-arg init (older signatures) and let the wrapper log a warning.
     try {
-      const rapier = (await import('@dimforge/rapier3d-compat')) as unknown as {
+      const rapier = (await import("@dimforge/rapier3d-compat")) as unknown as {
         init: () => Promise<unknown>;
       };
       await rapier.init();
@@ -32,4 +32,3 @@ export async function preinitRapier(): Promise<void> {
 }
 
 export default preinitRapier;
-
