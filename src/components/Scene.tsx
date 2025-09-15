@@ -1,214 +1,158 @@
-import { OrbitControls } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
-import { BallCollider, CapsuleCollider, CuboidCollider, Physics, RigidBody } from "@react-three/rapier";
-import React, { useEffect, useState } from "react";
+import { OrbitControls } from '@react-three/drei';
+import { Canvas } from '@react-three/fiber';
+import { BallCollider,CapsuleCollider, CuboidCollider, Physics, RigidBody } from '@react-three/rapier';
+import React, { useEffect, useMemo, useState } from 'react';
 
-import useUI from "../store/uiStore";
-import Simulation, { SimulationFallback } from "./Simulation";
-export default function Scene() {
-  // Note on Rapier imports:
-  // We import @react-three/rapier and its components statically. Previously we
-  // tried to dynamically import the wrapper and pre-initialize Rapier WASM to
-  // avoid context mismatch. However, dynamic imports combined with headless
-  // environments led to reconciliation errors like "Cannot set properties of
-  // undefined (setting 'id')" during mount and teardown. Static imports ensure
-  // a single module instance and let Vite prebundle accordingly (see vite.config.ts).
+import useUI from '../store/uiStore';
+import Simulation, { SimulationFallback } from './Simulation';
+
+/**
+ * Scene
+ * A compact, clear refactor of the previous Scene implementation.
+ * - Uses static imports for @react-three/fiber, @react-three/drei and @react-three/rapier
+ * - Feature-detects WebGL in a client-only effect and renders a non-R3F fallback
+ * - Wraps the Physics provider in an error boundary that renders a non-R3F
+ *   fallback when physics initialization/rendering fails
+ * - Defers mounting OrbitControls one animation frame after the Canvas mounts
+ * - Reports simple diagnostics to the UI store via useUI()
+ */
+interface PhysicsErrorBoundaryProps {
+  setRapierDebug: (msg: string | null) => void;
+  onError?: (msg: string) => void;
+  children?: React.ReactNode;
+}
+
+interface CanvasErrorBoundaryProps {
+  setRapierDebug: (msg: string | null) => void;
+  children?: React.ReactNode;
+}
+
+export default function Scene(): React.ReactElement {
   const setDreiLoading = useUI((s) => s.setDreiLoading);
   const setPhysicsAvailable = useUI((s) => s.setPhysicsAvailable);
   const setRapierDebug = useUI((s) => s.setRapierDebug);
+
+  // null = unknown, true = supported, false = unsupported
   const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
-  // Mount OrbitControls one tick after the Canvas is alive to avoid a transient
-  // R3F context timing edge-case where controls try to read the store before
-  // the Canvas provider is fully established during the initial commit.
   const [showControls, setShowControls] = useState(false);
 
-  // Error boundary to catch errors thrown by the Physics wrapper at mount time
-  type PhysicsErrorBoundaryProps = {
-    setRapierDebug: (msg: string | null) => void;
-    onError?: (msg: string) => void;
-    children?: React.ReactNode;
-  };
-  class PhysicsErrorBoundary extends React.Component<
-    PhysicsErrorBoundaryProps,
-    { hasError: boolean; msg?: string }
-  > {
+  // Memoize the rapier components bag so the Simulation props are stable.
+  const rapierComponents = useMemo(() => ({ RigidBody, CuboidCollider, CapsuleCollider, BallCollider }), []);
+
+  // Simple error-boundary that catches errors inside the Physics tree and
+  // falls back to a non-R3F SimulationFallback. Implemented as a class
+  // because React error boundaries must be classes.
+  class PhysicsErrorBoundary extends React.Component<PhysicsErrorBoundaryProps, { hasError: boolean; msg?: string }> {
     constructor(props: PhysicsErrorBoundaryProps) {
       super(props);
       this.state = { hasError: false };
     }
     componentDidCatch(error: unknown) {
       try {
-        // include a short portion of the stack if available so diagnostics are richer
         const e = error as { message?: unknown; stack?: unknown };
-        const stack = e && e.stack ? String(e.stack).slice(0, 1000) : undefined;
+        const stack = e && e.stack ? String(e.stack).slice(0, 1000) : '<no-stack>';
         const msg = e && e.message ? String(e.message) : String(error);
-        this.props.setRapierDebug(
-          `physics-render-error:${msg}; stack:${stack ?? "<no-stack>"}`,
-        );
+        this.props.setRapierDebug?.(`physics-render-error:${msg}; stack:${stack}`);
       } catch {
         // ignore
       }
       try {
-        const w =
-          typeof window !== "undefined"
-            ? (window as unknown as {
-                console?: { error?: (...args: unknown[]) => void };
-              })
-            : undefined;
-        if (w && w.console && typeof w.console.error === "function")
-          w.console.error("Physics render error", error);
-      } catch {
-        // noop
-      }
-      // notify parent so it can attempt a different runtime candidate
-      try {
-        if (this.props.onError)
-          this.props.onError(
-            String((error as { message?: unknown })?.message ?? String(error)),
-          );
+        if (this.props.onError) this.props.onError(String(error));
       } catch {
         // ignore
       }
-      this.setState({
-        hasError: true,
-        msg: (error as { message?: unknown })?.message
-          ? String((error as { message?: unknown })!.message)
-          : String(error),
-      });
+      this.setState({ hasError: true, msg: String(error) });
     }
     render() {
-      if (this.state.hasError) {
-        // IMPORTANT: Do not render a component that uses R3F hooks here.
-        // This error boundary is mounted inside the Canvas tree but wraps the
-        // Physics provider. If Physics fails, we still remain in the Canvas,
-        // but to be resilient across library versions and avoid any nested
-        // reconciler confusion, use the non-R3F fallback.
-        return React.createElement(SimulationFallback, {});
-      }
-      // render children (the Physics component)
+      if (this.state.hasError) return React.createElement(SimulationFallback, {});
       return this.props.children as React.ReactNode;
     }
   }
 
-  // Error boundary to catch Canvas / WebGL errors (e.g. WebGL context creation)
-  class CanvasErrorBoundary extends React.Component<
-    {
-      setRapierDebug: (msg: string | null) => void;
-      children?: React.ReactNode;
-    },
-    { hasError: boolean; msg?: string }
-  > {
-    constructor(props: {
-      setRapierDebug: (msg: string | null) => void;
-      children?: React.ReactNode;
-    }) {
+  // Canvas/WebGL-level errors: fall back to non-R3F simulation if the Canvas
+  // fails to mount (e.g. headless/CI without WebGL).
+  class CanvasErrorBoundary extends React.Component<CanvasErrorBoundaryProps, { hasError: boolean; msg?: string }> {
+    constructor(props: CanvasErrorBoundaryProps) {
       super(props);
       this.state = { hasError: false };
     }
     componentDidCatch(error: unknown) {
       try {
         const e = error as { message?: unknown; stack?: unknown };
-        const stack = e && e.stack ? String(e.stack).slice(0, 1000) : undefined;
+        const stack = e && e.stack ? String(e.stack).slice(0, 1000) : '<no-stack>';
         const msg = e && e.message ? String(e.message) : String(error);
-        this.props.setRapierDebug?.(
-          `canvas-render-error:${msg}; stack:${stack ?? "<no-stack>"}`,
-        );
+        this.props.setRapierDebug?.(`canvas-render-error:${msg}; stack:${stack}`);
       } catch {
         // ignore
       }
-      try {
-        const w =
-          typeof window !== "undefined"
-            ? (window as unknown as {
-                console?: { error?: (...args: unknown[]) => void };
-              })
-            : undefined;
-        if (w && w.console && typeof w.console.error === "function")
-          w.console.error("Canvas render error", error);
-      } catch {
-        // noop
-      }
-      this.setState({
-        hasError: true,
-        msg: (error as { message?: unknown })?.message
-          ? String((error as { message?: unknown })!.message)
-          : String(error),
-      });
+      this.setState({ hasError: true, msg: String(error) });
     }
     render() {
-      if (this.state.hasError) {
-        // Render a non-Canvas fallback so the app stays usable in environments
-        // without WebGL (CI/headless). Use the non-R3F fallback that does not
-        // call useFrame to avoid the "Hooks can only be used within the Canvas"
-        // error after a Canvas crash.
-        return React.createElement(SimulationFallback, {});
-      }
+      if (this.state.hasError) return React.createElement(SimulationFallback, {});
       return this.props.children as React.ReactNode;
     }
   }
 
+  // Run a client-only WebGL feature-detect and initialize UI flags.
   useEffect(() => {
-    // Quick synchronous feature-detect for WebGL availability. We run this
-    // inside an effect so it's client-only and doesn't run during SSR.
     try {
-      if (typeof window === "undefined") {
+      if (typeof window === 'undefined') {
         setWebglSupported(false);
       } else {
-        const canvas = document.createElement("canvas");
+        const canvas = document.createElement('canvas');
         const gl =
-          (canvas.getContext("webgl2") as unknown) ||
-          (canvas.getContext("webgl") as unknown) ||
-          (canvas.getContext as (id: string) => unknown)("experimental-webgl");
+          canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
         setWebglSupported(Boolean(gl));
       }
     } catch {
       setWebglSupported(false);
     }
 
-    // OrbitControls is statically imported now; use the loading flag only to keep UI consistent
-    setDreiLoading(false);
-    // Physics comes from static import as well; mark available
-    setPhysicsAvailable(true);
+    // Drei and Rapier are statically imported; update the UI store so other
+    // parts of the app know they're available.
     try {
-      setRapierDebug("static-imports");
+      setDreiLoading(false);
+    } catch {
+      /* ignore */
+    }
+    try {
+      setPhysicsAvailable(true);
+    } catch {
+      /* ignore */
+    }
+    try {
+      setRapierDebug?.('static-imports');
     } catch {
       /* ignore */
     }
   }, [setDreiLoading, setPhysicsAvailable, setRapierDebug]);
 
-  // Listen for WebGL context loss and gracefully fall back to the
-  // non-WebGL Simulation so the app doesn't repeatedly attempt to create
-  // a context and doesn't leave Rapier in a half-destroyed state.
+  // If WebGL context is lost, disable physics and fall back to non-WebGL
+  // rendering so the app doesn't continually attempt to recreate contexts.
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
     const handler = () => {
       try {
-        setRapierDebug?.("webgl-context-lost");
+        setRapierDebug?.('webgl-context-lost');
         setWebglSupported(false);
-        // disable physics to prevent wasm destroy races
         setPhysicsAvailable(false);
       } catch {
         // ignore
       }
     };
-    window.addEventListener(
-      "webglcontextlost",
-      handler as unknown as (e: unknown) => void,
-    );
-    return () => {
-      window.removeEventListener(
-        "webglcontextlost",
-        handler as unknown as (e: unknown) => void,
-      );
-    };
+    // use the same unknown cast pattern as the original code to avoid DOM lib
+    // type dependencies in environments where lib.dom isn't available.
+    window.addEventListener('webglcontextlost', handler as unknown as (e: unknown) => void);
+    return () => window.removeEventListener('webglcontextlost', handler as unknown as (e: unknown) => void);
   }, [setRapierDebug, setPhysicsAvailable]);
 
-  // Enable controls on the next animation frame once Canvas is mounted.
+  // Defer mounting OrbitControls one frame after the Canvas is ready to avoid
+  // certain R3F timing issues where controls access the store too early.
   useEffect(() => {
     if (webglSupported === false) return;
     let raf: number | undefined;
     try {
-      if (typeof window !== "undefined") {
+      if (typeof window !== 'undefined') {
         raf = window.requestAnimationFrame(() => setShowControls(true));
       } else {
         setShowControls(true);
@@ -217,29 +161,23 @@ export default function Scene() {
       setShowControls(true);
     }
     return () => {
-      if (typeof window !== "undefined" && raf)
-        window.cancelAnimationFrame(raf);
+      if (typeof window !== 'undefined' && raf) window.cancelAnimationFrame(raf);
       setShowControls(false);
     };
   }, [webglSupported]);
 
-  // If we deterministically detect WebGL is unavailable, avoid mounting the
-  // Canvas entirely and render a fallback Simulation. If detection hasn't
-  // completed (null) we optimistically render the CanvasErrorBoundary so the
-  // app can still attempt to create a context; the boundary will catch errors.
+  // If we deterministically know WebGL is unavailable, render a plain
+  // non-R3F fallback (still render a plain <canvas/> for layout/tests).
   if (webglSupported === false) {
-    // Render a non-r3f fallback that does minimal ECS bootstrapping but
-    // doesn't mount any r3f hooks/components.
     return (
       <>
-        {/* Placeholder canvas for headless/CI: Playwright won't have WebGL,
-            but some tests assert the presence of a canvas. We render a plain
-            canvas here (no R3F hooks) to keep layout stable. */}
         <canvas className="placeholder-canvas" aria-hidden="true" />
         <SimulationFallback />
       </>
     );
   }
+
+  // (rapierComponents is memoized earlier) - nothing to do here.
 
   return (
     <CanvasErrorBoundary setRapierDebug={setRapierDebug}>
@@ -256,35 +194,18 @@ export default function Scene() {
           shadow-camera-top={50}
           shadow-camera-bottom={-50}
         />
-        {/* Physics with static imports; wrap in error boundary for resilience */}
-        {React.createElement(
-          PhysicsErrorBoundary as React.ComponentType<{
-            setRapierDebug: (msg: string | null) => void;
-            onError?: (msg: string) => void;
-            children?: React.ReactNode;
-          }>,
-          {
-            setRapierDebug,
-            onError: (msg: string) => {
-              if (typeof setRapierDebug === "function")
-                setRapierDebug(`physics-mount-error:${msg}`);
-              setPhysicsAvailable(false);
-            },
-          },
-          React.createElement(
-            Physics as React.ComponentType<{ gravity?: number[] }>,
-            { gravity: [0, -9.81, 0] },
-            React.createElement(Simulation, {
-              physics: true,
-              rapierComponents: {
-                RigidBody,
-                CuboidCollider,
-                CapsuleCollider,
-                BallCollider,
-              },
-            }),
-          ),
-        )}
+
+        <PhysicsErrorBoundary
+          setRapierDebug={setRapierDebug}
+          onError={(msg: string) => {
+            setRapierDebug?.(`physics-mount-error:${msg}`);
+            setPhysicsAvailable(false);
+          }}
+        >
+          <Physics gravity={[0, -9.81, 0]}>
+            <Simulation physics={true} rapierComponents={rapierComponents} />
+          </Physics>
+        </PhysicsErrorBoundary>
 
         {showControls ? <OrbitControls /> : null}
       </Canvas>
