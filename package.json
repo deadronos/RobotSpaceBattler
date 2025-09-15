@@ -30,7 +30,7 @@
     ]
   },
   "dependencies": {
-    "@dimforge/rapier3d-compat": "^0.15.0",
+    "@dimforge/rapier3d-compat": "0.15.0",
     "@react-three/drei": "^10.7.6",
     "@react-three/fiber": "^9.3.0",
     "@react-three/postprocessing": "^3.0.4",
