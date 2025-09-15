@@ -10,24 +10,31 @@ export type RapierApi = {
 
 export function extractRapierApi(node: unknown): RapierApi | undefined {
   if (!node) return undefined;
-  // common shapes we see at runtime:
-  // - the wrapper places the api directly on the node: node.rigidBody
-  // - React refs may wrap it as { current: { rigidBody } }
-  // - some runtimes provide the api as the ref.current itself
   try {
-    const asAny = node as any;
+    const obj = node as Record<string, unknown>;
     // direct property
-    if (asAny.rigidBody) return asAny.rigidBody as RapierApi;
+    if (obj && typeof obj === "object" && "rigidBody" in obj) {
+      const rb = (obj as { rigidBody?: unknown }).rigidBody;
+      return (rb as RapierApi) || undefined;
+    }
     // ref object from useRef({ current: ... }) or forwarded ref
-    if (asAny.current) {
-      const cur = asAny.current as any;
-      if (cur.rigidBody) return cur.rigidBody as RapierApi;
+    if (obj && typeof obj === "object" && "current" in obj) {
+      const cur = (obj as { current?: unknown }).current;
+      if (
+        cur &&
+        typeof cur === "object" &&
+        "rigidBody" in (cur as Record<string, unknown>)
+      ) {
+        const rb = (cur as { rigidBody?: unknown }).rigidBody;
+        return (rb as RapierApi) || undefined;
+      }
       // sometimes the ref current is the api itself
       return (cur as RapierApi) || undefined;
     }
     // node itself might already be the API
-    return (asAny as RapierApi) || undefined;
+    return (obj as unknown as RapierApi) || undefined;
   } catch {
+    // ignore extraction errors
     return undefined;
   }
 }
@@ -37,6 +44,10 @@ export type Entity = {
   team: "red" | "blue";
   position: number[];
   rb?: RapierApi;
+  // optional collider reference if present at runtime
+  collider?: unknown;
+  // internal flag used during defensive cleanup
+  __destroying?: boolean;
   health?: { hp: number; maxHp: number };
   weapon?: {
     cooldown: number;

@@ -36,11 +36,13 @@ const useUI = create<UIState>((set) => ({
   setDreiLoading: (loading: boolean) => set(() => ({ dreiLoading: loading })),
 
   physicsAvailable: false,
-  setPhysicsAvailable: (available: boolean) => set(() => ({ physicsAvailable: available })),
+  setPhysicsAvailable: (available: boolean) =>
+    set(() => ({ physicsAvailable: available })),
   rapierDebug: null,
   setRapierDebug: (msg: string | null) => set(() => ({ rapierDebug: msg })),
   devDiagnosticsVisible: false,
-  setDevDiagnosticsVisible: (v: boolean) => set(() => ({ devDiagnosticsVisible: v })),
+  setDevDiagnosticsVisible: (v: boolean) =>
+    set(() => ({ devDiagnosticsVisible: v })),
 
   redAlive: 0,
   blueAlive: 0,

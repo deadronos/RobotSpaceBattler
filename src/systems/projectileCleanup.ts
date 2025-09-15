@@ -18,7 +18,11 @@ export function cleanupProjectiles(delta: number, storeRef = store) {
       pos.y < -10 ||
       pos.y > 100;
     if (p.projectile.ttl <= 0 || OOB) {
-      try { markEntityDestroying(p as unknown as any); } catch { /* ignore */ }
+      try {
+        markEntityDestroying(p as unknown as Record<string, unknown>);
+      } catch {
+        /* ignore */
+      }
       storeRef.remove(p);
     }
   }
