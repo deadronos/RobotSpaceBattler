@@ -41,7 +41,7 @@ export function hitscanSystem(
     const direction = applySpread(fireEvent.direction, spread, rng);
 
     // Perform raycast (simplified - in real implementation would use Rapier or Three.js raycaster)
-    const hit = performRaycast(fireEvent.origin, direction, weapon.range || 100, world);
+    const hit = performRaycast(fireEvent.origin, direction, weapon.range || 100, world, fireEvent.ownerId, weapon.team);
 
     if (hit) {
       // Apply damage
@@ -96,9 +96,10 @@ function performRaycast(
       position?: [number, number, number]; 
       team?: string;
       weapon?: WeaponComponent;
+      alive?: boolean;
     };
-    // Skip weapon owners
-    if (!e.position || !e.team || e.weapon) continue;
+    // Skip dead entities or entities without position/team
+    if (!e.position || !e.team || e.alive === false) continue;
     
     const [ex, ey, ez] = e.position;
     const toTarget = [ex - ox, ey - oy, ez - oz];

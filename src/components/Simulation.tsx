@@ -139,6 +139,7 @@ export default function Simulation() {
       spawn.push(robot);
     }
     
+    console.log('Spawned robots:', spawn.length, 'World entities:', world.entities.length);
     return spawn;
   }, []);
 

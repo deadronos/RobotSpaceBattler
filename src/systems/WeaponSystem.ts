@@ -67,9 +67,8 @@ export function weaponSystem(
       state.cooldownRemaining = weapon.cooldown;
       weapon.lastFiredAt = Date.now();
 
-      // Calculate firing direction (simplified - towards target)
-      // In a real implementation, this would use the AI's target selection
-      const direction: [number, number, number] = [1, 0, 0]; // placeholder
+      // Calculate firing direction towards the target
+      const direction: [number, number, number] = calculateTargetDirection(e, world);
 
       // Emit weapon fired event
       events.weaponFired.push({
@@ -95,4 +94,60 @@ export function weaponSystem(
       }
     }
   }
+}
+
+function calculateTargetDirection(entity: Entity, world: World<Entity>): [number, number, number] {
+  const e = entity as Entity & { 
+    weapon?: WeaponComponent;
+    weaponState?: WeaponStateComponent;
+    position?: [number, number, number];
+    team?: 'red' | 'blue';
+    rigid?: any;
+  };
+  
+  if (!e.position || !e.team || !e.rigid) return [1, 0, 0];
+  
+  // Find nearest enemy using same logic as the AI system
+  const enemies = Array.from(world.entities).filter(other => {
+    const otherEntity = other as Entity & { team?: string; rigid?: any; alive?: boolean };
+    return otherEntity.team && 
+           otherEntity.team !== e.team && 
+           otherEntity.rigid &&
+           otherEntity.alive !== false;
+  });
+  
+  if (enemies.length === 0) return [1, 0, 0];
+  
+  // Get current position using rigid body (authoritative)
+  const pos = e.rigid.translation();
+  let bestTarget = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  
+  for (const enemy of enemies) {
+    const enemyRigid = (enemy as any).rigid;
+    if (!enemyRigid) continue;
+    
+    const enemyPos = enemyRigid.translation();
+    const dx = enemyPos.x - pos.x;
+    const dy = enemyPos.y - pos.y;
+    const dz = enemyPos.z - pos.z;
+    const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestTarget = { x: enemyPos.x, y: enemyPos.y, z: enemyPos.z };
+    }
+  }
+  
+  if (!bestTarget) return [1, 0, 0];
+  
+  // Calculate normalized direction vector
+  const dx = bestTarget.x - pos.x;
+  const dy = bestTarget.y - pos.y;
+  const dz = bestTarget.z - pos.z;
+  const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  
+  if (length === 0) return [1, 0, 0];
+  
+  return [dx / length, dy / length, dz / length];
 }
