@@ -4,19 +4,20 @@
 ## In Progress
 
 - [TASK006] Unified weapons ECS - Systems integrated; documenting usage & perf follow-up.
-- [TASK005] Expand tasks list - Audit repo for missing tasks and add them to this index. (In progress)
 
 ## Pending
 
 - [TASK007] ProjectileSystem: add friendly-fire checks - Implement friendly-fire logic so projectiles do not damage allies when game mode disallows it. Location: `src/systems/ProjectileSystem.ts` (TODO at line ~170). Acceptance: projectiles ignore same-team entities when friendly fire is disabled; unit test added.
 
+- [TASK009] Simulation: FX system scaffold - Implement the FX/visual effects system placeholder noted in `src/components/Simulation.tsx`. Add lightweight FX system, hook into Simulation loop, provide simple particle/flash effect for hits. Acceptance: visual effects are triggered on hit events; non-blocking to game logic.
+
+- [TASK010] Projectile pooling & performance profiling - Investigate projectile allocation/GC pressure and add pooling or reuse if needed. Acceptance: identified perf hotspot and proposed mitigation (pool or reuse) with simple benchmark.
+
 
 
 ## New / Discovered (from code TODOs)
 
-- [TASK007] ProjectileSystem: add friendly-fire checks - Implement friendly-fire logic so projectiles do not damage allies when game mode disallows it. Location: `src/systems/ProjectileSystem.ts` (TODO at line ~170). Acceptance: projectiles ignore same-team entities when friendly fire is disabled; unit test added.
-
-- [TASK009] Simulation: FX system scaffold - Implement the FX/visual effects system placeholder noted in `Simulation.tsx` (TODO at line ~189). Tasks: add lightweight FX system, hook into Simulation loop, provide simple particle/flash effect for hits. Acceptance: visual effects are triggered on hit events; non-blocking to game logic.
+- [TASK009] Simulation: FX system scaffold - Implement the FX/visual effects system placeholder noted in `src/components/Simulation.tsx`. Tasks: add lightweight FX system, hook into Simulation loop, provide simple particle/flash effect for hits. Acceptance: visual effects are triggered on hit events; non-blocking to game logic.
 
 ## Completed
 
