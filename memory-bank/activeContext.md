@@ -1,27 +1,36 @@
+
 # Active Context - RobotSpaceBattler
 
 ## Current focus
 
-- Build a unified weapons ECS (guns, lasers, rockets) on top of miniplex.
-- Maintain deterministic simulation utilities.
+- Stabilize core simulation (physics-first authority, deterministic test mode).
+- Finish unified weapons ECS integration and increase unit test coverage for weapons and projectiles.
 
-## Recent changes
+## Recent changes (implemented)
 
-- Added seeded RNG helper and tests.
-- Drafted weapons ECS design doc and system skeletons.
-- Projectiles and beams now spawn as physics-backed render entities.
-- Weapon aiming now respects tracked targets and emits target ids through events.
-- miniplex store assigns numeric entity ids for weapon lookups.
+- Seeded RNG utility added and used by deterministic unit tests.
+- Rapier physics integrated; RigidBody is authoritative and transform sync utilities are in place.
+- Procedural robot prefabs and spawn controls implemented (dev-only UI exposed).
+- Weapons systems implemented: Hitscan, Projectile and Beam subsystems with events; projectile/beam entities spawn with Rapier bodies.
+- DamageSystem added and emits death events consumed by higher-level systems.
+- Unit tests expanded: weapons, projectile lifecycle, and physics sync tests (Vitest).
+- Playwright E2E smoke test added (`playwright/tests/smoke.spec.ts`) and verified locally to assert `#status` and `canvas` are present.
 
 ## Next steps
 
-- Integrate weapon systems into Simulation.
-- Harden target acquisition/friendly-fire rules and edge cases.
-- Expand unit tests for cooldowns and projectile lifecycle.
-- Add more tasks to `memory-bank-/tasks/_index.md` as work items are discovered.
+- Integrate the unified weapons ECS into the main `Simulation` wiring and ensure all systems read authority from Rapier bodies.
+- Implement Respawn and Scoring systems to consume death events and re-enable entities (see handover priorities).
+- Harden friendly-fire rules, ensure projectiles carry correct `sourceId`, and expand unit tests for cooldowns and AOE edge-cases.
+- Add GLTF asset loader and optional model replacement for procedural prefabs.
 
-## Decisions
+## Decisions / Conventions
 
-- Rapier's RigidBody is authoritative for transforms; ECS components should read from Rapier each frame.
+- Rapier's `RigidBody` remains authoritative for transforms; avoid mutating mesh transforms directly when a `RigidBody` is present.
+- New developer UI/tools should live under `src/components/ui/` and be guarded by dev flags.
+
+## Notes / Recent verification
+
+- Playwright smoke test uses the repo Playwright config which starts the dev server on port 5174 for CI; note the Vite default dev port is 5173 (see `memory-bank/techContext.md` for port docs).
+- Several unit tests rely on deterministic RNG; maintain `utils/seededRng.ts` as the canonical seeded RNG helper.
 
 
