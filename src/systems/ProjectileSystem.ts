@@ -47,7 +47,8 @@ export function projectileSystem(
   dt: number,
   rng: Rng,
   weaponFiredEvents: WeaponFiredEvent[],
-  events: { damage: DamageEvent[] }
+  events: { damage: DamageEvent[] },
+  rapierWorld?: unknown
 ) {
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== 'rocket') continue;

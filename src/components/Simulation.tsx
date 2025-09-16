@@ -16,6 +16,8 @@ import { useUI } from '../store/uiStore';
 import { aiSystem } from '../systems/AISystem';
 import { beamSystem } from '../systems/BeamSystem';
 import { damageSystem, type DeathEvent } from '../systems/DamageSystem';
+import { respawnSystem, clearRespawnQueue } from '../systems/RespawnSystem';
+import { scoringSystem, resetScores } from '../systems/ScoringSystem';
 import { hitscanSystem, type ImpactEvent } from '../systems/HitscanSystem';
 import { projectileSystem } from '../systems/ProjectileSystem';
 import type { WeaponFiredEvent } from '../systems/WeaponSystem';
@@ -76,12 +78,16 @@ export default function Simulation() {
   // Spawn initial teams once
   useEffect(() => {
     if (!spawnInitializedRef.current) {
+      resetScores();
+      clearRespawnQueue();
       resetAndSpawnDefaultTeams();
       spawnInitializedRef.current = true;
     }
 
     return () => {
       spawnInitializedRef.current = false;
+      clearRespawnQueue();
+      resetScores();
       resetWorld();
     };
   }, []);
@@ -121,6 +127,9 @@ export default function Simulation() {
     // 3. Damage application
     damageSystem(world, events.damage, events);
 
+    scoringSystem(events.death);
+    respawnSystem(world, events.death);
+
     // 4. TODO: FX system would go here
   });
 
@@ -155,3 +164,6 @@ export default function Simulation() {
 }
 
 // Movement and firing helpers removed — AI responsibilities moved to aiSystem
+
+
+
