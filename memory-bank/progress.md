@@ -6,11 +6,14 @@
 - Procedural robot generation and basic AI
 - Weapons ECS (in progress)
 - Projectile and beam entities render with Rapier bodies tied to ECS state
-- Weapon events carry target ids for hitscan/beam/projectile systems\n- Friendly-fire filtering enforced across hitscan/projectile/beam systems\n- Targeting regression tests in place
+- Weapon events carry target ids for hitscan/beam/projectile systems
+- Friendly-fire filtering enforced across hitscan/projectile/beam systems
+- Targeting regression tests in place
 - Seeded RNG utility for deterministic tests
 - Physics sync and projectile cleanup systems
 - Unit tests for core systems (Vitest)
 - Playwright E2E smoke test
+- Dev diagnostics now expose spawn/reset controls for robot teams
 
 ## What's left to build
 
@@ -30,5 +33,4 @@
 - Playwright smoke test expects dev server on port 5174, Vite default is 5173
 - Some systems lack full unit test coverage
 - No multiplayer/networking support (out of scope)
-
 

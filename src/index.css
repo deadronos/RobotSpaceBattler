@@ -24,3 +24,8 @@ canvas { display: block; }
 
 button { padding: 6px 12px; border-radius: 6px; border: 1px solid #3a485f; background: #1e2633; color: #e7edf5; cursor: pointer; }
 button:hover { background: #273244; }
+
+.ui.dev span { display: block; }
+.ui.dev .controls { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.ui.dev .controls button { flex: 1 0 auto; }
+

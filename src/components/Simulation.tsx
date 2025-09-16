@@ -4,7 +4,7 @@ import type { Query } from 'miniplex';
 import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useEcsQuery } from '../ecs/hooks';
-import { createRobotEntity, type Entity, resetWorld, world } from '../ecs/miniplexStore';
+import { type Entity, resetWorld, world } from '../ecs/miniplexStore';
 import type {
   BeamComponent,
   DamageEvent,
@@ -13,6 +13,7 @@ import type {
   WeaponStateComponent,
 } from '../ecs/weapons';
 import { Robot } from '../robots/robotPrefab';
+import { resetAndSpawnDefaultTeams } from '../robots/spawnControls';
 import { useUI } from '../store/uiStore';
 import { beamSystem } from '../systems/BeamSystem';
 import { damageSystem, type DeathEvent } from '../systems/DamageSystem';
@@ -24,7 +25,6 @@ import { createSeededRng, type Rng } from '../utils/seededRng';
 import { Beam } from './Beam';
 import { Projectile } from './Projectile';
 
-const TEAM_SIZE = 10;
 const ARENA_SIZE = 20; // half-extent
 
 // Deterministic mode configuration
@@ -73,6 +73,7 @@ export default function Simulation() {
   const paused = useUI((s) => s.paused);
   const frameCountRef = useRef(0);
   const rngRef = useRef<Rng | null>(null);
+  const spawnInitializedRef = useRef(false);
   const projectileQuery = useMemo(
     () => world.with('projectile', 'position') as unknown as Query<ProjectileEntity>,
     []
@@ -90,87 +91,24 @@ export default function Simulation() {
     rngRef.current = createSeededRng(DETERMINISTIC_SEED);
   }, []);
 
-  // Spawn once with weapon configurations
-  const robots = useMemo(() => {
-    resetWorld();
-    const spawn: Entity[] = [];
-    
-    // Red team robots with different weapon types
-    for (let i = 0; i < TEAM_SIZE; i++) {
-      const weaponType: 'gun' | 'laser' | 'rocket' = 
-        i % 3 === 0 ? 'gun' : 
-        i % 3 === 1 ? 'laser' : 'rocket';
-      
-      const robot = createRobotEntity({
-        team: 'red',
-        position: [-8 + (i % 5) * 2, 0.6, -6 + Math.floor(i / 5) * 2],
-      }) as Entity & { weapon?: WeaponComponent; weaponState?: WeaponStateComponent };
-
-      // Add weapon component
-      robot.weapon = {
-        id: `weapon_red_${i}`,
-        type: weaponType,
-        ownerId: robot.id as number,
-        team: 'red',
-        range: weaponType === 'gun' ? 15 : weaponType === 'laser' ? 25 : 20,
-        cooldown: weaponType === 'gun' ? 0.5 : weaponType === 'laser' ? 1.5 : 2.0,
-        power: weaponType === 'gun' ? 15 : weaponType === 'laser' ? 8 : 25,
-        accuracy: weaponType === 'gun' ? 0.8 : weaponType === 'laser' ? 0.95 : 0.7,
-        spread: weaponType === 'gun' ? 0.1 : 0,
-        ammo: weaponType === 'gun' ? { clip: 10, clipSize: 10, reserve: 50 } : undefined,
-        aoeRadius: weaponType === 'rocket' ? 3 : undefined,
-        beamParams: weaponType === 'laser' ? { duration: 1000, width: 0.1, tickInterval: 100 } : undefined,
-        flags: weaponType === 'laser' ? { continuous: true } : undefined,
-      };
-
-      robot.weaponState = {
-        firing: false,
-        reloading: false,
-        cooldownRemaining: 0,
-      };
-
-      spawn.push(robot);
+  // Track active robots via ECS
+  const robotQuery = useMemo(
+    () => world.with('weaponState', 'position') as unknown as Query<Entity>,
+    []
+  );
+  const robots = useEcsQuery(robotQuery);
+  useEffect(() => {
+    if (!spawnInitializedRef.current) {
+      resetAndSpawnDefaultTeams();
+      spawnInitializedRef.current = true;
     }
-    
-    // Blue team robots with different weapon types
-    for (let i = 0; i < TEAM_SIZE; i++) {
-      const weaponType: 'gun' | 'laser' | 'rocket' = 
-        i % 3 === 0 ? 'rocket' : 
-        i % 3 === 1 ? 'gun' : 'laser';
-      
-      const robot = createRobotEntity({
-        team: 'blue',
-        position: [8 - (i % 5) * 2, 0.6, 6 - Math.floor(i / 5) * 2],
-      }) as Entity & { weapon?: WeaponComponent; weaponState?: WeaponStateComponent };
 
-      // Add weapon component
-      robot.weapon = {
-        id: `weapon_blue_${i}`,
-        type: weaponType,
-        ownerId: robot.id as number,
-        team: 'blue',
-        range: weaponType === 'gun' ? 15 : weaponType === 'laser' ? 25 : 20,
-        cooldown: weaponType === 'gun' ? 0.5 : weaponType === 'laser' ? 1.5 : 2.0,
-        power: weaponType === 'gun' ? 15 : weaponType === 'laser' ? 8 : 25,
-        accuracy: weaponType === 'gun' ? 0.8 : weaponType === 'laser' ? 0.95 : 0.7,
-        spread: weaponType === 'gun' ? 0.1 : 0,
-        ammo: weaponType === 'gun' ? { clip: 10, clipSize: 10, reserve: 50 } : undefined,
-        aoeRadius: weaponType === 'rocket' ? 3 : undefined,
-        beamParams: weaponType === 'laser' ? { duration: 1000, width: 0.1, tickInterval: 100 } : undefined,
-        flags: weaponType === 'laser' ? { continuous: true } : undefined,
-      };
-
-      robot.weaponState = {
-        firing: false,
-        reloading: false,
-        cooldownRemaining: 0,
-      };
-
-      spawn.push(robot);
-    }
-    
-    return spawn;
+    return () => {
+      spawnInitializedRef.current = false;
+      resetWorld();
+    };
   }, []);
+
 
   // Deterministic per-frame systems
   useFrame(() => {

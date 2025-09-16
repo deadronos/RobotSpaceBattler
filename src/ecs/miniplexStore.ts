@@ -1,6 +1,6 @@
 import { World } from 'miniplex';
 
-import type { BeamComponent, ProjectileComponent } from './weapons';
+import type { BeamComponent, ProjectileComponent, WeaponComponent, WeaponStateComponent } from './weapons';
 
 // Component types based on SPEC.md
 export type Vec3 = [number, number, number];
@@ -57,6 +57,8 @@ export type Entity = Partial<
     RenderRef & {
       beam?: BeamComponent;
       projectile?: ProjectileComponent;
+      weapon?: WeaponComponent;
+      weaponState?: WeaponStateComponent;
     }
 >;
 
@@ -117,3 +119,7 @@ export function resetWorld() {
   entityLookup.clear();
   nextEntityId = 1;
 }
+
+
+
+
