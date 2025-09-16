@@ -1,38 +1,47 @@
 import { useFrame } from '@react-three/fiber';
-import { BallCollider, RigidBody, type RigidBodyApi } from '@react-three/rapier';
-import React, { useEffect, useRef } from 'react';
+import { BallCollider, RigidBody } from '@react-three/rapier';
+import React, { useCallback, useEffect, useRef } from 'react';
 import type { Mesh } from 'three';
 
 import type { Entity } from '../ecs/miniplexStore';
 import type { ProjectileComponent } from '../ecs/weapons';
 
+type RigidBodyHandle = {
+  translation?: () => { x: number; y: number; z: number };
+  linvel?: () => { x: number; y: number; z: number };
+  setLinvel?: (velocity: { x: number; y: number; z: number }, wake: boolean) => void;
+};
+
 interface ProjectileEntity extends Entity {
   projectile: ProjectileComponent;
   position: [number, number, number];
   velocity?: [number, number, number];
+  render?: unknown;
 }
 
 export function Projectile({ entity }: { entity: ProjectileEntity }) {
-  const bodyRef = useRef<RigidBodyApi | null>(null);
+  const bodyRef = useRef<RigidBodyHandle | null>(null);
   const meshRef = useRef<Mesh>(null);
 
-  useEffect(() => {
-    const body = bodyRef.current;
-    const mesh = meshRef.current;
-
-    if (body) {
+  const setBodyRef = useCallback(
+    (body: RigidBodyHandle | null) => {
+      bodyRef.current = body;
       entity.rigid = body as unknown;
-    }
+    },
+    [entity]
+  );
+
+  useEffect(() => {
+    const mesh = meshRef.current;
     if (mesh) {
       entity.render = mesh as unknown;
     }
-
     return () => {
-      if (entity.rigid === body) {
-        entity.rigid = null;
-      }
       if (entity.render === mesh) {
         entity.render = null;
+      }
+      if (entity.rigid === bodyRef.current) {
+        entity.rigid = null;
       }
     };
   }, [entity]);
@@ -41,28 +50,22 @@ export function Projectile({ entity }: { entity: ProjectileEntity }) {
     const body = bodyRef.current;
     if (!body || !entity.velocity) return;
     const [vx, vy, vz] = entity.velocity;
-    body.setLinvel({ x: vx, y: vy, z: vz }, true);
+    body.setLinvel?.({ x: vx, y: vy, z: vz }, true);
   }, [entity]);
 
   useFrame(() => {
     const body = bodyRef.current;
     if (!body) return;
 
-    const translation = body.translation();
-    if (entity.position) {
-      entity.position[0] = translation.x;
-      entity.position[1] = translation.y;
-      entity.position[2] = translation.z;
+    const translation = body.translation?.();
+    if (translation) {
+      entity.position = [translation.x, translation.y, translation.z];
     }
 
-    if (entity.velocity) {
+    if (entity.velocity && body.linvel && body.setLinvel) {
       const [vx, vy, vz] = entity.velocity;
       const current = body.linvel();
-      if (
-        Math.abs(current.x - vx) > 0.0001 ||
-        Math.abs(current.y - vy) > 0.0001 ||
-        Math.abs(current.z - vz) > 0.0001
-      ) {
+      if (Math.abs(current.x - vx) > 0.0001 || Math.abs(current.y - vy) > 0.0001 || Math.abs(current.z - vz) > 0.0001) {
         body.setLinvel({ x: vx, y: vy, z: vz }, true);
       }
     }
@@ -70,7 +73,7 @@ export function Projectile({ entity }: { entity: ProjectileEntity }) {
 
   return (
     <RigidBody
-      ref={bodyRef}
+      ref={setBodyRef}
       type="dynamic"
       colliders={false}
       ccd

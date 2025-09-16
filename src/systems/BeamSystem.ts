@@ -1,9 +1,36 @@
 import type { World } from 'miniplex';
 
-import { getEntityById, type Entity } from '../ecs/miniplexStore';
+import { type Entity,getEntityById } from '../ecs/miniplexStore';
 import type { BeamComponent, DamageEvent, WeaponComponent } from '../ecs/weapons';
 import type { Rng } from '../utils/seededRng';
 import type { WeaponFiredEvent } from './WeaponSystem';
+
+function resolveEntity(world: World<Entity>, id?: number) {
+  if (typeof id !== 'number') {
+    return undefined;
+  }
+
+  const lookup = getEntityById(id) as Entity | undefined;
+  if (lookup) {
+    return lookup;
+  }
+
+  return Array.from(world.entities).find(
+    (candidate) => (candidate.id as unknown as number) === id
+  ) as Entity | undefined;
+}
+
+function resolveOwner(world: World<Entity>, fireEvent: WeaponFiredEvent) {
+  const direct = resolveEntity(world, fireEvent.ownerId);
+  if (direct) {
+    return direct;
+  }
+
+  return Array.from(world.entities).find((candidate) => {
+    const entity = candidate as Entity & { weapon?: WeaponComponent };
+    return entity.weapon?.id === fireEvent.weaponId;
+  });
+}
 
 /**
  * Beam system for laser weapons.
@@ -16,22 +43,20 @@ export function beamSystem(
   weaponFiredEvents: WeaponFiredEvent[],
   events: { damage: DamageEvent[] }
 ) {
-  // Create new beams from weapon fired events
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== 'laser') continue;
 
-    const owner = getEntityById(fireEvent.ownerId) as Entity & {
+    const owner = resolveOwner(world, fireEvent) as (Entity & {
       weapon?: WeaponComponent;
       position?: [number, number, number];
       team?: string;
-    } | undefined;
+    }) | undefined;
 
     const weapon = owner?.weapon;
     if (!owner || !weapon) continue;
 
-    // Create beam entity
     const beamEntity: Entity & { beam: BeamComponent } = {
-      id: `beam_${fireEvent.weaponId}_${Date.now()}`,
+      id: 'beam_' + fireEvent.weaponId + '_' + Date.now(),
       position: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
       team: weapon.team,
       beam: {
@@ -41,9 +66,9 @@ export function beamSystem(
         direction: [fireEvent.direction[0], fireEvent.direction[1], fireEvent.direction[2]],
         length: weapon.range || 50,
         width: weapon.beamParams?.width || 0.1,
-        activeUntil: Date.now() + (weapon.beamParams?.duration || 2000), // 2s default
-        tickDamage: weapon.power / 10, // Damage per tick
-        tickInterval: weapon.beamParams?.tickInterval || 100, // 100ms default
+        activeUntil: Date.now() + (weapon.beamParams?.duration || 2000),
+        tickDamage: weapon.power / 10,
+        tickInterval: weapon.beamParams?.tickInterval || 100,
         lastTickAt: Date.now(),
       },
     };
@@ -51,27 +76,36 @@ export function beamSystem(
     world.add(beamEntity);
   }
 
-  // Update existing beams
   for (const entity of world.entities) {
     const e = entity as Entity & { beam?: BeamComponent };
     const { beam } = e;
     if (!beam) continue;
 
+    const owner =
+      resolveEntity(world, beam.ownerId) ??
+      Array.from(world.entities).find((candidate) => {
+        const ownerCandidate = candidate as Entity & { weapon?: WeaponComponent };
+        return ownerCandidate.weapon?.id === beam.sourceWeaponId;
+      });
+
     const now = Date.now();
 
-    // Check if beam is still active
     if (now >= beam.activeUntil) {
       world.remove(entity);
       continue;
     }
 
-    // Apply tick damage
     if (now >= beam.lastTickAt + beam.tickInterval) {
       beam.lastTickAt = now;
-      
-      // Perform raycast along beam direction
-      const hits = performBeamRaycast(beam.origin, beam.direction, beam.length, world);
-      
+
+      const hits = performBeamRaycast(
+        beam.origin,
+        beam.direction,
+        beam.length,
+        world,
+        (owner as { team?: string })?.team
+      );
+
       for (const hit of hits) {
         events.damage.push({
           sourceId: beam.ownerId,
@@ -83,9 +117,7 @@ export function beamSystem(
       }
     }
 
-    // Update beam origin if weapon moved (for continuous beams)
-    // This would require tracking the weapon owner's position
-    updateBeamOrigin(beam);
+    updateBeamOrigin(world, beam);
   }
 }
 
@@ -93,85 +125,81 @@ function performBeamRaycast(
   origin: [number, number, number],
   direction: [number, number, number],
   length: number,
-  world: World<Entity>
+  world: World<Entity>,
+  ownerTeam?: string
 ): Array<{ position: [number, number, number]; targetId: number }> {
   const hits: Array<{ position: [number, number, number]; targetId: number }> = [];
-  
-  // Simplified beam raycast - in real implementation would use Rapier
+
   const [ox, oy, oz] = origin;
   const [dx, dy, dz] = direction;
-  
-  // Normalize direction
+
   const dirLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
   const ndx = dx / dirLength;
   const ndy = dy / dirLength;
   const ndz = dz / dirLength;
-  
+
   for (const entity of world.entities) {
-    const e = entity as Entity & { 
-      position?: [number, number, number]; 
+    const candidate = entity as Entity & {
+      position?: [number, number, number];
       team?: string;
       beam?: BeamComponent;
       weapon?: WeaponComponent;
     };
-    
-    // Skip beams and weapon owners
-    if (!e.position || !e.team || e.beam || e.weapon) continue;
-    
-    const [ex, ey, ez] = e.position;
-    
-    // Check if entity is along the beam path
+
+    if (!candidate.position || !candidate.team || candidate.beam || candidate.weapon) continue;
+    if (ownerTeam && candidate.team === ownerTeam) continue;
+
+    const [ex, ey, ez] = candidate.position;
     const toEntity = [ex - ox, ey - oy, ez - oz];
     const projectionLength = toEntity[0] * ndx + toEntity[1] * ndy + toEntity[2] * ndz;
-    
-    // Check if projection is within beam length
+
     if (projectionLength < 0 || projectionLength > length) continue;
-    
-    // Calculate closest point on beam to entity
+
     const closestPoint = [
       ox + ndx * projectionLength,
       oy + ndy * projectionLength,
       oz + ndz * projectionLength,
     ];
-    
-    // Check distance from entity to beam
+
     const distanceToBeam = Math.sqrt(
-      (ex - closestPoint[0]) ** 2 + 
-      (ey - closestPoint[1]) ** 2 + 
-      (ez - closestPoint[2]) ** 2
+      (ex - closestPoint[0]) ** 2 +
+        (ey - closestPoint[1]) ** 2 +
+        (ez - closestPoint[2]) ** 2
     );
-    
-    const beamRadius = 0.5; // Beam radius for hit detection
+
+    const beamRadius = 0.5;
     if (distanceToBeam <= beamRadius) {
       hits.push({
         position: closestPoint as [number, number, number],
-        targetId: e.id as unknown as number,
+        targetId: candidate.id as unknown as number,
       });
     }
   }
-  
+
   return hits;
 }
 
-function updateBeamOrigin(beam: BeamComponent) {
-  const owner = getEntityById(beam.ownerId) as Entity & {
-    position?: [number, number, number];
-    rigid?: { translation: () => { x: number; y: number; z: number } };
-  } | undefined;
+function updateBeamOrigin(world: World<Entity>, beam: BeamComponent) {
+  const owner =
+    resolveEntity(world, beam.ownerId) ??
+    Array.from(world.entities).find((candidate) => {
+      const ownerCandidate = candidate as Entity & { weapon?: WeaponComponent };
+      return ownerCandidate.weapon?.id === beam.sourceWeaponId;
+    });
 
   if (!owner) {
     return;
   }
 
-  if (owner.rigid) {
-    const translation = owner.rigid.translation();
+  const rigid = (owner as { rigid?: { translation: () => { x: number; y: number; z: number } } }).rigid;
+  if (rigid) {
+    const translation = rigid.translation();
     beam.origin = [translation.x, translation.y, translation.z];
     return;
   }
 
-  if (owner.position) {
-    beam.origin = [owner.position[0], owner.position[1], owner.position[2]];
+  const position = (owner as { position?: [number, number, number] }).position;
+  if (position) {
+    beam.origin = [position[0], position[1], position[2]];
   }
 }
-
-

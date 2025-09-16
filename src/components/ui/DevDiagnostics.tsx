@@ -6,11 +6,11 @@ export default function DevDiagnostics() {
   const [count, setCount] = React.useState(0);
   
   React.useEffect(() => {
-    const interval = setInterval(() => {
+    const interval = window.setInterval(() => {
       setCount(world.entities.length);
     }, 100); // Update every 100ms
     
-    return () => clearInterval(interval);
+    return () => window.clearInterval(interval);
   }, []);
   
   return (

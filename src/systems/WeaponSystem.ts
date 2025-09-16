@@ -1,6 +1,6 @@
 import type { World } from 'miniplex';
 
-import { getEntityById, type Entity } from '../ecs/miniplexStore';
+import { type Entity,getEntityById } from '../ecs/miniplexStore';
 import type {
   DamageEvent,
   WeaponComponent,
@@ -18,7 +18,22 @@ export interface WeaponFiredEvent {
   timestamp: number;
 }
 
- type RigidBodyLike = {
+function resolveEntity(world: World<Entity>, id?: number) {
+  if (typeof id !== 'number') {
+    return undefined;
+  }
+
+  const lookup = getEntityById(id) as Entity | undefined;
+  if (lookup) {
+    return lookup;
+  }
+
+  return Array.from(world.entities).find(
+    (candidate) => (candidate.id as unknown as number) === id
+  ) as Entity | undefined;
+}
+
+type RigidBodyLike = {
   translation: () => { x: number; y: number; z: number };
 };
 
@@ -99,7 +114,7 @@ export function weaponSystem(
       let direction: [number, number, number] = [1, 0, 0];
       let targetId: number | undefined = typeof e.targetId === 'number' ? e.targetId : undefined;
       if (targetId !== undefined) {
-        const targetEntity = getEntityById(targetId);
+        const targetEntity = resolveEntity(world, targetId);
         if (targetEntity) {
           const targetPosition = getEntityPosition(targetEntity);
           if (targetPosition) {
@@ -142,4 +157,3 @@ export function weaponSystem(
     }
   }
 }
-

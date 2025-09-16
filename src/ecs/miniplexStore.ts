@@ -1,5 +1,7 @@
 import { World } from 'miniplex';
 
+import type { BeamComponent, ProjectileComponent } from './weapons';
+
 // Component types based on SPEC.md
 export type Vec3 = [number, number, number];
 
@@ -52,7 +54,10 @@ export type Entity = Partial<
       team: Team;
     } &
     RigidBodyRef &
-    RenderRef
+    RenderRef & {
+      beam?: BeamComponent;
+      projectile?: ProjectileComponent;
+    }
 >;
 
 export const world = new World<Entity>();

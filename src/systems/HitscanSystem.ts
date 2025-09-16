@@ -1,20 +1,43 @@
 import type { World } from 'miniplex';
 
 import { type Entity,getEntityById } from '../ecs/miniplexStore';
-import type { DamageEvent,WeaponComponent } from '../ecs/weapons';
+import type { DamageEvent, WeaponComponent } from '../ecs/weapons';
 import type { Rng } from '../utils/seededRng';
 import type { WeaponFiredEvent } from './WeaponSystem';
 
-interface ImpactEvent {
+export interface ImpactEvent {
   position: [number, number, number];
   normal: [number, number, number];
   targetId?: number;
 }
 
-/**
- * Hitscan system for guns and instant lasers.
- * Performs raycasts with spread/accuracy using seeded RNG.
- */
+function resolveEntity(world: World<Entity>, id?: number) {
+  if (typeof id !== 'number') {
+    return undefined;
+  }
+
+  const lookup = getEntityById(id) as Entity | undefined;
+  if (lookup) {
+    return lookup;
+  }
+
+  return Array.from(world.entities).find(
+    (candidate) => (candidate.id as unknown as number) === id
+  ) as Entity | undefined;
+}
+
+function resolveOwner(world: World<Entity>, fireEvent: WeaponFiredEvent) {
+  const direct = resolveEntity(world, fireEvent.ownerId);
+  if (direct) {
+    return direct;
+  }
+
+  return Array.from(world.entities).find((candidate) => {
+    const entity = candidate as Entity & { weapon?: WeaponComponent };
+    return entity.weapon?.id === fireEvent.weaponId;
+  });
+}
+
 export function hitscanSystem(
   world: World<Entity>,
   rng: Rng,
@@ -24,11 +47,11 @@ export function hitscanSystem(
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== 'gun') continue;
 
-    const owner = getEntityById(fireEvent.ownerId) as Entity & {
+    const owner = resolveOwner(world, fireEvent) as (Entity & {
       weapon?: WeaponComponent;
       team?: string;
       position?: [number, number, number];
-    } | undefined;
+    }) | undefined;
 
     const weapon = owner?.weapon;
     if (!owner || !weapon) continue;
@@ -39,8 +62,7 @@ export function hitscanSystem(
     const spread = spreadAngle * (1 - accuracy) * (rng() - 0.5) * 2;
     const direction = applySpread(fireEvent.direction, spread);
 
-    const targetEntity =
-      fireEvent.targetId !== undefined ? getEntityById(fireEvent.targetId) : undefined;
+    const targetEntity = resolveEntity(world, fireEvent.targetId);
 
     const hit = performRaycast(
       fireEvent.origin,
@@ -53,7 +75,6 @@ export function hitscanSystem(
     );
 
     if (hit) {
-      // Apply damage
       events.damage.push({
         sourceId: fireEvent.ownerId,
         weaponId: fireEvent.weaponId,
@@ -62,7 +83,6 @@ export function hitscanSystem(
         damage: weapon.power,
       });
 
-      // Create impact event for FX
       events.impact.push({
         position: hit.position,
         normal: hit.normal,
@@ -76,13 +96,12 @@ function applySpread(
   direction: [number, number, number],
   spread: number
 ): [number, number, number] {
-  // Simple spread application - rotate direction by spread amount
   const [x, y, z] = direction;
   const yaw = Math.atan2(z, x) + spread;
   const len = Math.sqrt(x * x + y * y + z * z);
   return [
     Math.cos(yaw) * len,
-    y, // Keep vertical component unchanged for simplicity
+    y,
     Math.sin(yaw) * len,
   ];
 }
@@ -111,15 +130,15 @@ function performRaycast(
 
     const [ex, ey, ez] = candidate.position;
     const toTarget = [ex - ox, ey - oy, ez - oz];
-    const distance = Math.sqrt(toTarget[0] * toTarget[0] + toTarget[1] * toTarget[1] + toTarget[2] * toTarget[2]);
+    const distance = Math.sqrt(toTarget[0] ** 2 + toTarget[1] ** 2 + toTarget[2] ** 2);
 
     if (distance > maxDistance) return null;
 
     const dot = (toTarget[0] * dx + toTarget[1] * dy + toTarget[2] * dz) / distance;
     if (dot > 0.99) {
       return {
-        position: candidate.position,
-        normal: [-dx, -dy, -dz],
+        position: candidate.position as [number, number, number],
+        normal: [-dx, -dy, -dz] as [number, number, number],
         targetId: candidate.id as unknown as number,
       };
     }
@@ -153,4 +172,3 @@ function performRaycast(
 
   return null;
 }
-

@@ -16,7 +16,7 @@ import { Robot } from '../robots/robotPrefab';
 import { useUI } from '../store/uiStore';
 import { beamSystem } from '../systems/BeamSystem';
 import { damageSystem, type DeathEvent } from '../systems/DamageSystem';
-import { hitscanSystem } from '../systems/HitscanSystem';
+import { hitscanSystem, type ImpactEvent } from '../systems/HitscanSystem';
 import { projectileSystem } from '../systems/ProjectileSystem';
 import type { WeaponFiredEvent } from '../systems/WeaponSystem';
 import { weaponSystem } from '../systems/WeaponSystem';
@@ -192,7 +192,7 @@ export default function Simulation() {
       weaponFired: [] as WeaponFiredEvent[],
       damage: [] as DamageEvent[],
       death: [] as DeathEvent[],
-      impact: [] as unknown[],
+      impact: [] as ImpactEvent[],
     };
 
     // 1. AI decisions and movement
@@ -289,7 +289,8 @@ function setWeaponFiring(self: Entity, target: Entity | undefined) {
     return;
   }
 
-  const trb = target.rigid as unknown as RigidLike | null;
+  const currentTarget = target;
+  const trb = currentTarget?.rigid as unknown as RigidLike | null;
   if (!trb) {
     weaponEntity.weaponState.firing = false;
     weaponEntity.targetId = undefined;
@@ -309,3 +310,4 @@ function setWeaponFiring(self: Entity, target: Entity | undefined) {
     weaponEntity.targetId = undefined;
   }
 }
+

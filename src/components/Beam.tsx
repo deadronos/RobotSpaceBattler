@@ -7,6 +7,7 @@ import type { BeamComponent } from '../ecs/weapons';
 
 interface BeamEntity extends Entity {
   beam: BeamComponent;
+  render?: unknown;
 }
 
 export function Beam({ entity }: { entity: BeamEntity }) {
