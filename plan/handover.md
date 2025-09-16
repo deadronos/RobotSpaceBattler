@@ -11,6 +11,7 @@ Short, actionable handover for the next automated/collaborative agent working on
 - Implemented: Rapier physics integration, procedural robot prefabs + inspector, spawn controls, seeded RNG, WeaponSystem + Hitscan/Projectile/Beam systems, DamageSystem, many unit tests covering weapons and deterministic behavior.
 - Partial: AI (basic targeting/movement exists, but state machines & LOS occlusion missing); Damage/Health emits death events but respawn and scoring systems not implemented.
 - Missing: asset pipeline/glTF loader and model replacement; dedicated weapon editor UI; Playwright smoke test(s) and CI perf regression job; projectile pooling and perf harness.
+ 
 
 ## Top priorities for next session (ranked)
 1. Add Playwright smoke test (quick win)
@@ -30,6 +31,16 @@ Short, actionable handover for the next automated/collaborative agent working on
 
 ## Suggested immediate task to run now
 - Create the Playwright smoke test and run it locally. This is low-risk, fast, and verifies dev server + basic page render. If Playwright fails because dev server port expectations differ, adapt test to use the preview or dev server port.
+
+## Recent work (by agent)
+- Playwright smoke test added and verified locally:
+   - File created: `playwright/tests/smoke.spec.ts`.
+   - Verified by running `npm run playwright:test` which started/reused the configured webServer on port 5174 and ran the test headlessly.
+   - Result: 1 test passed (asserted `#status` and `canvas` visible).
+
+Notes:
+- No config changes were necessary; `playwright.config.ts` is already configured to start the dev server with `npm run dev -- --port 5174` and reuse an existing server.
+- Next steps (recommended): Add a GitHub Actions workflow to run Playwright smoke on PRs, implement the GLTF asset loader, and implement Respawn/Scoring systems (see priorities below).
 
 ## Quick test checklist for the next session
 - Run unit tests: `npm run test` (Vitest)
