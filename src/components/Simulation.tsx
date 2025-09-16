@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber';
-import { CuboidCollider, RigidBody } from '@react-three/rapier';
+import { CuboidCollider, RigidBody, useRapier } from '@react-three/rapier';
 import type { Query } from 'miniplex';
 import React, { useEffect, useMemo, useRef } from 'react';
 
@@ -9,12 +9,11 @@ import type {
   BeamComponent,
   DamageEvent,
   ProjectileComponent,
-  WeaponComponent,
-  WeaponStateComponent,
 } from '../ecs/weapons';
 import { Robot } from '../robots/robotPrefab';
 import { resetAndSpawnDefaultTeams } from '../robots/spawnControls';
 import { useUI } from '../store/uiStore';
+import { aiSystem } from '../systems/AISystem';
 import { beamSystem } from '../systems/BeamSystem';
 import { damageSystem, type DeathEvent } from '../systems/DamageSystem';
 import { hitscanSystem, type ImpactEvent } from '../systems/HitscanSystem';
@@ -31,18 +30,7 @@ const ARENA_SIZE = 20; // half-extent
 const DETERMINISTIC_SEED = 12345;
 const FIXED_TIMESTEP = 1/60; // 60 FPS
 
-function distanceSquared(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) {
-  const dx = a.x - b.x;
-  const dy = a.y - b.y;
-  const dz = a.z - b.z;
-  return dx * dx + dy * dy + dz * dz;
-}
-
-type RigidLike = {
-  translation: () => { x: number; y: number; z: number };
-  linvel: () => { x: number; y: number; z: number };
-  setLinvel: (v: { x: number; y: number; z: number }, wake: boolean) => void;
-};
+// utility helpers removed — AI and movement handled in aiSystem
 
 type ProjectileEntity = Entity & {
   projectile: ProjectileComponent;
@@ -55,22 +43,12 @@ type BeamEntity = Entity & {
 };
 
 
-function pickNearestEnemy(self: Entity, enemies: Entity[]) {
-  const rigid = self.rigid as unknown as RigidLike | null;
-  if (!rigid) return undefined;
-  const p = rigid.translation();
-  let best: { e: Entity; d2: number } | undefined;
-  for (const e of enemies) {
-    const r = e.rigid as unknown as RigidLike | null;
-    if (!r) continue;
-    const d2 = distanceSquared(p, r.translation());
-    if (!best || d2 < best.d2) best = { e, d2 };
-  }
-  return best?.e;
-}
+// pickNearestEnemy removed — AI decisions are handled by the centralized aiSystem
 
 export default function Simulation() {
   const paused = useUI((s) => s.paused);
+  // rapier context (optional) for physics queries like raycasts
+  const rapier = useRapier();
   const frameCountRef = useRef(0);
   const rngRef = useRef<Rng | null>(null);
   const spawnInitializedRef = useRef(false);
@@ -82,8 +60,12 @@ export default function Simulation() {
     () => world.with('beam') as unknown as Query<BeamEntity>,
     []
   );
+
+  // Robots query (used for rendering Robot prefabs)
+  const robotQuery = useMemo(() => world.with('team', 'rigid', 'weapon', 'weaponState') as Query<Entity>, []);
   const projectiles = useEcsQuery(projectileQuery);
   const beams = useEcsQuery(beamQuery);
+  const robots = useEcsQuery(robotQuery);
 
 
   // Initialize deterministic RNG
@@ -91,12 +73,7 @@ export default function Simulation() {
     rngRef.current = createSeededRng(DETERMINISTIC_SEED);
   }, []);
 
-  // Track active robots via ECS
-  const robotQuery = useMemo(
-    () => world.with('team', 'alive', 'position') as unknown as Query<Entity>,
-    []
-  );
-  const robots = useEcsQuery(robotQuery);
+  // Spawn initial teams once
   useEffect(() => {
     if (!spawnInitializedRef.current) {
       resetAndSpawnDefaultTeams();
@@ -121,9 +98,7 @@ export default function Simulation() {
     // Create fresh RNG for this frame (deterministic)
     const frameRng = createSeededRng(DETERMINISTIC_SEED + frameCountRef.current);
 
-    const entities = Array.from(world.entities);
-    const red = entities.filter((e) => e.team === 'red' && e.alive !== false && e.rigid);
-    const blue = entities.filter((e) => e.team === 'blue' && e.alive !== false && e.rigid);
+  // (entities array not needed here)
 
     // Event containers for weapon systems
     const events = {
@@ -133,23 +108,15 @@ export default function Simulation() {
       impact: [] as ImpactEvent[],
     };
 
-    // 1. AI decisions and movement
-    for (const e of red) {
-      const target = pickNearestEnemy(e, blue);
-      steerTowards(e, target);
-      setWeaponFiring(e, target);
-    }
-    for (const e of blue) {
-      const target = pickNearestEnemy(e, red);
-      steerTowards(e, target);
-      setWeaponFiring(e, target);
-    }
+  // 1. AI decisions and movement (centralized AI system)
+  // If Rapier provides a world handle via useRapier, pass it through for physics-based LOS.
+  aiSystem(world, frameRng, rapier);
 
     // 2. Weapon systems (deterministic pipeline)
     weaponSystem(world, step, frameRng, events);
-    hitscanSystem(world, frameRng, events.weaponFired, events);
-    beamSystem(world, step, frameRng, events.weaponFired, events);
-    projectileSystem(world, step, frameRng, events.weaponFired, events);
+  hitscanSystem(world, frameRng, events.weaponFired, events, rapier);
+  beamSystem(world, step, frameRng, events.weaponFired, events);
+  projectileSystem(world, step, frameRng, events.weaponFired, events, rapier);
     
     // 3. Damage application
     damageSystem(world, events.damage, events);
@@ -157,11 +124,7 @@ export default function Simulation() {
     // 4. TODO: FX system would go here
   });
 
-  useEffect(() => {
-    return () => {
-      resetWorld();
-    };
-  }, []);
+  
 
   return (
     <group>
@@ -191,60 +154,4 @@ export default function Simulation() {
   );
 }
 
-function steerTowards(self: Entity, target: Entity | undefined) {
-  const rb = self.rigid as unknown as RigidLike | null;
-  if (!rb || !self.speed) return;
-  if (!target) {
-    // slow down
-    const lv = rb.linvel();
-    rb.setLinvel({ x: lv.x * 0.95, y: lv.y, z: lv.z * 0.95 }, true);
-    return;
-  }
-  const p = rb.translation();
-  const tp = (target.rigid as unknown as RigidLike).translation();
-  const dx = tp.x - p.x;
-  const dz = tp.z - p.z;
-  const len = Math.hypot(dx, dz) || 1;
-  const vx = (dx / len) * self.speed;
-  const vz = (dz / len) * self.speed;
-  rb.setLinvel({ x: vx, y: 0, z: vz }, true);
-}
-
-function setWeaponFiring(self: Entity, target: Entity | undefined) {
-  const weaponEntity = self as Entity & { 
-    weapon?: WeaponComponent; 
-    weaponState?: WeaponStateComponent 
-  };
-  
-  if (!weaponEntity.weapon || !weaponEntity.weaponState) return;
-
-  const rb = self.rigid as unknown as RigidLike | null;
-  const targetId = target && typeof target.id === 'number' ? target.id : undefined;
-
-  if (!rb || !targetId) {
-    weaponEntity.weaponState.firing = false;
-    weaponEntity.targetId = undefined;
-    return;
-  }
-
-  const currentTarget = target;
-  const trb = currentTarget?.rigid as unknown as RigidLike | null;
-  if (!trb) {
-    weaponEntity.weaponState.firing = false;
-    weaponEntity.targetId = undefined;
-    return;
-  }
-
-  weaponEntity.targetId = targetId;
-
-  // Check if target is in range
-  const d2 = distanceSquared(rb.translation(), trb.translation());
-  const range = weaponEntity.weapon.range || 10;
-
-  if (d2 <= range * range) {
-    weaponEntity.weaponState.firing = true;
-  } else {
-    weaponEntity.weaponState.firing = false;
-    weaponEntity.targetId = undefined;
-  }
-}
+// Movement and firing helpers removed — AI responsibilities moved to aiSystem
