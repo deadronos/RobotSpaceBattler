@@ -4,6 +4,7 @@ import Scene from "./components/Scene";
 import DevDiagnostics from "./components/ui/DevDiagnostics";
 import LoadingOverlay from "./components/ui/LoadingOverlay";
 import PauseControl from "./components/ui/PauseControl";
+import PrefabsInspector from "./components/ui/PrefabsInspector";
 import StatusBox from "./components/ui/StatusBox";
 
 export default function App() {
@@ -15,7 +16,9 @@ export default function App() {
       <PauseControl />
       <LoadingOverlay />
       <StatusBox />
+      <PrefabsInspector />
       <DevDiagnostics />
     </div>
   );
 }
+

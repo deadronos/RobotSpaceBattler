@@ -186,7 +186,7 @@ function checkProjectileCollision(
       weapon?: WeaponComponent;
     };
 
-    if (!candidate.position || !candidate.team || candidate.projectile || candidate.weapon) {
+    if (!candidate.position || !candidate.team || candidate.projectile) {
       continue;
     }
     if (candidate.team === projectileTeam) continue;
@@ -220,7 +220,7 @@ function applyAoEDamage(
       weapon?: WeaponComponent;
     };
 
-    if (!candidate.position || !candidate.team || candidate.projectile || candidate.weapon) {
+    if (!candidate.position || !candidate.team || candidate.projectile) {
       continue;
     }
     if (candidate.team === sourceTeam) continue;
@@ -303,4 +303,5 @@ function updateHomingBehavior(
     }
   }
 }
+
 

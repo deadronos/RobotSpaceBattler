@@ -70,6 +70,7 @@ export function beamSystem(
         tickDamage: weapon.power / 10,
         tickInterval: weapon.beamParams?.tickInterval || 100,
         lastTickAt: Date.now(),
+        firedAt: Date.now(),
       },
     };
 
@@ -90,7 +91,7 @@ export function beamSystem(
 
     const now = Date.now();
 
-    if (now >= beam.activeUntil) {
+    if (now >= beam.activeUntil || now < beam.firedAt) {
       world.remove(entity);
       continue;
     }
@@ -146,7 +147,7 @@ function performBeamRaycast(
       weapon?: WeaponComponent;
     };
 
-    if (!candidate.position || !candidate.team || candidate.beam || candidate.weapon) continue;
+    if (!candidate.position || !candidate.team || candidate.beam) continue;
     if (ownerTeam && candidate.team === ownerTeam) continue;
 
     const [ex, ey, ez] = candidate.position;
@@ -203,3 +204,6 @@ function updateBeamOrigin(world: World<Entity>, beam: BeamComponent) {
     beam.origin = [position[0], position[1], position[2]];
   }
 }
+
+
+

@@ -1,5 +1,6 @@
-import { createRobotEntity, resetWorld, world, type Entity, type Team, type Vec3 } from '../ecs/miniplexStore';
+import { createRobotEntity, type Entity, resetWorld, type Team, type Vec3,world } from '../ecs/miniplexStore';
 import type { WeaponComponent, WeaponStateComponent, WeaponType } from '../ecs/weapons';
+import { weaponProfiles } from './weaponProfiles';
 
 export const DEFAULT_TEAM_SIZE = 10;
 const GRID_COLUMNS = 5;
@@ -9,42 +10,6 @@ const BASE_HEIGHT = 0.6;
 const TEAM_BASES: Record<Team, Vec3> = {
   red: [-8, BASE_HEIGHT, -6],
   blue: [8, BASE_HEIGHT, 6],
-};
-
-const WEAPON_PROFILES: Record<WeaponType, Pick<WeaponComponent, 'range' | 'cooldown' | 'power' | 'accuracy' | 'spread' | 'ammo' | 'aoeRadius' | 'beamParams' | 'flags'>> = {
-  gun: {
-    range: 15,
-    cooldown: 0.5,
-    power: 15,
-    accuracy: 0.8,
-    spread: 0.1,
-    ammo: { clip: 10, clipSize: 10, reserve: 50 },
-    aoeRadius: undefined,
-    beamParams: undefined,
-    flags: undefined,
-  },
-  laser: {
-    range: 25,
-    cooldown: 1.5,
-    power: 8,
-    accuracy: 0.95,
-    spread: 0,
-    ammo: undefined,
-    aoeRadius: undefined,
-    beamParams: { duration: 1000, width: 0.1, tickInterval: 100 },
-    flags: { continuous: true },
-  },
-  rocket: {
-    range: 20,
-    cooldown: 2,
-    power: 25,
-    accuracy: 0.7,
-    spread: 0,
-    ammo: undefined,
-    aoeRadius: 3,
-    beamParams: undefined,
-    flags: undefined,
-  },
 };
 
 function countTeamRobots(team: Team) {
@@ -81,7 +46,7 @@ function configureWeapon(
   weaponType: WeaponType,
   index: number
 ): WeaponComponent {
-  const profile = WEAPON_PROFILES[weaponType];
+  const profile = weaponProfiles[weaponType];
   const ownerId = robot.id as number;
 
   return {
@@ -142,4 +107,6 @@ export function resetAndSpawnDefaultTeams() {
   spawnTeam('red', ['gun', 'laser', 'rocket']);
   spawnTeam('blue', ['rocket', 'gun', 'laser']);
 }
+
+
 

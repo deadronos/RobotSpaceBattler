@@ -44,6 +44,18 @@ export interface RenderRef {
   mesh?: unknown | null;
 }
 
+export const ROBOT_BASE_STATS = {
+  hp: 100,
+  maxHp: 100,
+  alive: true,
+  range: 8,
+  power: 10,
+  cooldown: 1.0,
+  cooldownLeft: 0,
+  speed: 3,
+  turnSpeed: 4,
+} as const satisfies Partial<Entity>;
+
 export type Entity = Partial<
   Transform &
     Health &
@@ -80,15 +92,7 @@ export function createRobotEntity(init: Partial<Entity>): Entity {
   const entity: Entity = {
     position: [0, 0, 0],
     rotation: [0, 0, 0],
-    hp: 100,
-    maxHp: 100,
-    alive: true,
-    range: 8,
-    power: 10,
-    cooldown: 1.0,
-    cooldownLeft: 0,
-    speed: 3,
-    turnSpeed: 4,
+    ...ROBOT_BASE_STATS,
     ...init,
   };
 
@@ -119,6 +123,7 @@ export function resetWorld() {
   entityLookup.clear();
   nextEntityId = 1;
 }
+
 
 
 

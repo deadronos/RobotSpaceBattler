@@ -42,6 +42,7 @@ export interface ProjectileComponent {
 export interface BeamComponent {
   sourceWeaponId: string;
   ownerId: number;
+  firedAt: number;
   origin: [number, number, number];
   direction: [number, number, number];
   length: number;

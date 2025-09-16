@@ -66,6 +66,7 @@ export interface ProjectileComponent {
 
 export interface BeamComponent {
   sourceWeaponId: string
+  firedAt?: number // timestamp (ms) when the beam was created/fired
   origin: [number, number, number]
   direction: [number, number, number]
   length: number
