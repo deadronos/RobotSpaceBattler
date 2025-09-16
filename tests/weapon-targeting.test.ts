@@ -139,6 +139,43 @@ describe('Weapon targeting and friendly-fire rules', () => {
     expect(projectileEvents.damage.some((d) => d.targetId === friendly.id)).toBe(false);
     expect(projectileEvents.damage.every((d) => d.sourceId === shooter.id)).toBe(true);
   });
+  it('uses resolved owner entity id when fire event ownerId is stale', () => {
+    const rng = createSeededRng(5);
+    const shooter = createRobotEntity({
+      team: 'red',
+      position: [0, 0, 0],
+    }) as ReturnType<typeof createRobotEntity> & {
+      weapon: WeaponComponent;
+    };
+
+    shooter.weapon = {
+      id: 'fallback-rocket',
+      type: 'rocket',
+      ownerId: shooter.id as number,
+      team: 'red',
+      range: 25,
+      cooldown: 0,
+      power: 12,
+    };
+
+    const projectileEvents = { damage: [] as DamageEvent[] };
+    const firedEvent: WeaponFiredEvent = {
+      weaponId: shooter.weapon.id,
+      ownerId: 0,
+      type: 'rocket',
+      origin: [0, 0, 0],
+      direction: [1, 0, 0],
+      timestamp: Date.now(),
+    };
+
+    projectileSystem(ecsWorld, 0.016, rng, [firedEvent], projectileEvents);
+    const projectile = Array.from(ecsWorld.entities).find(
+      (candidate) => (candidate as Entity & { projectile?: unknown }).projectile
+    ) as (Entity & { projectile: { ownerId: number } }) | undefined;
+
+    expect(projectile).toBeDefined();
+    expect(projectile?.projectile.ownerId).toBe(shooter.id);
+  });
   it('applies owner team filtering for beam tick damage', () => {
     const rng = createSeededRng(4);
     const events = { weaponFired: [] as WeaponFiredEvent[], damage: [] as DamageEvent[] };

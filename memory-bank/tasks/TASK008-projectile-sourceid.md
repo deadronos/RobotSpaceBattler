@@ -1,6 +1,6 @@
 # [TASK008] ProjectileSystem: sourceId wiring from weapon
 
-**Status:** Not Started  
+**Status:** Completed  
 **Added:** 2025-09-17  
 **Updated:** 2025-09-17
 
@@ -34,3 +34,19 @@ Replace hard-coded `sourceId: 0` used when spawning projectiles with the actual 
 
 - This change reduces ambiguity in scoring and event logs and is required for analytics/telemetry of shooters.
 - Keep changes small and safe: update tests in step with code changes to avoid breakage.
+
+## Progress Tracking
+
+**Overall Status:** Completed - 100%
+
+### Subtasks
+| ID | Description | Status | Updated | Notes |
+|----|-------------|--------|---------|-------|
+| 1.1 | Derive projectile owner id from resolved firing entity | Complete | 2025-09-17 | `projectileSystem` now prefers the resolved entity id over stale event ownerId. |
+| 1.2 | Add regression test covering fallback owner attribution | Complete | 2025-09-17 | Added coverage to `tests/weapon-targeting.test.ts`. |
+
+## Progress Log
+### 2025-09-17
+- Confirmed existing projectile wiring and added fallback to resolved owner id when spawning rockets in `src/systems/ProjectileSystem.ts`.
+- Added Vitest regression ensuring rocket projectiles inherit the resolved owner id even if the fire event passes a placeholder.
+- Ran `npm run test -- weapon-targeting.test.ts` to verify affected suite.
