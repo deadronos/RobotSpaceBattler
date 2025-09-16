@@ -3,7 +3,7 @@
 
 ## In Progress
 
-- [TASK006] Unified weapons ECS - Developing shared weapon components and systems.
+- [TASK006] Unified weapons ECS - Systems integrated; documenting usage & perf follow-up.
 - [TASK005] Expand tasks list - Audit repo for missing tasks and add them to this index. (In progress)
 
 ## Pending
