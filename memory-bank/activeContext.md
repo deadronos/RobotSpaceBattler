@@ -16,10 +16,11 @@
 - Unit tests expanded: weapons, projectile lifecycle, and physics sync tests (Vitest).
 - Playwright E2E smoke test added (`playwright/tests/smoke.spec.ts`) and verified locally to assert `#status` and `canvas` are present.
 
+- Respawn and Scoring systems implemented with queue-based respawns, score tracking UI, and Vitest coverage (`src/systems/RespawnSystem.ts`, `src/systems/ScoringSystem.ts`, `src/components/ui/ScoreBoard.tsx`).
+
 ## Next steps
 
 - Integrate the unified weapons ECS into the main `Simulation` wiring and ensure all systems read authority from Rapier bodies.
-- Implement Respawn and Scoring systems to consume death events and re-enable entities (see handover priorities).
 - Harden friendly-fire rules, ensure projectiles carry correct `sourceId`, and expand unit tests for cooldowns and AOE edge-cases.
 - Add GLTF asset loader and optional model replacement for procedural prefabs.
 
@@ -32,5 +33,6 @@
 
 - Playwright smoke test uses the repo Playwright config which starts the dev server on port 5174 for CI; note the Vite default dev port is 5173 (see `memory-bank/techContext.md` for port docs).
 - Several unit tests rely on deterministic RNG; maintain `utils/seededRng.ts` as the canonical seeded RNG helper.
+
 
 
