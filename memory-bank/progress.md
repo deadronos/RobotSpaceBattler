@@ -31,5 +31,9 @@
 - Playwright's config starts a dev server on port 5174 for CI; Vite's dev server default remains 5173 for local dev. This is documented in `memory-bank/techContext.md` and the handover recommends ensuring CI/Playwright runs use the configured webServer behavior.
 - Some systems still require expanded unit tests before closing out their tasks.
 
+## Recent fixes
+
+- Fixed a TypeScript build error where `Simulation` passed the Rapier world to `projectileSystem` — updated `projectileSystem` to accept an optional `rapierWorld` parameter so the production build succeeds. Tests and build verified locally.
+
 
 
