@@ -93,7 +93,7 @@ export default function Simulation() {
 
   // Track active robots via ECS
   const robotQuery = useMemo(
-    () => world.with('weaponState', 'position') as unknown as Query<Entity>,
+    () => world.with('team', 'alive', 'position') as unknown as Query<Entity>,
     []
   );
   const robots = useEcsQuery(robotQuery);
@@ -176,7 +176,7 @@ export default function Simulation() {
 
       {/* Robots */}
       {robots.map((e, i) => (
-        <Robot key={i} entity={e} />
+        <Robot key={String(e.id ?? i)} entity={e} />
       ))}
       {projectiles.map((entity) => (
         <Projectile
@@ -248,4 +248,3 @@ function setWeaponFiring(self: Entity, target: Entity | undefined) {
     weaponEntity.targetId = undefined;
   }
 }
-
