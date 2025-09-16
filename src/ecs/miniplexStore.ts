@@ -1,9 +1,119 @@
-// Minimal example store export for possible later use
-import { World } from "miniplex";
+import { World } from 'miniplex';
 
-import type { Entity } from "./types";
+import type { BeamComponent, ProjectileComponent } from './weapons';
 
-// Export a single World instance used by the simulation. Use the Entity type
-// so consumers get properly typed entries instead of unknown.
-export const store = new World<Entity>();
-export default store;
+// Component types based on SPEC.md
+export type Vec3 = [number, number, number];
+
+export type Team = 'red' | 'blue';
+
+export interface Transform {
+  position: Vec3;
+  rotation: Vec3; // Euler in radians
+}
+
+export interface Health {
+  hp: number;
+  maxHp: number;
+  alive: boolean;
+}
+
+export interface Weapon {
+  range: number;
+  power: number;
+  cooldown: number; // seconds
+  cooldownLeft: number; // seconds
+}
+
+export interface RobotStats {
+  speed: number; // m/s
+  turnSpeed: number; // rad/s (not used yet)
+}
+
+export interface Target {
+  targetId?: number; // entity id of current target
+}
+
+// Rapier RigidBody API is provided by @react-three/rapier
+export interface RigidBodyRef {
+  // Avoid strict type coupling to @react-three/rapier version
+  rigid?: unknown | null;
+}
+
+export interface RenderRef {
+  mesh?: unknown | null;
+}
+
+export type Entity = Partial<
+  Transform &
+    Health &
+    Weapon &
+    RobotStats &
+    Target & {
+      id: string | number;
+      team: Team;
+    } &
+    RigidBodyRef &
+    RenderRef & {
+      beam?: BeamComponent;
+      projectile?: ProjectileComponent;
+    }
+>;
+
+export const world = new World<Entity>();
+
+let nextEntityId = 1;
+const entityLookup = new Map<number, Entity>();
+
+export function getEntityById(id: number) {
+  return entityLookup.get(id);
+}
+
+// Helper queries
+export function getRobots() {
+  return Array.from(world.entities).filter((e) => e.team && e.rigid);
+}
+
+export function createRobotEntity(init: Partial<Entity>): Entity {
+  const entity: Entity = {
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    hp: 100,
+    maxHp: 100,
+    alive: true,
+    range: 8,
+    power: 10,
+    cooldown: 1.0,
+    cooldownLeft: 0,
+    speed: 3,
+    turnSpeed: 4,
+    ...init,
+  };
+
+  if (typeof entity.id !== 'number') {
+    entity.id = nextEntityId++;
+  }
+
+  const added = world.add(entity);
+
+  if (typeof added.id === 'number') {
+    entityLookup.set(added.id, added);
+  }
+
+  return added;
+}
+
+export function removeEntity(e: Entity) {
+  if (typeof e.id === 'number') {
+    entityLookup.delete(e.id);
+  }
+  world.remove(e);
+}
+
+export function resetWorld() {
+  for (const e of [...world.entities]) {
+    removeEntity(e);
+  }
+  entityLookup.clear();
+  nextEntityId = 1;
+}

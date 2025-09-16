@@ -1,15 +1,9 @@
-import React from "react";
+import React from 'react';
 
-import useUI from "../../store/uiStore";
+import { useUI } from '../../store/uiStore';
 
 export default function LoadingOverlay() {
-  const dreiLoading = useUI((s) => s.dreiLoading);
-  if (!dreiLoading) return null;
-  return (
-    <div className="drei-overlay">
-      <div className="drei-overlay-card" role="status" aria-live="polite">
-        Loading UI…
-      </div>
-    </div>
-  );
+  const loading = useUI((s) => s.loading);
+  if (!loading) return null;
+  return <div className="ui overlay">Loading…</div>;
 }

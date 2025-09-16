@@ -41,18 +41,6 @@
     "three": "^0.180.0",
     "zustand": "^5.0.8"
   },
-  "overrides": {
-    "@dimforge/rapier3d-compat": "0.15.0",
-    "@react-three/rapier": {
-      "@dimforge/rapier3d-compat": "0.15.0"
-    },
-    "@react-three/drei": {
-      "@dimforge/rapier3d-compat": "0.15.0"
-    },
-    "@types/three": {
-      "@dimforge/rapier3d-compat": "0.15.0"
-    }
-  },
   "devDependencies": {
     "@playwright/test": "^1.55.0",
     "@responsive-image/vite-plugin": "latest",
