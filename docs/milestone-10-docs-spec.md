@@ -20,3 +20,14 @@
 
 6. Acceptance Criteria
    - SPEC reflects implemented APIs and is referenced by tests.
+
+7. Recent updates (dev branch)
+
+   - `SPEC.md` expanded with concrete component shapes for `RobotStats` and `Weapon` components, implementation notes for the Rapier authority model, and short API snippets for spawning robots and firing weapons.
+   - Migration guidance added: prefer `RigidBody` APIs (setLinvel, setTranslation) over direct mesh transforms.
+
+8. Next steps
+
+   - Link SPEC sections from the developer README and `memory-bank/` so tests and contributors can easily find authoritative API shapes.
+   - Add unit tests that assert the component shapes remain stable (schema tests) and fail CI on breaking changes.
+

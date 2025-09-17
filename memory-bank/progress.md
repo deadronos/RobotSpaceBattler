@@ -38,5 +38,10 @@
 
 - Fixed a TypeScript build error where `Simulation` passed the Rapier world to `projectileSystem` — updated `projectileSystem` to accept an optional `rapierWorld` parameter so the production build succeeds. Tests and build verified locally.
 
+## Milestone 10 - Docs updates
+
+- Updated `SPEC.md` to include concrete component shapes and implementation notes for Robots, Weapons, AI, and Physics/Environment as part of Milestone 10. See `docs/milestone-10-docs-spec.md` for the milestone plan. These changes clarify Rapier authority and preferred APIs (use `RigidBody` methods rather than manipulating mesh transforms).
+
+
 
 

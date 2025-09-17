@@ -13,3 +13,5 @@ Small notes to ensure developer workflow (especially on Windows) runs pre-commit
 - CI: this repo includes a GitHub Actions workflow to run linting and formatting checks on pull requests.
 
 Thanks for contributing — please run the test suite locally (`npm run test`) before open a PR.
+
+See `CONTRIBUTING-HUSKY.md` for information about Husky hooks being removed and recommended local checks.

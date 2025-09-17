@@ -18,8 +18,7 @@
     "test:coverage": "vitest run --coverage",
     "ci:test": "cross-env CI=true vitest run --coverage",
     "playwright:install": "playwright install",
-    "playwright:test": "playwright test",
-    "prepare": "husky install"
+    "playwright:test": "playwright test"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx,js,jsx}": [
