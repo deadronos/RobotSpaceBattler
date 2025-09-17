@@ -12,7 +12,8 @@
     "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --config eslint.config.cjs --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "docs:deps": "node scripts/generate-dependency-docs.cjs",
-    "test": "vitest run",
+  "test": "vitest run",
+  "assets:validate": "node ./scripts/validate-assets.js",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "ci:test": "cross-env CI=true vitest run --coverage",
@@ -80,6 +81,11 @@
     "vite-plugin-glsl": "latest",
     "vite-plugin-svgr": "latest",
     "vite-plugin-wasm": "^3.5.0",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@types_node": "^20.5.6",
+    "@gltf-transform/cli": "^0.13.0",
+    "@gltf-transform/core": "^1.7.0",
+    "@gltf-transform/extensions": "^1.7.0",
+    "gltf-pipeline": "^3.0.5"
   }
 }
