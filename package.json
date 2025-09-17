@@ -13,7 +13,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "docs:deps": "node scripts/generate-dependency-docs.cjs",
     "test": "vitest run",
-  "assets:validate": "node ./scripts/validate-assets.cjs",
+    "assets:validate": "node ./scripts/validate-assets.cjs",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "ci:test": "cross-env CI=true vitest run --coverage",
@@ -43,10 +43,14 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@gltf-transform/cli": "latest",
+    "@gltf-transform/core": "latest",
+    "@gltf-transform/extensions": "latest",
     "@playwright/test": "^1.55.0",
     "@responsive-image/vite-plugin": "latest",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
+    "@types/node": "^20.5.6",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@typescript-eslint/eslint-plugin": "^8.43.0",
@@ -68,6 +72,7 @@
     "eslint-plugin-unicorn": "^61.0.2",
     "eslint-plugin-unused-imports": "^4.2.0",
     "eslint-plugin-vitest": "^0.5.4",
+    "gltf-pipeline": "^3.0.5",
     "jsdom": "^27.0.0",
     "lint-staged": "^16.1.6",
     "playwright": "^1.55.0",
@@ -80,11 +85,6 @@
     "vite-plugin-glsl": "latest",
     "vite-plugin-svgr": "latest",
     "vite-plugin-wasm": "^3.5.0",
-    "vitest": "^3.2.4",
-    "@types_node": "^20.5.6",
-    "@gltf-transform/cli": "^0.13.0",
-    "@gltf-transform/core": "^1.7.0",
-    "@gltf-transform/extensions": "^1.7.0",
-    "gltf-pipeline": "^3.0.5"
+    "vitest": "^3.2.4"
   }
 }

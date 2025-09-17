@@ -23,7 +23,7 @@ test('validateGltf returns missing for non-existent file', () => {
   const p = join(TMP, 'does-not-exist.gltf');
   const res = validateGltf(p);
   expect(res.ok).toBe(false);
-  expect(res.messages.some(m => m.includes('Missing file'))).toBe(true);
+  expect(res.messages.some((m: string) => m.includes('Missing file'))).toBe(true);
 });
 
 test('validateGltf returns error for invalid JSON', () => {
@@ -31,7 +31,7 @@ test('validateGltf returns error for invalid JSON', () => {
   writeFileSync(p, '{ not: valid json }', 'utf8');
   const res = validateGltf(p);
   expect(res.ok).toBe(false);
-  expect(res.messages.some(m => m.includes('Invalid JSON'))).toBe(true);
+  expect(res.messages.some((m: string) => m.includes('Invalid JSON'))).toBe(true);
 });
 
 test('validateGltf accepts minimal valid glTF', () => {
