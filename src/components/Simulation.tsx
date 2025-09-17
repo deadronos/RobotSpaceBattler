@@ -45,7 +45,7 @@ type BeamEntity = Entity & {
 
 // pickNearestEnemy removed — AI decisions are handled by the centralized aiSystem
 
-export default function Simulation() {
+export default function Simulation({ renderFloor = false }: { renderFloor?: boolean }) {
   const paused = useUI((s) => s.paused);
   const showFx = useUI((s) => s.showFx);
   // rapier context (optional) for physics queries like raycasts
@@ -63,7 +63,9 @@ export default function Simulation() {
   );
 
   // Robots query (used for rendering Robot prefabs)
-  const robotQuery = useMemo(() => world.with('team', 'rigid', 'weapon', 'weaponState') as Query<Entity>, []);
+  // Important: do NOT require 'rigid' here; the Robot prefab sets entity.rigid on mount.
+  // If we require 'rigid', nothing will render and robots will never mount.
+  const robotQuery = useMemo(() => world.with('team', 'weapon', 'weaponState') as Query<Entity>, []);
   const projectiles = useEcsQuery(projectileQuery);
   const beams = useEcsQuery(beamQuery);
   const robots = useEcsQuery(robotQuery);
@@ -137,12 +139,14 @@ export default function Simulation() {
 
   return (
     <group>
-      {/* Arena floor */}
+      {/* Arena floor: visual plane optional; collider always present. */}
       <RigidBody type="fixed" colliders={false}>
-        <mesh receiveShadow rotation-x={-Math.PI / 2} position={[0, 0, 0]}>
-          <planeGeometry args={[ARENA_SIZE * 2, ARENA_SIZE * 2, 1, 1]} />
-          <meshStandardMaterial color="#202531" />
-        </mesh>
+        {renderFloor ? (
+          <mesh receiveShadow rotation-x={-Math.PI / 2} position={[0, 0, 0]}>
+            <planeGeometry args={[ARENA_SIZE * 2, ARENA_SIZE * 2, 1, 1]} />
+            <meshStandardMaterial color="#202531" />
+          </mesh>
+        ) : null}
         <CuboidCollider args={[ARENA_SIZE, 0.1, ARENA_SIZE]} position={[0, -0.05, 0]} />
       </RigidBody>
 
