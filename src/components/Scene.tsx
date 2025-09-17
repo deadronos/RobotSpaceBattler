@@ -3,23 +3,21 @@ import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import React, { Suspense } from 'react';
 
+import EnvironmentLayout from './environment/EnvironmentLayout';
+import EnvironmentLighting from './environment/EnvironmentLighting';
 import Simulation from './Simulation';
+
+const ENABLE_ENVIRONMENT = true;
 
 export default function Scene() {
   return (
-    <Canvas shadows camera={{ position: [16, 12, 16], fov: 50 }}>
+  <Canvas shadows camera={{ position: [16, 12, 16], fov: 50 }}>
       <color attach="background" args={[0.04, 0.05, 0.09]} />
-      <ambientLight intensity={0.3} />
-      <directionalLight
-        castShadow
-        position={[10, 15, 5]}
-        intensity={1.1}
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-      />
+      {ENABLE_ENVIRONMENT ? <EnvironmentLighting /> : <ambientLight intensity={0.3} />}
       <Suspense fallback={null}>
+        {ENABLE_ENVIRONMENT ? <EnvironmentLayout /> : null}
         <Physics gravity={[0, -9.81, 0]}>
-          <Simulation />
+          <Simulation renderFloor={!ENABLE_ENVIRONMENT} />
         </Physics>
       </Suspense>
       <OrbitControls makeDefault />

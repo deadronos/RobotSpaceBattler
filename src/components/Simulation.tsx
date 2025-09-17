@@ -5,25 +5,23 @@ import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useEcsQuery } from '../ecs/hooks';
 import { type Entity, resetWorld, world } from '../ecs/miniplexStore';
-import type {
-  BeamComponent,
-  DamageEvent,
-  ProjectileComponent,
-} from '../ecs/weapons';
+import type { BeamComponent, DamageEvent, ProjectileComponent } from '../ecs/weapons';
 import { Robot } from '../robots/robotPrefab';
 import { resetAndSpawnDefaultTeams } from '../robots/spawnControls';
 import { useUI } from '../store/uiStore';
 import { aiSystem } from '../systems/AISystem';
 import { beamSystem } from '../systems/BeamSystem';
 import { damageSystem, type DeathEvent } from '../systems/DamageSystem';
-import { respawnSystem, clearRespawnQueue } from '../systems/RespawnSystem';
-import { scoringSystem, resetScores } from '../systems/ScoringSystem';
+import { fxSystem } from '../systems/FxSystem';
 import { hitscanSystem, type ImpactEvent } from '../systems/HitscanSystem';
 import { projectileSystem } from '../systems/ProjectileSystem';
+import { clearRespawnQueue,respawnSystem } from '../systems/RespawnSystem';
+import { resetScores,scoringSystem } from '../systems/ScoringSystem';
 import type { WeaponFiredEvent } from '../systems/WeaponSystem';
 import { weaponSystem } from '../systems/WeaponSystem';
 import { createSeededRng, type Rng } from '../utils/seededRng';
 import { Beam } from './Beam';
+import { FXLayer } from './FXLayer';
 import { Projectile } from './Projectile';
 
 const ARENA_SIZE = 20; // half-extent
@@ -47,8 +45,9 @@ type BeamEntity = Entity & {
 
 // pickNearestEnemy removed — AI decisions are handled by the centralized aiSystem
 
-export default function Simulation() {
+export default function Simulation({ renderFloor = false }: { renderFloor?: boolean }) {
   const paused = useUI((s) => s.paused);
+  const showFx = useUI((s) => s.showFx);
   // rapier context (optional) for physics queries like raycasts
   const rapier = useRapier();
   const frameCountRef = useRef(0);
@@ -64,7 +63,9 @@ export default function Simulation() {
   );
 
   // Robots query (used for rendering Robot prefabs)
-  const robotQuery = useMemo(() => world.with('team', 'rigid', 'weapon', 'weaponState') as Query<Entity>, []);
+  // Important: do NOT require 'rigid' here; the Robot prefab sets entity.rigid on mount.
+  // If we require 'rigid', nothing will render and robots will never mount.
+  const robotQuery = useMemo(() => world.with('team', 'weapon', 'weaponState') as Query<Entity>, []);
   const projectiles = useEcsQuery(projectileQuery);
   const beams = useEcsQuery(beamQuery);
   const robots = useEcsQuery(robotQuery);
@@ -130,19 +131,22 @@ export default function Simulation() {
     scoringSystem(events.death);
     respawnSystem(world, events.death);
 
-    // 4. TODO: FX system would go here
+    // 4. FX system (render-only, non-authoritative)
+    fxSystem(world, step, events);
   });
 
   
 
   return (
     <group>
-      {/* Arena floor */}
+      {/* Arena floor: visual plane optional; collider always present. */}
       <RigidBody type="fixed" colliders={false}>
-        <mesh receiveShadow rotation-x={-Math.PI / 2} position={[0, 0, 0]}>
-          <planeGeometry args={[ARENA_SIZE * 2, ARENA_SIZE * 2, 1, 1]} />
-          <meshStandardMaterial color="#202531" />
-        </mesh>
+        {renderFloor ? (
+          <mesh receiveShadow rotation-x={-Math.PI / 2} position={[0, 0, 0]}>
+            <planeGeometry args={[ARENA_SIZE * 2, ARENA_SIZE * 2, 1, 1]} />
+            <meshStandardMaterial color="#202531" />
+          </mesh>
+        ) : null}
         <CuboidCollider args={[ARENA_SIZE, 0.1, ARENA_SIZE]} position={[0, -0.05, 0]} />
       </RigidBody>
 
@@ -159,6 +163,9 @@ export default function Simulation() {
       {beams.map((entity) => (
         <Beam key={String(entity.id ?? entity.beam.sourceWeaponId)} entity={entity} />
       ))}
+
+      {/* FX Layer */}
+      {showFx ? <FXLayer /> : null}
     </group>
   );
 }

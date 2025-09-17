@@ -1,5 +1,6 @@
 import { World } from 'miniplex';
 
+import type { FxComponent } from './fx';
 import type { BeamComponent, ProjectileComponent, WeaponComponent, WeaponStateComponent } from './weapons';
 
 // Component types based on SPEC.md
@@ -71,6 +72,7 @@ export type Entity = Partial<
       projectile?: ProjectileComponent;
       weapon?: WeaponComponent;
       weaponState?: WeaponStateComponent;
+      fx?: FxComponent;
     }
 >;
 
