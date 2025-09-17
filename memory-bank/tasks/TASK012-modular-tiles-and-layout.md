@@ -1,7 +1,7 @@
 # [TASK012] - Modular Tiles and Layout
 
-Status: Pending  
-Added: 2025-09-17  
+Status: Completed
+Added: 2025-09-17
 Updated: 2025-09-17
 
 ## Original Request
@@ -25,10 +25,10 @@ Modular components keep geometry simple and reusable; a small arena confirms sca
 
 | ID | Description | Status | Updated | Notes |
 |----|-------------|--------|---------|-------|
-| 2.1 | Scaffold environment components folder and tile components | Not Started | 2025-09-17 |  |
-| 2.2 | Implement `EnvironmentLayout` with a basic arena | Not Started | 2025-09-17 |  |
-| 2.3 | Wire shared materials and verify tiling/UVs | Not Started | 2025-09-17 |  |
-| 2.4 | Add quick story/demo in `Scene.tsx` behind a flag | Not Started | 2025-09-17 |  |
+| 2.1 | Scaffold environment components folder and tile components | Completed | 2025-09-17 | Floor/Wall/Corner tile components created |
+| 2.2 | Implement `EnvironmentLayout` with a basic arena | Completed | 2025-09-17 | 10×10 arena with perimeter walls |
+| 2.3 | Wire shared materials and verify tiling/UVs | Completed | 2025-09-17 | Shared material instances reused |
+| 2.4 | Add quick story/demo in `Scene.tsx` behind a flag | Completed | 2025-09-17 | `ENABLE_ENVIRONMENT` toggle in Scene |
 
 ## Acceptance Criteria
 

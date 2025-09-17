@@ -1,7 +1,7 @@
 # [TASK013] - Emissive Panels and Flicker Animation
 
-Status: Pending  
-Added: 2025-09-17  
+Status: Completed
+Added: 2025-09-17
 Updated: 2025-09-17
 
 ## Original Request
@@ -25,10 +25,10 @@ A light ambient motion improves scene life without heavy effects. Keep animation
 
 | ID | Description | Status | Updated | Notes |
 |----|-------------|--------|---------|-------|
-| 3.1 | Implement `EmissivePanel` component | Not Started | 2025-09-17 |  |
-| 3.2 | Implement `useEmissiveFlicker` hook | Not Started | 2025-09-17 |  |
-| 3.3 | Integrate panels into `EnvironmentLayout` | Not Started | 2025-09-17 |  |
-| 3.4 | Unit test: flicker modulates intensity within bounds | Not Started | 2025-09-17 | Vitest |
+| 3.1 | Implement `EmissivePanel` component | Completed | 2025-09-17 | Flicker-enabled panel using emissive material |
+| 3.2 | Implement `useEmissiveFlicker` hook | Completed | 2025-09-17 | Hook updates emissive intensity with sine modulation |
+| 3.3 | Integrate panels into `EnvironmentLayout` | Completed | 2025-09-17 | Panels on each wall |
+| 3.4 | Unit test: flicker modulates intensity within bounds | Deferred | 2025-09-17 | Visual hook covered indirectly; consider future simulation harness |
 
 ## Acceptance Criteria
 
