@@ -30,7 +30,7 @@ export default function EnvironmentLighting({
 
   return (
     <group>
-      <Environment intensity={envIntensity} frames={1}>
+      <Environment frames={1}>
         <mesh scale={40}>
           <sphereGeometry args={[1, 32, 32]} />
           <meshBasicMaterial color="#1a1f28" side={BackSide} />
@@ -43,6 +43,8 @@ export default function EnvironmentLighting({
           position={[0, 4.5, -9]}
         />
       </Environment>
+      {/* Ambient light approximates global environment intensity since Environment does not accept an intensity prop */}
+      <ambientLight intensity={envIntensity} />
       <directionalLight
         castShadow={castShadows}
         position={[8, 14, 6]}

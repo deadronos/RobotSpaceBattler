@@ -13,7 +13,8 @@ export interface MetricsOptions {
 }
 
 function collectMaterialTextures(material: Material, target: Set<Texture>) {
-  const candidateKeys: (keyof Material)[] = [
+  // Many Three.js material types expose common texture slots. We probe a safe list.
+  const candidateKeys = [
     'map',
     'roughnessMap',
     'normalMap',
@@ -21,13 +22,17 @@ function collectMaterialTextures(material: Material, target: Set<Texture>) {
     'metalnessMap',
     'emissiveMap',
     'displacementMap',
-  ];
+  ] as const;
+
+  const getSlot = (mat: Material, key: (typeof candidateKeys)[number]): Texture | undefined => {
+    const record = mat as unknown as Record<string, unknown>;
+    const value = record[key];
+    return value instanceof Texture ? value : undefined;
+  };
 
   candidateKeys.forEach((key) => {
-    const texture = material[key as keyof Material];
-    if (texture && texture instanceof Texture) {
-      target.add(texture);
-    }
+    const texture = getSlot(material, key);
+    if (texture) target.add(texture);
   });
 }
 
