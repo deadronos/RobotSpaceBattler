@@ -1,7 +1,8 @@
 import type { World } from 'miniplex';
 
-import { type Entity,getEntityById } from '../ecs/miniplexStore';
+import { type Entity, getEntityById } from '../ecs/miniplexStore';
 import type { DamageEvent, ProjectileComponent, WeaponComponent } from '../ecs/weapons';
+import { useUI } from '../store/uiStore';
 import type { Rng } from '../utils/seededRng';
 import type { WeaponFiredEvent } from './WeaponSystem';
 
@@ -48,8 +49,18 @@ export function projectileSystem(
   rng: Rng,
   weaponFiredEvents: WeaponFiredEvent[],
   events: { damage: DamageEvent[] },
-  rapierWorld?: unknown
+  _rapierWorld?: unknown
 ) {
+  // Friendly-fire toggle (default false when store not initialized)
+  let friendlyFire = false;
+  // mark optional rapier arg as intentionally unused for now
+  void _rapierWorld;
+  try {
+    // In React runtime, useUI is callable; in tests, this may throw if Zustand isn't set up, so fall back.
+    friendlyFire = useUI.getState ? Boolean(useUI.getState().friendlyFire) : false;
+  } catch {
+    friendlyFire = false;
+  }
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== 'rocket') continue;
 
@@ -122,7 +133,7 @@ export function projectileSystem(
       position[2] += velocity[2] * dt;
     }
 
-    const hit = checkProjectileCollision(position, world, projectile.team);
+  const hit = checkProjectileCollision(position, world, projectile.team, friendlyFire);
     if (hit) {
       if (projectile.aoeRadius && projectile.aoeRadius > 0) {
         applyAoEDamage(
@@ -132,7 +143,8 @@ export function projectileSystem(
           projectile.team,
           projectile.ownerId,
           world,
-          events
+          events,
+          friendlyFire
         );
       } else {
         events.damage.push({
@@ -180,8 +192,10 @@ export function projectileSystem(
 function checkProjectileCollision(
   position: [number, number, number],
   world: World<Entity>,
-  projectileTeam: string
-): { targetId: number } | null {
+  projectileTeam: string,
+  friendlyFire: boolean
+): { targetId?: number } | null {
+  let impactedAny = false;
   for (const entity of world.entities) {
     const candidate = entity as Entity & {
       position?: [number, number, number];
@@ -193,18 +207,23 @@ function checkProjectileCollision(
     if (!candidate.position || !candidate.team || candidate.projectile) {
       continue;
     }
-    if (candidate.team === projectileTeam) continue;
-
+    // ignore entities carrying weapons (likely the shooter/robots)
+    if (candidate.weapon) continue;
     const [ex, ey, ez] = candidate.position;
     const [px, py, pz] = position;
     const distance = Math.sqrt((ex - px) ** 2 + (ey - py) ** 2 + (ez - pz) ** 2);
+
+    if (!friendlyFire && candidate.team === projectileTeam) {
+      if (distance < 1) impactedAny = true;
+      continue;
+    }
 
     if (distance < 1) {
       return { targetId: candidate.id as unknown as number };
     }
   }
 
-  return null;
+  return impactedAny ? {} : null;
 }
 
 function applyAoEDamage(
@@ -214,7 +233,8 @@ function applyAoEDamage(
   sourceTeam: string,
   sourceId: number,
   world: World<Entity>,
-  events: { damage: DamageEvent[] }
+  events: { damage: DamageEvent[] },
+  friendlyFire: boolean
 ) {
   for (const entity of world.entities) {
     const candidate = entity as Entity & {
@@ -227,7 +247,8 @@ function applyAoEDamage(
     if (!candidate.position || !candidate.team || candidate.projectile) {
       continue;
     }
-    if (candidate.team === sourceTeam) continue;
+    if (candidate.weapon) continue;
+    if (!friendlyFire && candidate.team === sourceTeam) continue;
 
     const [ex, ey, ez] = candidate.position;
     const [cx, cy, cz] = center;

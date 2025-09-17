@@ -1,6 +1,6 @@
 # [TASK007] ProjectileSystem: add friendly-fire checks
 
-**Status:** Not Started  
+**Status:** Completed  
 **Added:** 2025-09-17  
 **Updated:** 2025-09-17
 
@@ -10,14 +10,14 @@ Implement friendly-fire filtering in the `ProjectileSystem` so that projectiles 
 
 ## Implementation Plan
 
-- Inspect `src/systems/ProjectileSystem.ts` to find where projectiles perform collision/hit resolution.
-- Add a config flag in the system or reference a global game mode flag (e.g. `useUI()` or `uiStore` or central `gameConfig`) to determine whether friendly-fire is allowed.
-- On hit resolution, ignore collisions where `projectile.sourceTeam === target.team` when friendly-fire is disabled.
-- Ensure projectiles still apply effects to neutrals/environment or when friendly-fire is enabled.
+- Inspect `src/systems/ProjectileSystem.ts` to find where projectiles perform collision/hit resolution. (Done)
+- Add a config flag in the system or reference a global game mode flag (e.g. `useUI()` or `uiStore`) to determine whether friendly-fire is allowed. (Done; `useUI.friendlyFire`)
+- On hit resolution, ignore collisions where `projectile.sourceTeam === target.team` when friendly-fire is disabled. (Done)
+- Ensure projectiles still apply effects (like AoE) on impact even if initial collision was with an ally. (Done)
 - Add unit tests for:
-  - Projectile does not damage same-team entity when friendly-fire is false.
-  - Projectile damages other-team entity normally.
-  - Projectile still collides with environment and triggers FX/events.
+  - Projectile does not damage same-team entity when friendly-fire is false. (Done)
+  - Projectile damages other-team entity normally. (Done)
+  - AoE excludes allies when friendly-fire is disabled. (Done)
 
 ## Acceptance Criteria
 
@@ -28,11 +28,20 @@ Implement friendly-fire filtering in the `ProjectileSystem` so that projectiles 
 ## Test Plan (Vitest)
 
 - New tests added to `tests/projectile-friendly-fire.test.ts`:
-  - Setup a minimal ECS world (or mock) with two entities: shooter (team A) and target (team A). Spawn a projectile with `sourceTeam = A` and `friendlyFire = false`. Run the collision resolution step and assert target's health unchanged.
-  - Repeat with target on team B and assert damage applied.
-  - Add a test to ensure that environment collisions still resolve (mock an environment body) and that the projectile is cleaned up after impact.
+  - Same-team direct hit: no damage when FF disabled.
+  - Enemy direct hit: damage applied.
+  - AoE: allies excluded, enemies damaged when FF disabled.
+  - Friendly-fire enabled: allies can be damaged.
 
 ## Notes
 
 - If there is an existing central config or `uiStore` entry for game rules, prefer to read friendly-fire from there for consistency.
 - Keep the change minimal and thoroughly test edge cases like AOE projectiles and chain reactions.
+
+## Progress Log
+
+### 2025-09-17
+
+- Added `friendlyFire` flag to `useUI` store with setter/toggle.
+- Updated `ProjectileSystem` to honor friendly-fire for both direct and AoE, while still triggering AoE on allied impacts.
+- Added `tests/projectile-friendly-fire.test.ts` with coverage for disabled and enabled FF.

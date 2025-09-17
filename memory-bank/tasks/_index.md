@@ -7,8 +7,6 @@
 
 ## Pending
 
-- [TASK007] ProjectileSystem: add friendly-fire checks - Implement friendly-fire logic so projectiles do not damage allies when game mode disallows it. Location: `src/systems/ProjectileSystem.ts` (TODO at line ~170). Acceptance: projectiles ignore same-team entities when friendly fire is disabled; unit test added.
-
 - [TASK009] Simulation: FX system scaffold - Implement the FX/visual effects system placeholder noted in `src/components/Simulation.tsx`. Add lightweight FX system, hook into Simulation loop, provide simple particle/flash effect for hits. Acceptance: visual effects are triggered on hit events; non-blocking to game logic.
 
 - [TASK010] Projectile pooling & performance profiling - Investigate projectile allocation/GC pressure and add pooling or reuse if needed. Acceptance: identified perf hotspot and proposed mitigation (pool or reuse) with simple benchmark.
@@ -21,6 +19,7 @@
 
 ## Completed
 
+- [TASK007] ProjectileSystem: add friendly-fire checks - Completed on 2025-09-17; toggle exposed in UI and Vitest coverage added.
 - [TASK008] ProjectileSystem: sourceId wiring from weapon - Completed on 2025-09-17; rocket projectile spawns now source the resolved owner id and regression test added.
 - [TASK001] Bootstrap memory bank files - Created initial `memory-bank` files and tasks.
 - [TASK002] Add deterministic RNG helper - Completed on 2025-09-15.
