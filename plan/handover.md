@@ -1,3 +1,5 @@
+<<<<<<< HEAD
+=======
 # Handover for next agentic session
 
 Short, actionable handover for the next automated/collaborative agent working on RobotSpaceBattler.
@@ -70,3 +72,4 @@ Notes:
 - Keep changes reversible and documented in `SPEC.md` when altering system responsibilities (e.g., making respawn authoritative in a new system).
 
 If you want, I can start by adding the Playwright smoke test now and run it locally; confirm and I will proceed.
+>>>>>>> f2783074d8320620107ef1b0ece9268137253caf

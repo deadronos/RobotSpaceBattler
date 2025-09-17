@@ -111,5 +111,11 @@ Common pitfalls & recommendations
 - Projectile tunneling: use raycasts/sweeps for fast projectiles.
 - Memory churn: reuse objects, pool projectiles and ephemeral effects.
 
+Assets & art pipeline
+
+- Author assets as glTF/GLB following `docs/assets.md` (naming, units, metadata). Small example assets live in `public/assets/examples/`.
+- Developer helpers: `npm run assets:validate` (runs a lightweight validator) and `npm run assets:optimize` (uses gltf-transform to prune/dedup/quantize). These are intended for local dev and CI checks; production assets should be built and hosted on a CDN or asset server.
+
+
 Conclusion
 Start with the prototype below, get a working 10v10 simulation, then iterate on visuals, AI complexity, and performance optimizations. Replace procedural assets with Blender exports (gltf + gltfjsx) when you want polished visuals

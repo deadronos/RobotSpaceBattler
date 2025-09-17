@@ -42,4 +42,25 @@ npm run docs:deps
 ```
 
 This regenerates the dependency catalog from package.json and installed package metadata.
+
+### Assets & art pipeline (local dev)
+
+This project includes a small assets pipeline to validate and optimize glTF assets used during development.
+
+- Validate example assets:
+
+```powershell
+npm ci
+npm run assets:validate
+```
+
+- Optimize example assets (writes to `public/assets/optimized/`):
+
+```powershell
+npm run assets:optimize
+# Optional (Draco compression via gltf-transform if installed):
+npm run assets:compress
+```
+
+See `docs/assets.md` for authoring guidelines and naming conventions.
 \n
