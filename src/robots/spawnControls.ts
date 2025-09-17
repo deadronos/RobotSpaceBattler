@@ -40,24 +40,6 @@ function computeGridPosition(team: Team, index: number): Vec3 {
   ];
 }
 
-function configureWeapon(
-  robot: Entity,
-  team: Team,
-  weaponType: WeaponType,
-  index: number
-): WeaponComponent {
-  const profile = weaponProfiles[weaponType];
-  const ownerId = robot.id as number;
-
-  return {
-    id: `weapon_${team}_${weaponType}_${index}`,
-    type: weaponType,
-    ownerId,
-    team,
-    ...profile,
-  };
-}
-
 function createWeaponState(): WeaponStateComponent {
   return {
     firing: false,
@@ -74,13 +56,31 @@ export function spawnRobot(
   const spawnIndex = options.indexOverride ?? countTeamRobots(team);
   const position = options.position ?? computeGridPosition(team, spawnIndex);
 
+  // Create weapon and state objects before adding the entity so the entity
+  // matches queries that require 'weapon' and 'weaponState' immediately.
+  // OwnerId depends on the entity id which is assigned during createRobotEntity,
+  // so set a temporary placeholder here and fix it after creation.
+  const initialWeapon = {
+    id: `weapon_${team}_${weaponType}_${spawnIndex}`,
+    type: weaponType,
+    ownerId: -1, // will be corrected after entity is created
+    team,
+    ...weaponProfiles[weaponType],
+  } as WeaponComponent;
+
+  const initialWeaponState = createWeaponState();
+
   const robot = createRobotEntity({
     team,
     position,
+    weapon: initialWeapon,
+    weaponState: initialWeaponState,
   }) as Entity & { weapon?: WeaponComponent; weaponState?: WeaponStateComponent };
 
-  robot.weapon = configureWeapon(robot, team, weaponType, spawnIndex);
-  robot.weaponState = createWeaponState();
+  // Now that the entity has an id, fix the ownerId to the correct value.
+  if (robot.weapon) {
+    robot.weapon.ownerId = robot.id as number;
+  }
 
   return robot;
 }

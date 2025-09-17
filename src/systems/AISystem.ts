@@ -15,7 +15,10 @@ function now() {
 }
 
 function chooseNearestEnemy(self: Entity, world: World<Entity>) {
-  if (!self.rigid || !self.position) return undefined;
+  // Don't require a Rapier rigid reference to search for enemies - position
+  // is sufficient. Requiring `rigid` made spawned robots passive until the
+  // prefab mounted and attached the ref, which could arrive after AI ticks.
+  if (!self.position) return undefined;
   const p = self.position;
   let best: { e: Entity; d2: number } | undefined;
   for (const e of world.entities) {
