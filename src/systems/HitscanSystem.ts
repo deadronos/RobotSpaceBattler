@@ -194,10 +194,13 @@ function performRaycast(
         let best: { e: Entity; d2: number } | undefined;
         for (const candidate of world.entities) {
           const c = candidate as Entity & { position?: [number, number, number]; rigid?: unknown; team?: string; weapon?: WeaponComponent };
-          if (!c.position) continue;
-          if (typeof c.id === 'number' && c.id === ownerId) continue;
-          if (c.weapon) continue;
-          if (ownerTeam && c.team === ownerTeam) continue;
+            if (!c.position) continue;
+            // Skip the weapon owner itself
+            if (typeof c.id === 'number' && c.id === ownerId) continue;
+            // Do not skip entities just because they have a `weapon` component —
+            // robots are valid targets even though they own weapons. Previously
+            // filtering by `weapon` prevented hits from resolving against robots.
+            if (ownerTeam && c.team === ownerTeam) continue;
 
           // prefer rigid translation when available
           let cx = c.position[0];
@@ -241,10 +244,11 @@ function performRaycast(
     team?: string;
     weapon?: WeaponComponent;
   }) => {
-    if (!candidate.position) return null;
-    if (typeof candidate.id === 'number' && candidate.id === ownerId) return null;
-    if (candidate.weapon) return null;
-    if (ownerTeam && candidate.team === ownerTeam) return null;
+  if (!candidate.position) return null;
+  // Skip the owner itself
+  if (typeof candidate.id === 'number' && candidate.id === ownerId) return null;
+  // Do not exclude targets simply because they have a `weapon` component.
+  if (ownerTeam && candidate.team === ownerTeam) return null;
 
     const [ex, ey, ez] = candidate.position;
     const toTarget = [ex - ox, ey - oy, ez - oz];
