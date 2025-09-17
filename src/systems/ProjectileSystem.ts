@@ -47,7 +47,8 @@ export function projectileSystem(
   dt: number,
   rng: Rng,
   weaponFiredEvents: WeaponFiredEvent[],
-  events: { damage: DamageEvent[] }
+  events: { damage: DamageEvent[] },
+  rapierWorld?: unknown
 ) {
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== 'rocket') continue;
@@ -61,6 +62,9 @@ export function projectileSystem(
     const weapon = owner?.weapon;
     if (!owner || !weapon) continue;
 
+    const ownerEntityId =
+      typeof owner.id === 'number' ? owner.id : fireEvent.ownerId;
+
     const projectileEntity: Entity & {
       projectile: ProjectileComponent;
       velocity: [number, number, number];
@@ -70,7 +74,7 @@ export function projectileSystem(
       team: weapon.team,
       projectile: {
         sourceWeaponId: fireEvent.weaponId,
-        ownerId: fireEvent.ownerId,
+        ownerId: ownerEntityId,
         damage: weapon.power,
         team: weapon.team,
         aoeRadius: weapon.aoeRadius,
@@ -303,5 +307,3 @@ function updateHomingBehavior(
     }
   }
 }
-
-

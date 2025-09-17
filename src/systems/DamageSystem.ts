@@ -1,6 +1,7 @@
 import type { World } from 'miniplex';
 
 import type { Entity } from '../ecs/miniplexStore';
+import { getEntityById } from '../ecs/miniplexStore';
 import type { DamageEvent } from '../ecs/weapons';
 
 type RigidBodyLike = {
@@ -11,6 +12,8 @@ export interface DeathEvent {
   entityId: number;
   position: [number, number, number];
   team: string;
+  killerId?: number;
+  killerTeam?: string;
 }
 
 /**
@@ -43,11 +46,20 @@ export function damageSystem(
 
     if (newHp <= 0 && targetEntity.alive !== false) {
       targetEntity.alive = false;
+      targetEntity.hp = 0;
+
+      let killerTeam: string | undefined;
+      if (typeof damageEvent.sourceId === 'number') {
+        const killerEntity = getEntityById(damageEvent.sourceId) as Entity | undefined;
+        killerTeam = killerEntity?.team as string | undefined;
+      }
 
       events.death.push({
         entityId: damageEvent.targetId,
         position: [targetEntity.position[0], targetEntity.position[1], targetEntity.position[2]],
         team: targetEntity.team,
+        killerId: damageEvent.sourceId,
+        killerTeam,
       });
 
       targetEntity.rigid?.setLinvel?.({ x: 0, y: 0, z: 0 }, true);
