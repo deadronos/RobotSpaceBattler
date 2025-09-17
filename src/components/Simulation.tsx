@@ -5,25 +5,23 @@ import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useEcsQuery } from '../ecs/hooks';
 import { type Entity, resetWorld, world } from '../ecs/miniplexStore';
-import type {
-  BeamComponent,
-  DamageEvent,
-  ProjectileComponent,
-} from '../ecs/weapons';
+import type { BeamComponent, DamageEvent, ProjectileComponent } from '../ecs/weapons';
 import { Robot } from '../robots/robotPrefab';
 import { resetAndSpawnDefaultTeams } from '../robots/spawnControls';
 import { useUI } from '../store/uiStore';
 import { aiSystem } from '../systems/AISystem';
 import { beamSystem } from '../systems/BeamSystem';
 import { damageSystem, type DeathEvent } from '../systems/DamageSystem';
-import { respawnSystem, clearRespawnQueue } from '../systems/RespawnSystem';
-import { scoringSystem, resetScores } from '../systems/ScoringSystem';
+import { fxSystem } from '../systems/FxSystem';
 import { hitscanSystem, type ImpactEvent } from '../systems/HitscanSystem';
 import { projectileSystem } from '../systems/ProjectileSystem';
+import { clearRespawnQueue,respawnSystem } from '../systems/RespawnSystem';
+import { resetScores,scoringSystem } from '../systems/ScoringSystem';
 import type { WeaponFiredEvent } from '../systems/WeaponSystem';
 import { weaponSystem } from '../systems/WeaponSystem';
 import { createSeededRng, type Rng } from '../utils/seededRng';
 import { Beam } from './Beam';
+import { FXLayer } from './FXLayer';
 import { Projectile } from './Projectile';
 
 const ARENA_SIZE = 20; // half-extent
@@ -49,6 +47,7 @@ type BeamEntity = Entity & {
 
 export default function Simulation() {
   const paused = useUI((s) => s.paused);
+  const showFx = useUI((s) => s.showFx);
   // rapier context (optional) for physics queries like raycasts
   const rapier = useRapier();
   const frameCountRef = useRef(0);
@@ -130,7 +129,8 @@ export default function Simulation() {
     scoringSystem(events.death);
     respawnSystem(world, events.death);
 
-    // 4. TODO: FX system would go here
+    // 4. FX system (render-only, non-authoritative)
+    fxSystem(world, step, events);
   });
 
   
@@ -159,6 +159,9 @@ export default function Simulation() {
       {beams.map((entity) => (
         <Beam key={String(entity.id ?? entity.beam.sourceWeaponId)} entity={entity} />
       ))}
+
+      {/* FX Layer */}
+      {showFx ? <FXLayer /> : null}
     </group>
   );
 }

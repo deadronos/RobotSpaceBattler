@@ -5,6 +5,7 @@
 
 - Stabilize core simulation (physics-first authority, deterministic test mode).
 - Finish unified weapons ECS integration and increase unit test coverage for weapons and projectiles.
+- New: Event-driven FX system added (non-authoritative visuals) wired into Simulation.
 
 ## Recent changes (implemented)
 
@@ -12,6 +13,7 @@
 - Rapier physics integrated; RigidBody is authoritative and transform sync utilities are in place.
 - Procedural robot prefabs and spawn controls implemented (dev-only UI exposed).
 - Weapons systems implemented: Hitscan, Projectile and Beam subsystems with events; projectile/beam entities spawn with Rapier bodies.
+- FX system implemented (`src/systems/FxSystem.ts`) with `FXLayer` renderer and `showFx` UI flag.
 - DamageSystem added and emits death events consumed by higher-level systems.
 - Unit tests expanded: weapons, projectile lifecycle, and physics sync tests (Vitest).
 - Playwright E2E smoke test added (`playwright/tests/smoke.spec.ts`) and verified locally to assert `#status` and `canvas` are present.

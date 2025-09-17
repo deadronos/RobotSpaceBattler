@@ -1,6 +1,6 @@
 import type { Team } from '../ecs/miniplexStore';
-import type { DeathEvent } from './DamageSystem';
 import { getScores, incrementScore, resetScores } from '../store/scoreStore';
+import type { DeathEvent } from './DamageSystem';
 
 function isTeam(value: unknown): value is Team {
   return value === 'red' || value === 'blue';

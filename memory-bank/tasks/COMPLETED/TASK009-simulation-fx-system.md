@@ -1,7 +1,8 @@
 # TASK009 - Simulation FX system scaffold
 
-**Status:** Not Started  
-**Added:** 2025-09-17
+**Status:** Completed  
+**Added:** 2025-09-17  
+**Updated:** 2025-09-17
 
 ## Original Request
 
@@ -29,3 +30,20 @@ Visual feedback is important for clarity during simulation and tests. The projec
 
 - Keep performance in mind: FX should not block the main simulation or mutate authoritative physics state.
 - Prefer reusing existing event channels used by weapon/damage systems.
+
+## Outcome
+
+- Implemented a minimal, event-driven FX system:
+  - New `src/ecs/fx.ts` defines `FxComponent` and allowed types.
+  - New `src/systems/FxSystem.ts` consumes `impact` and `death` events to spawn transient FX entities with TTL, and cleans them up over time.
+  - New `src/components/FXLayer.tsx` renders simple geometry per FX type with fade-out.
+  - `src/ecs/miniplexStore.ts` entity type extended to include optional `fx`.
+  - `src/store/uiStore.ts` adds `showFx` flag with toggle; default true.
+  - `src/components/Simulation.tsx` wires `fxSystem` after scoring/respawn and renders `<FXLayer />` when `showFx` is enabled.
+- Testing:
+  - Added `tests/fx-system.test.ts` validating FX spawn from events and TTL cleanup.
+- All unit tests pass locally; build succeeded.
+
+## Status
+
+- Completed on 2025-09-17.
