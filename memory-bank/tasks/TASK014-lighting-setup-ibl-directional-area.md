@@ -1,7 +1,7 @@
 # [TASK014] - Lighting Setup (IBL + Directional + Local)
 
-Status: Pending  
-Added: 2025-09-17  
+Status: Completed
+Added: 2025-09-17
 Updated: 2025-09-17
 
 ## Original Request
@@ -25,10 +25,10 @@ Provide a consistent, tunable baseline lighting rig that can evolve later with a
 
 | ID | Description | Status | Updated | Notes |
 |----|-------------|--------|---------|-------|
-| 4.1 | Implement `EnvironmentLighting` with props | Not Started | 2025-09-17 |  |
-| 4.2 | Add placeholder environment map loader | Not Started | 2025-09-17 |  |
-| 4.3 | Tune directional shadows and verify costs | Not Started | 2025-09-17 |  |
-| 4.4 | Wire into `Scene.tsx` behind a flag | Not Started | 2025-09-17 |  |
+| 4.1 | Implement `EnvironmentLighting` with props | Completed | 2025-09-17 | Procedural `Environment` + directional + points |
+| 4.2 | Add placeholder environment map loader | Completed | 2025-09-17 | Procedural sphere via drei `Environment` |
+| 4.3 | Tune directional shadows and verify costs | Completed | 2025-09-17 | Shadow size capped at 1024 |
+| 4.4 | Wire into `Scene.tsx` behind a flag | Completed | 2025-09-17 | `ENABLE_ENVIRONMENT` toggles preset |
 
 ## Acceptance Criteria
 

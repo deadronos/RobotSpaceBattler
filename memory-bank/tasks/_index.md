@@ -7,18 +7,17 @@
 
 ## Pending
 
-- [TASK011] Materials utilities & textures - Create shared PBR material factories and placeholder tiling textures for metallic grey look.
-- [TASK012] Modular tiles & layout - Build floor/wall/corner tiles and compose a small arena layout using shared materials.
-- [TASK013] Emissive panels & flicker - Add emissive panels with lightweight flicker animation for ambient motion.
-- [TASK014] Lighting setup (IBL + directional + local) - Implement environment lighting preset and wire into Scene.
-- [TASK015] Performance validation & profiling - Add scene metrics utility, smoke test, and checklist for draw calls/material/texture counts.
-
 
 
 ## New / Discovered (from code TODOs)
 
 ## Completed
 
+- [TASK015] Performance validation & profiling - Completed on 2025-09-17; added `collectSceneMetrics` utility, tests, and checklist.
+- [TASK014] Lighting setup (IBL + directional + local) - Completed on 2025-09-17; `EnvironmentLighting` preset wired into Scene.
+- [TASK013] Emissive panels & flicker - Completed on 2025-09-17; panels with flicker hook integrated into layout.
+- [TASK012] Modular tiles & layout - Completed on 2025-09-17; modular floor/wall/corner tiles and arena layout created.
+- [TASK011] Materials utilities & textures - Completed on 2025-09-17; shared PBR material factories and placeholder textures.
 - [TASK007] ProjectileSystem: add friendly-fire checks - Completed on 2025-09-17; toggle exposed in UI and Vitest coverage added.
 - [TASK008] ProjectileSystem: sourceId wiring from weapon - Completed on 2025-09-17; rocket projectile spawns now source the resolved owner id and regression test added.
 - [TASK009] Simulation: FX system scaffold - Completed on 2025-09-17; added event-driven `FxSystem`, `FXLayer` renderer, `showFx` flag, and unit test.

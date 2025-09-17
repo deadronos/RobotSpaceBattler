@@ -1,7 +1,7 @@
 # [TASK015] - Performance Validation and Profiling
 
-Status: Pending  
-Added: 2025-09-17  
+Status: Completed
+Added: 2025-09-17
 Updated: 2025-09-17
 
 ## Original Request
@@ -23,9 +23,9 @@ Catch regressions early with a tiny measurement utility and checklist. Focus on 
 
 | ID | Description | Status | Updated | Notes |
 |----|-------------|--------|---------|-------|
-| 5.1 | Implement `sceneMetrics.ts` with basic counters | Not Started | 2025-09-17 |  |
-| 5.2 | Add unit test or script to print metrics | Not Started | 2025-09-17 | Vitest/Node |
-| 5.3 | Write checklist in docs with targets | Not Started | 2025-09-17 |  |
+| 5.1 | Implement `sceneMetrics.ts` with basic counters | Completed | 2025-09-17 | Counts meshes/materials/textures/geometries |
+| 5.2 | Add unit test or script to print metrics | Completed | 2025-09-17 | `tests/sceneMetrics.test.ts` exercises utility |
+| 5.3 | Write checklist in docs with targets | Completed | 2025-09-17 | Added section to milestone doc |
 
 ## Acceptance Criteria
 

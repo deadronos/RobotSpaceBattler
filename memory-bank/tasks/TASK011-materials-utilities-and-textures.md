@@ -1,7 +1,7 @@
 # [TASK011] - Shared Materials Utilities and Textures
 
-Status: Pending  
-Added: 2025-09-17  
+Status: Completed
+Added: 2025-09-17
 Updated: 2025-09-17
 
 ## Original Request
@@ -28,10 +28,10 @@ Centralizing material creation ensures consistent look and lowers draw calls via
 
 | ID | Description | Status | Updated | Notes |
 |----|-------------|--------|---------|-------|
-| 1.1 | Create `src/utils/materials.ts` with defaults and factories | Not Started | 2025-09-17 |  |
-| 1.2 | Add placeholder tiling textures and loader util | Not Started | 2025-09-17 | Use tiny inlined data or procedural |
-| 1.3 | Document usage in JSDoc and `docs/` | Not Started | 2025-09-17 |  |
-| 1.4 | Add unit tests for defaults and factory options | Not Started | 2025-09-17 | Vitest |
+| 1.1 | Create `src/utils/materials.ts` with defaults and factories | Completed | 2025-09-17 | Added JSDoc and emissive helpers |
+| 1.2 | Add placeholder tiling textures and loader util | Completed | 2025-09-17 | Procedural textures via `DataTexture` |
+| 1.3 | Document usage in JSDoc and `docs/` | Completed | 2025-09-17 | Notes added to milestone doc |
+| 1.4 | Add unit tests for defaults and factory options | Completed | 2025-09-17 | `tests/materials.test.ts` |
 
 ## Acceptance Criteria
 
