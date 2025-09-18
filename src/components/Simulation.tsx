@@ -4,7 +4,7 @@ import type { Query } from 'miniplex';
 import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useEcsQuery } from '../ecs/hooks';
-import { type Entity, resetWorld, world, setPauseVel, getPauseVel, clearPauseVel } from '../ecs/miniplexStore';
+import { clearPauseVel,type Entity, getPauseVel, resetWorld, setPauseVel, world } from '../ecs/miniplexStore';
 import type { BeamComponent, DamageEvent, ProjectileComponent } from '../ecs/weapons';
 import { Robot } from '../robots/robotPrefab';
 import { resetAndSpawnDefaultTeams } from '../robots/spawnControls';
