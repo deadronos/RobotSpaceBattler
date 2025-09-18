@@ -1,4 +1,4 @@
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { CuboidCollider, RigidBody, useRapier } from '@react-three/rapier';
 import type { Query } from 'miniplex';
 import React, { useEffect, useMemo, useRef } from 'react';
@@ -50,8 +50,8 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
   const showFx = useUI((s) => s.showFx);
   // rapier context (optional) for physics queries like raycasts
   const rapier = useRapier();
+  const { invalidate } = useThree();
   const frameCountRef = useRef(0);
-  const rngRef = useRef<Rng | null>(null);
   const spawnInitializedRef = useRef(false);
   const projectileQuery = useMemo(
     () => world.with('projectile', 'position') as unknown as Query<ProjectileEntity>,
@@ -71,10 +71,7 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
   const robots = useEcsQuery(robotQuery);
 
 
-  // Initialize deterministic RNG
-  useEffect(() => {
-    rngRef.current = createSeededRng(DETERMINISTIC_SEED);
-  }, []);
+  // RNG is created per-frame deterministically; no persistent RNG state needed
 
   // Spawn initial teams once
   useEffect(() => {
@@ -194,15 +191,15 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
 
 
   // Deterministic per-frame systems
-  useFrame(() => {
-    if (paused || !rngRef.current) return;
+  useFrame((state) => {
+    if (paused) return;
     
     // Use fixed timestep for determinism
     const step = FIXED_TIMESTEP;
     frameCountRef.current++;
     
     // Create fresh RNG for this frame (deterministic)
-    const frameRng = createSeededRng(DETERMINISTIC_SEED + frameCountRef.current);
+  const frameRng = createSeededRng(DETERMINISTIC_SEED + frameCountRef.current);
 
   // (entities array not needed here)
 
@@ -232,7 +229,15 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
 
     // 4. FX system (render-only, non-authoritative)
     fxSystem(world, step, events);
+
+    // Request a re-render since we're on an on-demand frameloop
+    state.invalidate();
   });
+
+  // Kick the demand loop when unpausing or on mount
+  useEffect(() => {
+    if (!paused) invalidate();
+  }, [paused, invalidate]);
 
   
 
@@ -253,9 +258,11 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
       {robots.map((e, i) => (
         <Robot key={String(e.id ?? i)} entity={e} />
       ))}
-      {projectiles.map((entity) => (
+      {projectiles.map((entity, i) => (
         <Projectile
-          key={String(entity.id ?? `${entity.projectile.sourceWeaponId}_${entity.projectile.spawnTime}`)}
+          key={String(
+            entity.id ?? `${entity.projectile.sourceWeaponId}_${entity.projectile.spawnTime}_${i}`
+          )}
           entity={entity}
         />
       ))}

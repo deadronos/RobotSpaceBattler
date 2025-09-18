@@ -46,3 +46,17 @@ button:hover { background: #273244; }
 .prefab-card dd { margin: 0; }
 .prefab-card button { align-self: flex-start; margin-top: 4px; }
 
+/* Diagnostics overlay */
+.diag-overlay {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #aee3ff;
+  font-family: monospace;
+  font-size: 12px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+

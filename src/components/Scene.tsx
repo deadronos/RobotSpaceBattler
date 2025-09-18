@@ -6,6 +6,7 @@ import React, { Suspense } from 'react';
 import EnvironmentLayout from './environment/EnvironmentLayout';
 import EnvironmentLighting from './environment/EnvironmentLighting';
 import Simulation from './Simulation';
+import DiagnosticsOverlay from './DiagnosticsOverlay';
 
 const ENABLE_ENVIRONMENT = true;
 
@@ -19,6 +20,7 @@ export default function Scene() {
         <Physics gravity={[0, -9.81, 0]}>
           <Simulation renderFloor={!ENABLE_ENVIRONMENT} />
         </Physics>
+        <DiagnosticsOverlay updateHz={8} />
       </Suspense>
       <OrbitControls makeDefault />
       <Stats />

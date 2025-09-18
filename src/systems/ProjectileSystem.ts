@@ -6,6 +6,9 @@ import { useUI } from '../store/uiStore';
 import type { Rng } from '../utils/seededRng';
 import type { WeaponFiredEvent } from './WeaponSystem';
 
+// Module-scoped serial to ensure unique projectile ids even within the same millisecond
+let projectileSerial = 0;
+
 interface RigidBodyLike {
   translation(): { x: number; y: number; z: number };
   linvel(): { x: number; y: number; z: number };
@@ -80,7 +83,7 @@ export function projectileSystem(
       projectile: ProjectileComponent;
       velocity: [number, number, number];
     } = {
-      id: 'projectile_' + fireEvent.weaponId + '_' + Date.now(),
+      id: `projectile_${fireEvent.weaponId}_${Date.now()}_${++projectileSerial}`,
       position: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
       team: weapon.team,
       projectile: {
@@ -133,7 +136,7 @@ export function projectileSystem(
       position[2] += velocity[2] * dt;
     }
 
-  const hit = checkProjectileCollision(position, world, projectile.team, friendlyFire);
+  const hit = checkProjectileCollision(position, world, projectile.team, projectile.ownerId, friendlyFire);
     if (hit) {
       if (projectile.aoeRadius && projectile.aoeRadius > 0) {
         applyAoEDamage(
@@ -193,6 +196,7 @@ function checkProjectileCollision(
   position: [number, number, number],
   world: World<Entity>,
   projectileTeam: string,
+  ownerId: number,
   friendlyFire: boolean
 ): { targetId?: number } | null {
   let impactedAny = false;
@@ -207,12 +211,16 @@ function checkProjectileCollision(
     if (!candidate.position || !candidate.team || candidate.projectile) {
       continue;
     }
-    // ignore entities carrying weapons (likely the shooter/robots)
-    if (candidate.weapon) continue;
+    // Ignore the owner itself (match by numeric id or weapon ownerId)
+    const isOwnerById = typeof candidate.id === 'number' && candidate.id === ownerId;
+    const isOwnerByWeapon = !!(candidate.weapon && typeof candidate.weapon.ownerId === 'number' && candidate.weapon.ownerId === ownerId);
+    if (isOwnerById || isOwnerByWeapon) continue;
+
     const [ex, ey, ez] = candidate.position;
     const [px, py, pz] = position;
     const distance = Math.sqrt((ex - px) ** 2 + (ey - py) ** 2 + (ez - pz) ** 2);
 
+    // Handle friendlies when friendly fire is disabled: register an impact (for AoE) but don't return a target
     if (!friendlyFire && candidate.team === projectileTeam) {
       if (distance < 1) impactedAny = true;
       continue;
