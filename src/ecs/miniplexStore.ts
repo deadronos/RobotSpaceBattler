@@ -68,6 +68,8 @@ export type Entity = Partial<
     } &
     RigidBodyRef &
     RenderRef & {
+      // Ephemeral component used to store paused velocities when pausing the simulation
+      pauseVel?: { lin?: Vec3; ang?: Vec3 };
       beam?: BeamComponent;
       projectile?: ProjectileComponent;
       weapon?: WeaponComponent;
@@ -88,6 +90,21 @@ export function getEntityById(id: number) {
 // Helper queries
 export function getRobots() {
   return Array.from(world.entities).filter((e) => e.team && e.rigid);
+}
+
+// pauseVel helpers - small ECS-style API for ephemeral pause velocity component
+export function setPauseVel(entity: Entity, lin?: Vec3, ang?: Vec3) {
+  entity.pauseVel = entity.pauseVel ?? {};
+  if (lin) entity.pauseVel.lin = lin;
+  if (ang) entity.pauseVel.ang = ang;
+}
+
+export function getPauseVel(entity: Entity) {
+  return entity.pauseVel;
+}
+
+export function clearPauseVel(entity: Entity) {
+  if (entity.pauseVel) delete entity.pauseVel;
 }
 
 export function createRobotEntity(init: Partial<Entity>): Entity {

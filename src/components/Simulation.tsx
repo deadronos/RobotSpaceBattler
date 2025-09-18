@@ -4,7 +4,7 @@ import type { Query } from 'miniplex';
 import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useEcsQuery } from '../ecs/hooks';
-import { type Entity, resetWorld, world } from '../ecs/miniplexStore';
+import { type Entity, resetWorld, world, setPauseVel, getPauseVel, clearPauseVel } from '../ecs/miniplexStore';
 import type { BeamComponent, DamageEvent, ProjectileComponent } from '../ecs/weapons';
 import { Robot } from '../robots/robotPrefab';
 import { resetAndSpawnDefaultTeams } from '../robots/spawnControls';
@@ -116,7 +116,7 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
               try {
                 const cur = r.linvel();
                 if (cur && typeof cur.x === 'number') {
-                  ent['__savedLinvel'] = { x: cur.x, y: cur.y, z: cur.z };
+                  setPauseVel(ent as Entity, [cur.x, cur.y, cur.z], undefined);
                 }
               } catch {
                 // ignore
@@ -128,7 +128,7 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
               try {
                 const curA = r.angvel();
                 if (curA && typeof curA.x === 'number') {
-                  ent['__savedAngvel'] = { x: curA.x, y: curA.y, z: curA.z };
+                  setPauseVel(ent as Entity, undefined, [curA.x, curA.y, curA.z]);
                 }
               } catch {
                 // ignore
@@ -164,13 +164,12 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
           const r = ent.rigid as RigidLike | undefined;
           if (!r) continue;
           try {
-            const saved = ent['__savedLinvel'] as { x: number; y: number; z: number } | undefined;
-            if (saved && typeof r.setLinvel === 'function') {
-              try { r.setLinvel({ x: saved.x, y: saved.y, z: saved.z }, true); } catch (err) { void err; }
+            const pv = getPauseVel(ent as Entity);
+            if (pv && pv.lin && typeof r.setLinvel === 'function') {
+              try { r.setLinvel({ x: pv.lin[0], y: pv.lin[1], z: pv.lin[2] }, true); } catch (err) { void err; }
             }
-            const savedA = ent['__savedAngvel'] as { x: number; y: number; z: number } | undefined;
-            if (savedA && typeof r.setAngvel === 'function') {
-              try { r.setAngvel({ x: savedA.x, y: savedA.y, z: savedA.z }, true); } catch (err) { void err; }
+            if (pv && pv.ang && typeof r.setAngvel === 'function') {
+              try { r.setAngvel({ x: pv.ang[0], y: pv.ang[1], z: pv.ang[2] }, true); } catch (err) { void err; }
             }
 
             // Attempt to wake the body if API exposed
@@ -181,9 +180,8 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
               try { r.wake(); } catch (err) { void err; }
             }
 
-            // Clean up saved entries
-            delete ent['__savedLinvel'];
-            delete ent['__savedAngvel'];
+            // Clean up ephemeral pauseVel
+            clearPauseVel(ent as Entity);
           } catch (err) {
             void err;
           }
