@@ -50,8 +50,13 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
   const showFx = useUI((s) => s.showFx);
   const rapier = useRapier();
   const { invalidate } = useThree();
-  const frame = useRef(0);
   const booted = useRef(false);
+  // Accumulator-based fixed-step sim (decoupled from render)
+  const accumulator = useRef(0);
+  const lastTime = useRef<number | null>(null);
+  const simTick = useRef(0);
+  const MAX_STEPS_PER_FRAME = 5; // avoid spiral-of-death
+  const MAX_FRAME_TIME = 0.25; // clamp large frame deltas (seconds)
 
   // Queries for render layers
   const projectileQuery = useMemo(
@@ -148,34 +153,59 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
 
   // Deterministic step: AI -> weapons -> damage -> score/respawn -> FX
   useFrame((state) => {
-    if (paused) return;
-    frame.current += 1;
+    // Handle pause: reset timing so we don't accumulate a huge delta while paused
+    if (paused) {
+      lastTime.current = null;
+      accumulator.current = 0;
+      return;
+    }
 
-    const dt = FIXED_TIMESTEP;
-    const rng = createSeededRng(BASE_SEED + frame.current);
+    const now = state.clock.getElapsedTime();
+    if (lastTime.current == null) {
+      lastTime.current = now;
+      return; // skip stepping on first frame to establish baseline
+    }
 
-    const events = {
-      weaponFired: [] as WeaponFiredEvent[],
-      damage: [] as DamageEvent[],
-      death: [] as DeathEvent[],
-      impact: [] as ImpactEvent[],
-    };
+    let frameTime = now - lastTime.current;
+    lastTime.current = now;
+    // clamp very large frame times to avoid doing too many steps
+    frameTime = Math.min(frameTime, MAX_FRAME_TIME);
+    accumulator.current += frameTime;
 
-    // AI & movement
-    aiSystem(world, rng, rapier);
-    // Weapons
-    weaponSystem(world, dt, rng, events);
-    hitscanSystem(world, rng, events.weaponFired, events, rapier);
-    beamSystem(world, dt, rng, events.weaponFired, events);
-    projectileSystem(world, dt, rng, events.weaponFired, events, rapier);
-    // Damage & outcomes
-    damageSystem(world, events.damage, events);
-    scoringSystem(events.death);
-    respawnSystem(world, events.death);
-    // FX (non-authoritative)
-    fxSystem(world, dt, events);
+    let steps = 0;
+    while (accumulator.current >= FIXED_TIMESTEP && steps < MAX_STEPS_PER_FRAME) {
+      // advance one deterministic sim tick
+      simTick.current += 1;
+      const dt = FIXED_TIMESTEP;
+      const rng = createSeededRng(BASE_SEED + simTick.current);
 
-    state.invalidate();
+      const events = {
+        weaponFired: [] as WeaponFiredEvent[],
+        damage: [] as DamageEvent[],
+        death: [] as DeathEvent[],
+        impact: [] as ImpactEvent[],
+      };
+
+      // AI & movement
+      aiSystem(world, rng, rapier);
+      // Weapons
+      weaponSystem(world, dt, rng, events);
+      hitscanSystem(world, rng, events.weaponFired, events, rapier);
+      beamSystem(world, dt, rng, events.weaponFired, events);
+      projectileSystem(world, dt, rng, events.weaponFired, events, rapier);
+      // Damage & outcomes
+      damageSystem(world, events.damage, events);
+      scoringSystem(events.death);
+      respawnSystem(world, events.death);
+      // FX (non-authoritative)
+      fxSystem(world, dt, events);
+
+      accumulator.current -= FIXED_TIMESTEP;
+      steps += 1;
+    }
+
+    // Only request a render if we actually stepped the sim this frame
+    if (steps > 0) state.invalidate();
   });
 
   // Kick a render when unpausing
