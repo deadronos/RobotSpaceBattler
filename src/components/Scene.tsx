@@ -3,10 +3,10 @@ import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import React, { Suspense } from 'react';
 
+import DiagnosticsOverlay from './DiagnosticsOverlay';
 import EnvironmentLayout from './environment/EnvironmentLayout';
 import EnvironmentLighting from './environment/EnvironmentLighting';
 import Simulation from './Simulation';
-import DiagnosticsOverlay from './DiagnosticsOverlay';
 
 const ENABLE_ENVIRONMENT = true;
 

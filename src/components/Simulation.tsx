@@ -19,7 +19,7 @@ import { clearRespawnQueue,respawnSystem } from '../systems/RespawnSystem';
 import { resetScores,scoringSystem } from '../systems/ScoringSystem';
 import type { WeaponFiredEvent } from '../systems/WeaponSystem';
 import { weaponSystem } from '../systems/WeaponSystem';
-import { createSeededRng, type Rng } from '../utils/seededRng';
+import { createSeededRng } from '../utils/seededRng';
 import { Beam } from './Beam';
 import { FXLayer } from './FXLayer';
 import { Projectile } from './Projectile';
