@@ -1,4 +1,4 @@
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import type { Query } from 'miniplex';
 import React, { useMemo } from 'react';
 
@@ -14,9 +14,16 @@ export function FXLayer() {
     []
   );
   const fxs = useEcsQuery(query);
+  const { invalidate } = useThree();
 
-  // We rely on FxSystem to advance ages; FXLayer is purely visual.
-  useFrame(() => {});
+  // Invalidate React on each frame to ensure FX animation updates are visible
+  // FxSystem advances ages each frame, but React needs to be told to re-render
+  useFrame(() => {
+    // Only invalidate if there are active FX entities to avoid unnecessary renders
+    if (fxs.length > 0) {
+      invalidate();
+    }
+  });
 
   return (
     <group>
