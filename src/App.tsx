@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Bootstrapper from './components/Bootstrapper';
 import Scene from './components/Scene';
 import DevDiagnostics from './components/ui/DevDiagnostics';
 import FriendlyFireToggle from './components/ui/FriendlyFireToggle';
@@ -14,6 +15,7 @@ export default function App() {
 
   return (
     <div className="app-root">
+      <Bootstrapper />
       <Scene />
       <FriendlyFireToggle />
       <PauseControl />

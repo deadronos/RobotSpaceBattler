@@ -1,7 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { CuboidCollider, RigidBody, useRapier } from '@react-three/rapier';
 import type { Query } from 'miniplex';
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
 import { useEcsQuery } from '../ecs/hooks';
 import { clearPauseVel,type Entity, getPauseVel, resetWorld, setPauseVel, world } from '../ecs/miniplexStore';
@@ -74,7 +74,8 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
   // RNG is created per-frame deterministically; no persistent RNG state needed
 
   // Spawn initial teams once
-  useEffect(() => {
+  // Spawn initial teams before first paint to ensure they are visible on first frame
+  useLayoutEffect(() => {
     if (!spawnInitializedRef.current) {
       resetScores();
       clearRespawnQueue();
@@ -256,18 +257,18 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
 
       {/* Robots */}
       {robots.map((e, i) => (
-        <Robot key={String(e.id ?? i)} entity={e} />
+        <Robot key={`r-${String(e.id ?? i)}`} entity={e} />
       ))}
       {projectiles.map((entity, i) => (
         <Projectile
-          key={String(
+          key={`p-${String(
             entity.id ?? `${entity.projectile.sourceWeaponId}_${entity.projectile.spawnTime}_${i}`
-          )}
+          )}`}
           entity={entity}
         />
       ))}
       {beams.map((entity) => (
-        <Beam key={String(entity.id ?? entity.beam.sourceWeaponId)} entity={entity} />
+        <Beam key={`b-${String(entity.id ?? entity.beam.sourceWeaponId)}`} entity={entity} />
       ))}
 
       {/* FX Layer */}
