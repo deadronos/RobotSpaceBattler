@@ -22,6 +22,7 @@ import { beamSystem } from '../systems/BeamSystem';
 import { damageSystem, type DeathEvent } from '../systems/DamageSystem';
 import { fxSystem } from '../systems/FxSystem';
 import { hitscanSystem, type ImpactEvent } from '../systems/HitscanSystem';
+import { physicsSyncSystem } from '../systems/PhysicsSyncSystem';
 import { projectileSystem } from '../systems/ProjectileSystem';
 import { clearRespawnQueue,respawnSystem } from '../systems/RespawnSystem';
 import { resetScores,scoringSystem } from '../systems/ScoringSystem';
@@ -235,7 +236,11 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
     scoringSystem(events.death);
     respawnSystem(world, events.death);
 
-    // 4. FX system (render-only, non-authoritative)
+    // 4. Physics sync - Update ECS positions from rigid body translations
+    // This ensures visual components render at current physics positions
+    physicsSyncSystem(world);
+
+    // 5. FX system (render-only, non-authoritative)
     fxSystem(world, step, events);
 
     // Request a re-render since we're on an on-demand frameloop

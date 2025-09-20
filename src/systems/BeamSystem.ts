@@ -209,6 +209,23 @@ function updateBeamOrigin(world: World<Entity>, beam: BeamComponent) {
     return;
   }
 
+  // Sync owner position from physics first before updating beam origin
+  const ownerEntity = owner as Entity & { 
+    position?: [number, number, number];
+    rigid?: { translation?: () => { x: number; y: number; z: number } };
+  };
+  
+  if (ownerEntity.rigid && typeof ownerEntity.rigid.translation === 'function' && ownerEntity.position) {
+    try {
+      const translation = ownerEntity.rigid.translation();
+      ownerEntity.position[0] = translation.x;
+      ownerEntity.position[1] = translation.y;
+      ownerEntity.position[2] = translation.z;
+    } catch {
+      // Defensive: ignore physics API errors
+    }
+  }
+
   const rigid = (owner as { rigid?: { translation: () => { x: number; y: number; z: number } } }).rigid;
   if (rigid) {
     const translation = rigid.translation();

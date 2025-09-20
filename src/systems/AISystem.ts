@@ -48,13 +48,25 @@ export function aiSystem(world: World<Entity>, rng: () => number, rapierWorld?: 
       weaponState?: { firing?: boolean; cooldownRemaining?: number };
       weapon?: { range?: number } & Record<string, unknown>;
       position?: [number, number, number];
-      rigid?: { setLinvel?: (v: { x: number; y: number; z: number }, wake: boolean) => void } | null;
+      rigid?: { setLinvel?: (v: { x: number; y: number; z: number }, wake: boolean) => void; translation?: () => { x: number; y: number; z: number } } | null;
       hp?: number;
       maxHp?: number;
       speed?: number;
     };
 
     if (!entity.weapon || !entity.weaponState || !entity.position) continue;
+
+    // Sync position from physics before making AI decisions
+    if (entity.rigid && typeof entity.rigid.translation === 'function') {
+      try {
+        const translation = entity.rigid.translation();
+        entity.position[0] = translation.x;
+        entity.position[1] = translation.y;
+        entity.position[2] = translation.z;
+      } catch {
+        // Defensive: ignore physics API errors
+      }
+    }
 
     // ensure an AI component
     if (!entity.ai) {
