@@ -27,6 +27,7 @@ export default function Scene() {
       frameloop="demand"
       shadows
       camera={{ position: [16, 12, 16], fov: 50 }}
+      style={{ transform: 'translateZ(0)', willChange: 'transform' }}
     >
       {/* Backdrop & lighting */}
       <color attach="background" args={[0.04, 0.05, 0.09]} />
@@ -43,7 +44,6 @@ export default function Scene() {
 
       {/* Physics world and simulation */}
       <Physics
-        updateLoop="independent"
         timeStep={1 / 60}
         key={hmrKey}
         gravity={[0, -9.81, 0]}
@@ -58,3 +58,4 @@ export default function Scene() {
     </Canvas>
   );
 }
+

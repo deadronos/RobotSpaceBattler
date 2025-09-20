@@ -46,7 +46,9 @@ export function Projectile({ entity }: { entity: ProjectileEntity }) {
     if (mesh) {
       entity.render = mesh as unknown;
     }
+  // mount
     return () => {
+  // unmount
       if (entity.render === mesh) {
         entity.render = null;
       }
@@ -71,6 +73,7 @@ export function Projectile({ entity }: { entity: ProjectileEntity }) {
 
   useFrame(() => {
     const body = bodyRef.current;
+  // per-frame logic
     if (!body) return;
 
     const translation = body.translation?.();

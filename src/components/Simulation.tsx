@@ -2,6 +2,20 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { CuboidCollider, RigidBody, useRapier } from "@react-three/rapier";
 import type { Query } from "miniplex";
 import React, { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+// small helper types for render-sync
+type RigidLike = Partial<{
+  translation: () => { x: number; y: number; z: number };
+  rotation: () => { x: number; y: number; z: number; w: number };
+  quaternion: () => { x: number; y: number; z: number; w: number };
+  euler: () => { x: number; y: number; z: number };
+  rotationEuler: () => { x: number; y: number; z: number };
+}>;
+
+type RenderLike = Partial<{
+  position: { set: (x: number, y: number, z: number) => void };
+  quaternion: { set: (x: number, y: number, z: number, w: number) => void };
+  rotation: { set: (x: number, y: number, z: number) => void };
+}>;
 
 import { useEcsQuery } from "../ecs/hooks";
 import {
@@ -31,7 +45,6 @@ import { resetScores, scoringSystem } from "../systems/ScoringSystem";
 import type { WeaponFiredEvent } from "../systems/WeaponSystem";
 import { weaponSystem } from "../systems/WeaponSystem";
 import { createSeededRng } from "../utils/seededRng";
-import { hasVisualActivity } from "../utils/visualActivity";
 import { Beam } from "./Beam";
 import { FXLayer } from "./FXLayer";
 import { Projectile } from "./Projectile";
@@ -189,12 +202,25 @@ export default function Simulation({
 
   // Deterministic step: AI -> weapons -> damage -> score/respawn -> FX
   useFrame((state) => {
+    // (Diagnostics removed) — keep simulation stepping and render-sync
     // Handle pause: reset timing so we don't accumulate a huge delta while paused
     if (paused) {
       lastTime.current = null;
       accumulator.current = 0;
       return;
     }
+
+    // TEMP LOG: ensure useFrame is running every RAF while unpaused
+    // Also log how many projectile components are mounted (helpful for debugging)
+    // Remove these once debugging is complete
+    globalThis.console?.log(
+      '[SIMULATION] useFrame tick — paused:',
+      paused,
+      'time:',
+      state.clock.getElapsedTime(),
+      'projectiles:',
+      projectiles.length,
+    );
 
     const now = state.clock.getElapsedTime();
     if (lastTime.current == null) {
@@ -246,7 +272,54 @@ export default function Simulation({
     // Always request a render for the next RAF while not paused.
     // This ensures the Canvas repaints each RAF so visual updates are never starved
     // even when the sim's fixed-step accumulator produced 0 steps this frame.
+    // Render-sync: copy authoritative physics transforms to render meshes in one place.
+    // This ensures meshes stay in sync with Rapier (which may run independently) and
+    // avoids per-entity invalidation.
+    try {
+      for (const e of world.entities) {
+        // Entities that expose both a rigid handle and a render (mesh/object3D)
+        const ent = e as unknown as { rigid?: RigidLike; render?: RenderLike };
+        const rigid = ent.rigid as RigidLike | undefined;
+        const renderObj = ent.render as RenderLike | undefined;
+        if (!rigid || !renderObj) continue;
+
+        try {
+          // copy translation if available
+          const tFn = rigid.translation;
+          if (typeof tFn === "function") {
+            const t = tFn();
+            if (t && typeof t.x === "number" && renderObj.position?.set) {
+              renderObj.position.set(t.x, t.y, t.z);
+            }
+          }
+
+          // copy quaternion rotation if available
+          const qFn = rigid.rotation ?? rigid.quaternion;
+          if (typeof qFn === "function") {
+            const q = qFn();
+            if (q && typeof q.x === "number" && typeof q.w === "number" && renderObj.quaternion?.set) {
+              renderObj.quaternion.set(q.x, q.y, q.z, q.w);
+            }
+          } else {
+            // fallback: some bodies expose Euler-style rotation
+            const eulerFn = rigid.euler ?? rigid.rotationEuler;
+            if (typeof eulerFn === "function") {
+              const ev = eulerFn();
+              if (ev && typeof ev.x === "number" && renderObj.rotation?.set) {
+                renderObj.rotation.set(ev.x, ev.y, ev.z);
+              }
+            }
+          }
+        } catch {
+          // ignore per-entity sync errors
+        }
+      }
+    } catch {
+      // ignore render-sync errors
+    }
+
     state.invalidate();
+
   });
 
   // Kick a render when unpausing
