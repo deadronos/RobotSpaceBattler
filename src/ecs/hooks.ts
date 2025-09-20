@@ -1,19 +1,16 @@
 import type { Query } from "miniplex";
-import { useEffect, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 
 import type { Entity } from "./miniplexStore";
 import { subscribeEntityChanges } from "./miniplexStore";
 
 export function useEcsQuery<T extends Entity>(query: Query<T>) {
-  useEffect(() => {
-    const connected = query.connect();
-    return () => {
-      connected.disconnect();
-    };
-  }, [query]);
-
   return useSyncExternalStore(
     (onStoreChange) => {
+      // Connect the query immediately so it materializes its initial set
+      // before we capture the first snapshot.
+      const connected = query.connect();
+
       const unsubscribeAdded = query.onEntityAdded.subscribe(() => {
         onStoreChange();
       });
@@ -26,10 +23,14 @@ export function useEcsQuery<T extends Entity>(query: Query<T>) {
         }
       });
 
+      // Nudge a paint right after connecting to capture the initial set.
+      Promise.resolve().then(() => onStoreChange());
+
       return () => {
         unsubscribeAdded();
         unsubscribeRemoved();
         unsubscribeChanged();
+        connected.disconnect();
       };
     },
     () => query.entities,
