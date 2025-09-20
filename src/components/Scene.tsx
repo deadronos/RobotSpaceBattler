@@ -3,7 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import React, { Suspense, useEffect, useState } from 'react';
 
-import DiagnosticsOverlay from './DiagnosticsOverlay';
+// import DiagnosticsOverlay from './DiagnosticsOverlay';
 import EnvironmentLayout from './environment/EnvironmentLayout';
 import EnvironmentLighting from './environment/EnvironmentLighting';
 import Simulation from './Simulation';
@@ -20,7 +20,7 @@ export default function Scene() {
   }, []);
 
   return (
-    <Canvas key={hmrKey} frameloop="always" shadows camera={{ position: [16, 12, 16], fov: 50 }}>
+    <Canvas key={hmrKey} frameloop="demand" shadows camera={{ position: [16, 12, 16], fov: 50 }}>
       {/* Backdrop & lighting */}
       <color attach="background" args={[0.04, 0.05, 0.09]} />
       {ENABLE_ENVIRONMENT ? <EnvironmentLighting /> : <ambientLight intensity={0.3} />}
@@ -31,12 +31,12 @@ export default function Scene() {
       ) : null}
 
       {/* Physics world and simulation */}
-      <Physics key={hmrKey} gravity={[0, -9.81, 0]}>
+      <Physics updateLoop="independent" timeStep={1/60} key={hmrKey} gravity={[0, -9.81, 0]}>
         <Simulation renderFloor={!ENABLE_ENVIRONMENT} />
       </Physics>
 
       {/* Diagnostics & controls */}
-      <DiagnosticsOverlay updateHz={8} />
+      {/* <DiagnosticsOverlay updateHz={8} /> */}
       <OrbitControls makeDefault />
       <Stats />
     </Canvas>

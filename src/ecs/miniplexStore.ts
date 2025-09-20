@@ -1,7 +1,7 @@
 import { World } from 'miniplex';
-
 import type { FxComponent } from './fx';
 import type { BeamComponent, ProjectileComponent, WeaponComponent, WeaponStateComponent } from './weapons';
+
 
 // Component types based on SPEC.md
 export type Vec3 = [number, number, number];
@@ -60,7 +60,7 @@ export const ROBOT_BASE_STATS = {
 export type Entity = Partial<
   Transform &
     Health &
-    Weapon &
+  Weapon &
     RobotStats &
     Target & {
       id: string | number;
