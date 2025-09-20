@@ -1,17 +1,17 @@
-import { World } from 'miniplex';
+import { World } from "miniplex";
 
-import type { FxComponent } from './fx';
+import type { FxComponent } from "./fx";
 import type {
   BeamComponent,
   ProjectileComponent,
   WeaponComponent,
   WeaponStateComponent,
-} from './weapons';
+} from "./weapons";
 
 // Component types based on SPEC.md
 export type Vec3 = [number, number, number];
 
-export type Team = 'red' | 'blue';
+export type Team = "red" | "blue";
 
 export interface Transform {
   position: Vec3;
@@ -70,8 +70,7 @@ export type Entity = Partial<
     Target & {
       id: string | number;
       team: Team;
-    } &
-    RigidBodyRef &
+    } & RigidBodyRef &
     RenderRef & {
       // Ephemeral component used to store paused velocities when pausing the simulation
       pauseVel?: { lin?: Vec3; ang?: Vec3 };
@@ -141,13 +140,13 @@ export function createRobotEntity(init: Partial<Entity>): Entity {
     ...init,
   };
 
-  if (typeof entity.id !== 'number') {
+  if (typeof entity.id !== "number") {
     entity.id = nextEntityId++;
   }
 
   const added = world.add(entity);
 
-  if (typeof added.id === 'number') {
+  if (typeof added.id === "number") {
     entityLookup.set(added.id, added);
   }
 
@@ -155,7 +154,7 @@ export function createRobotEntity(init: Partial<Entity>): Entity {
 }
 
 export function removeEntity(e: Entity) {
-  if (typeof e.id === 'number') {
+  if (typeof e.id === "number") {
     entityLookup.delete(e.id);
   }
   world.remove(e);
@@ -168,8 +167,3 @@ export function resetWorld() {
   entityLookup.clear();
   nextEntityId = 1;
 }
-
-
-
-
-

@@ -10,4 +10,4 @@ Coding conventions for RobotSpaceBattler
 
 Commit & PR Guidelines:
 - Use imperative commit messages under 72 chars (e.g., `ecs: add robot spawn system`).
-- Run `npm run format && npm run lint && npm run test` before opening PRs.
+- Run `npm run format && npm run lint && npm run test` before opening PRs

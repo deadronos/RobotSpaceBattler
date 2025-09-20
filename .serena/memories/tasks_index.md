@@ -21,5 +21,4 @@
 
 - [TASK001] Bootstrap memory bank files - Created initial `memory-bank` files and tasks.
 - [TASK002] Add deterministic RNG helper - Completed on 2025-09-15.
-- [TASK003] Add unit tests for physics sync - Added tests for `syncRigidBodiesToECS` and marked complete.
-        - Also added projectile cleanup tests (tests/projectileCleanup.test.ts).
+- [TASK003] Add unit tests for physics sync - Added tests for `syncRigidBodiesToECS` and marked complete. Also added projectile cleanup tests (`tests/projectileCleanup.test.ts`).

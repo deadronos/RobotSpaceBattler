@@ -1,12 +1,16 @@
-import type { World } from 'miniplex';
+import type { World } from "miniplex";
 
-import { type Entity,getEntityById } from '../ecs/miniplexStore';
-import type { BeamComponent, DamageEvent, WeaponComponent } from '../ecs/weapons';
-import type { Rng } from '../utils/seededRng';
-import type { WeaponFiredEvent } from './WeaponSystem';
+import { type Entity, getEntityById } from "../ecs/miniplexStore";
+import type {
+  BeamComponent,
+  DamageEvent,
+  WeaponComponent,
+} from "../ecs/weapons";
+import type { Rng } from "../utils/seededRng";
+import type { WeaponFiredEvent } from "./WeaponSystem";
 
 function resolveEntity(world: World<Entity>, id?: number) {
-  if (typeof id !== 'number') {
+  if (typeof id !== "number") {
     return undefined;
   }
 
@@ -16,7 +20,7 @@ function resolveEntity(world: World<Entity>, id?: number) {
   }
 
   return Array.from(world.entities).find(
-    (candidate) => (candidate.id as unknown as number) === id
+    (candidate) => (candidate.id as unknown as number) === id,
   ) as Entity | undefined;
 }
 
@@ -41,16 +45,18 @@ export function beamSystem(
   dt: number,
   _rng: Rng,
   weaponFiredEvents: WeaponFiredEvent[],
-  events: { damage: DamageEvent[] }
+  events: { damage: DamageEvent[] },
 ) {
   for (const fireEvent of weaponFiredEvents) {
-    if (fireEvent.type !== 'laser') continue;
+    if (fireEvent.type !== "laser") continue;
 
-    const owner = resolveOwner(world, fireEvent) as (Entity & {
-      weapon?: WeaponComponent;
-      position?: [number, number, number];
-      team?: string;
-    }) | undefined;
+    const owner = resolveOwner(world, fireEvent) as
+      | (Entity & {
+          weapon?: WeaponComponent;
+          position?: [number, number, number];
+          team?: string;
+        })
+      | undefined;
 
     const weapon = owner?.weapon;
     if (!owner || !weapon) continue;
@@ -60,26 +66,50 @@ export function beamSystem(
     // Try to find an existing beam for this weapon/owner and update it instead of spawning duplicates
     const existing = Array.from(world.entities).find((e) => {
       const b = (e as Entity & { beam?: BeamComponent }).beam;
-      return b && b.sourceWeaponId === fireEvent.weaponId && b.ownerId === fireEvent.ownerId;
+      return (
+        b &&
+        b.sourceWeaponId === fireEvent.weaponId &&
+        b.ownerId === fireEvent.ownerId
+      );
     }) as (Entity & { beam: BeamComponent }) | undefined;
 
     if (existing) {
-      existing.beam.origin = [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]];
-      existing.beam.direction = [fireEvent.direction[0], fireEvent.direction[1], fireEvent.direction[2]];
+      existing.beam.origin = [
+        fireEvent.origin[0],
+        fireEvent.origin[1],
+        fireEvent.origin[2],
+      ];
+      existing.beam.direction = [
+        fireEvent.direction[0],
+        fireEvent.direction[1],
+        fireEvent.direction[2],
+      ];
       existing.beam.length = weapon.range || 50;
       existing.beam.width = weapon.beamParams?.width || 0.1;
       // extend active window based on latest shot
       existing.beam.activeUntil = now + duration;
     } else {
       const beamEntity: Entity & { beam: BeamComponent } = {
-        id: 'beam_' + fireEvent.weaponId + '_' + now,
-        position: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
+        id: "beam_" + fireEvent.weaponId + "_" + now,
+        position: [
+          fireEvent.origin[0],
+          fireEvent.origin[1],
+          fireEvent.origin[2],
+        ],
         team: weapon.team,
         beam: {
           sourceWeaponId: fireEvent.weaponId,
           ownerId: fireEvent.ownerId,
-          origin: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
-          direction: [fireEvent.direction[0], fireEvent.direction[1], fireEvent.direction[2]],
+          origin: [
+            fireEvent.origin[0],
+            fireEvent.origin[1],
+            fireEvent.origin[2],
+          ],
+          direction: [
+            fireEvent.direction[0],
+            fireEvent.direction[1],
+            fireEvent.direction[2],
+          ],
           length: weapon.range || 50,
           width: weapon.beamParams?.width || 0.1,
           activeUntil: now + duration,
@@ -101,7 +131,9 @@ export function beamSystem(
     const owner =
       resolveEntity(world, beam.ownerId) ??
       Array.from(world.entities).find((candidate) => {
-        const ownerCandidate = candidate as Entity & { weapon?: WeaponComponent };
+        const ownerCandidate = candidate as Entity & {
+          weapon?: WeaponComponent;
+        };
         return ownerCandidate.weapon?.id === beam.sourceWeaponId;
       });
 
@@ -121,7 +153,7 @@ export function beamSystem(
         beam.direction,
         beam.length,
         world,
-        (owner as { team?: string })?.team
+        (owner as { team?: string })?.team,
       );
 
       for (const hit of hits) {
@@ -144,9 +176,10 @@ function performBeamRaycast(
   direction: [number, number, number],
   length: number,
   world: World<Entity>,
-  ownerTeam?: string
+  ownerTeam?: string,
 ): Array<{ position: [number, number, number]; targetId: number }> {
-  const hits: Array<{ position: [number, number, number]; targetId: number }> = [];
+  const hits: Array<{ position: [number, number, number]; targetId: number }> =
+    [];
 
   const [ox, oy, oz] = origin;
   const [dx, dy, dz] = direction;
@@ -169,7 +202,8 @@ function performBeamRaycast(
 
     const [ex, ey, ez] = candidate.position;
     const toEntity = [ex - ox, ey - oy, ez - oz];
-    const projectionLength = toEntity[0] * ndx + toEntity[1] * ndy + toEntity[2] * ndz;
+    const projectionLength =
+      toEntity[0] * ndx + toEntity[1] * ndy + toEntity[2] * ndz;
 
     if (projectionLength < 0 || projectionLength > length) continue;
 
@@ -182,7 +216,7 @@ function performBeamRaycast(
     const distanceToBeam = Math.sqrt(
       (ex - closestPoint[0]) ** 2 +
         (ey - closestPoint[1]) ** 2 +
-        (ez - closestPoint[2]) ** 2
+        (ez - closestPoint[2]) ** 2,
     );
 
     const beamRadius = 0.5;
@@ -210,12 +244,16 @@ function updateBeamOrigin(world: World<Entity>, beam: BeamComponent) {
   }
 
   // Sync owner position from physics first before updating beam origin
-  const ownerEntity = owner as Entity & { 
+  const ownerEntity = owner as Entity & {
     position?: [number, number, number];
     rigid?: { translation?: () => { x: number; y: number; z: number } };
   };
-  
-  if (ownerEntity.rigid && typeof ownerEntity.rigid.translation === 'function' && ownerEntity.position) {
+
+  if (
+    ownerEntity.rigid &&
+    typeof ownerEntity.rigid.translation === "function" &&
+    ownerEntity.position
+  ) {
     try {
       const translation = ownerEntity.rigid.translation();
       ownerEntity.position[0] = translation.x;
@@ -226,7 +264,11 @@ function updateBeamOrigin(world: World<Entity>, beam: BeamComponent) {
     }
   }
 
-  const rigid = (owner as { rigid?: { translation: () => { x: number; y: number; z: number } } }).rigid;
+  const rigid = (
+    owner as {
+      rigid?: { translation: () => { x: number; y: number; z: number } };
+    }
+  ).rigid;
   if (rigid) {
     const translation = rigid.translation();
     beam.origin = [translation.x, translation.y, translation.z];
@@ -238,6 +280,3 @@ function updateBeamOrigin(world: World<Entity>, beam: BeamComponent) {
     beam.origin = [position[0], position[1], position[2]];
   }
 }
-
-
-

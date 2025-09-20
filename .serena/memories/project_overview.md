@@ -1,7 +1,7 @@
 Project: RobotSpaceBattler
 
 Purpose:
-- Small 3D robot space-battle demo/game used for experimentation with WebGL/three.js, physics, ECS, and fast iteration in the browser.
+- Small 3D robot space-battle demo/game used for experimentation with WebGL/three.js, physics, and ECS patterns.
 
 Tech stack:
 - TypeScript, React, Vite

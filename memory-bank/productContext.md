@@ -1,17 +1,19 @@
 # Product Context — RobotSpaceBattler
 
+**Last updated:** 2025-09-20
+
 ## Why this exists
 
-RobotSpaceBattler exists to provide a compact, educational platform for experimenting with physics-driven gameplay, procedural content, and modular systems engineering in a React/Three.js environment.
+RobotSpaceBattler provides a hands-on sandbox for experimenting with physics-integrated gameplay, procedural asset generation, and modular systems design using modern web tooling.
 
-## Problems it solves
+## Problems it addresses
 
-- Demonstrates integrating Rapier physics with react-three-fiber and an ECS (miniplex).
-- Serves as a sandbox for AI/behavior experiments with simple robots.
-- Provides a testbed for fast iteration with Vite, Vitest and Playwright.
+- Teaching and prototyping how to integrate Rapier physics with a React/Three.js renderer.
+- Providing an accessible environment for experimenting with AI and weapon systems without heavy asset pipelines.
+- Enabling reproducible tests and CI workflows for interactive simulation logic.
 
-## User experience goals
+## UX goals
 
-- Fast load and immediate feedback in the browser.
-- Simple controls for spawning robots and toggling simulation features.
-- Clear visibility into simulation state for debugging and teaching.
+- Fast startup and immediate visual feedback in the browser.
+- Minimal controls for spawning, resetting, and toggling debug diagnostics.
+- Developer-facing visibility for simulation internals (diagnostics overlay, logs, and test hooks).

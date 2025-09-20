@@ -1,8 +1,16 @@
-import type { WeaponComponent, WeaponType } from '../ecs/weapons';
+import type { WeaponComponent, WeaponType } from "../ecs/weapons";
 
 type WeaponProfile = Pick<
   WeaponComponent,
-  'range' | 'cooldown' | 'power' | 'accuracy' | 'spread' | 'ammo' | 'aoeRadius' | 'beamParams' | 'flags'
+  | "range"
+  | "cooldown"
+  | "power"
+  | "accuracy"
+  | "spread"
+  | "ammo"
+  | "aoeRadius"
+  | "beamParams"
+  | "flags"
 >;
 
 export const weaponProfiles: Record<WeaponType, WeaponProfile> = {

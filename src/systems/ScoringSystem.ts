@@ -1,9 +1,9 @@
-import type { Team } from '../ecs/miniplexStore';
-import { getScores, incrementScore, resetScores } from '../store/scoreStore';
-import type { DeathEvent } from './DamageSystem';
+import type { Team } from "../ecs/miniplexStore";
+import { getScores, incrementScore, resetScores } from "../store/scoreStore";
+import type { DeathEvent } from "./DamageSystem";
 
 function isTeam(value: unknown): value is Team {
-  return value === 'red' || value === 'blue';
+  return value === "red" || value === "blue";
 }
 
 export function scoringSystem(deathEvents: DeathEvent[]) {

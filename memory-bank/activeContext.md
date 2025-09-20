@@ -1,40 +1,35 @@
-
 # Active Context - RobotSpaceBattler
+
+**Last updated:** 2025-09-20
 
 ## Current focus
 
-- Stabilize core simulation (physics-first authority, deterministic test mode).
-- Finish unified weapons ECS integration and increase unit test coverage for weapons and projectiles.
-- New: Event-driven FX system added (non-authoritative visuals) wired into Simulation.
+- Stabilize the physics-first simulation and ensure deterministic test modes are reliable.
+- Finalize unified weapons ECS integration and expand unit tests for weapon cooldowns, AOE, and edge cases.
+- Continue improving observability and dev tooling (diagnostics overlay, spawn controls, deterministic test hooks).
 
 ## Recent changes (implemented)
 
-- Seeded RNG utility added and used by deterministic unit tests.
-- Rapier physics integrated; RigidBody is authoritative and transform sync utilities are in place.
-- Procedural robot prefabs and spawn controls implemented (dev-only UI exposed).
-- Weapons systems implemented: Hitscan, Projectile and Beam subsystems with events; projectile/beam entities spawn with Rapier bodies.
-- FX system implemented (`src/systems/FxSystem.ts`) with `FXLayer` renderer and `showFx` UI flag.
-- DamageSystem added and emits death events consumed by higher-level systems.
-- Unit tests expanded: weapons, projectile lifecycle, and physics sync tests (Vitest).
-- Playwright E2E smoke test added (`playwright/tests/smoke.spec.ts`) and verified locally to assert `#status` and `canvas` are present.
-
-- Respawn and Scoring systems implemented with queue-based respawns, score tracking UI, and Vitest coverage (`src/systems/RespawnSystem.ts`, `src/systems/ScoringSystem.ts`, `src/components/ui/ScoreBoard.tsx`).
+- Seeded RNG utility added and adopted by deterministic tests.
+- Rapier physics integrated; `RigidBody` is treated as authoritative; transform sync utilities exist.
+- Procedural robot prefabs and spawn controls implemented (developer UI).
+- Weapons subsystems (Hitscan, Projectile, Beam) implemented and emitting events; projectiles and beams spawn with Rapier bodies.
+- Event-driven FX system added (`src/systems/FxSystem.ts` + `FXLayer`) with `showFx` toggle.
+- Damage, Respawn, and Scoring systems implemented with corresponding UI and tests.
+- Playwright smoke E2E added to verify basic UI and canvas rendering in CI.
 
 ## Next steps
 
-- Integrate the unified weapons ECS into the main `Simulation` wiring and ensure all systems read authority from Rapier bodies.
-- Harden friendly-fire rules, ensure projectiles carry correct `sourceId`, and expand unit tests for cooldowns and AOE edge-cases.
-- Add GLTF asset loader and optional model replacement for procedural prefabs.
+- Integrate weapons ECS fully into `Simulation.tsx` and remove any legacy wiring.
+- Harden friendly-fire and `sourceId` propagation across weapon → projectile flows and add regression tests.
+- Add optional GLTF loader and model replacement path for procedural prefabs.
 
-## Decisions / Conventions
+## Decisions & conventions
 
-- Rapier's `RigidBody` remains authoritative for transforms; avoid mutating mesh transforms directly when a `RigidBody` is present.
-- New developer UI/tools should live under `src/components/ui/` and be guarded by dev flags.
+- Rapier `RigidBody` remains authoritative for transforms; systems must not mutate mesh transforms directly when physics are present.
+- Small, testable systems should be preferred over large monolithic per-frame files.
 
-## Notes / Recent verification
+## Notes / verification
 
-- Playwright smoke test uses the repo Playwright config which starts the dev server on port 5174 for CI; note the Vite default dev port is 5173 (see `memory-bank/techContext.md` for port docs).
-- Several unit tests rely on deterministic RNG; maintain `utils/seededRng.ts` as the canonical seeded RNG helper.
-
-
-
+- Playwright config uses a webServer that starts Vite on port 5174 for CI; local `npm run dev` uses Vite's default 5173.
+- Maintain `utils/seededRng.ts` as the canonical seeded RNG helper for deterministic tests.

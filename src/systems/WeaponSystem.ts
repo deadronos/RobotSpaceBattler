@@ -1,17 +1,17 @@
-import type { World } from 'miniplex';
+import type { World } from "miniplex";
 
-import { type Entity,getEntityById } from '../ecs/miniplexStore';
+import { type Entity, getEntityById } from "../ecs/miniplexStore";
 import type {
   DamageEvent,
   WeaponComponent,
   WeaponStateComponent,
-} from '../ecs/weapons';
-import type { Rng } from '../utils/seededRng';
+} from "../ecs/weapons";
+import type { Rng } from "../utils/seededRng";
 
 export interface WeaponFiredEvent {
   weaponId: string;
   ownerId: number;
-  type: 'gun' | 'laser' | 'rocket';
+  type: "gun" | "laser" | "rocket";
   origin: [number, number, number];
   direction: [number, number, number];
   targetId?: number;
@@ -19,7 +19,7 @@ export interface WeaponFiredEvent {
 }
 
 function resolveEntity(world: World<Entity>, id?: number) {
-  if (typeof id !== 'number') {
+  if (typeof id !== "number") {
     return undefined;
   }
 
@@ -29,7 +29,7 @@ function resolveEntity(world: World<Entity>, id?: number) {
   }
 
   return Array.from(world.entities).find(
-    (candidate) => (candidate.id as unknown as number) === id
+    (candidate) => (candidate.id as unknown as number) === id,
   ) as Entity | undefined;
 }
 
@@ -37,7 +37,9 @@ type RigidBodyLike = {
   translation: () => { x: number; y: number; z: number };
 };
 
-function getEntityPosition(entity: Entity & { position?: [number, number, number] }): [number, number, number] | undefined {
+function getEntityPosition(
+  entity: Entity & { position?: [number, number, number] },
+): [number, number, number] | undefined {
   const rigid = entity.rigid as unknown as RigidBodyLike | null;
   if (rigid) {
     const { x, y, z } = rigid.translation();
@@ -54,21 +56,21 @@ function getEntityPosition(entity: Entity & { position?: [number, number, number
  * Emits WeaponFired events rather than directly resolving hits.
  */
 export function weaponSystem(
-  world: World<Entity>, 
-  dt: number, 
+  world: World<Entity>,
+  dt: number,
   rng: Rng,
-  events: { weaponFired: WeaponFiredEvent[]; damage: DamageEvent[] }
+  events: { weaponFired: WeaponFiredEvent[]; damage: DamageEvent[] },
 ) {
   for (const entity of world.entities) {
     const e = entity as Entity & {
       weapon?: WeaponComponent;
       weaponState?: WeaponStateComponent;
       position?: [number, number, number];
-      team?: 'red' | 'blue';
+      team?: "red" | "blue";
       rigid?: unknown;
       targetId?: number;
     };
-    
+
     const { weapon, weaponState: state, position, team } = e;
     if (!weapon || !state || !position || !team) continue;
 
@@ -90,17 +92,19 @@ export function weaponSystem(
     }
 
     // Check if we can fire
-    const canFire = state.firing && 
-                   (!state.cooldownRemaining || state.cooldownRemaining <= 0) &&
-                   (!weapon.ammo || weapon.ammo.clip > 0) &&
-                   !state.reloading;
+    const canFire =
+      state.firing &&
+      (!state.cooldownRemaining || state.cooldownRemaining <= 0) &&
+      (!weapon.ammo || weapon.ammo.clip > 0) &&
+      !state.reloading;
 
     if (canFire) {
-      if (typeof weapon.ownerId !== 'number' && typeof e.id === 'number') {
+      if (typeof weapon.ownerId !== "number" && typeof e.id === "number") {
         weapon.ownerId = e.id;
       }
 
-      const ownerId = typeof weapon.ownerId === 'number' ? weapon.ownerId : undefined;
+      const ownerId =
+        typeof weapon.ownerId === "number" ? weapon.ownerId : undefined;
       if (ownerId === undefined) {
         continue;
       }
@@ -112,7 +116,8 @@ export function weaponSystem(
       const origin = getEntityPosition(e) ?? position;
 
       let direction: [number, number, number] = [1, 0, 0];
-      let targetId: number | undefined = typeof e.targetId === 'number' ? e.targetId : undefined;
+      let targetId: number | undefined =
+        typeof e.targetId === "number" ? e.targetId : undefined;
       if (targetId !== undefined) {
         const targetEntity = resolveEntity(world, targetId);
         if (targetEntity) {

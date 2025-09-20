@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from "react";
 
-import { createMetalGreyMaterial } from '../../utils/materials';
-import CornerTile from './CornerTile';
-import EmissivePanel from './EmissivePanel';
-import FloorTile from './FloorTile';
-import WallTile from './WallTile';
+import { createMetalGreyMaterial } from "../../utils/materials";
+import CornerTile from "./CornerTile";
+import EmissivePanel from "./EmissivePanel";
+import FloorTile from "./FloorTile";
+import WallTile from "./WallTile";
 
 export interface EnvironmentLayoutProps {
   tileSize?: number;
@@ -19,7 +19,10 @@ export default function EnvironmentLayout({
   wallHeight = 4,
   showDebugGrid = false,
 }: EnvironmentLayoutProps) {
-  const floorMaterial = useMemo(() => createMetalGreyMaterial({ roughness: 0.35 }), []);
+  const floorMaterial = useMemo(
+    () => createMetalGreyMaterial({ roughness: 0.35 }),
+    [],
+  );
   const wallMaterial = useMemo(
     () =>
       createMetalGreyMaterial({
@@ -47,7 +50,14 @@ export default function EnvironmentLayout({
           -0.1,
           -halfWidth + z * tileSize,
         ];
-        tiles.push(<FloorTile key={`floor-${x}-${z}`} position={position} size={tileSize} material={floorMaterial} />);
+        tiles.push(
+          <FloorTile
+            key={`floor-${x}-${z}`}
+            position={position}
+            size={tileSize}
+            material={floorMaterial}
+          />,
+        );
       }
     }
     return tiles;
@@ -104,10 +114,30 @@ export default function EnvironmentLayout({
   const cornerTiles = useMemo(() => {
     const extent = halfWidth + tileSize / 2;
     return [
-      <CornerTile key="corner-ne" position={[extent, wallHeight / 2, -extent]} height={wallHeight} material={wallMaterial} />,
-      <CornerTile key="corner-nw" position={[-extent, wallHeight / 2, -extent]} height={wallHeight} material={wallMaterial} />,
-      <CornerTile key="corner-se" position={[extent, wallHeight / 2, extent]} height={wallHeight} material={wallMaterial} />,
-      <CornerTile key="corner-sw" position={[-extent, wallHeight / 2, extent]} height={wallHeight} material={wallMaterial} />,
+      <CornerTile
+        key="corner-ne"
+        position={[extent, wallHeight / 2, -extent]}
+        height={wallHeight}
+        material={wallMaterial}
+      />,
+      <CornerTile
+        key="corner-nw"
+        position={[-extent, wallHeight / 2, -extent]}
+        height={wallHeight}
+        material={wallMaterial}
+      />,
+      <CornerTile
+        key="corner-se"
+        position={[extent, wallHeight / 2, extent]}
+        height={wallHeight}
+        material={wallMaterial}
+      />,
+      <CornerTile
+        key="corner-sw"
+        position={[-extent, wallHeight / 2, extent]}
+        height={wallHeight}
+        material={wallMaterial}
+      />,
     ];
   }, [halfWidth, tileSize, wallHeight, wallMaterial]);
 
@@ -116,16 +146,37 @@ export default function EnvironmentLayout({
     const y = wallHeight * 0.55;
     const panelZ = extent - 0.01;
     return [
-      <EmissivePanel key="panel-north" position={[0, y, -panelZ]} rotation={[0, 0, 0]} />,
-      <EmissivePanel key="panel-south" position={[0, y, panelZ]} rotation={[0, Math.PI, 0]} />,
-      <EmissivePanel key="panel-east" position={[panelZ, y, 0]} rotation={[0, -Math.PI / 2, 0]} />,
-      <EmissivePanel key="panel-west" position={[-panelZ, y, 0]} rotation={[0, Math.PI / 2, 0]} />,
+      <EmissivePanel
+        key="panel-north"
+        position={[0, y, -panelZ]}
+        rotation={[0, 0, 0]}
+      />,
+      <EmissivePanel
+        key="panel-south"
+        position={[0, y, panelZ]}
+        rotation={[0, Math.PI, 0]}
+      />,
+      <EmissivePanel
+        key="panel-east"
+        position={[panelZ, y, 0]}
+        rotation={[0, -Math.PI / 2, 0]}
+      />,
+      <EmissivePanel
+        key="panel-west"
+        position={[-panelZ, y, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+      />,
     ];
   }, [halfWidth, tileSize, wallHeight]);
 
   return (
     <group>
-      {showDebugGrid ? <gridHelper args={[gridSize * tileSize, gridSize]} position={[0, -0.05, 0]} /> : null}
+      {showDebugGrid ? (
+        <gridHelper
+          args={[gridSize * tileSize, gridSize]}
+          position={[0, -0.05, 0]}
+        />
+      ) : null}
       {floorTiles}
       {wallTiles}
       {cornerTiles}

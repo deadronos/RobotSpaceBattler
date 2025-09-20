@@ -1,11 +1,14 @@
-import type { World } from 'miniplex';
+import type { World } from "miniplex";
 
-import type { Entity } from '../ecs/miniplexStore';
-import { getEntityById, notifyEntityChanged } from '../ecs/miniplexStore';
-import type { DamageEvent } from '../ecs/weapons';
+import type { Entity } from "../ecs/miniplexStore";
+import { getEntityById, notifyEntityChanged } from "../ecs/miniplexStore";
+import type { DamageEvent } from "../ecs/weapons";
 
 type RigidBodyLike = {
-  setLinvel?: (velocity: { x: number; y: number; z: number }, wake: boolean) => void;
+  setLinvel?: (
+    velocity: { x: number; y: number; z: number },
+    wake: boolean,
+  ) => void;
 };
 
 export interface DeathEvent {
@@ -22,13 +25,14 @@ export interface DeathEvent {
 export function damageSystem(
   world: World<Entity>,
   damageEvents: DamageEvent[],
-  events: { death: DeathEvent[] }
+  events: { death: DeathEvent[] },
 ) {
   for (const damageEvent of damageEvents) {
     if (!damageEvent.targetId) continue;
 
     const targetEntity = Array.from(world.entities).find(
-      (candidate) => (candidate.id as unknown as number) === damageEvent.targetId
+      (candidate) =>
+        (candidate.id as unknown as number) === damageEvent.targetId,
     ) as Entity & {
       hp?: number;
       maxHp?: number;
@@ -49,14 +53,20 @@ export function damageSystem(
       targetEntity.hp = 0;
 
       let killerTeam: string | undefined;
-      if (typeof damageEvent.sourceId === 'number') {
-        const killerEntity = getEntityById(damageEvent.sourceId) as Entity | undefined;
+      if (typeof damageEvent.sourceId === "number") {
+        const killerEntity = getEntityById(damageEvent.sourceId) as
+          | Entity
+          | undefined;
         killerTeam = killerEntity?.team as string | undefined;
       }
 
       events.death.push({
         entityId: damageEvent.targetId,
-        position: [targetEntity.position[0], targetEntity.position[1], targetEntity.position[2]],
+        position: [
+          targetEntity.position[0],
+          targetEntity.position[1],
+          targetEntity.position[2],
+        ],
         team: targetEntity.team,
         killerId: damageEvent.sourceId,
         killerTeam,

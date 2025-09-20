@@ -1,4 +1,3 @@
-
 # TASK003 - Add unit tests for physics sync
 
 **Status:** Completed
@@ -19,4 +18,3 @@
 - Marked task complete after initial unit tests for `syncRigidBodiesToECS`. Further tests (projectile cleanup) can be added in follow-up tasks.
 - Added projectile cleanup unit tests (tests/projectileCleanup.test.ts) covering TTL expiry, out-of-bounds removal, and survival when in bounds.
 - Also added collision/onHit simulation tests to verify damage application and projectile removal on hit.
-

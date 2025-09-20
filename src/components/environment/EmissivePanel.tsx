@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from "react";
 
-import { createEmissiveMaterial } from '../../utils/materials';
-import { useEmissiveFlicker } from './hooks';
+import { createEmissiveMaterial } from "../../utils/materials";
+import { useEmissiveFlicker } from "./hooks";
 
 export interface EmissivePanelProps {
   size?: [number, number];
@@ -18,7 +18,7 @@ export default function EmissivePanel({
   size = [1.6, 0.6],
   position = [0, 0, 0],
   rotation = [0, 0, 0],
-  emissiveColor = '#3fd9ff',
+  emissiveColor = "#3fd9ff",
   emissiveIntensity = 2.8,
   flicker = true,
   flickerSpeed = 2.2,

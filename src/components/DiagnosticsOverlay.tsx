@@ -1,10 +1,17 @@
-import { Html } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
-import React, { useMemo, useRef } from 'react';
+import { Html } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
+import React, { useMemo, useRef } from "react";
 
-export default function DiagnosticsOverlay({ updateHz = 8 }: { updateHz?: number }) {
+export default function DiagnosticsOverlay({
+  updateHz = 8,
+}: {
+  updateHz?: number;
+}) {
   const textRef = useRef<HTMLDivElement | null>(null);
-  const samples = useMemo(() => ({ last: Date.now(), fps: 0, acc: 0, frames: 0 }), []);
+  const samples = useMemo(
+    () => ({ last: Date.now(), fps: 0, acc: 0, frames: 0 }),
+    [],
+  );
   const interval = 1000 / Math.max(1, updateHz);
   const nextUpdateRef = useRef(Date.now() + interval);
 
@@ -29,7 +36,9 @@ export default function DiagnosticsOverlay({ updateHz = 8 }: { updateHz?: number
   // Use Html to render on top of the canvas without affecting scene
   return (
     <Html position={[0, 0, 0]} prepend zIndexRange={[1000, 2000]}>
-      <div ref={textRef} className="diag-overlay">FPS …</div>
+      <div ref={textRef} className="diag-overlay">
+        FPS …
+      </div>
     </Html>
   );
 }

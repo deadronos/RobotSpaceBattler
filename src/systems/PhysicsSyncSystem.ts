@@ -1,15 +1,15 @@
-import type { World } from 'miniplex';
+import type { World } from "miniplex";
 
-import type { Entity } from '../ecs/miniplexStore';
-import { notifyEntityChanged } from '../ecs/miniplexStore';
+import type { Entity } from "../ecs/miniplexStore";
+import { notifyEntityChanged } from "../ecs/miniplexStore";
 
 /**
  * Physics Sync System - Synchronizes entity positions from Rapier physics bodies back to ECS components.
- * 
+ *
  * This system ensures that visual rendering stays in sync with physics simulation by copying
  * the authoritative physics positions back to the entity.position components that React
  * components use for rendering.
- * 
+ *
  * Should run every frame after physics simulation but before rendering.
  */
 export function physicsSyncSystem(world: World<Entity>) {
@@ -27,7 +27,7 @@ export function physicsSyncSystem(world: World<Entity>) {
       translation?: () => { x: number; y: number; z: number };
     };
 
-    if (rigid && typeof rigid.translation === 'function') {
+    if (rigid && typeof rigid.translation === "function") {
       try {
         const translation = rigid.translation();
         const newX = translation.x;
@@ -36,7 +36,7 @@ export function physicsSyncSystem(world: World<Entity>) {
 
         // Check if position has actually changed to avoid unnecessary notifications
         const threshold = 0.0001;
-        const positionChanged = 
+        const positionChanged =
           Math.abs(e.position[0] - newX) > threshold ||
           Math.abs(e.position[1] - newY) > threshold ||
           Math.abs(e.position[2] - newZ) > threshold;

@@ -1,6 +1,17 @@
-import { createRobotEntity, type Entity, resetWorld, type Team, type Vec3,world } from '../ecs/miniplexStore';
-import type { WeaponComponent, WeaponStateComponent, WeaponType } from '../ecs/weapons';
-import { weaponProfiles } from './weaponProfiles';
+import {
+  createRobotEntity,
+  type Entity,
+  resetWorld,
+  type Team,
+  type Vec3,
+  world,
+} from "../ecs/miniplexStore";
+import type {
+  WeaponComponent,
+  WeaponStateComponent,
+  WeaponType,
+} from "../ecs/weapons";
+import { weaponProfiles } from "./weaponProfiles";
 
 export const DEFAULT_TEAM_SIZE = 10;
 const GRID_COLUMNS = 5;
@@ -31,7 +42,7 @@ function computeGridPosition(team: Team, index: number): Vec3 {
   const column = index % GRID_COLUMNS;
   const row = Math.floor(index / GRID_COLUMNS);
 
-  const direction = team === 'red' ? 1 : -1;
+  const direction = team === "red" ? 1 : -1;
 
   return [
     baseX + column * GRID_SPACING * direction,
@@ -51,7 +62,7 @@ function createWeaponState(): WeaponStateComponent {
 export function spawnRobot(
   team: Team,
   weaponType: WeaponType,
-  options: { position?: Vec3; indexOverride?: number } = {}
+  options: { position?: Vec3; indexOverride?: number } = {},
 ) {
   const spawnIndex = options.indexOverride ?? countTeamRobots(team);
   const position = options.position ?? computeGridPosition(team, spawnIndex);
@@ -75,7 +86,10 @@ export function spawnRobot(
     position,
     weapon: initialWeapon,
     weaponState: initialWeaponState,
-  }) as Entity & { weapon?: WeaponComponent; weaponState?: WeaponStateComponent };
+  }) as Entity & {
+    weapon?: WeaponComponent;
+    weaponState?: WeaponStateComponent;
+  };
 
   // Now that the entity has an id, fix the ownerId to the correct value.
   if (robot.weapon) {
@@ -88,7 +102,7 @@ export function spawnRobot(
 export function spawnTeam(
   team: Team,
   loadout: WeaponType[],
-  count = DEFAULT_TEAM_SIZE
+  count = DEFAULT_TEAM_SIZE,
 ) {
   const created: Entity[] = [];
   let spawnIndex = countTeamRobots(team);
@@ -104,9 +118,6 @@ export function spawnTeam(
 
 export function resetAndSpawnDefaultTeams() {
   resetWorld();
-  spawnTeam('red', ['gun', 'laser', 'rocket']);
-  spawnTeam('blue', ['rocket', 'gun', 'laser']);
+  spawnTeam("red", ["gun", "laser", "rocket"]);
+  spawnTeam("blue", ["rocket", "gun", "laser"]);
 }
-
-
-

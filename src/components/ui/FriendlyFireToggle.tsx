@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react";
 
-import { useUI } from '../../store/uiStore';
+import { useUI } from "../../store/uiStore";
 
 export default function FriendlyFireToggle() {
   const friendlyFire = useUI((s) => s.friendlyFire);

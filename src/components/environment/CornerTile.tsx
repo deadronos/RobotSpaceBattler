@@ -1,5 +1,5 @@
-import React from 'react';
-import { Material } from 'three';
+import React from "react";
+import { Material } from "three";
 
 export interface CornerTileProps {
   size?: number;

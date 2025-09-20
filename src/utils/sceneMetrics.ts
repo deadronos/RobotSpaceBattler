@@ -1,4 +1,12 @@
-import { BufferGeometry, Light, Material, Mesh, Object3D, Scene, Texture } from 'three';
+import {
+  BufferGeometry,
+  Light,
+  Material,
+  Mesh,
+  Object3D,
+  Scene,
+  Texture,
+} from "three";
 
 export interface SceneMetrics {
   meshes: number;
@@ -15,16 +23,19 @@ export interface MetricsOptions {
 function collectMaterialTextures(material: Material, target: Set<Texture>) {
   // Many Three.js material types expose common texture slots. We probe a safe list.
   const candidateKeys = [
-    'map',
-    'roughnessMap',
-    'normalMap',
-    'aoMap',
-    'metalnessMap',
-    'emissiveMap',
-    'displacementMap',
+    "map",
+    "roughnessMap",
+    "normalMap",
+    "aoMap",
+    "metalnessMap",
+    "emissiveMap",
+    "displacementMap",
   ] as const;
 
-  const getSlot = (mat: Material, key: (typeof candidateKeys)[number]): Texture | undefined => {
+  const getSlot = (
+    mat: Material,
+    key: (typeof candidateKeys)[number],
+  ): Texture | undefined => {
     const record = mat as unknown as Record<string, unknown>;
     const value = record[key];
     return value instanceof Texture ? value : undefined;
@@ -62,7 +73,7 @@ export function collectSceneMetrics(root: Object3D | Scene): SceneMetrics {
       }
     }
 
-    if ('isLight' in object && (object as Light).isLight) {
+    if ("isLight" in object && (object as Light).isLight) {
       lights.add(object as Light);
     }
   });

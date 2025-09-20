@@ -1,15 +1,15 @@
-import type { World } from 'miniplex';
+import type { World } from "miniplex";
 
-import type { FxComponent } from '../ecs/fx';
-import type { Entity } from '../ecs/miniplexStore';
-import { notifyEntityChanged } from '../ecs/miniplexStore';
-import type { DamageEvent } from '../ecs/weapons';
-import { useUI } from '../store/uiStore';
-import type { DeathEvent } from './DamageSystem';
-import type { ImpactEvent } from './HitscanSystem';
+import type { FxComponent } from "../ecs/fx";
+import type { Entity } from "../ecs/miniplexStore";
+import { notifyEntityChanged } from "../ecs/miniplexStore";
+import type { DamageEvent } from "../ecs/weapons";
+import { useUI } from "../store/uiStore";
+import type { DeathEvent } from "./DamageSystem";
+import type { ImpactEvent } from "./HitscanSystem";
 
 type FxSpawn = {
-  type: FxComponent['type'];
+  type: FxComponent["type"];
   position: [number, number, number];
   color?: string;
   size?: number;
@@ -36,7 +36,7 @@ function spawnFx(world: World<Entity>, fx: FxSpawn) {
 export function fxSystem(
   world: World<Entity>,
   dt: number,
-  events: { impact: ImpactEvent[]; death: DeathEvent[]; damage: DamageEvent[] }
+  events: { impact: ImpactEvent[]; death: DeathEvent[]; damage: DamageEvent[] },
 ) {
   // Read UI flag safely (tests may not have store setup)
   let show = true;
@@ -52,9 +52,9 @@ export function fxSystem(
       // Quick hit flash
       if (imp.position) {
         spawnFx(world, {
-          type: 'hitFlash',
+          type: "hitFlash",
           position: imp.position,
-          color: '#ffd166',
+          color: "#ffd166",
           size: 0.4,
           ttl: 0.25,
           intensity: 1,
@@ -62,9 +62,9 @@ export function fxSystem(
 
         // Small particle pop
         spawnFx(world, {
-          type: 'impactParticles',
+          type: "impactParticles",
           position: imp.position,
-          color: '#ffee99',
+          color: "#ffee99",
           size: 0.6,
           ttl: 0.5,
           intensity: 0.8,
@@ -75,9 +75,9 @@ export function fxSystem(
     for (const death of events.death) {
       if (death.position) {
         spawnFx(world, {
-          type: 'explosion',
+          type: "explosion",
           position: death.position,
-          color: '#ff6b6b',
+          color: "#ff6b6b",
           size: 1.2,
           ttl: 0.7,
           intensity: 1,
@@ -88,7 +88,10 @@ export function fxSystem(
 
   // Update and cleanup existing FX
   for (const entity of [...world.entities]) {
-    const e = entity as Entity & { fx?: FxComponent; position?: [number, number, number] };
+    const e = entity as Entity & {
+      fx?: FxComponent;
+      position?: [number, number, number];
+    };
     if (!e.fx) continue;
 
     e.fx.age += dt;

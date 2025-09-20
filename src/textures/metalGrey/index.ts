@@ -1,4 +1,13 @@
-import { DataTexture, LinearFilter, LinearMipmapLinearFilter, LinearSRGBColorSpace, RepeatWrapping, RGBAFormat, SRGBColorSpace, Texture } from 'three';
+import {
+  DataTexture,
+  LinearFilter,
+  LinearMipmapLinearFilter,
+  LinearSRGBColorSpace,
+  RepeatWrapping,
+  RGBAFormat,
+  SRGBColorSpace,
+  Texture,
+} from "three";
 
 export interface MetalTextureSet {
   map: Texture;
@@ -22,7 +31,8 @@ function createCheckerboardTexture(
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
       const offset = (y * size + x) * channels;
-      const useA = (x < blockSize && y < blockSize) || (x >= blockSize && y >= blockSize);
+      const useA =
+        (x < blockSize && y < blockSize) || (x >= blockSize && y >= blockSize);
       const [r, g, b] = useA ? colorA : colorB;
       pixels[offset] = r;
       pixels[offset + 1] = g;
@@ -103,9 +113,26 @@ function createNormalTexture(size: number, repeat: number) {
 export function createPlaceholderMetalTextureSet(repeat = 4): MetalTextureSet {
   const size = 4;
   return {
-    map: createCheckerboardTexture(size, [134, 138, 150], [110, 114, 124], SRGBColorSpace, repeat),
-    roughnessMap: createCheckerboardTexture(size, [180, 180, 180], [150, 150, 150], LinearSRGBColorSpace, repeat),
+    map: createCheckerboardTexture(
+      size,
+      [134, 138, 150],
+      [110, 114, 124],
+      SRGBColorSpace,
+      repeat,
+    ),
+    roughnessMap: createCheckerboardTexture(
+      size,
+      [180, 180, 180],
+      [150, 150, 150],
+      LinearSRGBColorSpace,
+      repeat,
+    ),
     normalMap: createNormalTexture(size, repeat),
-    aoMap: createSolidTexture(size, [210, 210, 210], LinearSRGBColorSpace, repeat),
+    aoMap: createSolidTexture(
+      size,
+      [210, 210, 210],
+      LinearSRGBColorSpace,
+      repeat,
+    ),
   };
 }

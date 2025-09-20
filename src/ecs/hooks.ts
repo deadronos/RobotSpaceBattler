@@ -1,8 +1,8 @@
-import type { Query } from 'miniplex';
-import { useEffect, useSyncExternalStore } from 'react';
+import type { Query } from "miniplex";
+import { useEffect, useSyncExternalStore } from "react";
 
-import type { Entity } from './miniplexStore';
-import { subscribeEntityChanges } from './miniplexStore';
+import type { Entity } from "./miniplexStore";
+import { subscribeEntityChanges } from "./miniplexStore";
 
 export function useEcsQuery<T extends Entity>(query: Query<T>) {
   useEffect(() => {
@@ -33,6 +33,6 @@ export function useEcsQuery<T extends Entity>(query: Query<T>) {
       };
     },
     () => query.entities,
-    () => query.entities
+    () => query.entities,
   );
 }
