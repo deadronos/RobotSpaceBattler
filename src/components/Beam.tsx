@@ -1,4 +1,4 @@
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Mesh, Quaternion, Vector3 } from 'three';
 
@@ -17,7 +17,6 @@ export function Beam({ entity }: { entity: BeamEntity }) {
   const midpoint = useMemo(() => new Vector3(), []);
   const up = useMemo(() => new Vector3(0, 1, 0), []);
   const rotation = useMemo(() => new Quaternion(), []);
-  const { invalidate } = useThree();
 
   useEffect(() => {
     const mesh = meshRef.current;
@@ -47,9 +46,6 @@ export function Beam({ entity }: { entity: BeamEntity }) {
 
     const width = beam.width ?? 0.1;
     mesh.scale.set(width, beam.length, width);
-    
-    // Invalidate to ensure beam updates are visible
-    invalidate();
   });
 
   const color = entity.team === 'red' ? '#ff6b6b' : '#6bc6ff';

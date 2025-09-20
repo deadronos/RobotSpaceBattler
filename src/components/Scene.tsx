@@ -12,7 +12,7 @@ const ENABLE_ENVIRONMENT = true;
 
 export default function Scene() {
   return (
-  <Canvas shadows camera={{ position: [16, 12, 16], fov: 50 }}>
+  <Canvas shadows camera={{ position: [16, 12, 16], fov: 50 }} frameloop="demand">
       <color attach="background" args={[0.04, 0.05, 0.09]} />
       {ENABLE_ENVIRONMENT ? <EnvironmentLighting /> : <ambientLight intensity={0.3} />}
       <Suspense fallback={null}>

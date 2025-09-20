@@ -1,4 +1,4 @@
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { BallCollider, RigidBody } from '@react-three/rapier';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { Mesh, Quaternion, Vector3 } from 'three';
@@ -28,7 +28,6 @@ export function Projectile({ entity }: { entity: ProjectileEntity }) {
   const dir = useRef(new Vector3());
   const rot = useRef(new Quaternion());
   const offset = useRef(new Vector3());
-  const { invalidate } = useThree();
 
   const setBodyRef = useCallback(
     (body: RigidBodyHandle | null) => {
@@ -101,9 +100,6 @@ export function Projectile({ entity }: { entity: ProjectileEntity }) {
         streak.visible = false;
       }
     }
-    
-    // Invalidate to ensure projectile movement and streak updates are visible
-    invalidate();
   });
 
   return (
