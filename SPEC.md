@@ -34,6 +34,120 @@ Main entities & components
   - Target: current target entity id
   - Render: reference to mesh for visual debugging
 
+Robots (implementation notes)
+
+- Robots are spawned by the Spawn System (`src/components/Simulation.tsx` spawn logic).
+- Procedural robots are constructed from a small set of primitive meshes and components. Each robot entity is composed of a Rapier `RigidBody` (capsule or compound box) and simplified collider for stable physics.
+- Component contract (JS/TS shape):
+
+  - Transform: { position: { x,y,z }, rotation: { x,y,z } }
+  - RobotStats: { speed: number, turnSpeed: number, sensorRange: number }
+  - Weapon: { id: string, type: 'hitscan'|'projectile'|'beam', cooldownMs: number, range: number, power: number, aoe?: number }
+
+- Spawning:
+  - The spawn system creates teams using `Team` component and assigns initial `Target` as `null`.
+  - Robots are registered in miniplex with their components; `RigidBodyRef` is attached to the Rapier body created in the spawn JSX.
+
+- Behaviors:
+  - Robots use steering (Movement System) which sets linear velocity through Rapier API: `RigidBody.setLinvel()`.
+  - Avoid direct mesh transforms for physics-driven entities; always use `RigidBody` as the source of truth.
+
+Weapons (implementation notes)
+
+- Two broad categories: hitscan and projectile.
+
+- Hitscan:
+  - Instantaneous raycast from muzzle to target, resolved in Weapon System.
+  - Use Rapier raycast or Three.js Raycaster against simplified colliders for consistency.
+  - Ideal for lasers and instant-hit beams. Friendly fire rules are evaluated in the Weapon System before applying damage.
+
+- Projectile:
+  - Spawned as lightweight physics bodies with `velocity` set on creation. Use projectile pooling to minimize GC churn.
+  - Fast projectiles should perform sweep/raycast checks to avoid tunneling.
+  - On impact they can apply direct damage and optional area-of-effect (AOE) damage; AOE handled by proximity queries against entity positions.
+
+- Beam / continuous weapons:
+  - Modeled as a hitscan run repeatedly while active (consumes weapon `cooldownMs` as a tick) or as a special beam component.
+
+- Weapon contract example (TypeScript):
+
+  interface WeaponComponent {
+    id: string;
+    type: 'hitscan' | 'projectile' | 'beam';
+    cooldownMs: number;
+    range: number;
+    power: number;
+    aoe?: number; // optional radius for explosions
+  }
+
+AI (implementation notes)
+
+- The AISystem runs at a configurable tick (default 60hz or throttled to 200ms for heavy logic). Default is frame-tied for prototype but heavy decisions are throttled.
+- Target selection: nearest-enemy-in-cone, preferred by `RobotStats.sensorRange` and faction rules.
+- Determinism: tests use a seeded RNG helper (see `tests/seededRng.test.ts`). If deterministic mode is enabled, seed the RNG at simulation start and avoid non-deterministic browser APIs in the simulation loop.
+- Public API surface for AI decisions (example):
+
+  type AIDecision = { action: 'move'|'attack'|'retreat', targetId?: string, aim: { x:number,y:number,z:number } }
+
+- Edge cases:
+  - Lost rigidbody refs (e.g. after respawn) must be reattached by the spawn/respawn system.
+  - Pathfinding is not included in this prototype; long-range navigation relies on steering and impulse-based avoidance.
+
+Physics & Environment (implementation notes)
+
+- Rapier Authority:
+  - Rapier `RigidBody` is authoritative for positions of physics-driven entities. Systems that need transform values should read from `RigidBody` during the Physics Sync System and update ECS `Transform` component accordingly.
+  - When adjusting motion, use Rapier API (`setLinvel`, `applyImpulse`, `setAngvel`) not direct mesh manip.
+
+- Colliders and scale:
+  - Keep robot colliders simple (capsule or a low-poly compound box). Ensure consistent units (1 unit ~= 1 meter).
+
+- Scene boundaries:
+  - The playable area is a bounded box defined in `src/components/Simulation.tsx`. Entities leaving bounds are clamped, destroyed, or teleported back depending on simulation rules (configured in UI store).
+
+- Performance tips:
+  - Pool ephemeral objects (projectiles, particle effects).
+  - Throttle AI and telemetry collection where possible.
+
+Migration notes
+
+- This SPEC adds concrete component shapes for Robot and Weapon components and clarifies Rapier authority. If your code expects transforms on meshes directly, migrate to reading/writing `RigidBody` via `RigidBodyRef`.
+
+- Example migration snippet:
+
+  // OLD (avoid):
+  mesh.position.set(x,y,z);
+
+  // NEW (preferred):
+  const rb = getRigidBodyForEntity(eid);
+  rb.setTranslation({ x, y, z }, true);
+
+API snippets & examples
+
+- Spawn a robot (simplified):
+
+  // ...existing code...
+  const id = store.spawnRobot({ team: 'red', stats: { speed: 3, turnSpeed: 0.08, sensorRange: 12 } });
+
+- Weapon firing (simplified pseudocode):
+
+  // ...existing code...
+  function tryFireWeapon(entity, weapon) {
+    if (weaponOnCooldown(weapon)) return;
+    if (weapon.type === 'hitscan') {
+      const hit = rapierWorld.castRay(...);
+      if (hit) applyDamage(hit.entityId, weapon.power);
+    } else {
+      spawnProjectile(entity, weapon);
+    }
+  }
+
+Testing notes
+
+- Unit tests cover pure logic: damage calculations, cooldown handling, target selection.
+- Integration tests (Vitest) use dom/jsdom for game loop checks and small simulation ticks. Playwright E2E verifies the app boots and the canvas renders.
+
+
 Systems
 
 - Spawn System: create entities (robots) with components
@@ -110,6 +224,12 @@ Common pitfalls & recommendations
 - Colliders and scale: ensure consistent unit scale (1 unit ~ 1 meter) for rapier physics stability.
 - Projectile tunneling: use raycasts/sweeps for fast projectiles.
 - Memory churn: reuse objects, pool projectiles and ephemeral effects.
+
+Assets & art pipeline
+
+- Author assets as glTF/GLB following `docs/assets.md` (naming, units, metadata). Small example assets live in `public/assets/examples/`.
+- Developer helpers: `npm run assets:validate` (runs a lightweight validator) and `npm run assets:optimize` (uses gltf-transform to prune/dedup/quantize). These are intended for local dev and CI checks; production assets should be built and hosted on a CDN or asset server.
+
 
 Conclusion
 Start with the prototype below, get a working 10v10 simulation, then iterate on visuals, AI complexity, and performance optimizations. Replace procedural assets with Blender exports (gltf + gltfjsx) when you want polished visuals

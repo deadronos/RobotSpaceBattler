@@ -55,25 +55,42 @@ export function beamSystem(
     const weapon = owner?.weapon;
     if (!owner || !weapon) continue;
 
-    const beamEntity: Entity & { beam: BeamComponent } = {
-      id: 'beam_' + fireEvent.weaponId + '_' + Date.now(),
-      position: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
-      team: weapon.team,
-      beam: {
-        sourceWeaponId: fireEvent.weaponId,
-        ownerId: fireEvent.ownerId,
-        origin: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
-        direction: [fireEvent.direction[0], fireEvent.direction[1], fireEvent.direction[2]],
-        length: weapon.range || 50,
-        width: weapon.beamParams?.width || 0.1,
-        activeUntil: Date.now() + (weapon.beamParams?.duration || 2000),
-        tickDamage: weapon.power / 10,
-        tickInterval: weapon.beamParams?.tickInterval || 100,
-        lastTickAt: Date.now(),
-      },
-    };
+    const duration = weapon.beamParams?.duration || 2000;
+    const now = Date.now();
+    // Try to find an existing beam for this weapon/owner and update it instead of spawning duplicates
+    const existing = Array.from(world.entities).find((e) => {
+      const b = (e as Entity & { beam?: BeamComponent }).beam;
+      return b && b.sourceWeaponId === fireEvent.weaponId && b.ownerId === fireEvent.ownerId;
+    }) as (Entity & { beam: BeamComponent }) | undefined;
 
-    world.add(beamEntity);
+    if (existing) {
+      existing.beam.origin = [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]];
+      existing.beam.direction = [fireEvent.direction[0], fireEvent.direction[1], fireEvent.direction[2]];
+      existing.beam.length = weapon.range || 50;
+      existing.beam.width = weapon.beamParams?.width || 0.1;
+      // extend active window based on latest shot
+      existing.beam.activeUntil = now + duration;
+    } else {
+      const beamEntity: Entity & { beam: BeamComponent } = {
+        id: 'beam_' + fireEvent.weaponId + '_' + now,
+        position: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
+        team: weapon.team,
+        beam: {
+          sourceWeaponId: fireEvent.weaponId,
+          ownerId: fireEvent.ownerId,
+          origin: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
+          direction: [fireEvent.direction[0], fireEvent.direction[1], fireEvent.direction[2]],
+          length: weapon.range || 50,
+          width: weapon.beamParams?.width || 0.1,
+          activeUntil: now + duration,
+          tickDamage: weapon.power / 10,
+          tickInterval: weapon.beamParams?.tickInterval || 100,
+          lastTickAt: now,
+          firedAt: now,
+        },
+      };
+      world.add(beamEntity);
+    }
   }
 
   for (const entity of world.entities) {
@@ -90,7 +107,8 @@ export function beamSystem(
 
     const now = Date.now();
 
-    if (now >= beam.activeUntil) {
+    // Remove beam if expired, time anomaly, or owner no longer exists
+    if (!owner || now >= beam.activeUntil || now < beam.firedAt) {
       world.remove(entity);
       continue;
     }
@@ -146,7 +164,7 @@ function performBeamRaycast(
       weapon?: WeaponComponent;
     };
 
-    if (!candidate.position || !candidate.team || candidate.beam || candidate.weapon) continue;
+    if (!candidate.position || !candidate.team || candidate.beam) continue;
     if (ownerTeam && candidate.team === ownerTeam) continue;
 
     const [ex, ey, ez] = candidate.position;
@@ -191,6 +209,23 @@ function updateBeamOrigin(world: World<Entity>, beam: BeamComponent) {
     return;
   }
 
+  // Sync owner position from physics first before updating beam origin
+  const ownerEntity = owner as Entity & { 
+    position?: [number, number, number];
+    rigid?: { translation?: () => { x: number; y: number; z: number } };
+  };
+  
+  if (ownerEntity.rigid && typeof ownerEntity.rigid.translation === 'function' && ownerEntity.position) {
+    try {
+      const translation = ownerEntity.rigid.translation();
+      ownerEntity.position[0] = translation.x;
+      ownerEntity.position[1] = translation.y;
+      ownerEntity.position[2] = translation.z;
+    } catch {
+      // Defensive: ignore physics API errors
+    }
+  }
+
   const rigid = (owner as { rigid?: { translation: () => { x: number; y: number; z: number } } }).rigid;
   if (rigid) {
     const translation = rigid.translation();
@@ -203,3 +238,6 @@ function updateBeamOrigin(world: World<Entity>, beam: BeamComponent) {
     beam.origin = [position[0], position[1], position[2]];
   }
 }
+
+
+

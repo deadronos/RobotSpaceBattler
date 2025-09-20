@@ -1,9 +1,13 @@
 import type { World } from 'miniplex';
 
-import { type Entity,getEntityById } from '../ecs/miniplexStore';
+import { type Entity, getEntityById, notifyEntityChanged } from '../ecs/miniplexStore';
 import type { DamageEvent, ProjectileComponent, WeaponComponent } from '../ecs/weapons';
+import { useUI } from '../store/uiStore';
 import type { Rng } from '../utils/seededRng';
 import type { WeaponFiredEvent } from './WeaponSystem';
+
+// Module-scoped serial to ensure unique projectile ids even within the same millisecond
+let projectileSerial = 0;
 
 interface RigidBodyLike {
   translation(): { x: number; y: number; z: number };
@@ -47,8 +51,19 @@ export function projectileSystem(
   dt: number,
   rng: Rng,
   weaponFiredEvents: WeaponFiredEvent[],
-  events: { damage: DamageEvent[] }
+  events: { damage: DamageEvent[] },
+  _rapierWorld?: unknown
 ) {
+  // Friendly-fire toggle (default false when store not initialized)
+  let friendlyFire = false;
+  // mark optional rapier arg as intentionally unused for now
+  void _rapierWorld;
+  try {
+    // In React runtime, useUI is callable; in tests, this may throw if Zustand isn't set up, so fall back.
+    friendlyFire = useUI.getState ? Boolean(useUI.getState().friendlyFire) : false;
+  } catch {
+    friendlyFire = false;
+  }
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== 'rocket') continue;
 
@@ -61,16 +76,19 @@ export function projectileSystem(
     const weapon = owner?.weapon;
     if (!owner || !weapon) continue;
 
+    const ownerEntityId =
+      typeof owner.id === 'number' ? owner.id : fireEvent.ownerId;
+
     const projectileEntity: Entity & {
       projectile: ProjectileComponent;
       velocity: [number, number, number];
     } = {
-      id: 'projectile_' + fireEvent.weaponId + '_' + Date.now(),
+      id: `projectile_${fireEvent.weaponId}_${Date.now()}_${++projectileSerial}`,
       position: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
       team: weapon.team,
       projectile: {
         sourceWeaponId: fireEvent.weaponId,
-        ownerId: fireEvent.ownerId,
+        ownerId: ownerEntityId,
         damage: weapon.power,
         team: weapon.team,
         aoeRadius: weapon.aoeRadius,
@@ -100,9 +118,11 @@ export function projectileSystem(
     const { projectile, position, velocity } = e;
     if (!projectile || !position || !velocity) continue;
     const rigid = e.rigid as unknown as RigidBodyLike | null;
+    let mutated = false;
 
     const age = (Date.now() - projectile.spawnTime) / 1000;
     if (age >= projectile.lifespan) {
+      notifyEntityChanged(e as Entity);
       world.remove(entity);
       continue;
     }
@@ -112,13 +132,21 @@ export function projectileSystem(
       position[0] = translation.x;
       position[1] = translation.y;
       position[2] = translation.z;
+      mutated = true;
     } else {
       position[0] += velocity[0] * dt;
       position[1] += velocity[1] * dt;
       position[2] += velocity[2] * dt;
+      mutated = true;
     }
 
-    const hit = checkProjectileCollision(position, world, projectile.team);
+    const hit = checkProjectileCollision(
+      position,
+      world,
+      projectile.team,
+      projectile.ownerId,
+      friendlyFire
+    );
     if (hit) {
       if (projectile.aoeRadius && projectile.aoeRadius > 0) {
         applyAoEDamage(
@@ -128,7 +156,8 @@ export function projectileSystem(
           projectile.team,
           projectile.ownerId,
           world,
-          events
+          events,
+          friendlyFire
         );
       } else {
         events.damage.push({
@@ -140,6 +169,7 @@ export function projectileSystem(
         });
       }
 
+      notifyEntityChanged(e as Entity);
       world.remove(entity);
       continue;
     }
@@ -156,6 +186,7 @@ export function projectileSystem(
         rng,
         rigid || undefined
       );
+      mutated = true;
     } else if (rigid) {
       const current = rigid.linvel();
       if (
@@ -164,11 +195,18 @@ export function projectileSystem(
         Math.abs(current.z - velocity[2]) > 0.0001
       ) {
         rigid.setLinvel({ x: velocity[0], y: velocity[1], z: velocity[2] }, true);
+        mutated = true;
       }
     }
 
     if (Math.abs(position[0]) > 50 || Math.abs(position[2]) > 50 || position[1] < -10) {
+      notifyEntityChanged(e as Entity);
       world.remove(entity);
+      continue;
+    }
+
+    if (mutated) {
+      notifyEntityChanged(e as Entity);
     }
   }
 }
@@ -176,8 +214,11 @@ export function projectileSystem(
 function checkProjectileCollision(
   position: [number, number, number],
   world: World<Entity>,
-  projectileTeam: string
-): { targetId: number } | null {
+  projectileTeam: string,
+  ownerId: number,
+  friendlyFire: boolean
+): { targetId?: number } | null {
+  let impactedAny = false;
   for (const entity of world.entities) {
     const candidate = entity as Entity & {
       position?: [number, number, number];
@@ -186,21 +227,30 @@ function checkProjectileCollision(
       weapon?: WeaponComponent;
     };
 
-    if (!candidate.position || !candidate.team || candidate.projectile || candidate.weapon) {
+    if (!candidate.position || !candidate.team || candidate.projectile) {
       continue;
     }
-    if (candidate.team === projectileTeam) continue;
+    // Ignore the owner itself (match by numeric id or weapon ownerId)
+    const isOwnerById = typeof candidate.id === 'number' && candidate.id === ownerId;
+    const isOwnerByWeapon = !!(candidate.weapon && typeof candidate.weapon.ownerId === 'number' && candidate.weapon.ownerId === ownerId);
+    if (isOwnerById || isOwnerByWeapon) continue;
 
     const [ex, ey, ez] = candidate.position;
     const [px, py, pz] = position;
     const distance = Math.sqrt((ex - px) ** 2 + (ey - py) ** 2 + (ez - pz) ** 2);
+
+    // Handle friendlies when friendly fire is disabled: register an impact (for AoE) but don't return a target
+    if (!friendlyFire && candidate.team === projectileTeam) {
+      if (distance < 1) impactedAny = true;
+      continue;
+    }
 
     if (distance < 1) {
       return { targetId: candidate.id as unknown as number };
     }
   }
 
-  return null;
+  return impactedAny ? {} : null;
 }
 
 function applyAoEDamage(
@@ -210,7 +260,8 @@ function applyAoEDamage(
   sourceTeam: string,
   sourceId: number,
   world: World<Entity>,
-  events: { damage: DamageEvent[] }
+  events: { damage: DamageEvent[] },
+  friendlyFire: boolean
 ) {
   for (const entity of world.entities) {
     const candidate = entity as Entity & {
@@ -220,10 +271,11 @@ function applyAoEDamage(
       weapon?: WeaponComponent;
     };
 
-    if (!candidate.position || !candidate.team || candidate.projectile || candidate.weapon) {
+    if (!candidate.position || !candidate.team || candidate.projectile) {
       continue;
     }
-    if (candidate.team === sourceTeam) continue;
+    if (candidate.weapon) continue;
+    if (!friendlyFire && candidate.team === sourceTeam) continue;
 
     const [ex, ey, ez] = candidate.position;
     const [cx, cy, cz] = center;
@@ -303,4 +355,3 @@ function updateHomingBehavior(
     }
   }
 }
-
