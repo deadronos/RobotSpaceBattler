@@ -1,7 +1,12 @@
 import { World } from 'miniplex';
 
 import type { FxComponent } from './fx';
-import type { BeamComponent, ProjectileComponent, WeaponComponent, WeaponStateComponent } from './weapons';
+import type {
+  BeamComponent,
+  ProjectileComponent,
+  WeaponComponent,
+  WeaponStateComponent,
+} from './weapons';
 
 // Component types based on SPEC.md
 export type Vec3 = [number, number, number];
@@ -82,6 +87,27 @@ export const world = new World<Entity>();
 
 let nextEntityId = 1;
 const entityLookup = new Map<number, Entity>();
+
+type EntityChangeListener = (entity: Entity | undefined) => void;
+const entityChangeListeners = new Set<EntityChangeListener>();
+
+export function subscribeEntityChanges(listener: EntityChangeListener) {
+  entityChangeListeners.add(listener);
+  return () => {
+    entityChangeListeners.delete(listener);
+  };
+}
+
+export function notifyEntityChanged(entity: Entity | undefined) {
+  if (entityChangeListeners.size === 0) return;
+  for (const listener of entityChangeListeners) {
+    try {
+      listener(entity);
+    } catch {
+      // Listener errors are swallowed to keep simulation running.
+    }
+  }
+}
 
 export function getEntityById(id: number) {
   return entityLookup.get(id);

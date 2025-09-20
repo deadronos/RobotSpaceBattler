@@ -4,7 +4,15 @@ import type { Query } from 'miniplex';
 import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useEcsQuery } from '../ecs/hooks';
-import { clearPauseVel,type Entity, getPauseVel, resetWorld, setPauseVel, world } from '../ecs/miniplexStore';
+import {
+  clearPauseVel,
+  type Entity,
+  getPauseVel,
+  resetWorld,
+  setPauseVel,
+  subscribeEntityChanges,
+  world,
+} from '../ecs/miniplexStore';
 import type { BeamComponent, DamageEvent, ProjectileComponent } from '../ecs/weapons';
 import { Robot } from '../robots/robotPrefab';
 import { resetAndSpawnDefaultTeams } from '../robots/spawnControls';
@@ -238,6 +246,15 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
   useEffect(() => {
     if (!paused) invalidate();
   }, [paused, invalidate]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeEntityChanges(() => {
+      invalidate();
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [invalidate]);
 
   
 

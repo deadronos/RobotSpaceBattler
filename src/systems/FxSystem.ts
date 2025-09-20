@@ -2,6 +2,7 @@ import type { World } from 'miniplex';
 
 import type { FxComponent } from '../ecs/fx';
 import type { Entity } from '../ecs/miniplexStore';
+import { notifyEntityChanged } from '../ecs/miniplexStore';
 import type { DamageEvent } from '../ecs/weapons';
 import { useUI } from '../store/uiStore';
 import type { DeathEvent } from './DamageSystem';
@@ -92,7 +93,10 @@ export function fxSystem(
 
     e.fx.age += dt;
     if (e.fx.age >= e.fx.ttl) {
+      notifyEntityChanged(e as Entity);
       world.remove(e);
+    } else {
+      notifyEntityChanged(e as Entity);
     }
   }
 }

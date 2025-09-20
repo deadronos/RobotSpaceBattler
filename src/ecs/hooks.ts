@@ -1,7 +1,10 @@
 import type { Query } from 'miniplex';
 import { useEffect, useSyncExternalStore } from 'react';
 
-export function useEcsQuery<T>(query: Query<T>) {
+import type { Entity } from './miniplexStore';
+import { subscribeEntityChanges } from './miniplexStore';
+
+export function useEcsQuery<T extends Entity>(query: Query<T>) {
   useEffect(() => {
     const connected = query.connect();
     return () => {
@@ -17,10 +20,16 @@ export function useEcsQuery<T>(query: Query<T>) {
       const unsubscribeRemoved = query.onEntityRemoved.subscribe(() => {
         onStoreChange();
       });
+      const unsubscribeChanged = subscribeEntityChanges((entity) => {
+        if (!entity || query.has(entity as T)) {
+          onStoreChange();
+        }
+      });
 
       return () => {
         unsubscribeAdded();
         unsubscribeRemoved();
+        unsubscribeChanged();
       };
     },
     () => query.entities,

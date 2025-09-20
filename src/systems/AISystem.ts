@@ -1,6 +1,7 @@
 import type { World } from 'miniplex';
 
 import type { Entity } from '../ecs/miniplexStore';
+import { notifyEntityChanged } from '../ecs/miniplexStore';
 import { performLineOfSight } from './perception';
 
 export type AIState = 'idle' | 'patrol' | 'engage' | 'flee';
@@ -178,5 +179,7 @@ export function aiSystem(world: World<Entity>, rng: () => number, rapierWorld?: 
         entity.ai.state = 'idle';
         entity.ai.stateSince = now();
     }
+
+    notifyEntityChanged(entity as Entity);
   }
 }

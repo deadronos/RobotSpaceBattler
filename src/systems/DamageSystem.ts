@@ -1,7 +1,7 @@
 import type { World } from 'miniplex';
 
 import type { Entity } from '../ecs/miniplexStore';
-import { getEntityById } from '../ecs/miniplexStore';
+import { getEntityById, notifyEntityChanged } from '../ecs/miniplexStore';
 import type { DamageEvent } from '../ecs/weapons';
 
 type RigidBodyLike = {
@@ -64,5 +64,7 @@ export function damageSystem(
 
       targetEntity.rigid?.setLinvel?.({ x: 0, y: 0, z: 0 }, true);
     }
+
+    notifyEntityChanged(targetEntity as Entity);
   }
 }

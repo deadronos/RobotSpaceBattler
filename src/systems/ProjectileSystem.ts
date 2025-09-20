@@ -1,6 +1,6 @@
 import type { World } from 'miniplex';
 
-import { type Entity, getEntityById } from '../ecs/miniplexStore';
+import { type Entity, getEntityById, notifyEntityChanged } from '../ecs/miniplexStore';
 import type { DamageEvent, ProjectileComponent, WeaponComponent } from '../ecs/weapons';
 import { useUI } from '../store/uiStore';
 import type { Rng } from '../utils/seededRng';
@@ -118,9 +118,11 @@ export function projectileSystem(
     const { projectile, position, velocity } = e;
     if (!projectile || !position || !velocity) continue;
     const rigid = e.rigid as unknown as RigidBodyLike | null;
+    let mutated = false;
 
     const age = (Date.now() - projectile.spawnTime) / 1000;
     if (age >= projectile.lifespan) {
+      notifyEntityChanged(e as Entity);
       world.remove(entity);
       continue;
     }
@@ -130,13 +132,21 @@ export function projectileSystem(
       position[0] = translation.x;
       position[1] = translation.y;
       position[2] = translation.z;
+      mutated = true;
     } else {
       position[0] += velocity[0] * dt;
       position[1] += velocity[1] * dt;
       position[2] += velocity[2] * dt;
+      mutated = true;
     }
 
-  const hit = checkProjectileCollision(position, world, projectile.team, projectile.ownerId, friendlyFire);
+    const hit = checkProjectileCollision(
+      position,
+      world,
+      projectile.team,
+      projectile.ownerId,
+      friendlyFire
+    );
     if (hit) {
       if (projectile.aoeRadius && projectile.aoeRadius > 0) {
         applyAoEDamage(
@@ -159,6 +169,7 @@ export function projectileSystem(
         });
       }
 
+      notifyEntityChanged(e as Entity);
       world.remove(entity);
       continue;
     }
@@ -175,6 +186,7 @@ export function projectileSystem(
         rng,
         rigid || undefined
       );
+      mutated = true;
     } else if (rigid) {
       const current = rigid.linvel();
       if (
@@ -183,11 +195,18 @@ export function projectileSystem(
         Math.abs(current.z - velocity[2]) > 0.0001
       ) {
         rigid.setLinvel({ x: velocity[0], y: velocity[1], z: velocity[2] }, true);
+        mutated = true;
       }
     }
 
     if (Math.abs(position[0]) > 50 || Math.abs(position[2]) > 50 || position[1] < -10) {
+      notifyEntityChanged(e as Entity);
       world.remove(entity);
+      continue;
+    }
+
+    if (mutated) {
+      notifyEntityChanged(e as Entity);
     }
   }
 }
