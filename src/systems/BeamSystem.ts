@@ -1,6 +1,10 @@
 import type { World } from "miniplex";
 
-import { type Entity, getEntityById } from "../ecs/miniplexStore";
+import {
+  type Entity,
+  getEntityById,
+  notifyEntityChanged,
+} from "../ecs/miniplexStore";
 import type {
   BeamComponent,
   DamageEvent,
@@ -8,6 +12,8 @@ import type {
 } from "../ecs/weapons";
 import type { Rng } from "../utils/seededRng";
 import type { WeaponFiredEvent } from "./WeaponSystem";
+
+const POSITION_EPSILON = 0.0001;
 
 function resolveEntity(world: World<Entity>, id?: number) {
   if (typeof id !== "number") {
@@ -88,6 +94,7 @@ export function beamSystem(
       existing.beam.width = weapon.beamParams?.width || 0.1;
       // extend active window based on latest shot
       existing.beam.activeUntil = now + duration;
+      notifyEntityChanged(existing as Entity);
     } else {
       const beamEntity: Entity & { beam: BeamComponent } = {
         id: "beam_" + fireEvent.weaponId + "_" + now,
@@ -167,7 +174,7 @@ export function beamSystem(
       }
     }
 
-    updateBeamOrigin(world, beam);
+    updateBeamOrigin(world, e as Entity & { beam: BeamComponent });
   }
 }
 
@@ -231,7 +238,11 @@ function performBeamRaycast(
   return hits;
 }
 
-function updateBeamOrigin(world: World<Entity>, beam: BeamComponent) {
+function updateBeamOrigin(
+  world: World<Entity>,
+  beamEntity: Entity & { beam: BeamComponent },
+) {
+  const beam = beamEntity.beam;
   const owner =
     resolveEntity(world, beam.ownerId) ??
     Array.from(world.entities).find((candidate) => {
@@ -243,7 +254,7 @@ function updateBeamOrigin(world: World<Entity>, beam: BeamComponent) {
     return;
   }
 
-  // Sync owner position from physics first before updating beam origin
+  let ownerMutated = false;
   const ownerEntity = owner as Entity & {
     position?: [number, number, number];
     rigid?: { translation?: () => { x: number; y: number; z: number } };
@@ -251,18 +262,36 @@ function updateBeamOrigin(world: World<Entity>, beam: BeamComponent) {
 
   if (
     ownerEntity.rigid &&
-    typeof ownerEntity.rigid.translation === "function" &&
-    ownerEntity.position
+    typeof ownerEntity.rigid.translation === "function"
   ) {
     try {
       const translation = ownerEntity.rigid.translation();
-      ownerEntity.position[0] = translation.x;
-      ownerEntity.position[1] = translation.y;
-      ownerEntity.position[2] = translation.z;
+      const nextPosition: [number, number, number] = [
+        translation.x,
+        translation.y,
+        translation.z,
+      ];
+      const currentPosition = ownerEntity.position;
+
+      if (
+        !currentPosition ||
+        Math.abs(currentPosition[0] - nextPosition[0]) > POSITION_EPSILON ||
+        Math.abs(currentPosition[1] - nextPosition[1]) > POSITION_EPSILON ||
+        Math.abs(currentPosition[2] - nextPosition[2]) > POSITION_EPSILON
+      ) {
+        ownerEntity.position = nextPosition;
+        ownerMutated = true;
+      }
     } catch {
       // Defensive: ignore physics API errors
     }
   }
+
+  if (ownerMutated) {
+    notifyEntityChanged(ownerEntity as Entity);
+  }
+
+  let beamMutated = false;
 
   const rigid = (
     owner as {
@@ -271,12 +300,43 @@ function updateBeamOrigin(world: World<Entity>, beam: BeamComponent) {
   ).rigid;
   if (rigid) {
     const translation = rigid.translation();
-    beam.origin = [translation.x, translation.y, translation.z];
-    return;
+    const nextOrigin: [number, number, number] = [
+      translation.x,
+      translation.y,
+      translation.z,
+    ];
+    const currentOrigin = beam.origin;
+    if (
+      !currentOrigin ||
+      Math.abs(currentOrigin[0] - nextOrigin[0]) > POSITION_EPSILON ||
+      Math.abs(currentOrigin[1] - nextOrigin[1]) > POSITION_EPSILON ||
+      Math.abs(currentOrigin[2] - nextOrigin[2]) > POSITION_EPSILON
+    ) {
+      beam.origin = nextOrigin;
+      beamMutated = true;
+    }
+  } else {
+    const position = (owner as { position?: [number, number, number] }).position;
+    if (position) {
+      const nextOrigin: [number, number, number] = [
+        position[0],
+        position[1],
+        position[2],
+      ];
+      const currentOrigin = beam.origin;
+      if (
+        !currentOrigin ||
+        Math.abs(currentOrigin[0] - nextOrigin[0]) > POSITION_EPSILON ||
+        Math.abs(currentOrigin[1] - nextOrigin[1]) > POSITION_EPSILON ||
+        Math.abs(currentOrigin[2] - nextOrigin[2]) > POSITION_EPSILON
+      ) {
+        beam.origin = nextOrigin;
+        beamMutated = true;
+      }
+    }
   }
 
-  const position = (owner as { position?: [number, number, number] }).position;
-  if (position) {
-    beam.origin = [position[0], position[1], position[2]];
+  if (beamMutated) {
+    notifyEntityChanged(beamEntity as Entity);
   }
 }

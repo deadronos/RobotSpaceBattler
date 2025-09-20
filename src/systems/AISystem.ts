@@ -15,6 +15,8 @@ function now() {
   return Date.now();
 }
 
+const POSITION_EPSILON = 0.0001;
+
 function chooseNearestEnemy(self: Entity, world: World<Entity>) {
   // Don't require a Rapier rigid reference to search for enemies - position
   // is sufficient. Requiring `rigid` made spawned robots passive until the
@@ -70,9 +72,18 @@ export function aiSystem(
     if (entity.rigid && typeof entity.rigid.translation === "function") {
       try {
         const translation = entity.rigid.translation();
-        entity.position[0] = translation.x;
-        entity.position[1] = translation.y;
-        entity.position[2] = translation.z;
+        const nextPosition: [number, number, number] = [
+          translation.x,
+          translation.y,
+          translation.z,
+        ];
+        if (
+          Math.abs(entity.position[0] - nextPosition[0]) > POSITION_EPSILON ||
+          Math.abs(entity.position[1] - nextPosition[1]) > POSITION_EPSILON ||
+          Math.abs(entity.position[2] - nextPosition[2]) > POSITION_EPSILON
+        ) {
+          entity.position = nextPosition;
+        }
       } catch {
         // Defensive: ignore physics API errors
       }
