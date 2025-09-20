@@ -5,11 +5,8 @@ import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useEcsQuery } from '../ecs/hooks';
 import {
-  clearPauseVel,
   type Entity,
-  getPauseVel,
   resetWorld,
-  setPauseVel,
   subscribeEntityChanges,
   world,
 } from '../ecs/miniplexStore';
@@ -99,106 +96,6 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
     };
   }, []);
 
-  // Freeze physics when paused: zero velocities and attempt to put bodies to sleep.
-  // On resume, try to restore previous linear/angular velocities when available.
-  useEffect(() => {
-    // No-op if Rapier not available
-    try {
-      if (paused) {
-        for (const e of world.entities) {
-          const ent = e as Entity & { rigid?: unknown } & Record<string, unknown>;
-          type RigidLike = Partial<{
-            linvel: () => { x: number; y: number; z: number };
-            angvel: () => { x: number; y: number; z: number };
-            setLinvel: (v: { x: number; y: number; z: number }, wake: boolean) => void;
-            setAngvel: (v: { x: number; y: number; z: number }, wake: boolean) => void;
-            sleep: () => void;
-          }>;
-          const r = ent.rigid as RigidLike | undefined;
-          if (!r) continue;
-          try {
-            // Save existing linear velocity if accessible
-            if (typeof r.linvel === 'function') {
-              try {
-                const cur = r.linvel();
-                if (cur && typeof cur.x === 'number') {
-                  setPauseVel(ent as Entity, [cur.x, cur.y, cur.z], undefined);
-                }
-              } catch {
-                // ignore
-              }
-            }
-
-            // Save existing angular velocity if accessible
-            if (typeof r.angvel === 'function') {
-              try {
-                const curA = r.angvel();
-                if (curA && typeof curA.x === 'number') {
-                  setPauseVel(ent as Entity, undefined, [curA.x, curA.y, curA.z]);
-                }
-              } catch {
-                // ignore
-              }
-            }
-
-            // Zero velocities
-            if (typeof r.setLinvel === 'function') {
-              try { r.setLinvel?.({ x: 0, y: 0, z: 0 }, true); } catch (err) { void err; }
-            }
-            if (typeof r.setAngvel === 'function') {
-              try { r.setAngvel({ x: 0, y: 0, z: 0 }, true); } catch (err) { void err; }
-            }
-
-            // Attempt to put body to sleep if API exposed
-            if (typeof r.sleep === 'function') {
-              try { r.sleep(); } catch (err) { void err; }
-            }
-          } catch {
-            // defensive: ignore any per-body errors
-          }
-        }
-      } else {
-        // Restore saved velocities where present and attempt to wake bodies
-        for (const e of world.entities) {
-          const ent = e as Entity & { rigid?: unknown } & Record<string, unknown>;
-          type RigidLike = Partial<{
-            setLinvel: (v: { x: number; y: number; z: number }, wake: boolean) => void;
-            setAngvel: (v: { x: number; y: number; z: number }, wake: boolean) => void;
-            wakeUp: () => void;
-            wake: () => void;
-          }>;
-          const r = ent.rigid as RigidLike | undefined;
-          if (!r) continue;
-          try {
-            const pv = getPauseVel(ent as Entity);
-            if (pv && pv.lin && typeof r.setLinvel === 'function') {
-              try { r.setLinvel({ x: pv.lin[0], y: pv.lin[1], z: pv.lin[2] }, true); } catch (err) { void err; }
-            }
-            if (pv && pv.ang && typeof r.setAngvel === 'function') {
-              try { r.setAngvel({ x: pv.ang[0], y: pv.ang[1], z: pv.ang[2] }, true); } catch (err) { void err; }
-            }
-
-            // Attempt to wake the body if API exposed
-            if (typeof r.wakeUp === 'function') {
-              try { r.wakeUp(); } catch (err) { void err; }
-            }
-            if (typeof r.wake === 'function') {
-              try { r.wake(); } catch (err) { void err; }
-            }
-
-            // Clean up ephemeral pauseVel
-            clearPauseVel(ent as Entity);
-          } catch (err) {
-            void err;
-          }
-        }
-      }
-    } catch {
-      // if any global rapier access throws, silently ignore — this is a best-effort feature
-    }
-  }, [paused]);
-
-
   // Deterministic per-frame systems
   useFrame((state) => {
     if (paused) return;
@@ -210,7 +107,6 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
     // Create fresh RNG for this frame (deterministic)
   const frameRng = createSeededRng(DETERMINISTIC_SEED + frameCountRef.current);
 
-  // (entities array not needed here)
 
     // Event containers for weapon systems
     const events = {
