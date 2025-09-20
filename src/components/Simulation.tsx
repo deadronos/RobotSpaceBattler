@@ -77,6 +77,8 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
   const robots = useEcsQuery(robotQuery);
 
 
+
+
   // RNG is created per-frame deterministically; no persistent RNG state needed
 
   // Spawn initial teams once
@@ -86,6 +88,8 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
       clearRespawnQueue();
       resetAndSpawnDefaultTeams();
       spawnInitializedRef.current = true;
+      // Force an immediate invalidation to ensure robots render
+      invalidate();
     }
 
     return () => {
@@ -94,7 +98,7 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
       resetScores();
       resetWorld();
     };
-  }, []);
+  }, [invalidate]);
 
   // Deterministic per-frame systems
   useFrame((state) => {
@@ -176,6 +180,8 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
       {robots.map((e, i) => (
         <Robot key={String(e.id ?? i)} entity={e} />
       ))}
+
+      {/* Projectiles */}
       {projectiles.map((entity, i) => (
         <Projectile
           key={String(
