@@ -24,10 +24,9 @@ export default function Scene() {
   return (
     <Canvas
       key={hmrKey}
-      frameloop="demand"
+      frameloop="always"
       shadows
       camera={{ position: [16, 12, 16], fov: 50 }}
-      style={{ transform: 'translateZ(0)', willChange: 'transform' }}
     >
       {/* Backdrop & lighting */}
       <color attach="background" args={[0.04, 0.05, 0.09]} />
