@@ -1,6 +1,6 @@
-import type { World } from 'miniplex';
+import type { World } from "miniplex";
 
-import type { Entity } from '../ecs/miniplexStore';
+import type { Entity } from "../ecs/miniplexStore";
 
 /**
  * Lightweight perception utilities used by AI systems.
@@ -13,7 +13,7 @@ export function performLineOfSight(
   world: World<Entity>,
   maxDistance = 100,
   // optional Rapier world object from @react-three/rapier (useRapier().world)
-  rapierWorld?: unknown
+  rapierWorld?: unknown,
 ): boolean {
   if (!target.position) return false;
 
@@ -21,12 +21,18 @@ export function performLineOfSight(
   const [tx, ty, tz] = target.position;
 
   const toTarget = [tx - ox, ty - oy, tz - oz];
-  const distance = Math.sqrt(toTarget[0] ** 2 + toTarget[1] ** 2 + toTarget[2] ** 2);
+  const distance = Math.sqrt(
+    toTarget[0] ** 2 + toTarget[1] ** 2 + toTarget[2] ** 2,
+  );
   if (distance > maxDistance) return false;
 
   // naive occlusion: if any other entity stands between origin and target within a small threshold,
   // treat as blocked. This is not a physics raycast but is sufficient for dev-mode LOS.
-  const dir = [toTarget[0] / distance, toTarget[1] / distance, toTarget[2] / distance];
+  const dir = [
+    toTarget[0] / distance,
+    toTarget[1] / distance,
+    toTarget[2] / distance,
+  ];
 
   // If a Rapier physics world was provided, try to perform a physics raycast.
   // We don't rely on exact typings here because react-three-rapier exposes
@@ -46,17 +52,25 @@ export function performLineOfSight(
       let hit: unknown = undefined;
 
       // Common wrapper: world.castRay(origin, dir, maxDistance)
-      if (typeof (rw as { castRay?: unknown }).castRay === 'function') {
-        const fn = (rw as { castRay?: (...args: unknown[]) => unknown }).castRay!;
+      if (typeof (rw as { castRay?: unknown }).castRay === "function") {
+        const fn = (rw as { castRay?: (...args: unknown[]) => unknown })
+          .castRay!;
         hit = fn(originVec, dirVec, maxDistance);
       }
 
       // Some wrappers expose a queryPipeline/castRay API
-      if (!hit && rw.queryPipeline && typeof (rw.queryPipeline as { castRay?: unknown }).castRay === 'function') {
+      if (
+        !hit &&
+        rw.queryPipeline &&
+        typeof (rw.queryPipeline as { castRay?: unknown }).castRay ===
+          "function"
+      ) {
         try {
-          const qp = rw.queryPipeline as { castRay?: (...args: unknown[]) => unknown };
-          const bodies = (rw as Record<string, unknown>)['bodies'];
-          const colliders = (rw as Record<string, unknown>)['colliders'];
+          const qp = rw.queryPipeline as {
+            castRay?: (...args: unknown[]) => unknown;
+          };
+          const bodies = (rw as Record<string, unknown>)["bodies"];
+          const colliders = (rw as Record<string, unknown>)["colliders"];
           if (qp.castRay) {
             hit = qp.castRay(bodies, colliders, originVec, dirVec, maxDistance);
           }
@@ -66,7 +80,11 @@ export function performLineOfSight(
       }
 
       // Some wasm bindings expose raw methods
-      if (!hit && rw.raw && typeof (rw.raw as { castRay?: unknown }).castRay === 'function') {
+      if (
+        !hit &&
+        rw.raw &&
+        typeof (rw.raw as { castRay?: unknown }).castRay === "function"
+      ) {
         try {
           const raw = rw.raw as { castRay?: (...args: unknown[]) => unknown };
           if (raw.castRay) hit = raw.castRay(originVec, dirVec, maxDistance);
@@ -78,23 +96,23 @@ export function performLineOfSight(
       // Heuristically extract a time-of-impact (toi) number from the hit
       // result using safe unknown checks.
       let toi: number | undefined;
-      if (hit && typeof hit === 'object') {
+      if (hit && typeof hit === "object") {
         const h = hit as Record<string, unknown>;
-        const cand = h['toi'] ?? h['toiSeconds'] ?? h['time'];
-        if (typeof cand === 'number') {
+        const cand = h["toi"] ?? h["toiSeconds"] ?? h["time"];
+        if (typeof cand === "number") {
           toi = cand;
         }
       }
       if (toi === undefined && Array.isArray(hit) && hit.length > 0) {
         const first = hit[0] as unknown;
-        if (first && typeof first === 'object') {
+        if (first && typeof first === "object") {
           const f = first as Record<string, unknown>;
-          const cand2 = f['toi'];
-          if (typeof cand2 === 'number') toi = cand2;
+          const cand2 = f["toi"];
+          if (typeof cand2 === "number") toi = cand2;
         }
       }
 
-      if (typeof toi === 'number') {
+      if (typeof toi === "number") {
         if (toi + 1e-3 < distance) return false;
         return true;
       }
@@ -109,14 +127,16 @@ export function performLineOfSight(
 
     const [ex, ey, ez] = e.position;
     const toOther = [ex - ox, ey - oy, ez - oz];
-    const proj = toOther[0] * dir[0] + toOther[1] * dir[1] + toOther[2] * dir[2];
+    const proj =
+      toOther[0] * dir[0] + toOther[1] * dir[1] + toOther[2] * dir[2];
     if (proj <= 0 || proj >= distance) continue;
 
     // perpendicular distance from the line
     const closestX = ox + dir[0] * proj;
     const closestY = oy + dir[1] * proj;
     const closestZ = oz + dir[2] * proj;
-    const perpDistSq = (ex - closestX) ** 2 + (ey - closestY) ** 2 + (ez - closestZ) ** 2;
+    const perpDistSq =
+      (ex - closestX) ** 2 + (ey - closestY) ** 2 + (ez - closestZ) ** 2;
 
     // assume entities have a small radius ~0.6 and act as occluders
     if (perpDistSq < 0.6 * 0.6) {

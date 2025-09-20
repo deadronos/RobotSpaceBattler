@@ -1,13 +1,13 @@
-import React from 'react';
+import React from "react";
 
-import type { Team } from '../../ecs/miniplexStore';
-import { robotPrefabs } from '../../robots/prefabCatalog';
-import { spawnRobot } from '../../robots/spawnControls';
+import type { Team } from "../../ecs/miniplexStore";
+import { robotPrefabs } from "../../robots/prefabCatalog";
+import { spawnRobot } from "../../robots/spawnControls";
 
-const TEAMS: Team[] = ['red', 'blue'];
+const TEAMS: Team[] = ["red", "blue"];
 
 export default function PrefabsInspector() {
-  const [team, setTeam] = React.useState<Team>('red');
+  const [team, setTeam] = React.useState<Team>("red");
 
   return (
     <div className="ui prefabs">
@@ -18,10 +18,10 @@ export default function PrefabsInspector() {
             <button
               key={value}
               type="button"
-              className={value === team ? 'active' : ''}
+              className={value === team ? "active" : ""}
               onClick={() => setTeam(value)}
             >
-              {value === 'red' ? 'Red team' : 'Blue team'}
+              {value === "red" ? "Red team" : "Blue team"}
             </button>
           ))}
         </div>
@@ -31,7 +31,9 @@ export default function PrefabsInspector() {
           <article key={prefab.id} className="prefab-card">
             <header>
               <strong>{prefab.label}</strong>
-              <span className="weapon-tag">{prefab.weaponType.toUpperCase()}</span>
+              <span className="weapon-tag">
+                {prefab.weaponType.toUpperCase()}
+              </span>
             </header>
             <p>{prefab.summary}</p>
             <dl>
@@ -62,7 +64,10 @@ export default function PrefabsInspector() {
                 </div>
               ) : null}
             </dl>
-            <button type="button" onClick={() => spawnRobot(team, prefab.weaponType)}>
+            <button
+              type="button"
+              onClick={() => spawnRobot(team, prefab.weaponType)}
+            >
               Spawn {team} {prefab.weaponType}
             </button>
           </article>

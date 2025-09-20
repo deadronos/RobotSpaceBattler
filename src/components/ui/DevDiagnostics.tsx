@@ -1,10 +1,14 @@
-import React from 'react';
+import React from "react";
 
-import { world } from '../../ecs/miniplexStore';
-import { resetAndSpawnDefaultTeams, spawnRobot, spawnTeam } from '../../robots/spawnControls';
+import { world } from "../../ecs/miniplexStore";
+import {
+  resetAndSpawnDefaultTeams,
+  spawnRobot,
+  spawnTeam,
+} from "../../robots/spawnControls";
 
-const RED_LOADOUT = ['gun', 'laser', 'rocket'] as const;
-const BLUE_LOADOUT = ['rocket', 'gun', 'laser'] as const;
+const RED_LOADOUT = ["gun", "laser", "rocket"] as const;
+const BLUE_LOADOUT = ["rocket", "gun", "laser"] as const;
 const REINFORCEMENT_COUNT = 3;
 
 export default function DevDiagnostics() {
@@ -17,10 +21,10 @@ export default function DevDiagnostics() {
   React.useEffect(() => {
     const interval = window.setInterval(() => {
       const robots = world.entities.filter((entity) =>
-        Boolean((entity as { weaponState?: unknown }).weaponState)
+        Boolean((entity as { weaponState?: unknown }).weaponState),
       );
-      const red = robots.filter((entity) => entity.team === 'red').length;
-      const blue = robots.filter((entity) => entity.team === 'blue').length;
+      const red = robots.filter((entity) => entity.team === "red").length;
+      const blue = robots.filter((entity) => entity.team === "blue").length;
 
       setCounts({
         entities: world.entities.length,
@@ -39,37 +43,41 @@ export default function DevDiagnostics() {
         Robots - Red: {counts.red} | Blue: {counts.blue}
       </span>
       <div className="controls">
-        <button type="button" onClick={() => spawnRobot('red', 'gun')}>
+        <button type="button" onClick={() => spawnRobot("red", "gun")}>
           + Red Gunner
         </button>
-        <button type="button" onClick={() => spawnRobot('red', 'laser')}>
+        <button type="button" onClick={() => spawnRobot("red", "laser")}>
           + Red Laser
         </button>
-        <button type="button" onClick={() => spawnRobot('red', 'rocket')}>
+        <button type="button" onClick={() => spawnRobot("red", "rocket")}>
           + Red Rocket
         </button>
       </div>
       <div className="controls">
-        <button type="button" onClick={() => spawnRobot('blue', 'rocket')}>
+        <button type="button" onClick={() => spawnRobot("blue", "rocket")}>
           + Blue Rocket
         </button>
-        <button type="button" onClick={() => spawnRobot('blue', 'gun')}>
+        <button type="button" onClick={() => spawnRobot("blue", "gun")}>
           + Blue Gunner
         </button>
-        <button type="button" onClick={() => spawnRobot('blue', 'laser')}>
+        <button type="button" onClick={() => spawnRobot("blue", "laser")}>
           + Blue Laser
         </button>
       </div>
       <div className="controls">
         <button
           type="button"
-          onClick={() => spawnTeam('red', [...RED_LOADOUT], REINFORCEMENT_COUNT)}
+          onClick={() =>
+            spawnTeam("red", [...RED_LOADOUT], REINFORCEMENT_COUNT)
+          }
         >
           Red reinforcements x{REINFORCEMENT_COUNT}
         </button>
         <button
           type="button"
-          onClick={() => spawnTeam('blue', [...BLUE_LOADOUT], REINFORCEMENT_COUNT)}
+          onClick={() =>
+            spawnTeam("blue", [...BLUE_LOADOUT], REINFORCEMENT_COUNT)
+          }
         >
           Blue reinforcements x{REINFORCEMENT_COUNT}
         </button>
@@ -80,6 +88,3 @@ export default function DevDiagnostics() {
     </div>
   );
 }
-
-
-

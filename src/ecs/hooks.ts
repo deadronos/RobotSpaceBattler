@@ -1,5 +1,5 @@
-import type { Query } from 'miniplex';
-import { useEffect, useSyncExternalStore } from 'react';
+import type { Query } from "miniplex";
+import { useEffect, useSyncExternalStore } from "react";
 
 export function useEcsQuery<T>(query: Query<T>) {
   useEffect(() => {
@@ -18,7 +18,7 @@ export function useEcsQuery<T>(query: Query<T>) {
         onStoreChange();
       });
 
-  // Important: trigger an initial store change so that if entities were
+      // Important: trigger an initial store change so that if entities were
       // added before this subscription connected (e.g., during mount effects),
       // React schedules a re-render to pick them up.
       // Use a microtask to avoid setState during render warnings.
@@ -30,6 +30,6 @@ export function useEcsQuery<T>(query: Query<T>) {
       };
     },
     () => query.entities,
-    () => query.entities
+    () => query.entities,
   );
 }

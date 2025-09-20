@@ -1,10 +1,10 @@
-import type { World } from 'miniplex';
+import type { World } from "miniplex";
 
-import type { Entity, Team } from '../ecs/miniplexStore';
-import { getEntityById, removeEntity } from '../ecs/miniplexStore';
-import type { WeaponComponent, WeaponType } from '../ecs/weapons';
-import { spawnRobot } from '../robots/spawnControls';
-import type { DeathEvent } from './DamageSystem';
+import type { Entity, Team } from "../ecs/miniplexStore";
+import { getEntityById, removeEntity } from "../ecs/miniplexStore";
+import type { WeaponComponent, WeaponType } from "../ecs/weapons";
+import { spawnRobot } from "../robots/spawnControls";
+import type { DeathEvent } from "./DamageSystem";
 
 const DEFAULT_RESPAWN_DELAY_MS = 3000;
 
@@ -23,25 +23,25 @@ export interface RespawnSystemOptions {
 
 function resolveWeaponType(entity: Entity | undefined): WeaponType {
   const weapon = (entity as Entity & { weapon?: WeaponComponent })?.weapon;
-  return weapon?.type ?? 'gun';
+  return weapon?.type ?? "gun";
 }
 
 function isTeam(value: unknown): value is Team {
-  return value === 'red' || value === 'blue';
+  return value === "red" || value === "blue";
 }
 
 function resolveEntity(world: World<Entity>, id: number) {
   const direct = getEntityById(id) as Entity | undefined;
   if (direct) return direct;
   return Array.from(world.entities).find(
-    (candidate) => (candidate.id as unknown as number) === id
+    (candidate) => (candidate.id as unknown as number) === id,
   ) as Entity | undefined;
 }
 
 export function respawnSystem(
   world: World<Entity>,
   deathEvents: DeathEvent[],
-  options: RespawnSystemOptions = {}
+  options: RespawnSystemOptions = {},
 ) {
   const now = options.now ?? Date.now();
   const respawnDelayMs = options.respawnDelayMs ?? DEFAULT_RESPAWN_DELAY_MS;

@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react";
 
-import { useUI } from '../../store/uiStore';
+import { useUI } from "../../store/uiStore";
 
 export default function LoadingOverlay() {
   const loading = useUI((s) => s.loading);

@@ -1,7 +1,7 @@
-import { CuboidCollider, RigidBody } from '@react-three/rapier';
-import React, { useEffect, useRef } from 'react';
+import { CuboidCollider, RigidBody } from "@react-three/rapier";
+import React, { useEffect, useRef } from "react";
 
-import type { Entity } from '../ecs/miniplexStore';
+import type { Entity } from "../ecs/miniplexStore";
 
 export function Robot({ entity }: { entity: Entity }) {
   const rbRef = useRef<unknown>(null);
@@ -11,17 +11,20 @@ export function Robot({ entity }: { entity: Entity }) {
     // Expose rigid API to systems via ECS entity
     entity.rigid = rbRef.current;
     try {
-      if (rbRef.current && typeof rbRef.current === 'object') {
+      if (rbRef.current && typeof rbRef.current === "object") {
         try {
-          (rbRef.current as Record<string, unknown>)['__entityId'] = entity.id;
+          (rbRef.current as Record<string, unknown>)["__entityId"] = entity.id;
         } catch {
           /* ignore */
         }
       }
-      if (colliderRef.current && typeof colliderRef.current === 'object') {
+      if (colliderRef.current && typeof colliderRef.current === "object") {
         try {
-          (colliderRef.current as Record<string, unknown>)['userData'] = { id: entity.id };
-          (colliderRef.current as Record<string, unknown>)['entityId'] = entity.id;
+          (colliderRef.current as Record<string, unknown>)["userData"] = {
+            id: entity.id,
+          };
+          (colliderRef.current as Record<string, unknown>)["entityId"] =
+            entity.id;
         } catch {
           /* ignore */
         }
@@ -46,7 +49,9 @@ export function Robot({ entity }: { entity: Entity }) {
     >
       <mesh castShadow>
         <boxGeometry args={[0.8, 1.2, 0.8]} />
-        <meshStandardMaterial color={entity.team === 'red' ? '#b04646' : '#4976d1'} />
+        <meshStandardMaterial
+          color={entity.team === "red" ? "#b04646" : "#4976d1"}
+        />
       </mesh>
       <CuboidCollider
         ref={(c) => {

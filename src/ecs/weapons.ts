@@ -1,11 +1,10 @@
-
-export type WeaponType = 'gun' | 'laser' | 'rocket';
+export type WeaponType = "gun" | "laser" | "rocket";
 
 export interface WeaponComponent {
   id: string;
   type: WeaponType;
   ownerId: number;
-  team: 'red' | 'blue';
+  team: "red" | "blue";
   range: number;
   cooldown: number; // seconds
   lastFiredAt?: number;
@@ -17,7 +16,12 @@ export interface WeaponComponent {
   projectilePrefab?: string;
   aoeRadius?: number;
   beamParams?: { duration?: number; width?: number; tickInterval?: number };
-  flags?: { continuous?: boolean; chargeable?: boolean; burst?: boolean; homing?: boolean };
+  flags?: {
+    continuous?: boolean;
+    chargeable?: boolean;
+    burst?: boolean;
+    homing?: boolean;
+  };
 }
 
 export interface WeaponStateComponent {
@@ -31,7 +35,7 @@ export interface ProjectileComponent {
   sourceWeaponId: string;
   ownerId: number;
   damage: number;
-  team: 'red' | 'blue';
+  team: "red" | "blue";
   aoeRadius?: number;
   lifespan: number;
   spawnTime: number;

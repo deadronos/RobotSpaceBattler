@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
-import { resetWorld } from '../ecs/miniplexStore';
-import { resetAndSpawnDefaultTeams } from '../robots/spawnControls';
-import { clearRespawnQueue } from '../systems/RespawnSystem';
-import { resetScores } from '../systems/ScoringSystem';
+import { resetWorld } from "../ecs/miniplexStore";
+import { resetAndSpawnDefaultTeams } from "../robots/spawnControls";
+import { clearRespawnQueue } from "../systems/RespawnSystem";
+import { resetScores } from "../systems/ScoringSystem";
 
 export default function Bootstrapper() {
   useEffect(() => {

@@ -1,12 +1,19 @@
-import { Html } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
-import React, { useMemo, useRef, useState } from 'react';
+import { Html } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
+import React, { useMemo, useRef, useState } from "react";
 
-export default function DiagnosticsOverlay({ updateHz = 8 }: { updateHz?: number }) {
+export default function DiagnosticsOverlay({
+  updateHz = 8,
+}: {
+  updateHz?: number;
+}) {
   // Keep the ref untyped to avoid depending on global DOM type defs in the
   // linting environment. We only use textContent on the element.
-  const [text, setText] = useState('FPS …');
-  const samples = useMemo(() => ({ last: Date.now(), fps: 0, acc: 0, frames: 0 }), []);
+  const [text, setText] = useState("FPS …");
+  const samples = useMemo(
+    () => ({ last: Date.now(), fps: 0, acc: 0, frames: 0 }),
+    [],
+  );
   const interval = 1000 / Math.max(1, updateHz);
   const nextUpdateRef = useRef(Date.now() + interval);
 
@@ -21,7 +28,9 @@ export default function DiagnosticsOverlay({ updateHz = 8 }: { updateHz?: number
       samples.acc = 0;
       nextUpdateRef.current = now + interval;
 
-      setText(`FPS ${fps} | dt ${(dt * 1000).toFixed(1)}ms | t ${now.toFixed(0)}ms`);
+      setText(
+        `FPS ${fps} | dt ${(dt * 1000).toFixed(1)}ms | t ${now.toFixed(0)}ms`,
+      );
     }
   });
 

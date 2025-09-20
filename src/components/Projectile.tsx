@@ -1,15 +1,19 @@
-import { useFrame, useThree } from '@react-three/fiber';
-import { BallCollider, RigidBody } from '@react-three/rapier';
-import React, { useCallback, useEffect, useRef } from 'react';
-import { Mesh, Quaternion, Vector3 } from 'three';
+import { useFrame } from "@react-three/fiber";
+import { BallCollider, RigidBody } from "@react-three/rapier";
+import React, { useCallback, useEffect, useRef } from "react";
+import { Mesh, Quaternion, Vector3 } from "three";
 
-import type { Entity } from '../ecs/miniplexStore';
-import type { ProjectileComponent } from '../ecs/weapons';
+import type { Entity } from "../ecs/miniplexStore";
+import type { ProjectileComponent } from "../ecs/weapons";
+import { markVisualActive, unmarkVisualActive } from "../utils/visualActivity";
 
 type RigidBodyHandle = {
   translation?: () => { x: number; y: number; z: number };
   linvel?: () => { x: number; y: number; z: number };
-  setLinvel?: (velocity: { x: number; y: number; z: number }, wake: boolean) => void;
+  setLinvel?: (
+    velocity: { x: number; y: number; z: number },
+    wake: boolean,
+  ) => void;
 };
 
 interface ProjectileEntity extends Entity {
@@ -28,14 +32,13 @@ export function Projectile({ entity }: { entity: ProjectileEntity }) {
   const dir = useRef(new Vector3());
   const rot = useRef(new Quaternion());
   const offset = useRef(new Vector3());
-  const { invalidate } = useThree();
 
   const setBodyRef = useCallback(
     (body: RigidBodyHandle | null) => {
       bodyRef.current = body;
       entity.rigid = body as unknown;
     },
-    [entity]
+    [entity],
   );
 
   useEffect(() => {
@@ -60,6 +63,12 @@ export function Projectile({ entity }: { entity: ProjectileEntity }) {
     body.setLinvel?.({ x: vx, y: vy, z: vz }, true);
   }, [entity]);
 
+  useEffect(() => {
+    // Projectile is visible and animated while mounted
+    markVisualActive();
+    return () => unmarkVisualActive();
+  }, []);
+
   useFrame(() => {
     const body = bodyRef.current;
     if (!body) return;
@@ -72,7 +81,11 @@ export function Projectile({ entity }: { entity: ProjectileEntity }) {
     if (entity.velocity && body.linvel && body.setLinvel) {
       const [vx, vy, vz] = entity.velocity;
       const current = body.linvel();
-      if (Math.abs(current.x - vx) > 0.0001 || Math.abs(current.y - vy) > 0.0001 || Math.abs(current.z - vz) > 0.0001) {
+      if (
+        Math.abs(current.x - vx) > 0.0001 ||
+        Math.abs(current.y - vy) > 0.0001 ||
+        Math.abs(current.z - vz) > 0.0001
+      ) {
         body.setLinvel({ x: vx, y: vy, z: vz }, true);
       }
     }
@@ -101,9 +114,8 @@ export function Projectile({ entity }: { entity: ProjectileEntity }) {
         streak.visible = false;
       }
     }
-    
-    // Invalidate to ensure projectile movement and streak updates are visible
-    invalidate();
+
+    // projectile visuals are covered by central visualActivity while mounted
   });
 
   return (
@@ -120,13 +132,15 @@ export function Projectile({ entity }: { entity: ProjectileEntity }) {
     >
       <mesh ref={meshRef} castShadow={false} frustumCulled={false}>
         <sphereGeometry args={[0.28, 16, 16]} />
-        <meshBasicMaterial color={entity.team === 'red' ? '#ffb199' : '#b3d9ff'} />
+        <meshBasicMaterial
+          color={entity.team === "red" ? "#ffb199" : "#b3d9ff"}
+        />
       </mesh>
       {/* Instantaneous streak for motion clarity (cheap) */}
       <mesh ref={streakRef} frustumCulled={false} castShadow={false}>
         <cylinderGeometry args={[0.5, 0.5, 1, 6, 1, true]} />
         <meshBasicMaterial
-          color={entity.team === 'red' ? '#ffd6cc' : '#d9ecff'}
+          color={entity.team === "red" ? "#ffd6cc" : "#d9ecff"}
           transparent
           opacity={0.7}
         />

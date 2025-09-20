@@ -1,9 +1,9 @@
-import { useFrame, useThree } from '@react-three/fiber';
-import { CuboidCollider, RigidBody, useRapier } from '@react-three/rapier';
-import type { Query } from 'miniplex';
-import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useFrame, useThree } from "@react-three/fiber";
+import { CuboidCollider, RigidBody, useRapier } from "@react-three/rapier";
+import type { Query } from "miniplex";
+import React, { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 
-import { useEcsQuery } from '../ecs/hooks';
+import { useEcsQuery } from "../ecs/hooks";
 import {
   clearPauseVel,
   type Entity,
@@ -11,25 +11,30 @@ import {
   resetWorld,
   setPauseVel,
   world,
-} from '../ecs/miniplexStore';
-import type { BeamComponent, DamageEvent, ProjectileComponent } from '../ecs/weapons';
-import { Robot } from '../robots/robotPrefab';
-import { resetAndSpawnDefaultTeams } from '../robots/spawnControls';
-import { useUI } from '../store/uiStore';
-import { aiSystem } from '../systems/AISystem';
-import { beamSystem } from '../systems/BeamSystem';
-import { damageSystem, type DeathEvent } from '../systems/DamageSystem';
-import { fxSystem } from '../systems/FxSystem';
-import { hitscanSystem, type ImpactEvent } from '../systems/HitscanSystem';
-import { projectileSystem } from '../systems/ProjectileSystem';
-import { clearRespawnQueue, respawnSystem } from '../systems/RespawnSystem';
-import { resetScores, scoringSystem } from '../systems/ScoringSystem';
-import type { WeaponFiredEvent } from '../systems/WeaponSystem';
-import { weaponSystem } from '../systems/WeaponSystem';
-import { createSeededRng } from '../utils/seededRng';
-import { Beam } from './Beam';
-import { FXLayer } from './FXLayer';
-import { Projectile } from './Projectile';
+} from "../ecs/miniplexStore";
+import type {
+  BeamComponent,
+  DamageEvent,
+  ProjectileComponent,
+} from "../ecs/weapons";
+import { Robot } from "../robots/robotPrefab";
+import { resetAndSpawnDefaultTeams } from "../robots/spawnControls";
+import { useUI } from "../store/uiStore";
+import { aiSystem } from "../systems/AISystem";
+import { beamSystem } from "../systems/BeamSystem";
+import { damageSystem, type DeathEvent } from "../systems/DamageSystem";
+import { fxSystem } from "../systems/FxSystem";
+import { hitscanSystem, type ImpactEvent } from "../systems/HitscanSystem";
+import { projectileSystem } from "../systems/ProjectileSystem";
+import { clearRespawnQueue, respawnSystem } from "../systems/RespawnSystem";
+import { resetScores, scoringSystem } from "../systems/ScoringSystem";
+import type { WeaponFiredEvent } from "../systems/WeaponSystem";
+import { weaponSystem } from "../systems/WeaponSystem";
+import { createSeededRng } from "../utils/seededRng";
+import { hasVisualActivity } from "../utils/visualActivity";
+import { Beam } from "./Beam";
+import { FXLayer } from "./FXLayer";
+import { Projectile } from "./Projectile";
 
 // Constants
 const ARENA_SIZE = 20; // half-extent
@@ -45,7 +50,11 @@ type ProjectileEntity = Entity & {
 
 type BeamEntity = Entity & { beam: BeamComponent };
 
-export default function Simulation({ renderFloor = false }: { renderFloor?: boolean }) {
+export default function Simulation({
+  renderFloor = false,
+}: {
+  renderFloor?: boolean;
+}) {
   const paused = useUI((s) => s.paused);
   const showFx = useUI((s) => s.showFx);
   const rapier = useRapier();
@@ -60,12 +69,19 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
 
   // Queries for render layers
   const projectileQuery = useMemo(
-    () => world.with('projectile', 'position') as unknown as Query<ProjectileEntity>,
+    () =>
+      world.with(
+        "projectile",
+        "position",
+      ) as unknown as Query<ProjectileEntity>,
     [],
   );
-  const beamQuery = useMemo(() => world.with('beam') as unknown as Query<BeamEntity>, []);
+  const beamQuery = useMemo(
+    () => world.with("beam") as unknown as Query<BeamEntity>,
+    [],
+  );
   const robotQuery = useMemo(
-    () => world.with('team', 'weapon', 'weaponState') as Query<Entity>,
+    () => world.with("team", "weapon", "weaponState") as Query<Entity>,
     [],
   );
   const projectiles = useEcsQuery(projectileQuery);
@@ -93,12 +109,21 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
     try {
       if (paused) {
         for (const e of world.entities) {
-          const ent = e as Entity & { rigid?: unknown } & Record<string, unknown>;
+          const ent = e as Entity & { rigid?: unknown } & Record<
+              string,
+              unknown
+            >;
           type RigidLike = Partial<{
             linvel: () => { x: number; y: number; z: number };
             angvel: () => { x: number; y: number; z: number };
-            setLinvel: (v: { x: number; y: number; z: number }, wake: boolean) => void;
-            setAngvel: (v: { x: number; y: number; z: number }, wake: boolean) => void;
+            setLinvel: (
+              v: { x: number; y: number; z: number },
+              wake: boolean,
+            ) => void;
+            setAngvel: (
+              v: { x: number; y: number; z: number },
+              wake: boolean,
+            ) => void;
             sleep: () => void;
           }>;
           const r = ent.rigid as RigidLike | undefined;
@@ -125,10 +150,19 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
         }
       } else {
         for (const e of world.entities) {
-          const ent = e as Entity & { rigid?: unknown } & Record<string, unknown>;
+          const ent = e as Entity & { rigid?: unknown } & Record<
+              string,
+              unknown
+            >;
           type RigidLike = Partial<{
-            setLinvel: (v: { x: number; y: number; z: number }, wake: boolean) => void;
-            setAngvel: (v: { x: number; y: number; z: number }, wake: boolean) => void;
+            setLinvel: (
+              v: { x: number; y: number; z: number },
+              wake: boolean,
+            ) => void;
+            setAngvel: (
+              v: { x: number; y: number; z: number },
+              wake: boolean,
+            ) => void;
             wakeUp: () => void;
             wake: () => void;
           }>;
@@ -136,8 +170,10 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
           if (!r) continue;
           try {
             const pv = getPauseVel(ent as Entity);
-            if (pv?.lin) r.setLinvel?.({ x: pv.lin[0], y: pv.lin[1], z: pv.lin[2] }, true);
-            if (pv?.ang) r.setAngvel?.({ x: pv.ang[0], y: pv.ang[1], z: pv.ang[2] }, true);
+            if (pv?.lin)
+              r.setLinvel?.({ x: pv.lin[0], y: pv.lin[1], z: pv.lin[2] }, true);
+            if (pv?.ang)
+              r.setAngvel?.({ x: pv.ang[0], y: pv.ang[1], z: pv.ang[2] }, true);
             r.wakeUp?.();
             r.wake?.();
             clearPauseVel(ent as Entity);
@@ -173,7 +209,10 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
     accumulator.current += frameTime;
 
     let steps = 0;
-    while (accumulator.current >= FIXED_TIMESTEP && steps < MAX_STEPS_PER_FRAME) {
+    while (
+      accumulator.current >= FIXED_TIMESTEP &&
+      steps < MAX_STEPS_PER_FRAME
+    ) {
       // advance one deterministic sim tick
       simTick.current += 1;
       const dt = FIXED_TIMESTEP;
@@ -204,8 +243,10 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
       steps += 1;
     }
 
-    // Only request a render if we actually stepped the sim this frame
-    if (steps > 0) state.invalidate();
+    // Always request a render for the next RAF while not paused.
+    // This ensures the Canvas repaints each RAF so visual updates are never starved
+    // even when the sim's fixed-step accumulator produced 0 steps this frame.
+    state.invalidate();
   });
 
   // Kick a render when unpausing
@@ -223,7 +264,10 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
             <meshStandardMaterial color="#202531" />
           </mesh>
         ) : null}
-        <CuboidCollider args={[ARENA_SIZE, 0.1, ARENA_SIZE]} position={[0, -0.05, 0]} />
+        <CuboidCollider
+          args={[ARENA_SIZE, 0.1, ARENA_SIZE]}
+          position={[0, -0.05, 0]}
+        />
       </RigidBody>
 
       {/* Render layers */}
@@ -233,19 +277,20 @@ export default function Simulation({ renderFloor = false }: { renderFloor?: bool
       {projectiles.map((entity, i) => (
         <Projectile
           key={`p-${String(
-            entity.id ?? `${entity.projectile.sourceWeaponId}_${entity.projectile.spawnTime}_${i}`,
+            entity.id ??
+              `${entity.projectile.sourceWeaponId}_${entity.projectile.spawnTime}_${i}`,
           )}`}
           entity={entity}
         />
       ))}
       {beams.map((entity) => (
-        <Beam key={`b-${String(entity.id ?? entity.beam.sourceWeaponId)}`} entity={entity} />
+        <Beam
+          key={`b-${String(entity.id ?? entity.beam.sourceWeaponId)}`}
+          entity={entity}
+        />
       ))}
 
       {showFx ? <FXLayer /> : null}
     </group>
   );
 }
-
-
-

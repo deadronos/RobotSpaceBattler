@@ -1,29 +1,29 @@
-import React from 'react';
+import React from "react";
 
-import { useScoreStore } from '../../store/scoreStore';
+import { useScoreStore } from "../../store/scoreStore";
 
 const containerStyle: React.CSSProperties = {
-  position: 'absolute',
+  position: "absolute",
   top: 16,
-  left: '50%',
-  transform: 'translateX(-50%)',
-  display: 'flex',
+  left: "50%",
+  transform: "translateX(-50%)",
+  display: "flex",
   gap: 16,
-  padding: '8px 16px',
-  background: 'rgba(18, 24, 36, 0.85)',
-  color: '#fff',
+  padding: "8px 16px",
+  background: "rgba(18, 24, 36, 0.85)",
+  color: "#fff",
   borderRadius: 8,
   fontSize: 14,
   letterSpacing: 0.5,
-  fontFamily: 'Roboto, sans-serif',
-  pointerEvents: 'none',
+  fontFamily: "Roboto, sans-serif",
+  pointerEvents: "none",
 };
 
 const entryStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
+  display: "flex",
+  alignItems: "center",
   gap: 6,
-  textTransform: 'uppercase',
+  textTransform: "uppercase",
 };
 
 const valueStyle: React.CSSProperties = {
@@ -38,13 +38,19 @@ export default function ScoreBoard() {
     <div style={containerStyle} id="scoreboard">
       <div style={entryStyle} data-team="red">
         <span>Red</span>
-        <span style={{ ...valueStyle, color: '#f87171' }} data-testid="score-red">
+        <span
+          style={{ ...valueStyle, color: "#f87171" }}
+          data-testid="score-red"
+        >
           {scores.red ?? 0}
         </span>
       </div>
       <div style={entryStyle} data-team="blue">
         <span>Blue</span>
-        <span style={{ ...valueStyle, color: '#60a5fa' }} data-testid="score-blue">
+        <span
+          style={{ ...valueStyle, color: "#60a5fa" }}
+          data-testid="score-blue"
+        >
           {scores.blue ?? 0}
         </span>
       </div>

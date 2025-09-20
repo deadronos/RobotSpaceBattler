@@ -1,6 +1,6 @@
-import { ROBOT_BASE_STATS } from '../ecs/miniplexStore';
-import type { WeaponType } from '../ecs/weapons';
-import { weaponProfiles } from './weaponProfiles';
+import { ROBOT_BASE_STATS } from "../ecs/miniplexStore";
+import type { WeaponType } from "../ecs/weapons";
+import { weaponProfiles } from "./weaponProfiles";
 
 export interface RobotPrefabDefinition {
   id: string;
@@ -24,10 +24,10 @@ const baseStats = {
 
 export const robotPrefabs: RobotPrefabDefinition[] = [
   {
-    id: 'gunner',
-    label: 'Autocannon Gunner',
-    weaponType: 'gun',
-    summary: 'Rapid-fire frontline unit with short cooldown bursts.',
+    id: "gunner",
+    label: "Autocannon Gunner",
+    weaponType: "gun",
+    summary: "Rapid-fire frontline unit with short cooldown bursts.",
     stats: {
       ...baseStats,
       range: weaponProfiles.gun.range,
@@ -37,10 +37,10 @@ export const robotPrefabs: RobotPrefabDefinition[] = [
     },
   },
   {
-    id: 'laser',
-    label: 'Beam Support',
-    weaponType: 'laser',
-    summary: 'Precision beam that maintains pressure at long range.',
+    id: "laser",
+    label: "Beam Support",
+    weaponType: "laser",
+    summary: "Precision beam that maintains pressure at long range.",
     stats: {
       ...baseStats,
       range: weaponProfiles.laser.range,
@@ -50,10 +50,10 @@ export const robotPrefabs: RobotPrefabDefinition[] = [
     },
   },
   {
-    id: 'rocket',
-    label: 'Rocket Artillery',
-    weaponType: 'rocket',
-    summary: 'Slow-firing AoE rocket for clustered targets.',
+    id: "rocket",
+    label: "Rocket Artillery",
+    weaponType: "rocket",
+    summary: "Slow-firing AoE rocket for clustered targets.",
     stats: {
       ...baseStats,
       range: weaponProfiles.rocket.range,

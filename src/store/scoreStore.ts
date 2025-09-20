@@ -1,6 +1,6 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
-import type { Team } from '../ecs/miniplexStore';
+import type { Team } from "../ecs/miniplexStore";
 
 type ScoreMap = Record<Team, number>;
 
