@@ -22,9 +22,15 @@ export function useEcsQuery<T extends Entity>(query: Query<T>) {
           onStoreChange();
         }
       });
-
-  // Defer initial notify to next microtask to avoid update-depth loops
-  Promise.resolve().then(() => onStoreChange());
+      // Immediately notify once to ensure first paint reflects the current
+      // world state (robots visible on initial load). Calling the subscription
+      // callback here is safe with useSyncExternalStore and avoids a lost
+      // initial update if spawns happen during mount effects elsewhere.
+      try {
+        onStoreChange();
+      } catch {
+        // no-op; defensive in case React dev runtime complains in exotic trees
+      }
 
       return () => {
         unsubscribeAdded();

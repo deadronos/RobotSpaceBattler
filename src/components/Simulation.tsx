@@ -92,12 +92,14 @@ export default function Simulation({
 
   // RNG is created per-frame deterministically; no persistent RNG state needed
 
-  // Spawn initial teams once
+  // Spawn initial teams once (only if the world is empty on mount)
   useEffect(() => {
     if (!spawnInitializedRef.current) {
-      resetScores();
-      clearRespawnQueue();
-      resetAndSpawnDefaultTeams();
+      if (world.entities.length === 0) {
+        resetScores();
+        clearRespawnQueue();
+        resetAndSpawnDefaultTeams();
+      }
       spawnInitializedRef.current = true;
       // Force an immediate invalidation to ensure robots render
       invalidate();
