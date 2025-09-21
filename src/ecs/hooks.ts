@@ -23,8 +23,8 @@ export function useEcsQuery<T extends Entity>(query: Query<T>) {
         }
       });
 
-      // Nudge a paint right after connecting to capture the initial set.
-      Promise.resolve().then(() => onStoreChange());
+  // Defer initial notify to next microtask to avoid update-depth loops
+  Promise.resolve().then(() => onStoreChange());
 
       return () => {
         unsubscribeAdded();
@@ -33,7 +33,7 @@ export function useEcsQuery<T extends Entity>(query: Query<T>) {
         connected.disconnect();
       };
     },
-    () => query.entities,
-    () => query.entities,
+    () => query.entities as unknown as T[],
+    () => query.entities as unknown as T[],
   );
 }

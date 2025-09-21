@@ -1,6 +1,7 @@
 import {
   createRobotEntity,
   type Entity,
+  notifyEntityChanged,
   resetWorld,
   type Team,
   type Vec3,
@@ -120,4 +121,11 @@ export function resetAndSpawnDefaultTeams() {
   resetWorld();
   spawnTeam("red", ["gun", "laser", "rocket"]);
   spawnTeam("blue", ["rocket", "gun", "laser"]);
+  // Notify subscribers that the world entity set has changed.
+  // This helps hooks that need an initial nudge on first load.
+  try {
+    notifyEntityChanged(undefined);
+  } catch {
+    // non-fatal; used only to wake subscribers
+  }
 }
