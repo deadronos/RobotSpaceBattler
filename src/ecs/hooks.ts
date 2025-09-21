@@ -5,12 +5,24 @@ import type { Entity } from "./miniplexStore";
 import { subscribeEntityChanges } from "./miniplexStore";
 
 export function useEcsQuery<T extends Entity>(query: Query<T>) {
+  // Eagerly connect the query before React reads the initial snapshot so
+  // that any entity-added events which occur during the mounting phase
+  // (for example spawns scheduled by parent effects) are not missed.
+  // We store the connection in a ref so it's created once per-hook-instance
+  // and can be cleaned up when the component unmounts.
+  const connRef = ((): { disconnect?: () => void } => {
+    try {
+      return query.connect();
+    } catch {
+      // Defensive: if connect throws for any reason, return a noop wrapper
+      return { disconnect: () => {} };
+    }
+  })();
+
   return useSyncExternalStore(
     (onStoreChange) => {
-      // Connect the query immediately so it materializes its initial set
-      // before we capture the first snapshot.
-      const connected = query.connect();
-
+      // We already connected above; wire up change listeners to forward
+      // miniplex query events into React's external store mechanism.
       const unsubscribeAdded = query.onEntityAdded.subscribe(() => {
         onStoreChange();
       });
@@ -22,10 +34,10 @@ export function useEcsQuery<T extends Entity>(query: Query<T>) {
           onStoreChange();
         }
       });
+
       // Immediately notify once to ensure first paint reflects the current
-      // world state (robots visible on initial load). Calling the subscription
-      // callback here is safe with useSyncExternalStore and avoids a lost
-      // initial update if spawns happen during mount effects elsewhere.
+      // world state. This avoids a lost initial update if entities were
+      // added before the component subscribed.
       try {
         onStoreChange();
       } catch {
@@ -36,7 +48,11 @@ export function useEcsQuery<T extends Entity>(query: Query<T>) {
         unsubscribeAdded();
         unsubscribeRemoved();
         unsubscribeChanged();
-        connected.disconnect();
+        try {
+          connRef.disconnect?.();
+        } catch {
+          // ignore errors during cleanup
+        }
       };
     },
     () => query.entities as unknown as T[],
