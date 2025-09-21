@@ -94,22 +94,61 @@ export default function Simulation({
 
   // Spawn initial teams once
   useEffect(() => {
-    if (!spawnInitializedRef.current) {
-      resetScores();
-      clearRespawnQueue();
-      resetAndSpawnDefaultTeams();
+  let tid: number | undefined;
+  // connections that we may create so cleanup can call disconnect()
+  let robotConn: { disconnect?: () => void } | undefined;
+  let projectileConn: { disconnect?: () => void } | undefined;
+  let beamConn: { disconnect?: () => void } | undefined;
+
+  if (!spawnInitializedRef.current) {
+      // Explicitly connect queries early so their internal connections exist
+      // before we add entities. This avoids a race where entities are
+      // created before any listeners have attached and thus no onEntityAdded
+      // notifications reach subscribers.
+  robotConn = robotQuery.connect();
+  projectileConn = projectileQuery.connect();
+  beamConn = beamQuery.connect();
+
+      // Defer spawning to the next macrotask so child components (Robot,
+      // Projectile, Beam) have a chance to run their connection effects
+      // (query.connect) and subscribe to entity add/remove events. When
+      // spawning happens synchronously here it's possible the child
+      // subscriptions haven't attached yet and they'll miss the initial
+      // entities.
       spawnInitializedRef.current = true;
-      // Force an immediate invalidation to ensure robots render
-      invalidate();
+      tid = window.setTimeout(() => {
+        resetScores();
+        clearRespawnQueue();
+        resetAndSpawnDefaultTeams();
+        // Force an immediate invalidation to ensure robots render
+        invalidate();
+      }, 0);
     }
 
     return () => {
+      if (typeof tid === "number") window.clearTimeout(tid);
+      try {
+        robotConn?.disconnect?.();
+      } catch {
+        // ignore
+      }
+      try {
+        projectileConn?.disconnect?.();
+      } catch {
+        // ignore
+      }
+      try {
+        beamConn?.disconnect?.();
+      } catch {
+        // ignore
+      }
+
       spawnInitializedRef.current = false;
       clearRespawnQueue();
       resetScores();
       resetWorld();
     };
-  }, [invalidate]);
+  }, [invalidate, robotQuery, projectileQuery, beamQuery]);
 
   // Deterministic per-frame systems
   useFrame((state) => {
