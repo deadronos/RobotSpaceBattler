@@ -86,9 +86,12 @@ export default function Simulation({
     () => world.with("team", "weapon", "weaponState") as Query<Entity>,
     [],
   );
+  // debug logs removed
   const projectiles = useEcsQuery(projectileQuery);
   const beams = useEcsQuery(beamQuery);
   const robots = useEcsQuery(robotQuery);
+
+  // debug logs removed
 
   // RNG is created per-frame deterministically; no persistent RNG state needed
 
@@ -99,7 +102,7 @@ export default function Simulation({
   let robotConn: { disconnect?: () => void } | undefined;
   let projectileConn: { disconnect?: () => void } | undefined;
   let beamConn: { disconnect?: () => void } | undefined;
-
+  // Spawn initial teams once (only if the world is empty on mount)
   if (!spawnInitializedRef.current) {
       // Explicitly connect queries early so their internal connections exist
       // before we add entities. This avoids a race where entities are

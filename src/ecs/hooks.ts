@@ -1,38 +1,30 @@
 import type { Query } from "miniplex";
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, useLayoutEffect, useRef } from "react";
 
 import type { Entity } from "./miniplexStore";
 import { subscribeEntityChanges } from "./miniplexStore";
 
 export function useEcsQuery<T extends Entity>(query: Query<T>) {
-  // Eagerly connect the query before React reads the initial snapshot so
-  // that any entity-added events which occur during the mounting phase
-  // (for example spawns scheduled by parent effects) are not missed.
-  // We store the connection in a ref so it's created once per-hook-instance
-  // and can be cleaned up when the component unmounts.
-  const connRef = ((): { disconnect?: () => void } => {
+  // Create and hold the query connection for the hook instance. We prefer
+  // to connect synchronously so that any entities created during the mount
+  // phase are visible to the query subscription immediately. Connect is
+  // defensive (try/catch) and returns a simple disconnect wrapper.
+  const connRef = useRef<{ disconnect?: () => void } | null>(null);
+  if (connRef.current === null) {
     try {
-      return query.connect();
+      connRef.current = query.connect();
     } catch {
-      // Defensive: if connect throws for any reason, return a noop wrapper
-      return { disconnect: () => {} };
+      connRef.current = { disconnect: () => {} };
     }
-  })();
+  }
 
   return useSyncExternalStore(
     (onStoreChange) => {
-      // We already connected above; wire up change listeners to forward
-      // miniplex query events into React's external store mechanism.
-      const unsubscribeAdded = query.onEntityAdded.subscribe(() => {
-        onStoreChange();
-      });
-      const unsubscribeRemoved = query.onEntityRemoved.subscribe(() => {
-        onStoreChange();
-      });
+      // Wire up listeners to forward miniplex query events into React.
+      const unsubscribeAdded = query.onEntityAdded.subscribe(() => onStoreChange());
+      const unsubscribeRemoved = query.onEntityRemoved.subscribe(() => onStoreChange());
       const unsubscribeChanged = subscribeEntityChanges((entity) => {
-        if (!entity || query.has(entity as T)) {
-          onStoreChange();
-        }
+        if (!entity || query.has(entity as T)) onStoreChange();
       });
 
       // Immediately notify once to ensure first paint reflects the current
@@ -41,18 +33,18 @@ export function useEcsQuery<T extends Entity>(query: Query<T>) {
       try {
         onStoreChange();
       } catch {
-        // no-op; defensive in case React dev runtime complains in exotic trees
+        // defensive - ignore errors from React internals
       }
-
       return () => {
         unsubscribeAdded();
         unsubscribeRemoved();
         unsubscribeChanged();
         try {
-          connRef.disconnect?.();
+          connRef.current?.disconnect?.();
         } catch {
           // ignore errors during cleanup
         }
+        connRef.current = null;
       };
     },
     () => query.entities as unknown as T[],

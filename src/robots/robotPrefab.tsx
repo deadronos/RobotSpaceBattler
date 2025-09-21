@@ -44,6 +44,8 @@ export function Robot({ entity }: { entity: Entity }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // dev-only mount counter removed
+
   return (
     <RigidBody
       ref={(r) => {
