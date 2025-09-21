@@ -92,8 +92,9 @@ export default function Simulation({
 
   // RNG is created per-frame deterministically; no persistent RNG state needed
 
-  // Spawn initial teams once
+  // Spawn initial teams once (only if the world is empty on mount)
   useEffect(() => {
+<<<<<<< HEAD
   let tid: number | undefined;
   // connections that we may create so cleanup can call disconnect()
   let robotConn: { disconnect?: () => void } | undefined;
@@ -115,6 +116,14 @@ export default function Simulation({
       // spawning happens synchronously here it's possible the child
       // subscriptions haven't attached yet and they'll miss the initial
       // entities.
+=======
+    if (!spawnInitializedRef.current) {
+      if (world.entities.length === 0) {
+        resetScores();
+        clearRespawnQueue();
+        resetAndSpawnDefaultTeams();
+      }
+>>>>>>> f58ca147e8c92f2bf1932c64f13c8b5cb15628a6
       spawnInitializedRef.current = true;
       tid = window.setTimeout(() => {
         resetScores();

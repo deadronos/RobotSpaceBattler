@@ -79,6 +79,8 @@ module.exports = [
       'unused-imports': require('eslint-plugin-unused-imports')
     },
     rules: Object.assign({}, (tsRecommended && tsRecommended.rules) ? tsRecommended.rules : {}, {
+      // Typescript handles undefined vars at type level; disable core no-undef for TS to avoid false positives
+      'no-undef': 'off',
       // react hooks plugin rules
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',

@@ -54,7 +54,7 @@ export function Robot({ entity }: { entity: Entity }) {
       colliders={false}
       canSleep={false}
     >
-      <mesh castShadow>
+      <mesh castShadow frustumCulled={false} name="RobotMesh">
         <boxGeometry args={[0.8, 1.2, 0.8]} />
         <meshStandardMaterial
           color={entity.team === "red" ? "#b04646" : "#4976d1"}
