@@ -121,14 +121,14 @@ export function Projectile({ entity }: { entity: ProjectileEntity }) {
       canSleep={false}
       position={entity.position as unknown as [number, number, number]}
     >
-      <mesh ref={meshRef} castShadow={false} frustumCulled={false}>
+      <mesh ref={meshRef} castShadow={false} frustumCulled={false} name="ProjectileMesh">
         <sphereGeometry args={[0.28, 16, 16]} />
         <meshBasicMaterial
           color={entity.team === "red" ? "#ffb199" : "#b3d9ff"}
         />
       </mesh>
       {/* Instantaneous streak for motion clarity (cheap) */}
-      <mesh ref={streakRef} frustumCulled={false} castShadow={false}>
+      <mesh ref={streakRef} frustumCulled={false} castShadow={false} name="ProjectileStreak">
         <cylinderGeometry args={[0.5, 0.5, 1, 6, 1, true]} />
         <meshBasicMaterial
           color={entity.team === "red" ? "#ffd6cc" : "#d9ecff"}

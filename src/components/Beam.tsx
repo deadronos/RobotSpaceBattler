@@ -55,6 +55,7 @@ export function Beam({ entity }: { entity: BeamEntity }) {
   return (
     <mesh
       ref={meshRef}
+      name="BeamMesh"
       frustumCulled={false}
       castShadow={false}
       receiveShadow={false}
