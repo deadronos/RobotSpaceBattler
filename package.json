@@ -91,4 +91,8 @@
     "vite-plugin-wasm": "latest",
     "vitest": "latest"
   }
+  ,
+  "overrides": {
+    "@typescript-eslint/utils": "7.18.0"
+  }
 }
