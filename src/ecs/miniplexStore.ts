@@ -1,4 +1,7 @@
-import { World } from "miniplex";
+import { createEntityLookup } from "./entityLookup";
+import { createRenderKeyGenerator } from "./renderKey";
+import { clearPauseVelocity, getPauseVelocity, setPauseVelocity } from "./pauseVelocity";
+import { createWorldController } from "./worldFactory";
 
 import type { FxComponent } from "./fx";
 import type {
@@ -8,7 +11,6 @@ import type {
   WeaponStateComponent,
 } from "./weapons";
 
-// Component types based on SPEC.md
 export type Vec3 = [number, number, number];
 
 export type Team = "red" | "blue";
@@ -40,9 +42,7 @@ export interface Target {
   targetId?: number; // entity id of current target
 }
 
-// Rapier RigidBody API is provided by @react-three/rapier
 export interface RigidBodyRef {
-  // Avoid strict type coupling to @react-three/rapier version
   rigid?: unknown | null;
 }
 
@@ -72,7 +72,6 @@ export type Entity = Partial<
       team: Team;
     } & RigidBodyRef &
     RenderRef & {
-      // Ephemeral component used to store paused velocities when pausing the simulation
       pauseVel?: { lin?: Vec3; ang?: Vec3 };
       beam?: BeamComponent;
       projectile?: ProjectileComponent;
@@ -82,54 +81,36 @@ export type Entity = Partial<
     }
 >;
 
-export const world = new World<Entity>();
+const entityLookup = createEntityLookup<Entity>();
+const worldController = createWorldController<Entity>({
+  onEntityAdded: (entity) => entityLookup.track(entity),
+  onEntityRemoved: (entity) => entityLookup.untrack(entity),
+});
+const renderKeyGenerator = createRenderKeyGenerator<Entity>();
 
-let nextEntityId = 1;
-const entityLookup = new Map<number, Entity>();
+export const { world } = worldController;
 
-type EntityChangeListener = (entity: Entity | undefined) => void;
-const entityChangeListeners = new Set<EntityChangeListener>();
+export const subscribeEntityChanges = entityLookup.subscribe;
 
-export function subscribeEntityChanges(listener: EntityChangeListener) {
-  entityChangeListeners.add(listener);
-  return () => {
-    entityChangeListeners.delete(listener);
-  };
-}
+export const notifyEntityChanged = (entity: Entity | undefined) =>
+  entityLookup.notify(entity);
 
-export function notifyEntityChanged(entity: Entity | undefined) {
-  if (entityChangeListeners.size === 0) return;
-  for (const listener of entityChangeListeners) {
-    try {
-      listener(entity);
-    } catch {
-      // Listener errors are swallowed to keep simulation running.
-    }
-  }
-}
+export const getEntityById = (id: number) => entityLookup.getById(id);
 
-export function getEntityById(id: number) {
-  return entityLookup.get(id);
-}
-
-// Helper queries
 export function getRobots() {
   return Array.from(world.entities).filter((e) => e.team && e.rigid);
 }
 
-// pauseVel helpers - small ECS-style API for ephemeral pause velocity component
 export function setPauseVel(entity: Entity, lin?: Vec3, ang?: Vec3) {
-  entity.pauseVel = entity.pauseVel ?? {};
-  if (lin) entity.pauseVel.lin = lin;
-  if (ang) entity.pauseVel.ang = ang;
+  setPauseVelocity(entity, lin, ang);
 }
 
 export function getPauseVel(entity: Entity) {
-  return entity.pauseVel;
+  return getPauseVelocity(entity);
 }
 
 export function clearPauseVel(entity: Entity) {
-  if (entity.pauseVel) delete entity.pauseVel;
+  clearPauseVelocity(entity);
 }
 
 export function createRobotEntity(init: Partial<Entity>): Entity {
@@ -140,45 +121,21 @@ export function createRobotEntity(init: Partial<Entity>): Entity {
     ...init,
   };
 
-  if (typeof entity.id !== "number") {
-    entity.id = nextEntityId++;
-  }
-
-  const added = world.add(entity);
-
-  if (typeof added.id === "number") {
-    entityLookup.set(added.id, added);
-  }
-
+  entityLookup.ensureEntityId(entity);
+  const added = worldController.add(entity);
+  entityLookup.track(added);
   return added;
 }
 
-export function removeEntity(e: Entity) {
-  if (typeof e.id === "number") {
-    entityLookup.delete(e.id);
-  }
-  world.remove(e);
+export function removeEntity(entity: Entity) {
+  worldController.remove(entity);
 }
 
 export function resetWorld() {
-  for (const e of [...world.entities]) {
-    removeEntity(e);
-  }
+  worldController.reset();
   entityLookup.clear();
-  nextEntityId = 1;
 }
 
-// Global render-key generator for entities. Some tests or manual entity
-// creation may assign colliding numeric ids; this helper provides a
-// stable, unique key string per entity object that presentation code can
-// use for React keys to avoid duplicate-key warnings.
-const renderKeyMap = new WeakMap<Entity, string>();
-let renderKeyCounter = 0;
 export function getRenderKey(entity: Entity, fallbackIndex?: number) {
-  const existing = renderKeyMap.get(entity);
-  if (existing) return existing;
-  const idPart = typeof entity.id === "number" || typeof entity.id === "string" ? String(entity.id) : "anon";
-  const key = `${idPart}_${++renderKeyCounter}_${fallbackIndex ?? 0}`;
-  renderKeyMap.set(entity, key);
-  return key;
+  return renderKeyGenerator(entity, fallbackIndex);
 }

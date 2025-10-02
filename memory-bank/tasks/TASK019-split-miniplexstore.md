@@ -1,6 +1,6 @@
 # [TASK019] - Split miniplexStore responsibilities into smaller modules
 
-**Status:** Pending  
+**Status:** Completed  
 **Added:** 2025-10-02  
 **Updated:** 2025-10-02
 
@@ -18,16 +18,18 @@ Refactor `src/ecs/miniplexStore.ts` to separate concerns: world factory, entity 
 
 ## Progress Tracking
 
-**Overall Status:** Not Started - 0%
+**Overall Status:** Completed - 100%
 
 ### Subtasks
 | ID | Description | Status | Updated | Notes |
 |----|-------------|--------|---------|-------|
-| 4.1 | Implement `worldFactory.ts` and tests | Not Started | 2025-10-02 | Provide isolated world creation for unit tests |
-| 4.2 | Extract `entityLookup.ts` with API + tests | Not Started | 2025-10-02 | Ensure lookup sync on add/remove |
-| 4.3 | Extract `renderKey.ts` and add uniqueness tests | Not Started | 2025-10-02 | WeakMap-based implementation retained |
-| 4.4 | Wire façade (`miniplexStore.ts`) and update imports | Not Started | 2025-10-02 | Keep compatibility with existing modules |
+| 4.1 | Implement `worldFactory.ts` and tests | Complete | 2025-10-02 | Added `createWorldController` with lifecycle hooks + unit tests |
+| 4.2 | Extract `entityLookup.ts` with API + tests | Complete | 2025-10-02 | Lookup manages id generation, listeners, and reset semantics |
+| 4.3 | Extract `renderKey.ts` and add uniqueness tests | Complete | 2025-10-02 | Generator returns stable keys; covered with dedicated tests |
+| 4.4 | Wire façade (`miniplexStore.ts`) and update imports | Complete | 2025-10-02 | Façade delegates to modules, pause velocity helpers moved to `pauseVelocity.ts` |
 
 ## Progress Log
 ### 2025-10-02
-- Task created with implementation plan.
+- Created `worldFactory.ts` and `entityLookup.ts`, rewired `miniplexStore` to compose them via lifecycle hooks.
+- Added `renderKey.ts` and `pauseVelocity.ts`, exposing wrappers from the façade to keep the public API stable.
+- Authored new Vitest suites (`tests/entityLookup.test.ts`, `tests/worldFactory.test.ts`, `tests/renderKey.test.ts`, `tests/pauseVelocity.test.ts`) to validate the extracted modules.
