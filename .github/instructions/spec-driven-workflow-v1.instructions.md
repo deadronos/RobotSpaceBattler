@@ -4,7 +4,7 @@ applyTo: '**'
 ---
 
 # Spec-Driven Workflow — Quick Loop
-Hint: use /memory-bank 
+Hint: use memory-bank folder ( look at .github/instructions/memory-bank.instructions.md for templates)
 use /memory-bank/designs folder to store designs
 use /memory-bank/tasks folder to store task files
 
