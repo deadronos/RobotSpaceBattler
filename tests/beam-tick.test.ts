@@ -137,6 +137,58 @@ describe('BeamSystem Tick Damage and Interruption', () => {
     expect(world.entities.length).toBe(1); // Only laser remains
   });
 
+  it('removes beams when the owning entity no longer exists', () => {
+    const laser: Entity & { weapon: WeaponComponent } = {
+      id: 1,
+      position: [0, 0, 0],
+      team: 'red',
+      weapon: {
+        id: 'orphaned-laser',
+        type: 'laser',
+        ownerId: 1,
+        team: 'red',
+        range: 25,
+        cooldown: 1,
+        power: 30,
+        beamParams: {
+          duration: 800,
+          width: 0.15,
+          tickInterval: 100,
+        },
+      },
+    };
+
+    world.add(laser);
+
+    const weaponFiredEvent: WeaponFiredEvent = {
+      weaponId: 'orphaned-laser',
+      ownerId: 1,
+      type: 'laser',
+      origin: [0, 0, 0],
+      direction: [1, 0, 0],
+      timestamp: baseTime,
+    };
+
+    const rng = createSeededRng(12345);
+
+    beamSystem(world, 0.016, rng, [weaponFiredEvent], events, baseTime);
+
+    const beamsBeforeRemoval = Array.from(world.entities).filter(
+      (e) => (e as Entity & { beam?: BeamComponent }).beam,
+    );
+    expect(beamsBeforeRemoval).toHaveLength(1);
+
+    // Remove the owning entity from the world
+    world.remove(laser);
+
+    beamSystem(world, 0.016, rng, [], events, baseTime + 16);
+
+    const beamsAfterRemoval = Array.from(world.entities).filter(
+      (e) => (e as Entity & { beam?: BeamComponent }).beam,
+    );
+    expect(beamsAfterRemoval).toHaveLength(0);
+  });
+
   it('should hit multiple targets in beam path', () => {
     const laser: Entity & { weapon: WeaponComponent } = {
       id: 'laser',
