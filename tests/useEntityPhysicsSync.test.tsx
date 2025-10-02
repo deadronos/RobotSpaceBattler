@@ -5,7 +5,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 const frameCallbacks: Array<(state?: unknown, delta?: number) => void> = [];
 
 vi.mock("@react-three/fiber", () => ({
-  useFrame: (cb: (state: unknown, delta: number) => void) => {
+  useFrame: (cb: (state?: unknown, delta?: number) => void) => {
     frameCallbacks.push(cb);
   },
 }));

@@ -1,8 +1,8 @@
 import type { World } from "miniplex";
 
+import { resolveEntity } from "../ecs/ecsResolve";
 import type { Entity, Team } from "../ecs/miniplexStore";
 import { removeEntity } from "../ecs/miniplexStore";
-import { resolveEntity } from "../ecs/ecsResolve";
 import type { WeaponComponent, WeaponType } from "../ecs/weapons";
 import { spawnRobot } from "../robots/spawnControls";
 import type { DeathEvent } from "./DamageSystem";

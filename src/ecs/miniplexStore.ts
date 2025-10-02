@@ -1,15 +1,14 @@
 import { createEntityLookup } from "./entityLookup";
-import { createRenderKeyGenerator } from "./renderKey";
-import { clearPauseVelocity, getPauseVelocity, setPauseVelocity } from "./pauseVelocity";
-import { createWorldController } from "./worldFactory";
-
 import type { FxComponent } from "./fx";
+import { clearPauseVelocity, getPauseVelocity, setPauseVelocity } from "./pauseVelocity";
+import { createRenderKeyGenerator } from "./renderKey";
 import type {
   BeamComponent,
   ProjectileComponent,
   WeaponComponent,
   WeaponStateComponent,
 } from "./weapons";
+import { createWorldController } from "./worldFactory";
 
 export type Vec3 = [number, number, number];
 

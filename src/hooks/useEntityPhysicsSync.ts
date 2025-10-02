@@ -1,5 +1,5 @@
 import { useFrame } from "@react-three/fiber";
-import { useCallback, useEffect, useRef, type MutableRefObject } from "react";
+import { type MutableRefObject,useCallback, useEffect, useRef } from "react";
 
 import type { Entity } from "../ecs/miniplexStore";
 
