@@ -15,6 +15,11 @@ import type { WeaponFiredEvent } from "./WeaponSystem";
 
 const POSITION_EPSILON = 0.0001;
 
+// Monotonic counter to guarantee uniqueness when timestamps collide.
+// Date.now() can return the same millisecond for rapid successive events;
+// append a counter to generated beam ids to avoid duplicate React keys.
+let beamIdCounter = 0;
+
 function resolveEntity(world: World<Entity>, id?: number) {
   if (typeof id !== "number") {
     return undefined;
@@ -53,6 +58,7 @@ export function beamSystem(
   weaponFiredEvents: WeaponFiredEvent[],
   events: { damage: DamageEvent[] },
 ) {
+  // (no-op) module-level beamIdCounter used below
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== "laser") continue;
 
@@ -96,8 +102,9 @@ export function beamSystem(
       existing.beam.activeUntil = now + duration;
       notifyEntityChanged(existing as Entity);
     } else {
+  const counter = ++beamIdCounter;
       const beamEntity: Entity & { beam: BeamComponent } = {
-        id: "beam_" + fireEvent.weaponId + "_" + now,
+        id: "beam_" + fireEvent.weaponId + "_" + now + "_" + counter,
         position: [
           fireEvent.origin[0],
           fireEvent.origin[1],

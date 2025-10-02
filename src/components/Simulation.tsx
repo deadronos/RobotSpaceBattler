@@ -1,7 +1,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { CuboidCollider, RigidBody, useRapier } from "@react-three/rapier";
-import type { Query } from "miniplex";
 import React, { useEffect, useMemo, useRef } from "react";
+import type { Query } from "miniplex";
 
 import { useEcsQuery } from "../ecs/hooks";
 import {
@@ -9,6 +9,9 @@ import {
   resetWorld,
   subscribeEntityChanges,
   world,
+  setPauseVel,
+  getPauseVel,
+  clearPauseVel,
 } from "../ecs/miniplexStore";
 import type {
   BeamComponent,
@@ -206,6 +209,60 @@ export default function Simulation({
     if (!paused) invalidate();
   }, [paused, invalidate]);
 
+  // When pausing, capture and zero rigidbody velocities to prevent physics
+  // from continuing to move bodies while the render loop is paused. On
+  // resume, restore previously stored velocities.
+  useEffect(() => {
+    if (!world) return;
+
+    if (paused) {
+      for (const raw of world.entities) {
+        const e = raw as Entity;
+        try {
+          if (!e.rigid) continue;
+          // Capture current velocities if API available
+          const rigid = e.rigid as unknown as {
+            linvel?: () => { x: number; y: number; z: number };
+            angvel?: () => { x: number; y: number; z: number };
+            setLinvel?: (v: { x: number; y: number; z: number }, wake: boolean) => void;
+            setAngvel?: (v: { x: number; y: number; z: number }, wake: boolean) => void;
+          };
+          const lin = rigid.linvel?.() ?? null;
+          const ang = rigid.angvel?.() ?? null;
+          if (lin) setPauseVel(e, [lin.x, lin.y, lin.z]);
+          if (ang) setPauseVel(e, undefined, [ang.x, ang.y, ang.z]);
+          // Zero velocities
+          rigid.setLinvel?.({ x: 0, y: 0, z: 0 }, true);
+          rigid.setAngvel?.({ x: 0, y: 0, z: 0 }, true);
+        } catch {
+          // ignore per-entity errors
+        }
+      }
+    } else {
+      // restore
+      for (const raw of world.entities) {
+        const e = raw as Entity;
+        try {
+          if (!e.rigid) continue;
+          const rigid = e.rigid as unknown as {
+            setLinvel?: (v: { x: number; y: number; z: number }, wake: boolean) => void;
+            setAngvel?: (v: { x: number; y: number; z: number }, wake: boolean) => void;
+          };
+          const pv = getPauseVel(e);
+          if (pv?.lin) {
+            rigid.setLinvel?.({ x: pv.lin[0], y: pv.lin[1], z: pv.lin[2] }, true);
+          }
+          if (pv?.ang) {
+            rigid.setAngvel?.({ x: pv.ang[0], y: pv.ang[1], z: pv.ang[2] }, true);
+          }
+          clearPauseVel(e);
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }, [paused]);
+
   useEffect(() => {
     const unsubscribe = subscribeEntityChanges(() => {
       invalidate();
@@ -248,7 +305,11 @@ export default function Simulation({
       ))}
       {beams.map((entity) => (
         <Beam
-          key={String(entity.id ?? entity.beam.sourceWeaponId)}
+          key={String(
+            entity.id ?? `${entity.beam.sourceWeaponId}_${entity.beam.firedAt}_${
+              entity.beam.ownerId ?? "anon"
+            }`,
+          )}
           entity={entity}
         />
       ))}

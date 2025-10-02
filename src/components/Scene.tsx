@@ -18,9 +18,9 @@ export default function Scene() {
     <Canvas
       shadows
       camera={{ position: [16, 12, 16], fov: 50 }}
-      // Render continuously to keep visuals in sync with physics across environments.
-      // Pausing is handled by the Physics component and systems.
-      frameloop="always"
+      // Use on-demand rendering: we drive frames explicitly via TickDriver/invalidate().
+      // This avoids accidental continuous renders and makes pause/unpause deterministic.
+      frameloop="demand"
     >
       <color attach="background" args={[0.04, 0.05, 0.09]} />
       {ENABLE_ENVIRONMENT ? (
