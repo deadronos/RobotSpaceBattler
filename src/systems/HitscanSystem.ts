@@ -1,7 +1,7 @@
 import type { World } from "miniplex";
 
-import { type Entity } from "../ecs/miniplexStore";
 import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
+import { type Entity } from "../ecs/miniplexStore";
 import type { DamageEvent, WeaponComponent } from "../ecs/weapons";
 import type { Rng } from "../utils/seededRng";
 import { extractEntityIdFromRapierHit } from "./rapierHelpers";

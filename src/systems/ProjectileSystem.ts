@@ -1,7 +1,7 @@
 import type { World } from "miniplex";
 
-import { type Entity, notifyEntityChanged } from "../ecs/miniplexStore";
 import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
+import { type Entity, notifyEntityChanged } from "../ecs/miniplexStore";
 import type {
   DamageEvent,
   ProjectileComponent,

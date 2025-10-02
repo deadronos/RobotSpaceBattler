@@ -1,8 +1,8 @@
 # [TASK020] - Refactor Projectile component: extract physics-sync & streak logic
 
-**Status:** Pending  
+**Status:** Completed  
 **Added:** 2025-10-02  
-**Updated:** 2025-10-02
+**Updated:** 2025-10-04
 
 ## Original Request
 Refactor `src/components/Projectile.tsx` to extract physics synchronization into a shared hook and move visual streak math into a small presentational component to reduce allocations and improve testability.
@@ -17,16 +17,21 @@ Refactor `src/components/Projectile.tsx` to extract physics synchronization into
 
 ## Progress Tracking
 
-**Overall Status:** Not Started - 0%
+**Overall Status:** Completed - 100%
 
 ### Subtasks
 | ID | Description | Status | Updated | Notes |
 |----|-------------|--------|---------|-------|
-| 5.1 | Implement `useEntityPhysicsSync` + tests | Not Started | 2025-10-02 | Mock rigid handles for tests |
-| 5.2 | Implement `ProjectileStreak` component/hook | Not Started | 2025-10-02 | Reuse vector/quaternion instances where possible |
-| 5.3 | Wire into `Projectile.tsx` and clean up lifecycle code | Not Started | 2025-10-02 | Ensure entity.render/rigid attach/detach remains correct |
-| 5.4 | Add unit tests and validate render tests | Not Started | 2025-10-02 | Run `r3f-ecs-sync` and projectile tests |
+| 5.1 | Implement `useEntityPhysicsSync` + tests | Complete | 2025-10-04 | Added `src/hooks/useEntityPhysicsSync.ts` and targeted Vitest coverage. |
+| 5.2 | Implement `ProjectileStreak` component/hook | Complete | 2025-10-04 | Created `src/components/ProjectileStreak.tsx` with reusable math state. |
+| 5.3 | Wire into `Projectile.tsx` and clean up lifecycle code | Complete | 2025-10-04 | `Projectile.tsx` now consumes hook and renders `<ProjectileStreak />`. |
+| 5.4 | Add unit tests and validate render tests | Complete | 2025-10-04 | Added `tests/useEntityPhysicsSync.test.tsx` and `tests/projectile-streak.test.ts`; ran focused Vitest suite. |
 
 ## Progress Log
 ### 2025-10-02
 - Task created and scoped.
+
+### 2025-10-04
+- Implemented `src/hooks/useEntityPhysicsSync.ts` to centralize rigid-body translation/velocity sync and refactored `Projectile.tsx` to consume it.
+- Extracted `<ProjectileStreak />` (in `src/components/ProjectileStreak.tsx`) handling streak transforms with reusable math refs; `Projectile` now memoizes color palette and delegates streak rendering.
+- Authored Vitest coverage in `tests/useEntityPhysicsSync.test.tsx` and `tests/projectile-streak.test.ts`, executed `npm run test -- useEntityPhysicsSync.test.tsx projectile-streak.test.ts` (passing).
