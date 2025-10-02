@@ -1,7 +1,8 @@
 import type { World } from "miniplex";
 
 import type { Entity, Team } from "../ecs/miniplexStore";
-import { getEntityById, removeEntity } from "../ecs/miniplexStore";
+import { removeEntity } from "../ecs/miniplexStore";
+import { resolveEntity } from "../ecs/ecsResolve";
 import type { WeaponComponent, WeaponType } from "../ecs/weapons";
 import { spawnRobot } from "../robots/spawnControls";
 import type { DeathEvent } from "./DamageSystem";
@@ -28,14 +29,6 @@ function resolveWeaponType(entity: Entity | undefined): WeaponType {
 
 function isTeam(value: unknown): value is Team {
   return value === "red" || value === "blue";
-}
-
-function resolveEntity(world: World<Entity>, id: number) {
-  const direct = getEntityById(id) as Entity | undefined;
-  if (direct) return direct;
-  return Array.from(world.entities).find(
-    (candidate) => (candidate.id as unknown as number) === id,
-  ) as Entity | undefined;
 }
 
 export function respawnSystem(

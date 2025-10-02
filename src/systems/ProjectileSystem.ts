@@ -1,10 +1,7 @@
 import type { World } from "miniplex";
 
-import {
-  type Entity,
-  getEntityById,
-  notifyEntityChanged,
-} from "../ecs/miniplexStore";
+import { type Entity, notifyEntityChanged } from "../ecs/miniplexStore";
+import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
 import type {
   DamageEvent,
   ProjectileComponent,
@@ -21,33 +18,6 @@ interface RigidBodyLike {
   translation(): { x: number; y: number; z: number };
   linvel(): { x: number; y: number; z: number };
   setLinvel(velocity: { x: number; y: number; z: number }, wake: boolean): void;
-}
-
-function resolveEntity(world: World<Entity>, id?: number) {
-  if (typeof id !== "number") {
-    return undefined;
-  }
-
-  const lookup = getEntityById(id) as Entity | undefined;
-  if (lookup) {
-    return lookup;
-  }
-
-  return Array.from(world.entities).find(
-    (candidate) => (candidate.id as unknown as number) === id,
-  ) as Entity | undefined;
-}
-
-function resolveOwner(world: World<Entity>, fireEvent: WeaponFiredEvent) {
-  const direct = resolveEntity(world, fireEvent.ownerId);
-  if (direct) {
-    return direct;
-  }
-
-  return Array.from(world.entities).find((candidate) => {
-    const entity = candidate as Entity & { weapon?: WeaponComponent };
-    return entity.weapon?.id === fireEvent.weaponId;
-  });
 }
 
 /**
@@ -78,7 +48,10 @@ export function projectileSystem(
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== "rocket") continue;
 
-    const owner = resolveOwner(world, fireEvent) as
+    const owner = resolveOwner(world, {
+      ownerId: fireEvent.ownerId,
+      weaponId: fireEvent.weaponId,
+    }) as
       | (Entity & {
           weapon?: WeaponComponent;
           team?: string;

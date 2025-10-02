@@ -1,8 +1,8 @@
 # [TASK018] - Refactor BeamSystem: owner resolution & raycasting simplification
 
-**Status:** Pending  
-**Added:** 2025-10-02  
-**Updated:** 2025-10-02
+**Status:** Completed
+**Added:** 2025-10-02
+**Updated:** 2025-10-03
 
 ## Original Request
 Refactor `src/systems/BeamSystem.ts` to remove duplicate owner/entity resolution, avoid full-world scanning for raycast hits, and prefer physics-driven raycasts (Rapier) when available.
@@ -19,16 +19,22 @@ Refactor `src/systems/BeamSystem.ts` to remove duplicate owner/entity resolution
 
 ## Progress Tracking
 
-**Overall Status:** Not Started - 0%
+**Overall Status:** Completed - 100%
 
 ### Subtasks
 | ID | Description | Status | Updated | Notes |
 |----|-------------|--------|---------|-------|
-| 3.1 | Create shared ecsResolve utilities | Not Started | 2025-10-02 | Reuse in WeaponSystem as well |
-| 3.2 | Implement Rapier-backed raycast helper + fallback | Not Started | 2025-10-02 | Maintain deterministic fallback behavior |
-| 3.3 | Split beam creation vs beam ticking | Not Started | 2025-10-02 | Improve testability |
-| 3.4 | Add unit tests for damage ticks and expiry | Not Started | 2025-10-02 | Use simNowMs injection for determinism |
+| 3.1 | Create shared ecsResolve utilities | Completed | 2025-10-03 | Shared resolver + unit tests added |
+| 3.2 | Implement Rapier-backed raycast helper + fallback | Completed | 2025-10-03 | Rapier-first helper with query fallback |
+| 3.3 | Split beam creation vs beam ticking | Completed | 2025-10-03 | Event processing + ticking exported |
+| 3.4 | Add unit tests for damage ticks and expiry | Completed | 2025-10-03 | Extended beam tick + owner removal coverage |
 
 ## Progress Log
 ### 2025-10-02
 - Task created and scoped.
+### 2025-10-03
+- Reviewed existing BeamSystem implementation and dependent tests.
+- Planned shared entity/owner resolver utility and BeamSystem refactor structure (event handling vs ticking).
+- Implemented `ecsResolve` helper with shared owner/entity lookup and updated dependent systems.
+- Refactored BeamSystem into event/tick phases with Rapier-aware raycast helper and deterministic fallback.
+- Expanded beam tick unit tests and added resolver coverage; all Vitest suites passing locally.

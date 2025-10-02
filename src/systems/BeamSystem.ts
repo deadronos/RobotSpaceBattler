@@ -1,16 +1,10 @@
 import type { World } from "miniplex";
 
-import {
-  type Entity,
-  getEntityById,
-  notifyEntityChanged,
-} from "../ecs/miniplexStore";
-import type {
-  BeamComponent,
-  DamageEvent,
-  WeaponComponent,
-} from "../ecs/weapons";
+import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
+import { type Entity, notifyEntityChanged } from "../ecs/miniplexStore";
+import type { BeamComponent, DamageEvent, WeaponComponent } from "../ecs/weapons";
 import type { Rng } from "../utils/seededRng";
+import { extractEntityIdFromRapierHit } from "./rapierHelpers";
 import type { WeaponFiredEvent } from "./WeaponSystem";
 
 const POSITION_EPSILON = 0.0001;
@@ -20,31 +14,23 @@ const POSITION_EPSILON = 0.0001;
 // append a counter to generated beam ids to avoid duplicate React keys.
 let beamIdCounter = 0;
 
-function resolveEntity(world: World<Entity>, id?: number) {
-  if (typeof id !== "number") {
-    return undefined;
-  }
+export type BeamEntity = Entity & {
+  beam: BeamComponent;
+  position?: [number, number, number];
+  team?: string;
+};
 
-  const lookup = getEntityById(id) as Entity | undefined;
-  if (lookup) {
-    return lookup;
-  }
+export type BeamOwnerEntity = Entity & {
+  weapon?: WeaponComponent;
+  team?: string;
+  position?: [number, number, number];
+  rigid?: { translation?: () => { x: number; y: number; z: number } };
+};
 
-  return Array.from(world.entities).find(
-    (candidate) => (candidate.id as unknown as number) === id,
-  ) as Entity | undefined;
-}
-
-function resolveOwner(world: World<Entity>, fireEvent: WeaponFiredEvent) {
-  const direct = resolveEntity(world, fireEvent.ownerId);
-  if (direct) {
-    return direct;
-  }
-
-  return Array.from(world.entities).find((candidate) => {
-    const entity = candidate as Entity & { weapon?: WeaponComponent };
-    return entity.weapon?.id === fireEvent.weaponId;
-  });
+interface BeamHitCandidate {
+  targetId: number;
+  position: [number, number, number];
+  distance: number;
 }
 
 /**
@@ -53,38 +39,53 @@ function resolveOwner(world: World<Entity>, fireEvent: WeaponFiredEvent) {
  */
 export function beamSystem(
   world: World<Entity>,
-  dt: number,
+  _dt: number,
   _rng: Rng,
   weaponFiredEvents: WeaponFiredEvent[],
   events: { damage: DamageEvent[] },
   simNowMs?: number,
+  rapierWorld?: unknown,
 ) {
-  // (no-op) module-level beamIdCounter used below
+  void _dt;
+  void _rng;
+  const now = typeof simNowMs === "number" ? simNowMs : Date.now();
+
+  processBeamFireEvents(world, weaponFiredEvents, now);
+  processBeamTicks(world, events, now, rapierWorld);
+}
+
+export function processBeamFireEvents(
+  world: World<Entity>,
+  weaponFiredEvents: WeaponFiredEvent[],
+  now: number,
+) {
+  if (weaponFiredEvents.length === 0) return;
+
+  const beamQuery = world.with("beam") as unknown as { entities: BeamEntity[] };
+
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== "laser") continue;
 
-    const owner = resolveOwner(world, fireEvent) as
-      | (Entity & {
-          weapon?: WeaponComponent;
-          position?: [number, number, number];
-          team?: string;
-        })
-      | undefined;
+    const owner = resolveOwner(world, {
+      ownerId: fireEvent.ownerId,
+      weaponId: fireEvent.weaponId,
+    }) as BeamOwnerEntity | undefined;
 
     const weapon = owner?.weapon;
     if (!owner || !weapon) continue;
 
-    const duration = weapon.beamParams?.duration || 2000;
-  const now = typeof simNowMs === "number" ? simNowMs : Date.now();
-    // Try to find an existing beam for this weapon/owner and update it instead of spawning duplicates
-    const existing = Array.from(world.entities).find((e) => {
-      const b = (e as Entity & { beam?: BeamComponent }).beam;
+    const duration = weapon.beamParams?.duration ?? 2000;
+    const width = weapon.beamParams?.width ?? 0.1;
+    const length = weapon.range || 50;
+
+    const existing = beamQuery.entities.find((candidate) => {
+      const beam = candidate.beam;
       return (
-        b &&
-        b.sourceWeaponId === fireEvent.weaponId &&
-        b.ownerId === fireEvent.ownerId
+        beam &&
+        beam.sourceWeaponId === fireEvent.weaponId &&
+        beam.ownerId === fireEvent.ownerId
       );
-    }) as (Entity & { beam: BeamComponent }) | undefined;
+    }) as BeamEntity | undefined;
 
     if (existing) {
       existing.beam.origin = [
@@ -97,67 +98,80 @@ export function beamSystem(
         fireEvent.direction[1],
         fireEvent.direction[2],
       ];
-      existing.beam.length = weapon.range || 50;
-      existing.beam.width = weapon.beamParams?.width || 0.1;
-      // extend active window based on latest shot
-  existing.beam.activeUntil = now + duration;
+      existing.beam.length = length;
+      existing.beam.width = width;
+      existing.beam.activeUntil = now + duration;
+      existing.position = [
+        fireEvent.origin[0],
+        fireEvent.origin[1],
+        fireEvent.origin[2],
+      ];
       notifyEntityChanged(existing as Entity);
-    } else {
-  const counter = ++beamIdCounter;
-      const beamEntity: Entity & { beam: BeamComponent } = {
-        id: "beam_" + fireEvent.weaponId + "_" + now + "_" + counter,
-        position: [
+      continue;
+    }
+
+    const counter = ++beamIdCounter;
+    const beamEntity: BeamEntity = {
+      id: `beam_${fireEvent.weaponId}_${now}_${counter}`,
+      position: [
+        fireEvent.origin[0],
+        fireEvent.origin[1],
+        fireEvent.origin[2],
+      ],
+      team: weapon.team,
+      beam: {
+        sourceWeaponId: fireEvent.weaponId,
+        ownerId: fireEvent.ownerId,
+        origin: [
           fireEvent.origin[0],
           fireEvent.origin[1],
           fireEvent.origin[2],
         ],
-        team: weapon.team,
-        beam: {
-          sourceWeaponId: fireEvent.weaponId,
-          ownerId: fireEvent.ownerId,
-          origin: [
-            fireEvent.origin[0],
-            fireEvent.origin[1],
-            fireEvent.origin[2],
-          ],
-          direction: [
-            fireEvent.direction[0],
-            fireEvent.direction[1],
-            fireEvent.direction[2],
-          ],
-          length: weapon.range || 50,
-          width: weapon.beamParams?.width || 0.1,
-          activeUntil: now + duration,
-          tickDamage: weapon.power / 10,
-          tickInterval: weapon.beamParams?.tickInterval || 100,
-          lastTickAt: now,
-          firedAt: now,
-        },
-      };
-      world.add(beamEntity);
-    }
+        direction: [
+          fireEvent.direction[0],
+          fireEvent.direction[1],
+          fireEvent.direction[2],
+        ],
+        length,
+        width,
+        activeUntil: now + duration,
+        tickDamage: weapon.power / 10,
+        tickInterval: weapon.beamParams?.tickInterval ?? 100,
+        lastTickAt: now,
+        firedAt: now,
+      },
+    };
+    world.add(beamEntity);
   }
+}
 
-  for (const entity of world.entities) {
-    const e = entity as Entity & { beam?: BeamComponent };
-    const { beam } = e;
+export function processBeamTicks(
+  world: World<Entity>,
+  events: { damage: DamageEvent[] },
+  now: number,
+  rapierWorld?: unknown,
+) {
+  const beamQuery = world.with("beam") as unknown as { entities: BeamEntity[] };
+  const beams = [...beamQuery.entities];
+
+  for (const entity of beams) {
+    const beamEntity = entity as BeamEntity;
+    const beam = beamEntity.beam;
     if (!beam) continue;
 
-    const owner =
-      resolveEntity(world, beam.ownerId) ??
-      Array.from(world.entities).find((candidate) => {
-        const ownerCandidate = candidate as Entity & {
-          weapon?: WeaponComponent;
-        };
-        return ownerCandidate.weapon?.id === beam.sourceWeaponId;
-      });
+    const owner = resolveOwner(world, {
+      ownerId: beam.ownerId,
+      weaponId: beam.sourceWeaponId,
+    }) as BeamOwnerEntity | undefined;
 
-    const now = typeof simNowMs === "number" ? simNowMs : Date.now();
-
-    // Remove beam if expired, time anomaly, or owner no longer exists
     if (!owner || now >= beam.activeUntil || now < beam.firedAt) {
-      world.remove(entity);
+      world.remove(entity as Entity);
       continue;
+    }
+
+    const syncResult = syncBeamToOwner(beamEntity, owner);
+    if (syncResult.ownerMutated) {
+      notifyEntityChanged(owner as Entity);
     }
 
     if (now >= beam.lastTickAt + beam.tickInterval) {
@@ -167,8 +181,10 @@ export function beamSystem(
         beam.origin,
         beam.direction,
         beam.length,
+        beam.width,
         world,
-        (owner as { team?: string })?.team,
+        owner.team,
+        rapierWorld,
       );
 
       for (const hit of hits) {
@@ -182,50 +198,243 @@ export function beamSystem(
       }
     }
 
-    updateBeamOrigin(world, e as Entity & { beam: BeamComponent });
+    if (syncResult.beamMutated) {
+      notifyEntityChanged(beamEntity as Entity);
+    }
   }
+}
+
+function syncBeamToOwner(beamEntity: BeamEntity, owner: BeamOwnerEntity) {
+  let ownerMutated = false;
+  let beamMutated = false;
+
+  const rigid = owner.rigid;
+  if (
+    rigid &&
+    typeof rigid.translation === "function"
+  ) {
+    try {
+      const translation = rigid.translation();
+      const next: [number, number, number] = [
+        translation.x,
+        translation.y,
+        translation.z,
+      ];
+      if (!owner.position || !vectorsEqual(owner.position, next)) {
+        owner.position = next;
+        ownerMutated = true;
+      }
+    } catch {
+      /* ignore physics API errors */
+    }
+  }
+
+  const sourcePosition = owner.position;
+  if (!sourcePosition) {
+    return { ownerMutated, beamMutated };
+  }
+
+  if (!beamEntity.beam.origin || !vectorsEqual(beamEntity.beam.origin, sourcePosition)) {
+    beamEntity.beam.origin = [
+      sourcePosition[0],
+      sourcePosition[1],
+      sourcePosition[2],
+    ];
+    beamMutated = true;
+  }
+
+  if (!beamEntity.position || !vectorsEqual(beamEntity.position, sourcePosition)) {
+    beamEntity.position = [
+      sourcePosition[0],
+      sourcePosition[1],
+      sourcePosition[2],
+    ];
+    beamMutated = true;
+  }
+
+  return { ownerMutated, beamMutated };
 }
 
 function performBeamRaycast(
   origin: [number, number, number],
   direction: [number, number, number],
   length: number,
+  width: number,
   world: World<Entity>,
   ownerTeam?: string,
-): Array<{ position: [number, number, number]; targetId: number }> {
-  const hits: Array<{ position: [number, number, number]; targetId: number }> =
-    [];
+  rapierWorld?: unknown,
+) {
+  const normalized = normalize(direction);
+  if (!normalized) {
+    return [] as Array<{ position: [number, number, number]; targetId: number }>;
+  }
 
+  const rapierHits =
+    tryRapierBeamRaycast(origin, normalized, length, rapierWorld) ?? [];
+
+  let candidates: BeamHitCandidate[] = rapierHits;
+
+  if (candidates.length === 0) {
+    candidates = fallbackBeamRaycast(origin, normalized, length, width, world);
+  } else {
+    const fallback = fallbackBeamRaycast(origin, normalized, length, width, world);
+    for (const candidate of fallback) {
+      if (!candidates.some((existing) => existing.targetId === candidate.targetId)) {
+        candidates.push(candidate);
+      }
+    }
+  }
+
+  const filtered: BeamHitCandidate[] = [];
+  for (const candidate of candidates) {
+    const target = resolveEntity(world, candidate.targetId);
+    if (!target) continue;
+
+    const team = (target as { team?: string }).team;
+    if (ownerTeam && team === ownerTeam) continue;
+
+    filtered.push(candidate);
+  }
+
+  filtered.sort((a, b) => a.distance - b.distance);
+
+  return filtered.map((candidate) => ({
+    targetId: candidate.targetId,
+    position: candidate.position,
+  }));
+}
+
+function tryRapierBeamRaycast(
+  origin: [number, number, number],
+  direction: [number, number, number],
+  length: number,
+  rapierWorld?: unknown,
+): BeamHitCandidate[] | null {
+  if (!rapierWorld) return null;
+
+  const hits: BeamHitCandidate[] = [];
+
+  const processHit = (raw: unknown) => {
+    if (!raw) return;
+    if (Array.isArray(raw)) {
+      for (const nested of raw) processHit(nested);
+      return;
+    }
+
+    const hit = raw as Record<string, unknown>;
+    const targetId = extractEntityIdFromRapierHit(hit);
+    if (typeof targetId !== "number") {
+      return;
+    }
+
+    const point = extractPointFromRapierHit(hit, origin, direction, length);
+    if (!point) {
+      return;
+    }
+
+    const distance = distanceAlongRay(origin, point, direction);
+    hits.push({ targetId, position: point, distance });
+  };
+
+  try {
+    const rw = rapierWorld as Record<string, unknown>;
+    let attempted = false;
+
+    const ray = {
+      origin: { x: origin[0], y: origin[1], z: origin[2] },
+      dir: { x: direction[0], y: direction[1], z: direction[2] },
+    };
+
+    if (
+      rw.queryPipeline &&
+      typeof (rw.queryPipeline as { intersectionsWithRay?: unknown }).intersectionsWithRay ===
+        "function"
+    ) {
+      attempted = true;
+      try {
+        const qp = rw.queryPipeline as {
+          intersectionsWithRay?: (
+            bodies: unknown,
+            colliders: unknown,
+            ray: unknown,
+            maxToi: number,
+            solid?: boolean,
+            callback?: (hit: unknown) => boolean,
+          ) => void;
+        };
+        const bodies = (rw as Record<string, unknown>)["bodies"];
+        const colliders = (rw as Record<string, unknown>)["colliders"];
+        qp.intersectionsWithRay?.(bodies, colliders, ray, length, true, (hit) => {
+          processHit(hit);
+          return true;
+        });
+      } catch {
+        /* fall back to other strategies */
+      }
+    }
+
+    if (
+      typeof (rw as { castRay?: unknown }).castRay === "function"
+    ) {
+      attempted = true;
+      processHit((rw as { castRay: (...args: unknown[]) => unknown }).castRay(ray, length, true));
+    }
+
+    if (
+      rw.raw &&
+      typeof (rw.raw as { castRay?: unknown }).castRay === "function"
+    ) {
+      attempted = true;
+      const raw = rw.raw as { castRay: (...args: unknown[]) => unknown };
+      processHit(raw.castRay(ray, length, true));
+    }
+
+    if (!attempted) {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+
+  return hits.length > 0 ? hits : null;
+}
+
+function fallbackBeamRaycast(
+  origin: [number, number, number],
+  direction: [number, number, number],
+  length: number,
+  width: number,
+  world: World<Entity>,
+) {
+  const hits: BeamHitCandidate[] = [];
   const [ox, oy, oz] = origin;
   const [dx, dy, dz] = direction;
 
-  const dirLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
-  const ndx = dx / dirLength;
-  const ndy = dy / dirLength;
-  const ndz = dz / dirLength;
+  const beamRadius = Math.max(width * 0.5, 0.5);
 
-  for (const entity of world.entities) {
-    const candidate = entity as Entity & {
-      position?: [number, number, number];
-      team?: string;
-      beam?: BeamComponent;
-      weapon?: WeaponComponent;
-    };
+  const query = world.with("team", "position") as unknown as {
+    entities: Array<
+      Entity & {
+        position: [number, number, number];
+        team?: string;
+        beam?: BeamComponent;
+      }
+    >;
+  };
 
-    if (!candidate.position || !candidate.team || candidate.beam) continue;
-    if (ownerTeam && candidate.team === ownerTeam) continue;
+  for (const candidate of query.entities) {
+    if (candidate.beam) continue;
 
     const [ex, ey, ez] = candidate.position;
     const toEntity = [ex - ox, ey - oy, ez - oz];
-    const projectionLength =
-      toEntity[0] * ndx + toEntity[1] * ndy + toEntity[2] * ndz;
+    const projectionLength = toEntity[0] * dx + toEntity[1] * dy + toEntity[2] * dz;
 
     if (projectionLength < 0 || projectionLength > length) continue;
 
-    const closestPoint = [
-      ox + ndx * projectionLength,
-      oy + ndy * projectionLength,
-      oz + ndz * projectionLength,
+    const closestPoint: [number, number, number] = [
+      ox + dx * projectionLength,
+      oy + dy * projectionLength,
+      oz + dz * projectionLength,
     ];
 
     const distanceToBeam = Math.sqrt(
@@ -234,11 +443,11 @@ function performBeamRaycast(
         (ez - closestPoint[2]) ** 2,
     );
 
-    const beamRadius = 0.5;
     if (distanceToBeam <= beamRadius) {
       hits.push({
-        position: closestPoint as [number, number, number],
+        position: closestPoint,
         targetId: candidate.id as unknown as number,
+        distance: projectionLength,
       });
     }
   }
@@ -246,105 +455,97 @@ function performBeamRaycast(
   return hits;
 }
 
-function updateBeamOrigin(
-  world: World<Entity>,
-  beamEntity: Entity & { beam: BeamComponent },
+function normalize(direction: [number, number, number]) {
+  const [dx, dy, dz] = direction;
+  const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  if (length < POSITION_EPSILON) {
+    return null;
+  }
+  return [dx / length, dy / length, dz / length] as [number, number, number];
+}
+
+function vectorsEqual(
+  a: [number, number, number],
+  b: [number, number, number],
 ) {
-  const beam = beamEntity.beam;
-  const owner =
-    resolveEntity(world, beam.ownerId) ??
-    Array.from(world.entities).find((candidate) => {
-      const ownerCandidate = candidate as Entity & { weapon?: WeaponComponent };
-      return ownerCandidate.weapon?.id === beam.sourceWeaponId;
-    });
+  return (
+    Math.abs(a[0] - b[0]) <= POSITION_EPSILON &&
+    Math.abs(a[1] - b[1]) <= POSITION_EPSILON &&
+    Math.abs(a[2] - b[2]) <= POSITION_EPSILON
+  );
+}
 
-  if (!owner) {
-    return;
+function extractPointFromRapierHit(
+  hit: Record<string, unknown>,
+  origin: [number, number, number],
+  direction: [number, number, number],
+  maxDistance: number,
+) {
+  const pointValue = hit["point"] ?? hit["hitPoint"] ?? hit["position"];
+  const parsedPoint = parsePoint(pointValue);
+  if (parsedPoint) {
+    return parsedPoint;
   }
 
-  let ownerMutated = false;
-  const ownerEntity = owner as Entity & {
-    position?: [number, number, number];
-    rigid?: { translation?: () => { x: number; y: number; z: number } };
-  };
-
-  if (
-    ownerEntity.rigid &&
-    typeof ownerEntity.rigid.translation === "function"
-  ) {
-    try {
-      const translation = ownerEntity.rigid.translation();
-      const nextPosition: [number, number, number] = [
-        translation.x,
-        translation.y,
-        translation.z,
-      ];
-      const currentPosition = ownerEntity.position;
-
-      if (
-        !currentPosition ||
-        Math.abs(currentPosition[0] - nextPosition[0]) > POSITION_EPSILON ||
-        Math.abs(currentPosition[1] - nextPosition[1]) > POSITION_EPSILON ||
-        Math.abs(currentPosition[2] - nextPosition[2]) > POSITION_EPSILON
-      ) {
-        ownerEntity.position = nextPosition;
-        ownerMutated = true;
-      }
-    } catch {
-      // Defensive: ignore physics API errors
-    }
+  const toi = typeof hit["toi"] === "number" ? (hit["toi"] as number) : undefined;
+  if (typeof toi === "number") {
+    const distance = Math.min(Math.max(toi, 0), maxDistance);
+    return [
+      origin[0] + direction[0] * distance,
+      origin[1] + direction[1] * distance,
+      origin[2] + direction[2] * distance,
+    ] as [number, number, number];
   }
 
-  if (ownerMutated) {
-    notifyEntityChanged(ownerEntity as Entity);
+  const distance =
+    typeof hit["distance"] === "number" ? (hit["distance"] as number) : undefined;
+  if (typeof distance === "number") {
+    const clamped = Math.min(Math.max(distance, 0), maxDistance);
+    return [
+      origin[0] + direction[0] * clamped,
+      origin[1] + direction[1] * clamped,
+      origin[2] + direction[2] * clamped,
+    ] as [number, number, number];
   }
 
-  let beamMutated = false;
+  return null;
+}
 
-  const rigid = (
-    owner as {
-      rigid?: { translation: () => { x: number; y: number; z: number } };
-    }
-  ).rigid;
-  if (rigid) {
-    const translation = rigid.translation();
-    const nextOrigin: [number, number, number] = [
-      translation.x,
-      translation.y,
-      translation.z,
-    ];
-    const currentOrigin = beam.origin;
+function parsePoint(value: unknown) {
+  if (!value) return null;
+  if (Array.isArray(value) && value.length >= 3) {
+    const [x, y, z] = value;
     if (
-      !currentOrigin ||
-      Math.abs(currentOrigin[0] - nextOrigin[0]) > POSITION_EPSILON ||
-      Math.abs(currentOrigin[1] - nextOrigin[1]) > POSITION_EPSILON ||
-      Math.abs(currentOrigin[2] - nextOrigin[2]) > POSITION_EPSILON
+      typeof x === "number" &&
+      typeof y === "number" &&
+      typeof z === "number"
     ) {
-      beam.origin = nextOrigin;
-      beamMutated = true;
-    }
-  } else {
-    const position = (owner as { position?: [number, number, number] }).position;
-    if (position) {
-      const nextOrigin: [number, number, number] = [
-        position[0],
-        position[1],
-        position[2],
-      ];
-      const currentOrigin = beam.origin;
-      if (
-        !currentOrigin ||
-        Math.abs(currentOrigin[0] - nextOrigin[0]) > POSITION_EPSILON ||
-        Math.abs(currentOrigin[1] - nextOrigin[1]) > POSITION_EPSILON ||
-        Math.abs(currentOrigin[2] - nextOrigin[2]) > POSITION_EPSILON
-      ) {
-        beam.origin = nextOrigin;
-        beamMutated = true;
-      }
+      return [x, y, z] as [number, number, number];
     }
   }
+  if (typeof value === "object") {
+    const v = value as Record<string, unknown>;
+    const x = v["x"];
+    const y = v["y"];
+    const z = v["z"];
+    if (
+      typeof x === "number" &&
+      typeof y === "number" &&
+      typeof z === "number"
+    ) {
+      return [x, y, z] as [number, number, number];
+    }
+  }
+  return null;
+}
 
-  if (beamMutated) {
-    notifyEntityChanged(beamEntity as Entity);
-  }
+function distanceAlongRay(
+  origin: [number, number, number],
+  point: [number, number, number],
+  direction: [number, number, number],
+) {
+  const dx = point[0] - origin[0];
+  const dy = point[1] - origin[1];
+  const dz = point[2] - origin[2];
+  return dx * direction[0] + dy * direction[1] + dz * direction[2];
 }

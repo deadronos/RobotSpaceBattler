@@ -6,7 +6,6 @@
 
 ## Pending
 
-- [TASK018] Refactor BeamSystem: owner resolution & raycasting simplification - Pending
 - [TASK019] Split miniplexStore responsibilities into smaller modules - Pending
 - [TASK020] Refactor Projectile component: extract physics-sync & streak logic - Pending
 
@@ -16,6 +15,9 @@
 
 ## Completed
 
+- [TASK018] Refactor BeamSystem: owner resolution & raycasting simplification - Completed on 2025-10-03.
+  - Added shared `ecsResolve` helper with unit tests and refactored BeamSystem into event/tick phases.
+  - Implemented Rapier-first beam raycasting with deterministic fallback and expanded beam tick coverage.
 - [TASK017] Refactor AISystem: introduce queries & perception helpers - Completed on 2025-01-16.
 
   - Extracted query helpers (`src/systems/ai/queries.ts`) to replace full world scans.

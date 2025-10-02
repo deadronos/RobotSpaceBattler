@@ -108,7 +108,7 @@ export default function Simulation({
 
     weaponSystem(world, step, rng, events, simNowMs);
     hitscanSystem(world, rng, events.weaponFired, events, rapier);
-    beamSystem(world, step, rng, events.weaponFired, events, simNowMs);
+    beamSystem(world, step, rng, events.weaponFired, events, simNowMs, rapier);
     projectileSystem(world, step, rng, events.weaponFired, events, simNowMs, rapier);
 
     damageSystem(world, events.damage, events);

@@ -1,6 +1,7 @@
 import type { World } from "miniplex";
 
-import { type Entity, getEntityById } from "../ecs/miniplexStore";
+import { type Entity } from "../ecs/miniplexStore";
+import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
 import type { DamageEvent, WeaponComponent } from "../ecs/weapons";
 import type { Rng } from "../utils/seededRng";
 import { extractEntityIdFromRapierHit } from "./rapierHelpers";
@@ -10,33 +11,6 @@ export interface ImpactEvent {
   position: [number, number, number];
   normal: [number, number, number];
   targetId?: number;
-}
-
-function resolveEntity(world: World<Entity>, id?: number) {
-  if (typeof id !== "number") {
-    return undefined;
-  }
-
-  const lookup = getEntityById(id) as Entity | undefined;
-  if (lookup) {
-    return lookup;
-  }
-
-  return Array.from(world.entities).find(
-    (candidate) => (candidate.id as unknown as number) === id,
-  ) as Entity | undefined;
-}
-
-function resolveOwner(world: World<Entity>, fireEvent: WeaponFiredEvent) {
-  const direct = resolveEntity(world, fireEvent.ownerId);
-  if (direct) {
-    return direct;
-  }
-
-  return Array.from(world.entities).find((candidate) => {
-    const entity = candidate as Entity & { weapon?: WeaponComponent };
-    return entity.weapon?.id === fireEvent.weaponId;
-  });
 }
 
 export function hitscanSystem(
@@ -49,7 +23,10 @@ export function hitscanSystem(
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== "gun") continue;
 
-    const owner = resolveOwner(world, fireEvent) as
+    const owner = resolveOwner(world, {
+      ownerId: fireEvent.ownerId,
+      weaponId: fireEvent.weaponId,
+    }) as
       | (Entity & {
           weapon?: WeaponComponent;
           team?: string;
