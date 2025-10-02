@@ -1,26 +1,19 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { CuboidCollider, RigidBody, useRapier } from "@react-three/rapier";
 import type { Query } from "miniplex";
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo } from "react";
 
 import { useEcsQuery } from "../ecs/hooks";
-import {
-  clearPauseVel,
-  type Entity,
-  getPauseVel,
-  resetWorld,
-  setPauseVel,
-  subscribeEntityChanges,
-  world,
-  getRenderKey,
-} from "../ecs/miniplexStore";
+import { type Entity, subscribeEntityChanges, world, getRenderKey } from "../ecs/miniplexStore";
+import { capturePauseVel, restorePauseVel } from "../ecs/pauseManager";
+import { useFixedStepLoop } from "../hooks/useFixedStepLoop";
+import { useSimulationBootstrap } from "../hooks/useSimulationBootstrap";
 import type {
   BeamComponent,
   DamageEvent,
   ProjectileComponent,
 } from "../ecs/weapons";
 import { Robot } from "../robots/robotPrefab";
-import { resetAndSpawnDefaultTeams } from "../robots/spawnControls";
 import { useUI } from "../store/uiStore";
 import { aiSystem } from "../systems/AISystem";
 import { beamSystem } from "../systems/BeamSystem";
@@ -29,11 +22,11 @@ import { fxSystem } from "../systems/FxSystem";
 import { hitscanSystem, type ImpactEvent } from "../systems/HitscanSystem";
 import { physicsSyncSystem } from "../systems/PhysicsSyncSystem";
 import { projectileSystem } from "../systems/ProjectileSystem";
-import { clearRespawnQueue, respawnSystem } from "../systems/RespawnSystem";
-import { resetScores, scoringSystem } from "../systems/ScoringSystem";
+import { respawnSystem } from "../systems/RespawnSystem";
+import { scoringSystem } from "../systems/ScoringSystem";
 import type { WeaponFiredEvent } from "../systems/WeaponSystem";
 import { weaponSystem } from "../systems/WeaponSystem";
-import { createSeededRng } from "../utils/seededRng";
+// RNG is created by FixedStepDriver; no per-component RNG import needed
 import { Beam } from "./Beam";
 import { FXLayer } from "./FXLayer";
 import { Projectile } from "./Projectile";
@@ -68,9 +61,7 @@ export default function Simulation({
   // rapier context (optional) for physics queries like raycasts
   const rapier = useRapier();
   const { invalidate } = useThree();
-  const frameCountRef = useRef(0);
-  const simTimeRef = useRef(0); // milliseconds since simulation start
-  const spawnInitializedRef = useRef(false);
+  // internal step/frame counters are held by the FixedStepDriver
   const projectileQuery = useMemo(
     () =>
       world.with(
@@ -100,81 +91,12 @@ export default function Simulation({
 
   // RNG is created per-frame deterministically; no persistent RNG state needed
 
-  // Spawn initial teams once (only if the world is empty on mount)
-  useEffect(() => {
-  let tid: number | undefined;
-  // connections that we may create so cleanup can call disconnect()
-  let robotConn: { disconnect?: () => void } | undefined;
-  let projectileConn: { disconnect?: () => void } | undefined;
-  let beamConn: { disconnect?: () => void } | undefined;
-  // Spawn initial teams once (only if the world is empty on mount)
-  if (!spawnInitializedRef.current) {
-      // Explicitly connect queries early so their internal connections exist
-      // before we add entities. This avoids a race where entities are
-      // created before any listeners have attached and thus no onEntityAdded
-      // notifications reach subscribers.
-  robotConn = robotQuery.connect();
-  projectileConn = projectileQuery.connect();
-  beamConn = beamQuery.connect();
+  // Spawn & bootstrap logic extracted to hook
+  useSimulationBootstrap(robotQuery, projectileQuery, beamQuery, invalidate);
 
-      // Defer spawning to the next macrotask so child components (Robot,
-      // Projectile, Beam) have a chance to run their connection effects
-      // (query.connect) and subscribe to entity add/remove events. When
-      // spawning happens synchronously here it's possible the child
-      // subscriptions haven't attached yet and they'll miss the initial
-      // entities.
-      spawnInitializedRef.current = true;
-      tid = window.setTimeout(() => {
-        resetScores();
-        clearRespawnQueue();
-        resetAndSpawnDefaultTeams();
-        // Force an immediate invalidation to ensure robots render
-        invalidate();
-      }, 0);
-    }
-
-    return () => {
-      if (typeof tid === "number") window.clearTimeout(tid);
-      try {
-        robotConn?.disconnect?.();
-      } catch {
-        // ignore
-      }
-      try {
-        projectileConn?.disconnect?.();
-      } catch {
-        // ignore
-      }
-      try {
-        beamConn?.disconnect?.();
-      } catch {
-        // ignore
-      }
-
-      spawnInitializedRef.current = false;
-      clearRespawnQueue();
-      resetScores();
-      resetWorld();
-    };
-  }, [invalidate, robotQuery, projectileQuery, beamQuery]);
-
-  // Deterministic per-frame systems
-  useFrame(() => {
-    if (paused) return;
-
-    // Use fixed timestep for determinism
-    const step = FIXED_TIMESTEP;
-    frameCountRef.current++;
-    // Advance simulation time by fixed step (ms)
-    simTimeRef.current += step * 1000;
-    const simNowMs = simTimeRef.current;
-
-    // Create fresh RNG for this frame (deterministic)
-    const frameRng = createSeededRng(
-      DETERMINISTIC_SEED + frameCountRef.current,
-    );
-
-    // Event containers for weapon systems
+  // Use fixed-step loop hook to provide deterministic stepping
+  useFixedStepLoop({ enabled: !paused, seed: DETERMINISTIC_SEED, step: FIXED_TIMESTEP }, (ctx) => {
+    const { step, rng, simNowMs } = ctx;
     const events = {
       weaponFired: [] as WeaponFiredEvent[],
       damage: [] as DamageEvent[],
@@ -182,30 +104,21 @@ export default function Simulation({
       impact: [] as ImpactEvent[],
     };
 
-    // 1. AI decisions and movement (centralized AI system)
-    // If Rapier provides a world handle via useRapier, pass it through for physics-based LOS.
-  aiSystem(world, frameRng, rapier, simNowMs);
+    aiSystem(world, rng, rapier, simNowMs);
 
-    // 2. Weapon systems (deterministic pipeline)
-  weaponSystem(world, step, frameRng, events, simNowMs);
-  hitscanSystem(world, frameRng, events.weaponFired, events, rapier);
-  beamSystem(world, step, frameRng, events.weaponFired, events, simNowMs);
-  projectileSystem(world, step, frameRng, events.weaponFired, events, simNowMs, rapier);
+    weaponSystem(world, step, rng, events, simNowMs);
+    hitscanSystem(world, rng, events.weaponFired, events, rapier);
+    beamSystem(world, step, rng, events.weaponFired, events, simNowMs);
+    projectileSystem(world, step, rng, events.weaponFired, events, simNowMs, rapier);
 
-    // 3. Damage application
     damageSystem(world, events.damage, events);
 
     scoringSystem(events.death);
     respawnSystem(world, events.death);
 
-    // 4. Physics sync - Update ECS positions from rigid body translations
-    // This ensures visual components render at current physics positions
     physicsSyncSystem(world);
 
-    // 5. FX system (render-only, non-authoritative)
     fxSystem(world, step, events);
-
-  // Renders are requested by TickDriver and by entity-change subscriptions.
   });
 
   // Kick the demand loop when unpausing or on mount
@@ -216,57 +129,12 @@ export default function Simulation({
   // Use centralized ECS render-key helper for stable unique keys
   // (see miniplexStore.getRenderKey)
 
-  // When pausing, capture and zero rigidbody velocities to prevent physics
-  // from continuing to move bodies while the render loop is paused. On
-  // resume, restore previously stored velocities.
   useEffect(() => {
     if (!world) return;
-
     if (paused) {
-      for (const raw of world.entities) {
-        const e = raw as Entity;
-        try {
-          if (!e.rigid) continue;
-          // Capture current velocities if API available
-          const rigid = e.rigid as unknown as {
-            linvel?: () => { x: number; y: number; z: number };
-            angvel?: () => { x: number; y: number; z: number };
-            setLinvel?: (v: { x: number; y: number; z: number }, wake: boolean) => void;
-            setAngvel?: (v: { x: number; y: number; z: number }, wake: boolean) => void;
-          };
-          const lin = rigid.linvel?.() ?? null;
-          const ang = rigid.angvel?.() ?? null;
-          if (lin) setPauseVel(e, [lin.x, lin.y, lin.z]);
-          if (ang) setPauseVel(e, undefined, [ang.x, ang.y, ang.z]);
-          // Zero velocities
-          rigid.setLinvel?.({ x: 0, y: 0, z: 0 }, true);
-          rigid.setAngvel?.({ x: 0, y: 0, z: 0 }, true);
-        } catch {
-          // ignore per-entity errors
-        }
-      }
+      capturePauseVel(world);
     } else {
-      // restore
-      for (const raw of world.entities) {
-        const e = raw as Entity;
-        try {
-          if (!e.rigid) continue;
-          const rigid = e.rigid as unknown as {
-            setLinvel?: (v: { x: number; y: number; z: number }, wake: boolean) => void;
-            setAngvel?: (v: { x: number; y: number; z: number }, wake: boolean) => void;
-          };
-          const pv = getPauseVel(e);
-          if (pv?.lin) {
-            rigid.setLinvel?.({ x: pv.lin[0], y: pv.lin[1], z: pv.lin[2] }, true);
-          }
-          if (pv?.ang) {
-            rigid.setAngvel?.({ x: pv.ang[0], y: pv.ang[1], z: pv.ang[2] }, true);
-          }
-          clearPauseVel(e);
-        } catch {
-          // ignore
-        }
-      }
+      restorePauseVel(world);
     }
   }, [paused]);
 

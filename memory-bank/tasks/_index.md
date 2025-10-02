@@ -11,11 +11,14 @@
 
 ## In Progress
 
-- (none)
+- [TASK016] Refactor Simulation: extract tick driver & bootstrap - In Progress
 
 ## Pending
 
-- (none)
+- [TASK017] Refactor AISystem: introduce queries & perception helpers - Pending
+- [TASK018] Refactor BeamSystem: owner resolution & raycasting simplification - Pending
+- [TASK019] Split miniplexStore responsibilities into smaller modules - Pending
+- [TASK020] Refactor Projectile component: extract physics-sync & streak logic - Pending
 
 ## New / Discovered (from code TODOs)
 
