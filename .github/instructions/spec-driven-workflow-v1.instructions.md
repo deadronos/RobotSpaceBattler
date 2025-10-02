@@ -66,18 +66,18 @@ End.
   - **Interfaces:** API contracts, schemas, public-facing function signatures.
   - **Data Models:** Data structures and database schemas.
 
-> Note: This repository uses a centralized Memory Bank for project context and task tracking. Store design and related artifacts under the `/memory` folder so they are discoverable by agents and maintainers (for example: `memory/designs/design.md`, `memory/requirements.md`).
+> Note: This repository uses a centralized Memory Bank for project context and task tracking. Store design and related artifacts under the `/memory-bank` folder so they are discoverable by agents and maintainers (for example: `memory-bank/designs/design.md`, `memory-bank/requirements.md`).
 
 **Recommended memory placement:**
 
-- Requirements: `memory/requirements.md` (EARS-style requirements)
-- Design: `memory/designs/design.md` (architecture, interfaces, diagrams)
-- Tasks & plan: `memory/tasks/_index.md` and `memory/tasks/TASKID-*.md`
-- Active context & progress: `memory/activeContext.md`, `memory/progress.md`
+- Requirements: `memory-bank/requirements.md` (EARS-style requirements)
+- Design: `memory-bank/designs/design.md` (architecture, interfaces, diagrams)
+- Tasks & plan: `memory-bank/tasks/_index.md` and `memory-bank/tasks/TASKID-*.md`
+- Active context & progress: `memory-bank/activeContext.md`, `memory-bank/progress.md`
 
 - [ ] **Document error handling:**
 
-> Store implementation plans and task files inside the memory bank tasks folder (`memory/tasks/`) following the Memory Bank structure required by the project. Use `memory/tasks/_index.md` as the master index and create `memory/tasks/TASKID-taskname.md` for each task.
+> Store implementation plans and task files inside the memory bank tasks folder (`memory-bank/tasks/`) following the Memory Bank structure required by the project. Use `memory-bank/tasks/_index.md` as the master index and create `memory-bank/tasks/TASKID-taskname.md` for each task.
   - Create an error matrix with procedures and expected responses.
 
 - [ ] **Define unit testing strategy.**

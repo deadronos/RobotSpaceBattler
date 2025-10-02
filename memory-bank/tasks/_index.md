@@ -14,6 +14,8 @@
 
 ## Completed
 
+- [TASK022] Create granular design documents — Added `weapons-design.md`, `ai-design.md`, and `physics-sync-design.md` with diagrams and patterns - Completed on 2025-10-03.
+- [TASK021] Capture implementation state — Create `requirements.md` and `design.md` reflecting current code and tests - Completed on 2025-10-03.
 - [TASK020] Refactor Projectile component: extract physics-sync & streak logic - Completed on 2025-10-04.
   - Added `useEntityPhysicsSync`, extracted `<ProjectileStreak />`, and added focused Vitest coverage.
 - [TASK019] Split miniplexStore responsibilities into smaller modules - Completed on 2025-10-02.
