@@ -23,18 +23,18 @@ describe("useSimulationBootstrap", () => {
     cleanup();
   });
 
-  it("runs bootstrap on mount and cleanup on unmount", () => {
+  it("runs bootstrap on mount and cleanup on unmount", async () => {
     const invalidate = vi.fn();
-    // Spy on spawnControls and scoring/respawn helpers that the hook calls
-    const spawnControls = require("../src/robots/spawnControls");
-    const scoring = require("../src/systems/ScoringSystem");
-    const respawn = require("../src/systems/RespawnSystem");
-    const resetWorld = require("../src/ecs/miniplexStore");
+  // Spy on spawnControls and scoring/respawn helpers that the hook calls
+  const spawnControls = await import("../src/robots/spawnControls");
+  const scoring = await import("../src/systems/ScoringSystem");
+  const respawn = await import("../src/systems/RespawnSystem");
+  const resetWorld = await import("../src/ecs/miniplexStore");
 
-    const spawnSpy = vi.spyOn(spawnControls, "resetAndSpawnDefaultTeams");
-    const scoreSpy = vi.spyOn(scoring, "resetScores");
-    const clearRespawnSpy = vi.spyOn(respawn, "clearRespawnQueue");
-    const resetWorldSpy = vi.spyOn(resetWorld, "resetWorld");
+  const spawnSpy = vi.spyOn(spawnControls, "resetAndSpawnDefaultTeams");
+  const scoreSpy = vi.spyOn(scoring, "resetScores");
+  const clearRespawnSpy = vi.spyOn(respawn, "clearRespawnQueue");
+  const resetWorldSpy = vi.spyOn(resetWorld, "resetWorld");
 
     const { unmount } = render(<BootstrapTest invalidate={invalidate} />);
 

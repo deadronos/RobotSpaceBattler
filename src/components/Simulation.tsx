@@ -4,15 +4,15 @@ import type { Query } from "miniplex";
 import React, { useEffect, useMemo } from "react";
 
 import { useEcsQuery } from "../ecs/hooks";
-import { type Entity, subscribeEntityChanges, world, getRenderKey } from "../ecs/miniplexStore";
+import { type Entity, getRenderKey,subscribeEntityChanges, world } from "../ecs/miniplexStore";
 import { capturePauseVel, restorePauseVel } from "../ecs/pauseManager";
-import { useFixedStepLoop } from "../hooks/useFixedStepLoop";
-import { useSimulationBootstrap } from "../hooks/useSimulationBootstrap";
 import type {
   BeamComponent,
   DamageEvent,
   ProjectileComponent,
 } from "../ecs/weapons";
+import { useFixedStepLoop } from "../hooks/useFixedStepLoop";
+import { useSimulationBootstrap } from "../hooks/useSimulationBootstrap";
 import { Robot } from "../robots/robotPrefab";
 import { useUI } from "../store/uiStore";
 import { aiSystem } from "../systems/AISystem";

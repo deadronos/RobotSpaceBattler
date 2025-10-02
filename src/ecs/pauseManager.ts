@@ -1,6 +1,7 @@
 import type { World } from "miniplex";
+
 import type { Entity } from "./miniplexStore";
-import { setPauseVel, getPauseVel, clearPauseVel } from "./miniplexStore";
+import { clearPauseVel,getPauseVel, setPauseVel } from "./miniplexStore";
 
 export function capturePauseVel(world: World<Entity>) {
   for (const raw of world.entities) {

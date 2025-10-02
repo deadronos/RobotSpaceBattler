@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 
 import type { FxComponent } from "../ecs/fx";
 import { useEcsQuery } from "../ecs/hooks";
-import { type Entity, world, getRenderKey } from "../ecs/miniplexStore";
+import { type Entity, getRenderKey,world } from "../ecs/miniplexStore";
 
 type FxEntity = Entity & {
   fx: FxComponent;

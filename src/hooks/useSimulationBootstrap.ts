@@ -1,14 +1,15 @@
-import { useEffect, useRef } from "react";
 import type { Query } from "miniplex";
-import { resetAndSpawnDefaultTeams } from "../robots/spawnControls";
-import { resetScores } from "../systems/ScoringSystem";
-import { clearRespawnQueue } from "../systems/RespawnSystem";
-import { resetWorld } from "../ecs/miniplexStore";
+import { useEffect, useRef } from "react";
 
-export function useSimulationBootstrap(
-  robotQuery: Query<any>,
-  projectileQuery: Query<any>,
-  beamQuery: Query<any>,
+import { resetWorld } from "../ecs/miniplexStore";
+import { resetAndSpawnDefaultTeams } from "../robots/spawnControls";
+import { clearRespawnQueue } from "../systems/RespawnSystem";
+import { resetScores } from "../systems/ScoringSystem";
+
+export function useSimulationBootstrap<R, P, B>(
+  robotQuery: Query<R>,
+  projectileQuery: Query<P>,
+  beamQuery: Query<B>,
   invalidate: () => void,
 ) {
   const spawnInitializedRef = useRef(false);

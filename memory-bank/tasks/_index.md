@@ -2,16 +2,7 @@
 
 ## In Progress
 
-## Pending
-
-## New / Discovered (from code TODOs)
-
-```markdown
-# Tasks Index
-
-## In Progress
-
-- [TASK016] Refactor Simulation: extract tick driver & bootstrap - In Progress
+(none)
 
 ## Pending
 
@@ -26,21 +17,45 @@
 
 ## Completed
 
-- [TASK015] Performance validation & profiling - Completed on 2025-09-17; added `collectSceneMetrics` utility, tests, and checklist.
-- [TASK014] Lighting setup (IBL + directional + local) - Completed on 2025-09-17; `EnvironmentLighting` preset wired into Scene.
-- [TASK013] Emissive panels & flicker - Completed on 2025-09-17; panels with flicker hook integrated into layout.
-- [TASK012] Modular tiles & layout - Completed on 2025-09-17; modular floor/wall/corner tiles and arena layout created.
-- [TASK011] Materials utilities & textures - Completed on 2025-09-17; shared PBR material factories and placeholder textures.
-- [TASK007] ProjectileSystem: add friendly-fire checks - Completed on 2025-09-17; toggle exposed in UI and Vitest coverage added.
-- [TASK008] ProjectileSystem: sourceId wiring from weapon - Completed on 2025-09-17; rocket projectile spawns now source the resolved owner id and regression test added.
-- [TASK009] Simulation: FX system scaffold - Completed on 2025-09-17; added event-driven `FxSystem`, `FXLayer` renderer, `showFx` flag, and unit test.
+- [TASK015] Performance validation & profiling - Completed on 2025-09-17.
+
+  - Added collectSceneMetrics utility, tests, and checklist.
+- [TASK014] Lighting setup (IBL + directional + local) - Completed on 2025-09-17.
+
+  - `EnvironmentLighting` preset was wired into Scene.
+- [TASK013] Emissive panels & flicker - Completed on 2025-09-17.
+
+  - Panels with a flicker hook were integrated into the layout.
+- [TASK012] Modular tiles & layout - Completed on 2025-09-17.
+
+  - Modular floor/wall/corner tiles and arena layout created.
+- [TASK011] Materials utilities & textures - Completed on 2025-09-17.
+
+  - Shared PBR material factories and placeholder textures added.
+- [TASK007] ProjectileSystem: add friendly-fire checks - Completed on 2025-09-17.
+
+  - Toggle exposed in UI and Vitest coverage added.
+- [TASK008] ProjectileSystem: sourceId wiring from weapon - Completed on 2025-09-17.
+
+  - Rocket projectiles now source the resolved owner id; regression test added.
+- [TASK009] Simulation: FX system scaffold - Completed on 2025-09-17.
+
+  - Added event-driven `FxSystem`, `FXLayer` renderer, `showFx` flag, and unit test.
 - [TASK001] Bootstrap memory bank files - Created initial `memory-bank` files and tasks.
 - [TASK002] Add deterministic RNG helper - Completed on 2025-09-15.
-- [TASK003] Add unit tests for physics sync - Added tests for `syncRigidBodiesToECS` and marked complete. Also added projectile cleanup tests (`tests/projectileCleanup.test.ts`).
-- [TASK004] Fix Playwright dev server port mismatch - Resolved by leveraging Playwright's configured `webServer` (starts Vite on 5174); verified smoke test locally.
+- [TASK003] Add unit tests for physics sync - Completed.
+
+  - Added tests for `syncRigidBodiesToECS` and projectile cleanup tests (`tests/projectileCleanup.test.ts`).
+- [TASK004] Fix Playwright dev server port mismatch - Completed.
+
+  - Resolved by leveraging Playwright's configured `webServer` (starts Vite on 5174); smoke test verified locally.
+- [TASK016] Refactor Simulation: extract tick driver & bootstrap - Completed on 2025-10-02.
+  - Extracted fixed-step driver, bootstrap hook and pause manager.
+  - Added unit tests and ran them locally (66 tests passed).
 
 ## Later
 
 - [TASK006] Unified weapons ECS - Systems integrated; documenting usage & perf follow-up.
-- [TASK010] Projectile pooling & performance profiling - Investigate projectile allocation/GC pressure and add pooling/reuse as needed.
-```
+- [TASK010] Projectile pooling & performance profiling
+  - Investigate projectile allocation/GC pressure.
+  - Add pooling/reuse as needed.
