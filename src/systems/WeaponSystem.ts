@@ -60,6 +60,7 @@ export function weaponSystem(
   dt: number,
   rng: Rng,
   events: { weaponFired: WeaponFiredEvent[]; damage: DamageEvent[] },
+  simNowMs?: number,
 ) {
   for (const entity of world.entities) {
     const e = entity as Entity & {
@@ -111,7 +112,7 @@ export function weaponSystem(
 
       // Set cooldown
       state.cooldownRemaining = weapon.cooldown;
-      weapon.lastFiredAt = Date.now();
+  weapon.lastFiredAt = typeof simNowMs === "number" ? simNowMs : Date.now();
 
       const origin = getEntityPosition(e) ?? position;
 
@@ -144,7 +145,8 @@ export function weaponSystem(
         origin: [origin[0], origin[1], origin[2]],
         direction,
         targetId,
-        timestamp: Date.now(),
+        timestamp:
+          typeof simNowMs === "number" ? simNowMs : Date.now(),
       });
 
       // Consume ammo AFTER firing

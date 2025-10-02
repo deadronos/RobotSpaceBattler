@@ -63,6 +63,7 @@ function UnpausedScene() {
 }
 
 describe('ECS ↔ R3F synchronization (headless)', () => {
+  const baseTime = 1_600_000_000_000;
   beforeEach(() => {
     // Seed some robots so Simulation has entities immediately
     resetAndSpawnDefaultTeams();
@@ -111,7 +112,7 @@ describe('ECS ↔ R3F synchronization (headless)', () => {
     expect(changed).toBeGreaterThan(0);
 
     // After initial spawn/reset is complete, seed a projectile and a beam deterministically
-    const now = Date.now();
+  const now = baseTime;
     world.add({
       id: 9001,
       team: 'red',

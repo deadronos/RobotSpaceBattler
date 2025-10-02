@@ -9,6 +9,7 @@ import { projectileSystem } from '../src/systems/ProjectileSystem';
 import { weaponSystem, type WeaponFiredEvent } from '../src/systems/WeaponSystem';
 import { createSeededRng } from '../src/utils/seededRng';
 describe('Weapon targeting and friendly-fire rules', () => {
+  const baseTime = 1_600_000_000_000;
   beforeEach(() => {
     resetWorld();
   });
@@ -42,7 +43,7 @@ describe('Weapon targeting and friendly-fire rules', () => {
       position: [5, 0, 0],
     });
     shooter.targetId = enemy.id as number;
-    weaponSystem(ecsWorld, 0.016, rng, events);
+  weaponSystem(ecsWorld, 0.016, rng, events, baseTime);
     expect(events.weaponFired).toHaveLength(1);
     const fireEvent = events.weaponFired[0];
     expect(fireEvent.targetId).toBe(enemy.id);
@@ -83,7 +84,7 @@ describe('Weapon targeting and friendly-fire rules', () => {
       position: [5, 0, 0],
     });
     shooter.targetId = friendly.id as number;
-    weaponSystem(ecsWorld, 0.016, rng, events);
+  weaponSystem(ecsWorld, 0.016, rng, events, baseTime);
     const hitscanEvents: { damage: DamageEvent[]; impact: ImpactEvent[] } = { damage: [], impact: [] };
     hitscanSystem(ecsWorld, rng, events.weaponFired, hitscanEvents);
     expect(hitscanEvents.damage).toHaveLength(0);
@@ -123,9 +124,9 @@ describe('Weapon targeting and friendly-fire rules', () => {
       position: [5, 0, 2],
     });
     shooter.targetId = enemy.id as number;
-    weaponSystem(ecsWorld, 0.016, rng, events);
-    const projectileEvents = { weaponFired: events.weaponFired, damage: [] as DamageEvent[] };
-    projectileSystem(ecsWorld, 0.016, rng, events.weaponFired, projectileEvents);
+  weaponSystem(ecsWorld, 0.016, rng, events, baseTime);
+  const projectileEvents = { weaponFired: events.weaponFired, damage: [] as DamageEvent[] };
+  projectileSystem(ecsWorld, 0.016, rng, events.weaponFired, projectileEvents, baseTime);
     const projectile = Array.from(ecsWorld.entities).find(
       (candidate) => (candidate as Entity & { projectile?: unknown }).projectile
     ) as (Entity & { projectile: { ownerId: number; homing?: { targetId?: number } } }) | undefined;
@@ -133,7 +134,7 @@ describe('Weapon targeting and friendly-fire rules', () => {
     expect(projectile?.projectile.ownerId).toBe(shooter.id);
     expect(projectile?.projectile.homing?.targetId).toBe(enemy.id);
     for (let i = 0; i < 20 && projectileEvents.damage.length === 0; i += 1) {
-      projectileSystem(ecsWorld, 0.05, rng, [], projectileEvents);
+      projectileSystem(ecsWorld, 0.05, rng, [], projectileEvents, baseTime + Math.round((i + 1) * 50));
     }
     expect(projectileEvents.damage.filter((d) => d.targetId === enemy.id)).toHaveLength(1);
     expect(projectileEvents.damage.some((d) => d.targetId === friendly.id)).toBe(false);
@@ -165,10 +166,10 @@ describe('Weapon targeting and friendly-fire rules', () => {
       type: 'rocket',
       origin: [0, 0, 0],
       direction: [1, 0, 0],
-      timestamp: Date.now(),
+      timestamp: baseTime,
     };
 
-    projectileSystem(ecsWorld, 0.016, rng, [firedEvent], projectileEvents);
+    projectileSystem(ecsWorld, 0.016, rng, [firedEvent], projectileEvents, baseTime);
     const projectile = Array.from(ecsWorld.entities).find(
       (candidate) => (candidate as Entity & { projectile?: unknown }).projectile
     ) as (Entity & { projectile: { ownerId: number } }) | undefined;
@@ -211,10 +212,10 @@ describe('Weapon targeting and friendly-fire rules', () => {
     });
     shooter.targetId = enemy.id as number;
     const beamDamage: DamageEvent[] = [];
-    weaponSystem(ecsWorld, 0.016, rng, events);
-    beamSystem(ecsWorld, 0.016, rng, events.weaponFired, { damage: beamDamage });
+    weaponSystem(ecsWorld, 0.016, rng, events, baseTime);
+    beamSystem(ecsWorld, 0.016, rng, events.weaponFired, { damage: beamDamage }, baseTime);
     for (let i = 0; i < 20 && !beamDamage.some((d) => d.targetId === enemy.id); i += 1) {
-      beamSystem(ecsWorld, 0.05, rng, [], { damage: beamDamage });
+      beamSystem(ecsWorld, 0.05, rng, [], { damage: beamDamage }, baseTime + Math.round((i + 1) * 50));
     }
     expect(beamDamage.some((d) => d.targetId === friendly.id)).toBe(false);
   });

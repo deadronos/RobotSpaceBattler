@@ -167,3 +167,18 @@ export function resetWorld() {
   entityLookup.clear();
   nextEntityId = 1;
 }
+
+// Global render-key generator for entities. Some tests or manual entity
+// creation may assign colliding numeric ids; this helper provides a
+// stable, unique key string per entity object that presentation code can
+// use for React keys to avoid duplicate-key warnings.
+const renderKeyMap = new WeakMap<Entity, string>();
+let renderKeyCounter = 0;
+export function getRenderKey(entity: Entity, fallbackIndex?: number) {
+  const existing = renderKeyMap.get(entity);
+  if (existing) return existing;
+  const idPart = typeof entity.id === "number" || typeof entity.id === "string" ? String(entity.id) : "anon";
+  const key = `${idPart}_${++renderKeyCounter}_${fallbackIndex ?? 0}`;
+  renderKeyMap.set(entity, key);
+  return key;
+}

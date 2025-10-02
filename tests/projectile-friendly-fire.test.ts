@@ -11,6 +11,7 @@ import { useUI } from '../src/store/uiStore';
 describe('ProjectileSystem friendly-fire', () => {
   let world: World<Entity>;
   let events: { damage: DamageEvent[] };
+  const baseTime = 1_600_000_000_000;
 
   beforeEach(() => {
     world = new World<Entity>();
@@ -51,17 +52,17 @@ describe('ProjectileSystem friendly-fire', () => {
       type: 'rocket',
       origin: [0, 0, 0],
       direction: [1, 0, 0],
-      timestamp: Date.now(),
+      timestamp: baseTime,
     };
 
     const rng = createSeededRng(1);
-    projectileSystem(world, 0.016, rng, [weaponFiredEvent], events);
+  projectileSystem(world, 0.016, rng, [weaponFiredEvent], events, baseTime);
 
     const proj = Array.from(world.entities).find(e => (e as any).projectile) as Entity & { projectile: ProjectileComponent; position: [number, number, number] };
     expect(proj).toBeDefined();
     proj.position = [10, 0, 0];
 
-    projectileSystem(world, 0.016, rng, [], events);
+  projectileSystem(world, 0.016, rng, [], events, baseTime + 16);
 
     // Expect no damage recorded
     const allyDamaged = events.damage.some(d => d.targetId === ('ally' as unknown as number));
@@ -79,16 +80,16 @@ describe('ProjectileSystem friendly-fire', () => {
       type: 'rocket',
       origin: [0, 0, 0],
       direction: [1, 0, 0],
-      timestamp: Date.now(),
+      timestamp: baseTime,
     };
 
     const rng = createSeededRng(1);
-    projectileSystem(world, 0.016, rng, [weaponFiredEvent], events);
+  projectileSystem(world, 0.016, rng, [weaponFiredEvent], events, baseTime);
 
     const proj = Array.from(world.entities).find(e => (e as any).projectile) as Entity & { projectile: ProjectileComponent; position: [number, number, number] };
     proj.position = [10, 0, 0];
 
-    projectileSystem(world, 0.016, rng, [], events);
+  projectileSystem(world, 0.016, rng, [], events, baseTime + 16);
 
     const enemyDamaged = events.damage.some(d => d.targetId === ('enemy' as unknown as number));
     expect(enemyDamaged).toBe(true);
@@ -107,14 +108,14 @@ describe('ProjectileSystem friendly-fire', () => {
       type: 'rocket',
       origin: [0, 0, 0],
       direction: [1, 0, 0],
-      timestamp: Date.now(),
+      timestamp: baseTime,
     };
 
     const rng = createSeededRng(1);
-    projectileSystem(world, 0.016, rng, [weaponFiredEvent], events);
+  projectileSystem(world, 0.016, rng, [weaponFiredEvent], events, baseTime);
     const proj = Array.from(world.entities).find(e => (e as any).projectile) as Entity & { projectile: ProjectileComponent; position: [number, number, number] };
     proj.position = [10, 0, 0];
-    projectileSystem(world, 0.016, rng, [], events);
+  projectileSystem(world, 0.016, rng, [], events, baseTime + 16);
 
     const allyDamage = events.damage.filter(d => d.targetId === ('a1' as unknown as number) || d.targetId === ('a2' as unknown as number));
     const enemyDamage = events.damage.filter(d => d.targetId === ('b1' as unknown as number));
@@ -134,14 +135,14 @@ describe('ProjectileSystem friendly-fire', () => {
       type: 'rocket',
       origin: [0, 0, 0],
       direction: [1, 0, 0],
-      timestamp: Date.now(),
+      timestamp: baseTime,
     };
 
     const rng = createSeededRng(1);
-    projectileSystem(world, 0.016, rng, [weaponFiredEvent], events);
+  projectileSystem(world, 0.016, rng, [weaponFiredEvent], events, baseTime);
     const proj = Array.from(world.entities).find(e => (e as any).projectile) as Entity & { projectile: ProjectileComponent; position: [number, number, number] };
     proj.position = [10, 0, 0];
-    projectileSystem(world, 0.016, rng, [], events);
+  projectileSystem(world, 0.016, rng, [], events, baseTime + 16);
 
     const allyDamaged = events.damage.some(d => d.targetId === ('ally' as unknown as number));
     expect(allyDamaged).toBe(true);

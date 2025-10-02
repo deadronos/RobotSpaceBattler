@@ -10,6 +10,7 @@ import { createSeededRng } from '../src/utils/seededRng';
 describe('ProjectileSystem AoE and Friendly Fire', () => {
   let world: World<Entity>;
   let events: { damage: DamageEvent[] };
+  const baseTime = 1_600_000_000_000;
 
   beforeEach(() => {
     world = new World<Entity>();
@@ -64,13 +65,13 @@ describe('ProjectileSystem AoE and Friendly Fire', () => {
       type: 'rocket',
       origin: [0, 0, 0],
       direction: [1, 0, 0],
-      timestamp: Date.now(),
+      timestamp: baseTime,
     };
 
     const rng = createSeededRng(12345);
     
-    // Spawn projectile
-    projectileSystem(world, 0.016, rng, [weaponFiredEvent], events);
+  // Spawn projectile
+  projectileSystem(world, 0.016, rng, [weaponFiredEvent], events, baseTime);
     
     // Find the projectile
     const projectiles = Array.from(world.entities).filter(e => 
@@ -87,8 +88,8 @@ describe('ProjectileSystem AoE and Friendly Fire', () => {
     // Move projectile to impact point
     projectile.position = [10, 0, 0];
     
-    // Simulate impact
-    projectileSystem(world, 0.016, rng, [], events);
+  // Simulate impact
+    projectileSystem(world, 0.016, rng, [], events, baseTime + 16);
 
     // Should damage target1 and target2, but not target3
     expect(events.damage.length).toBeGreaterThanOrEqual(2);
@@ -140,13 +141,13 @@ describe('ProjectileSystem AoE and Friendly Fire', () => {
       type: 'rocket',
       origin: [0, 0, 0],
       direction: [1, 0, 0],
-      timestamp: Date.now(),
+      timestamp: baseTime,
     };
 
     const rng = createSeededRng(12345);
     
-    // Spawn and move projectile to impact
-    projectileSystem(world, 0.016, rng, [weaponFiredEvent], events);
+  // Spawn and move projectile to impact
+  projectileSystem(world, 0.016, rng, [weaponFiredEvent], events, baseTime);
     
     const projectiles = Array.from(world.entities).filter(e => 
       (e as Entity & { projectile?: ProjectileComponent }).projectile
@@ -159,7 +160,7 @@ describe('ProjectileSystem AoE and Friendly Fire', () => {
 
     projectile.position = [10, 0, 0]; // Impact at center target
     
-    projectileSystem(world, 0.016, rng, [], events);
+    projectileSystem(world, 0.016, rng, [], events, baseTime + 16);
 
     expect(events.damage).toHaveLength(2);
     
@@ -198,13 +199,13 @@ describe('ProjectileSystem AoE and Friendly Fire', () => {
       type: 'rocket',
       origin: [0, 0, 0],
       direction: [1, 0, 0],
-      timestamp: Date.now(),
+      timestamp: baseTime,
     };
 
     const rng = createSeededRng(12345);
     
-    // Spawn projectile
-    projectileSystem(world, 0.016, rng, [weaponFiredEvent], events);
+  // Spawn projectile
+  projectileSystem(world, 0.016, rng, [weaponFiredEvent], events, baseTime);
     
     expect(world.entities.length).toBe(2); // Launcher + projectile
 
@@ -214,8 +215,8 @@ describe('ProjectileSystem AoE and Friendly Fire', () => {
     );
     const projectile = projectiles[0] as Entity & { projectile: ProjectileComponent };
     
-    // Set spawn time to past
-    projectile.projectile.spawnTime = Date.now() - 6000; // 6 seconds ago
+  // Set spawn time to past
+  projectile.projectile.spawnTime = baseTime - 6000; // 6 seconds ago
     projectile.projectile.lifespan = 5; // 5 second lifetime
 
     projectileSystem(world, 0.016, rng, [], events);
@@ -248,13 +249,13 @@ describe('ProjectileSystem AoE and Friendly Fire', () => {
       type: 'rocket',
       origin: [0, 0, 0],
       direction: [1, 0, 0],
-      timestamp: Date.now(),
+      timestamp: baseTime,
     };
 
     const rng = createSeededRng(12345);
     
-    // Spawn projectile
-    projectileSystem(world, 0.016, rng, [weaponFiredEvent], events);
+  // Spawn projectile
+  projectileSystem(world, 0.016, rng, [weaponFiredEvent], events, baseTime);
     
     const projectiles = Array.from(world.entities).filter(e => 
       (e as Entity & { projectile?: ProjectileComponent }).projectile
@@ -267,7 +268,7 @@ describe('ProjectileSystem AoE and Friendly Fire', () => {
     // Move projectile out of bounds
     projectile.position = [100, 0, 0]; // Far outside arena
 
-    projectileSystem(world, 0.016, rng, [], events);
+  projectileSystem(world, 0.016, rng, [], events, baseTime + 16);
 
     // Projectile should be removed
     expect(world.entities.length).toBe(1); // Only launcher remains

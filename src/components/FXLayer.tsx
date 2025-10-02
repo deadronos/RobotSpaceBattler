@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 
 import type { FxComponent } from "../ecs/fx";
 import { useEcsQuery } from "../ecs/hooks";
-import { type Entity, world } from "../ecs/miniplexStore";
+import { type Entity, world, getRenderKey } from "../ecs/miniplexStore";
 
 type FxEntity = Entity & {
   fx: FxComponent;
@@ -35,14 +35,14 @@ export function FXLayer() {
         switch (fx.type) {
           case "hitFlash":
             return (
-              <mesh key={String(e.id)} position={position}>
+              <mesh key={getRenderKey(e)} position={position}>
                 <sphereGeometry args={[size * 0.5, 8, 8]} />
                 <meshBasicMaterial color={color} transparent opacity={alpha} />
               </mesh>
             );
           case "impactParticles":
-            return (
-              <mesh key={String(e.id)} position={position}>
+              return (
+              <mesh key={getRenderKey(e)} position={position}>
                 <octahedronGeometry args={[size * 0.4, 0]} />
                 <meshBasicMaterial
                   color={color}
@@ -52,8 +52,8 @@ export function FXLayer() {
               </mesh>
             );
           case "explosion":
-            return (
-              <mesh key={String(e.id)} position={position}>
+              return (
+              <mesh key={getRenderKey(e)} position={position}>
                 <sphereGeometry args={[size, 10, 10]} />
                 <meshBasicMaterial
                   color={color}

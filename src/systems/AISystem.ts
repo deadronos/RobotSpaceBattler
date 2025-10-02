@@ -11,9 +11,7 @@ export interface AIComponent {
   stateSince: number; // timestamp ms
 }
 
-function now() {
-  return Date.now();
-}
+// (simulate time provided by caller) - compute per-invocation below
 
 const POSITION_EPSILON = 0.0001;
 
@@ -47,7 +45,9 @@ export function aiSystem(
   world: World<Entity>,
   rng: () => number,
   rapierWorld?: unknown,
+  simNowMs?: number,
 ) {
+  const now = typeof simNowMs === "number" ? simNowMs : Date.now();
   for (const e of world.entities) {
     const entity = e as Entity & {
       ai?: AIComponent;
@@ -91,7 +91,7 @@ export function aiSystem(
 
     // ensure an AI component
     if (!entity.ai) {
-      entity.ai = { state: "idle", stateSince: now() } as AIComponent;
+      entity.ai = { state: "idle", stateSince: now } as AIComponent;
     }
 
     // health-based transition
@@ -104,7 +104,7 @@ export function aiSystem(
         // occasionally switch to patrol or look for enemies
         if (rng() < 0.02) {
           entity.ai.state = "patrol";
-          entity.ai.stateSince = now();
+          entity.ai.stateSince = now;
         }
         const target = chooseNearestEnemy(entity, world);
         if (
@@ -118,7 +118,7 @@ export function aiSystem(
           )
         ) {
           entity.ai.state = "engage";
-          entity.ai.stateSince = now();
+          entity.ai.stateSince = now;
           entity.targetId = target.id as unknown as number;
         }
         break;
@@ -132,9 +132,9 @@ export function aiSystem(
           entity.rigid.setLinvel?.({ x: vx, y: 0, z: vz }, true);
         }
         // revert to idle after a bit
-        if (now() - entity.ai.stateSince > 3000) {
+        if (now - entity.ai.stateSince > 3000) {
           entity.ai.state = "idle";
-          entity.ai.stateSince = now();
+          entity.ai.stateSince = now;
         }
 
         // check for enemies
@@ -150,7 +150,7 @@ export function aiSystem(
           )
         ) {
           entity.ai.state = "engage";
-          entity.ai.stateSince = now();
+                    entity.ai.stateSince = now;
           entity.targetId = target.id as unknown as number;
         }
         break;
@@ -159,7 +159,7 @@ export function aiSystem(
         const target = chooseNearestEnemy(entity, world);
         if (!target) {
           entity.ai.state = "idle";
-          entity.ai.stateSince = now();
+          entity.ai.stateSince = now;
           entity.weaponState.firing = false;
           entity.targetId = undefined;
           break;
@@ -233,13 +233,13 @@ export function aiSystem(
         // if healed above threshold, return to idle
         if ((entity.hp ?? 0) > (entity.maxHp ?? 100) * 0.5) {
           entity.ai.state = "idle";
-          entity.ai.stateSince = now();
+          entity.ai.stateSince = now;
         }
         break;
       }
       default:
         entity.ai.state = "idle";
-        entity.ai.stateSince = now();
+                entity.ai.stateSince = now;
     }
 
     notifyEntityChanged(entity as Entity);

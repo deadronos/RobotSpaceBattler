@@ -1,17 +1,18 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { CuboidCollider, RigidBody, useRapier } from "@react-three/rapier";
-import React, { useEffect, useMemo, useRef } from "react";
 import type { Query } from "miniplex";
+import React, { useEffect, useMemo, useRef } from "react";
 
 import { useEcsQuery } from "../ecs/hooks";
 import {
+  clearPauseVel,
   type Entity,
+  getPauseVel,
   resetWorld,
+  setPauseVel,
   subscribeEntityChanges,
   world,
-  setPauseVel,
-  getPauseVel,
-  clearPauseVel,
+  getRenderKey,
 } from "../ecs/miniplexStore";
 import type {
   BeamComponent,
@@ -68,6 +69,7 @@ export default function Simulation({
   const rapier = useRapier();
   const { invalidate } = useThree();
   const frameCountRef = useRef(0);
+  const simTimeRef = useRef(0); // milliseconds since simulation start
   const spawnInitializedRef = useRef(false);
   const projectileQuery = useMemo(
     () =>
@@ -157,12 +159,15 @@ export default function Simulation({
   }, [invalidate, robotQuery, projectileQuery, beamQuery]);
 
   // Deterministic per-frame systems
-  useFrame((state) => {
+  useFrame(() => {
     if (paused) return;
 
     // Use fixed timestep for determinism
     const step = FIXED_TIMESTEP;
     frameCountRef.current++;
+    // Advance simulation time by fixed step (ms)
+    simTimeRef.current += step * 1000;
+    const simNowMs = simTimeRef.current;
 
     // Create fresh RNG for this frame (deterministic)
     const frameRng = createSeededRng(
@@ -179,13 +184,13 @@ export default function Simulation({
 
     // 1. AI decisions and movement (centralized AI system)
     // If Rapier provides a world handle via useRapier, pass it through for physics-based LOS.
-    aiSystem(world, frameRng, rapier);
+  aiSystem(world, frameRng, rapier, simNowMs);
 
     // 2. Weapon systems (deterministic pipeline)
-    weaponSystem(world, step, frameRng, events);
-    hitscanSystem(world, frameRng, events.weaponFired, events, rapier);
-    beamSystem(world, step, frameRng, events.weaponFired, events);
-    projectileSystem(world, step, frameRng, events.weaponFired, events, rapier);
+  weaponSystem(world, step, frameRng, events, simNowMs);
+  hitscanSystem(world, frameRng, events.weaponFired, events, rapier);
+  beamSystem(world, step, frameRng, events.weaponFired, events, simNowMs);
+  projectileSystem(world, step, frameRng, events.weaponFired, events, simNowMs, rapier);
 
     // 3. Damage application
     damageSystem(world, events.damage, events);
@@ -200,14 +205,16 @@ export default function Simulation({
     // 5. FX system (render-only, non-authoritative)
     fxSystem(world, step, events);
 
-    // Request a re-render since we're on an on-demand frameloop
-    state.invalidate();
+  // Renders are requested by TickDriver and by entity-change subscriptions.
   });
 
   // Kick the demand loop when unpausing or on mount
   useEffect(() => {
     if (!paused) invalidate();
   }, [paused, invalidate]);
+
+  // Use centralized ECS render-key helper for stable unique keys
+  // (see miniplexStore.getRenderKey)
 
   // When pausing, capture and zero rigidbody velocities to prevent physics
   // from continuing to move bodies while the render loop is paused. On
@@ -290,28 +297,15 @@ export default function Simulation({
 
       {/* Robots */}
       {robots.map((e, i) => (
-        <Robot key={String(e.id ?? i)} entity={e} />
+        <Robot key={getRenderKey(e, i)} entity={e} />
       ))}
 
       {/* Projectiles */}
       {projectiles.map((entity, i) => (
-        <Projectile
-          key={String(
-            entity.id ??
-              `${entity.projectile.sourceWeaponId}_${entity.projectile.spawnTime}_${i}`,
-          )}
-          entity={entity}
-        />
+        <Projectile key={getRenderKey(entity, i)} entity={entity} />
       ))}
-      {beams.map((entity) => (
-        <Beam
-          key={String(
-            entity.id ?? `${entity.beam.sourceWeaponId}_${entity.beam.firedAt}_${
-              entity.beam.ownerId ?? "anon"
-            }`,
-          )}
-          entity={entity}
-        />
+      {beams.map((entity, i) => (
+        <Beam key={getRenderKey(entity, i)} entity={entity} />
       ))}
 
       {/* FX Layer */}

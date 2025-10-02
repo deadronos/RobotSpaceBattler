@@ -5,6 +5,8 @@ import { beamSystem } from '../src/systems/BeamSystem';
 import { damageSystem } from '../src/systems/DamageSystem';
 import { createSeededRng } from '../src/utils/seededRng';
 
+const baseTime = 1_600_000_000_000;
+
 // Test: rocket AoE damage
 test('rocket should explode and apply AoE damage', () => {
   resetWorld();
@@ -32,17 +34,17 @@ test('rocket should explode and apply AoE damage', () => {
 
   const events: any = { weaponFired: [], damage: [] };
 
-  // Fire
-  weaponSystem(world, dt, rng, events);
+  // Fire (use deterministic sim time)
+  weaponSystem(world, dt, rng, events, baseTime);
   expect(events.weaponFired.length).toBeGreaterThan(0);
 
   // Run projectile system to spawn projectile (pass the weaponFired events)
-  projectileSystem(world, dt, rng, events.weaponFired, events);
+  projectileSystem(world, dt, rng, events.weaponFired, events, baseTime);
 
   // Simulate several frames to move the projectile into targets
   for (let i = 0; i < 120; i++) {
-    // subsequent frames: no new fired events
-    projectileSystem(world, dt, rng, [], events);
+    // subsequent frames: no new fired events; advance sim time
+    projectileSystem(world, dt, rng, [], events, baseTime + Math.round((i + 1) * dt * 1000));
     // apply damage if any
     if (events.damage.length > 0) {
       damageSystem(world, events.damage, { death: [] });
@@ -83,19 +85,19 @@ test('laser beam should apply tick damage over time to target', () => {
   const events: any = { weaponFired: [], damage: [] };
 
   // Fire beam (initial creation)
-  weaponSystem(world, dt, rng, events);
-  beamSystem(world, dt, rng, events.weaponFired, events);
+  weaponSystem(world, dt, rng, events, baseTime);
+  beamSystem(world, dt, rng, events.weaponFired, events, baseTime);
 
   // Find beam and force its lastTickAt back so the next beamSystem call will tick
   const beam = Array.from(world.entities).find((e: any) => e.beam) as any;
   expect(beam).toBeDefined();
   if (beam) {
-    beam.beam.lastTickAt = Date.now() - beam.beam.tickInterval - 1;
+    beam.beam.lastTickAt = baseTime - beam.beam.tickInterval - 1;
   }
 
   // Invoke beamSystem to process tick(s)
   for (let i = 0; i < 5; i++) {
-    beamSystem(world, dt, rng, [], events);
+    beamSystem(world, dt, rng, [], events, baseTime + Math.round((i + 1) * dt * 1000));
     if (events.damage.length > 0) {
       damageSystem(world, events.damage, { death: [] });
     }
@@ -129,9 +131,9 @@ test('homing rocket should update trajectory towards moving target', () => {
 
   const events: any = { weaponFired: [], damage: [] };
 
-  // Fire homing projectile
-  weaponSystem(world, dt, rng, events);
-  projectileSystem(world, dt, rng, events.weaponFired, events);
+  // Fire homing projectile (deterministic timesteps)
+  weaponSystem(world, dt, rng, events, baseTime);
+  projectileSystem(world, dt, rng, events.weaponFired, events, baseTime);
 
   // Find the spawned projectile
   const projectile = Array.from(world.entities).find((e: any) => e.projectile && e.projectile.homing) as any;
@@ -150,7 +152,7 @@ test('homing rocket should update trajectory towards moving target', () => {
 
   // Update homing behavior for more frames to allow steering (target stationary)
   for (let i = 0; i < 120; i++) {
-    projectileSystem(world, dt, rng, [], events);
+    projectileSystem(world, dt, rng, [], events, baseTime + Math.round((i + 1) * dt * 1000));
   }
 
   const finalPos = projectile.position as [number, number, number];

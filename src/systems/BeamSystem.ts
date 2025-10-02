@@ -57,6 +57,7 @@ export function beamSystem(
   _rng: Rng,
   weaponFiredEvents: WeaponFiredEvent[],
   events: { damage: DamageEvent[] },
+  simNowMs?: number,
 ) {
   // (no-op) module-level beamIdCounter used below
   for (const fireEvent of weaponFiredEvents) {
@@ -74,7 +75,7 @@ export function beamSystem(
     if (!owner || !weapon) continue;
 
     const duration = weapon.beamParams?.duration || 2000;
-    const now = Date.now();
+  const now = typeof simNowMs === "number" ? simNowMs : Date.now();
     // Try to find an existing beam for this weapon/owner and update it instead of spawning duplicates
     const existing = Array.from(world.entities).find((e) => {
       const b = (e as Entity & { beam?: BeamComponent }).beam;
@@ -99,7 +100,7 @@ export function beamSystem(
       existing.beam.length = weapon.range || 50;
       existing.beam.width = weapon.beamParams?.width || 0.1;
       // extend active window based on latest shot
-      existing.beam.activeUntil = now + duration;
+  existing.beam.activeUntil = now + duration;
       notifyEntityChanged(existing as Entity);
     } else {
   const counter = ++beamIdCounter;
@@ -151,7 +152,7 @@ export function beamSystem(
         return ownerCandidate.weapon?.id === beam.sourceWeaponId;
       });
 
-    const now = Date.now();
+    const now = typeof simNowMs === "number" ? simNowMs : Date.now();
 
     // Remove beam if expired, time anomaly, or owner no longer exists
     if (!owner || now >= beam.activeUntil || now < beam.firedAt) {

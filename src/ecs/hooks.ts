@@ -1,5 +1,5 @@
 import type { Query } from "miniplex";
-import { useSyncExternalStore, useLayoutEffect, useRef } from "react";
+import { useRef,useSyncExternalStore } from "react";
 
 import type { Entity } from "./miniplexStore";
 import { subscribeEntityChanges } from "./miniplexStore";

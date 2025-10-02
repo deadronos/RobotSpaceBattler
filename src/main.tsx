@@ -1,6 +1,6 @@
 import "./index.css";
 
-import React from "react";
+import React, { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import App from "./App";
@@ -19,7 +19,10 @@ if (world.entities.length === 0) {
 }
 
 const root = createRoot(document.getElementById("root")!);
-root.render(<App />);
+root.render(
+	<StrictMode>
+		<App />
+	</StrictMode>);
 
 // DEV: expose ECS world for end-to-end debugging and automated checks
 // dev-only debug hooks removed

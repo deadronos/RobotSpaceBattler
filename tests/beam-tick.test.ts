@@ -10,6 +10,7 @@ import { createSeededRng } from '../src/utils/seededRng';
 describe('BeamSystem Tick Damage and Interruption', () => {
   let world: World<Entity>;
   let events: { damage: DamageEvent[] };
+  const baseTime = 1_600_000_000_000; // fixed ms baseline for deterministic tests
 
   beforeEach(() => {
     world = new World<Entity>();
@@ -54,13 +55,13 @@ describe('BeamSystem Tick Damage and Interruption', () => {
       type: 'laser',
       origin: [0, 0, 0],
       direction: [1, 0, 0],
-      timestamp: Date.now(),
+        timestamp: baseTime,
     };
 
     const rng = createSeededRng(12345);
     
     // Create beam
-    beamSystem(world, 0.016, rng, [weaponFiredEvent], events);
+      beamSystem(world, 0.016, rng, [weaponFiredEvent], events, baseTime);
     
     const beams = Array.from(world.entities).filter(e => 
       (e as Entity & { beam?: BeamComponent }).beam
@@ -73,11 +74,10 @@ describe('BeamSystem Tick Damage and Interruption', () => {
     expect(events.damage).toHaveLength(0);
 
     // Simulate time passing to trigger tick damage
-    const now = Date.now();
-    beam.beam.lastTickAt = now - 150; // 150ms ago (past tick interval)
+  beam.beam.lastTickAt = baseTime - 150; // 150ms ago (past tick interval)
 
     events.damage = []; // Reset
-    beamSystem(world, 0.016, rng, [], events);
+      beamSystem(world, 0.016, rng, [], events, baseTime + 16);
 
     // Should apply tick damage
     expect(events.damage).toHaveLength(1);
@@ -114,13 +114,13 @@ describe('BeamSystem Tick Damage and Interruption', () => {
       type: 'laser',
       origin: [0, 0, 0],
       direction: [1, 0, 0],
-      timestamp: Date.now(),
+        timestamp: baseTime,
     };
 
     const rng = createSeededRng(12345);
     
     // Create beam
-    beamSystem(world, 0.016, rng, [weaponFiredEvent], events);
+      beamSystem(world, 0.016, rng, [weaponFiredEvent], events, baseTime);
     expect(world.entities.length).toBe(2); // Laser + beam
 
     // Find the beam and expire it
@@ -129,9 +129,9 @@ describe('BeamSystem Tick Damage and Interruption', () => {
     );
     const beam = beams[0] as Entity & { beam: BeamComponent };
     
-    beam.beam.activeUntil = Date.now() - 100; // Expired 100ms ago
+  beam.beam.activeUntil = baseTime - 100; // Expired 100ms ago
 
-    beamSystem(world, 0.016, rng, [], events);
+      beamSystem(world, 0.016, rng, [], events, baseTime + 16);
 
     // Beam should be removed
     expect(world.entities.length).toBe(1); // Only laser remains
@@ -188,24 +188,24 @@ describe('BeamSystem Tick Damage and Interruption', () => {
       type: 'laser',
       origin: [0, 0, 0],
       direction: [1, 0, 0], // Straight along x-axis
-      timestamp: Date.now(),
+      timestamp: baseTime,
     };
 
     const rng = createSeededRng(12345);
     
-    // Create beam
-    beamSystem(world, 0.016, rng, [weaponFiredEvent], events);
+  // Create beam
+      beamSystem(world, 0.016, rng, [weaponFiredEvent], events, baseTime);
     
     const beams = Array.from(world.entities).filter(e => 
       (e as Entity & { beam?: BeamComponent }).beam
     );
     const beam = beams[0] as Entity & { beam: BeamComponent };
     
-    // Trigger tick damage
-    beam.beam.lastTickAt = Date.now() - 150; // Past tick interval
+  // Trigger tick damage
+  beam.beam.lastTickAt = baseTime - 150; // Past tick interval
     
-    events.damage = [];
-    beamSystem(world, 0.016, rng, [], events);
+  events.damage = [];
+      beamSystem(world, 0.016, rng, [], events, baseTime + 16);
 
     // Should hit target1 and target2, but not target3
     expect(events.damage).toHaveLength(2);
@@ -245,13 +245,13 @@ describe('BeamSystem Tick Damage and Interruption', () => {
       type: 'laser',
       origin: [0, 0, 0],
       direction: [1, 0, 0],
-      timestamp: Date.now(),
+        timestamp: baseTime,
     };
 
     const rng = createSeededRng(12345);
     
-    // Create beam
-    beamSystem(world, 0.016, rng, [weaponFiredEvent], events);
+  // Create beam
+  beamSystem(world, 0.016, rng, [weaponFiredEvent], events, baseTime);
     
     const beams = Array.from(world.entities).filter(e => 
       (e as Entity & { beam?: BeamComponent }).beam
@@ -264,8 +264,8 @@ describe('BeamSystem Tick Damage and Interruption', () => {
     // Move the laser weapon
     laser.position = [5, 2, 1];
 
-    // Update beam system
-    beamSystem(world, 0.016, rng, [], events);
+  // Update beam system
+  beamSystem(world, 0.016, rng, [], events, baseTime + 16);
 
     // Beam origin should update to weapon's new position
     expect(beam.beam.origin).toEqual([5, 2, 1]);
@@ -316,12 +316,12 @@ describe('BeamSystem Tick Damage and Interruption', () => {
       type: 'laser',
       origin: [0, 0, 0],
       direction: [1, 0, 0],
-      timestamp: Date.now(),
+      timestamp: baseTime,
     };
 
     const rng = createSeededRng(12345);
     
-    beamSystem(world, 0.016, rng, [weaponFiredEvent], events);
+  beamSystem(world, 0.016, rng, [weaponFiredEvent], events, baseTime);
     
     const beams = Array.from(world.entities).filter(e => 
       (e as Entity & { beam?: BeamComponent }).beam
@@ -331,11 +331,11 @@ describe('BeamSystem Tick Damage and Interruption', () => {
     // Verify beam length matches weapon range
     expect(beam.beam.length).toBe(10);
 
-    // Trigger tick damage
-    beam.beam.lastTickAt = Date.now() - 150;
+  // Trigger tick damage
+  beam.beam.lastTickAt = baseTime - 150;
     
-    events.damage = [];
-    beamSystem(world, 0.016, rng, [], events);
+  events.damage = [];
+  beamSystem(world, 0.016, rng, [], events, baseTime + 16);
 
     // Should only hit near target, not far target
     expect(events.damage).toHaveLength(1);

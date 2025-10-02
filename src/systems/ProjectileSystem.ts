@@ -60,6 +60,7 @@ export function projectileSystem(
   rng: Rng,
   weaponFiredEvents: WeaponFiredEvent[],
   events: { damage: DamageEvent[] },
+  simNowMs?: number,
   _rapierWorld?: unknown,
 ) {
   // Friendly-fire toggle (default false when store not initialized)
@@ -91,11 +92,12 @@ export function projectileSystem(
     const ownerEntityId =
       typeof owner.id === "number" ? owner.id : fireEvent.ownerId;
 
+    const now = typeof simNowMs === "number" ? simNowMs : Date.now();
     const projectileEntity: Entity & {
       projectile: ProjectileComponent;
       velocity: [number, number, number];
     } = {
-      id: `projectile_${fireEvent.weaponId}_${Date.now()}_${++projectileSerial}`,
+      id: `projectile_${fireEvent.weaponId}_${now}_${++projectileSerial}`,
       position: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
       team: weapon.team,
       projectile: {
@@ -105,7 +107,7 @@ export function projectileSystem(
         team: weapon.team,
         aoeRadius: weapon.aoeRadius,
         lifespan: 5,
-        spawnTime: Date.now(),
+        spawnTime: now,
         speed: 20,
         homing: weapon.flags?.homing
           ? { turnSpeed: 2, targetId: fireEvent.targetId }
@@ -134,7 +136,8 @@ export function projectileSystem(
     const rigid = e.rigid as unknown as RigidBodyLike | null;
     let mutated = false;
 
-    const age = (Date.now() - projectile.spawnTime) / 1000;
+  const currentMs = typeof simNowMs === "number" ? simNowMs : Date.now();
+  const age = (currentMs - projectile.spawnTime) / 1000;
     if (age >= projectile.lifespan) {
       notifyEntityChanged(e as Entity);
       world.remove(entity);

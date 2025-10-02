@@ -10,6 +10,7 @@ import { createSeededRng } from '../src/utils/seededRng';
 describe('HitscanSystem Determinism', () => {
   let world: World<Entity>;
   let events: { damage: DamageEvent[]; impact: any[] };
+  const baseTime = 1_600_000_000_000;
 
   beforeEach(() => {
     world = new World<Entity>();
@@ -51,7 +52,7 @@ describe('HitscanSystem Determinism', () => {
       type: 'gun',
       origin: [0, 0, 0],
       direction: [1, 0, 0],
-      timestamp: Date.now(),
+      timestamp: baseTime,
     };
 
     // First run with seed 12345
@@ -107,7 +108,7 @@ describe('HitscanSystem Determinism', () => {
       type: 'gun',
       origin: [0, 0, 0],
       direction: [1, 0, 0], // Firing straight
-      timestamp: Date.now(),
+      timestamp: baseTime,
     };
 
     // Test multiple shots to verify spread affects hit probability
@@ -173,7 +174,7 @@ describe('HitscanSystem Determinism', () => {
       type: 'gun',
       origin: [0, 0, 0],
       direction: [1, 0, 0],
-      timestamp: Date.now(),
+      timestamp: baseTime,
     };
 
     const rng = createSeededRng(12345);

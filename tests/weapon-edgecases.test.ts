@@ -6,6 +6,8 @@ import { beamSystem } from '../src/systems/BeamSystem';
 import { damageSystem } from '../src/systems/DamageSystem';
 import { createSeededRng } from '../src/utils/seededRng';
 
+const baseTime = 1_600_000_000_000;
+
 // Edge-case: friendly-fire avoidance for hitscan weapons
 test('hitscan should avoid damaging friendly targets', () => {
   resetWorld();
@@ -34,7 +36,7 @@ test('hitscan should avoid damaging friendly targets', () => {
 
   const events: any = { weaponFired: [], damage: [], impact: [] };
 
-  weaponSystem(world, dt, rng, events);
+  weaponSystem(world, dt, rng, events, baseTime);
   hitscanSystem(world, rng, events.weaponFired, events);
   damageSystem(world, events.damage, { death: [] });
 
@@ -66,18 +68,18 @@ test('projectile should be removed after lifespan expires', () => {
   const events: any = { weaponFired: [], damage: [] };
 
   // Fire rocket (spawns projectile)
-  weaponSystem(world, dt, rng, events);
-  projectileSystem(world, dt, rng, events.weaponFired, events);
+  weaponSystem(world, dt, rng, events, baseTime);
+  projectileSystem(world, dt, rng, events.weaponFired, events, baseTime);
 
   // Find projectile
   const projectile = Array.from(world.entities).find((e: any) => e.projectile) as any;
   expect(projectile).toBeDefined();
 
   // Force spawnTime to far past so it's expired
-  projectile.projectile.spawnTime = Date.now() - (projectile.projectile.lifespan + 1) * 1000;
+  projectile.projectile.spawnTime = baseTime - (projectile.projectile.lifespan + 1) * 1000;
 
   // Run projectile system which should remove expired projectile
-  projectileSystem(world, dt, rng, [], events);
+  projectileSystem(world, dt, rng, [], events, baseTime + 16);
 
   const found = Array.from(world.entities).find((e: any) => e === projectile);
   expect(found).toBeUndefined();
@@ -108,16 +110,16 @@ test('beam should tick damage over time and expire after duration', () => {
   const events: any = { weaponFired: [], damage: [] };
 
   // Fire the beam and create beam entity
-  weaponSystem(world, dt, rng, events);
-  beamSystem(world, dt, rng, events.weaponFired, events);
+  weaponSystem(world, dt, rng, events, baseTime);
+  beamSystem(world, dt, rng, events.weaponFired, events, baseTime);
 
   const beamEntity = Array.from(world.entities).find((e: any) => e.beam) as any;
   expect(beamEntity).toBeDefined();
 
   // Force tick multiple times by setting lastTickAt back and calling beamSystem
   for (let i = 0; i < 3; i++) {
-    if (beamEntity) beamEntity.beam.lastTickAt = Date.now() - beamEntity.beam.tickInterval - 1;
-    beamSystem(world, dt, rng, [], events);
+  if (beamEntity) beamEntity.beam.lastTickAt = baseTime - beamEntity.beam.tickInterval - 1;
+  beamSystem(world, dt, rng, [], events, baseTime + Math.round((i + 1) * dt * 1000));
     if (events.damage.length > 0) {
       damageSystem(world, events.damage, { death: [] });
       events.damage = [];
@@ -128,8 +130,8 @@ test('beam should tick damage over time and expire after duration', () => {
   expect(target.hp).toBeLessThan(100);
 
   // Now force expiration
-  if (beamEntity) beamEntity.beam.activeUntil = Date.now() - 1;
-  beamSystem(world, dt, rng, [], events);
+  if (beamEntity) beamEntity.beam.activeUntil = baseTime - 1;
+  beamSystem(world, dt, rng, [], events, baseTime + 16);
 
   const stillBeam = Array.from(world.entities).find((e: any) => e.beam);
   expect(stillBeam).toBeUndefined();
@@ -147,7 +149,7 @@ test('rocket AoE should damage multiple targets with falloff and exclude outside
   const farTarget = createRobotEntity({ team: 'blue', position: [9.5, 0.6, 0], hp: 100 }) as any; // 4.5 units
 
   // Create a projectile entity at the center with AoE radius 3
-  const projectileEntity: any = {
+    const projectileEntity: any = {
     id: 'proj_manual',
     position: [5, 0.6, 0],
     team: 'red',
@@ -158,7 +160,7 @@ test('rocket AoE should damage multiple targets with falloff and exclude outside
       team: 'red',
       aoeRadius: 3,
       lifespan: 5,
-      spawnTime: Date.now(),
+        spawnTime: baseTime,
       speed: 0,
     },
     velocity: [0, 0, 0],
@@ -169,7 +171,7 @@ test('rocket AoE should damage multiple targets with falloff and exclude outside
   const events: any = { weaponFired: [], damage: [] };
 
   // Run projectile system which should detect collision (centerTarget is at same pos) and apply AoE
-  projectileSystem(world, dt, rng, [], events);
+  projectileSystem(world, dt, rng, [], events, baseTime + 16);
   // Apply damage
   if (events.damage.length > 0) {
     damageSystem(world, events.damage, { death: [] });
