@@ -6,7 +6,6 @@
 
 ## Pending
 
-- [TASK019] Split miniplexStore responsibilities into smaller modules - Pending
 - [TASK020] Refactor Projectile component: extract physics-sync & streak logic - Pending
 
 ## New / Discovered (from code TODOs)
@@ -15,6 +14,8 @@
 
 ## Completed
 
+- [TASK019] Split miniplexStore responsibilities into smaller modules - Completed on 2025-10-02.
+  - Extracted `worldFactory`, `entityLookup`, `renderKey`, and `pauseVelocity` modules plus façade wiring tests.
 - [TASK018] Refactor BeamSystem: owner resolution & raycasting simplification - Completed on 2025-10-03.
   - Added shared `ecsResolve` helper with unit tests and refactored BeamSystem into event/tick phases.
   - Implemented Rapier-first beam raycasting with deterministic fallback and expanded beam tick coverage.
