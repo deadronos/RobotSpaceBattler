@@ -6,7 +6,6 @@
 
 ## Pending
 
-- [TASK017] Refactor AISystem: introduce queries & perception helpers - Pending
 - [TASK018] Refactor BeamSystem: owner resolution & raycasting simplification - Pending
 - [TASK019] Split miniplexStore responsibilities into smaller modules - Pending
 - [TASK020] Refactor Projectile component: extract physics-sync & streak logic - Pending
@@ -16,6 +15,14 @@
 - (none)
 
 ## Completed
+
+- [TASK017] Refactor AISystem: introduce queries & perception helpers - Completed on 2025-01-16.
+
+  - Extracted query helpers (`src/systems/ai/queries.ts`) to replace full world scans.
+  - Extracted perception helpers (`src/systems/ai/perception.ts`) wrapping LOS checks.
+  - Extracted pure decision functions (`src/systems/ai/decisions.ts`) for testable state machine logic.
+  - Refactored AISystem to be a thin orchestrator applying decisions.
+  - Added 58 comprehensive unit tests (124 total tests pass).
 
 - [TASK015] Performance validation & profiling - Completed on 2025-09-17.
 
