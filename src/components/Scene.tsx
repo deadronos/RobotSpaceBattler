@@ -39,7 +39,7 @@ export default function Scene() {
         <Physics
           gravity={[0, -9.81, 0]}
           paused={paused}
-          updateLoop="follow"
+          updateLoop="independent"
           timeStep={1 / 60}
         >
           <Simulation renderFloor={!ENABLE_ENVIRONMENT} />
