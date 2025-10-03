@@ -43,6 +43,26 @@ References:
 - Feature spec: specs/001-title-simulation-spec/spec.md
 - Constitution: .specify/memory/constitution.md
 
+## Tech Context
+
+This feature targets the repository's existing frontend tech stack: 
+
+## Technologies
+
+- React + TypeScript
+- Vite
+- @react-three/fiber (Three.js)
+- @react-three/rapier (physics)
+- miniplex (ECS)
+- zustand (UI state)
+- Vitest (unit tests)
+- Playwright (E2E)
+
+## Dependencies Notes
+
+`docs/DEPENDENCIES-deep-dive.md` has descriptions for mentioned techs.
+
+
 Next: Produce data model and contracts for Scoring and Respawn (Phase 1).
 
 <!-- eof -->
