@@ -6,6 +6,17 @@
 and AI agents MUST adhere to the 6 core principles (Physics-First Authority, Deterministic Simulation,
 Test-Driven Development, Small Composable Systems, ECS-Driven Architecture, On-Demand Rendering).
 
+## Instructions/Prompts are in:  `.github/prompts`
+
+possible prompts for SpecKit workflow:
+/constitution `.github/prompts/constitution.prompt.md`
+/specify `.github/prompts/specify.prompt.md`
+/clarify `.github/prompts/clarify.prompt.md`
+/plan `.github/prompts/plan.prompt.md`
+/tasks `.github/prompts/tasks.prompt.md`
+/analyze `.github/prompts/analyze.prompt.md`
+/implement `.github/prompts/implement.prompt.md`
+
 Project documentation and workflow artifacts are managed in `specs/` (numbered folders with specs, plans, tasks, templates).
 
 
