@@ -2,7 +2,7 @@ import type { World } from "miniplex";
 
 import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
 import { type Entity, notifyEntityChanged } from "../ecs/miniplexStore";
-import type { DamageEvent, WeaponComponent, ProjectileComponent } from "../ecs/weapons";
+import type { DamageEvent, ProjectileComponent,WeaponComponent } from "../ecs/weapons";
 import type { StepContext } from "../utils/fixedStepDriver";
 import type { Rng } from "../utils/seededRng";
 import type { WeaponFiredEvent } from "./WeaponSystem";
@@ -79,13 +79,8 @@ export function projectileSystem(
     // Using a loose type here to avoid large refactors during the deterministic
     // guard implementation. A full migration to string gameplay ids is tracked
     // as T052B and should be completed separately.
-    type LocalProjectileEntity = Entity & {
-      projectile: ProjectileComponent;
-      velocity: [number, number, number];
-    };
-
-    const projectileEntity: LocalProjectileEntity = {
-      id: idFactory() as unknown as number,
+    const projectileEntity: unknown = {
+      id: idFactory(),
       position: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
       team: weapon.team,
       projectile: {
@@ -98,13 +93,14 @@ export function projectileSystem(
         spawnTime: simNowMs,
         speed: 20,
         homing: weapon.flags?.homing ? { turnSpeed: 2, targetId: fireEvent.targetId } : undefined,
-      } as unknown as ProjectileComponent,
+      } as ProjectileComponent,
       velocity: [0, 0, 0],
     };
 
     const [dx, dy, dz] = fireEvent.direction;
-    const speed = projectileEntity.projectile.speed || 20;
-    projectileEntity.velocity = [dx * speed, dy * speed, dz * speed];
+  const p = projectileEntity as { projectile: { speed?: number }; velocity?: [number, number, number] };
+  const speed = p.projectile.speed || 20;
+  p.velocity = [dx * speed, dy * speed, dz * speed];
 
   world.add(projectileEntity as unknown as Entity);
   }
@@ -226,11 +222,8 @@ function checkProjectileCollision(
   projectileTeam: string,
   ownerId: string,
   friendlyFire: boolean,
-): { targetId?: number } | null {
-  const ownerNumericId = Number(ownerId);
-  const ownerNumeric = Number.isFinite(ownerNumericId)
-    ? ownerNumericId
-    : undefined;
+): { targetId?: string } | null {
+  // ownerId is a gameplay id string; compare by string
   let impactedAny = false;
   for (const entity of world.entities) {
     const candidate = entity as Entity & {
@@ -243,11 +236,8 @@ function checkProjectileCollision(
     if (!candidate.position || !candidate.team || candidate.projectile) {
       continue;
     }
-    // Ignore the owner itself (match by numeric id or weapon ownerId)
-    const isOwnerById =
-      typeof candidate.id === "number" &&
-      ownerNumeric !== undefined &&
-      candidate.id === ownerNumeric;
+    // Ignore the owner itself by comparing gameplay id or id string
+    const isOwnerById = String(candidate.id) === ownerId;
     const isOwnerByWeapon = !!(
       candidate.weapon &&
       typeof candidate.weapon.ownerId === "string" &&
@@ -268,7 +258,7 @@ function checkProjectileCollision(
     }
 
     if (distance < 1) {
-      return { targetId: candidate.id as unknown as number };
+      return { targetId: String(candidate.id) };
     }
   }
 
@@ -285,10 +275,7 @@ function applyAoEDamage(
   events: { damage: DamageEvent[] },
   friendlyFire: boolean,
 ) {
-  const sourceNumericId = Number(sourceId);
-  const sourceNumeric = Number.isFinite(sourceNumericId)
-    ? sourceNumericId
-    : undefined;
+  // sourceId is a gameplay id string
   for (const entity of world.entities) {
     const candidate = entity as Entity & {
       position?: [number, number, number];
@@ -301,11 +288,7 @@ function applyAoEDamage(
       continue;
     }
     if (candidate.weapon) continue;
-    if (
-      typeof candidate.id === "number" &&
-      sourceNumeric !== undefined &&
-      candidate.id === sourceNumeric
-    ) {
+    if (String(candidate.id) === sourceId) {
       continue;
     }
     if (candidate.weapon && (candidate.weapon as unknown as { ownerId?: string }).ownerId && (candidate.weapon as unknown as { ownerId?: string }).ownerId === sourceId) {
@@ -325,7 +308,7 @@ function applyAoEDamage(
 
       events.damage.push({
         sourceId,
-        targetId: candidate.id as unknown as number,
+  targetId: String(candidate.id),
         position: [center[0], center[1], center[2]],
         damage: finalDamage,
       });
@@ -359,7 +342,7 @@ function updateHomingBehavior(
 
     if (targets.length > 0) {
       const target = targets[Math.floor(rng() * targets.length)];
-      homing.targetId = target.id as unknown as number;
+  homing.targetId = String(target.id);
     }
   }
 

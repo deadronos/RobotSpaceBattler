@@ -58,7 +58,7 @@ export interface BeamComponent {
 export interface DamageEvent {
   sourceId: string | number;
   weaponId?: string;
-  targetId?: number;
+  targetId?: number | string;
   position?: [number, number, number];
   damage: number;
 }

@@ -17,10 +17,10 @@ type RigidBodyLike = {
 };
 
 export interface DeathEvent {
-  entityId: number;
+  entityId: string | number;
   position: [number, number, number];
   team: string;
-  killerId?: number;
+  killerId?: string | number;
   killerTeam?: string;
 }
 
@@ -37,20 +37,20 @@ export function damageSystem(
   void _frameCount; // Reserved for future deterministic ordering enhancements
   // Sort damage events deterministically by targetId to ensure consistent processing order
   // This prevents flakiness when multiple damage events arrive in the same frame
-  const sortedEvents = [...damageEvents].sort((a, b) => {
-    if (typeof a.targetId === "number" && typeof b.targetId === "number") {
-      return a.targetId - b.targetId;
-    }
-    return String(a.targetId).localeCompare(String(b.targetId));
-  });
+  const sortedEvents = [...damageEvents].sort((a, b) =>
+    String(a.targetId).localeCompare(String(b.targetId)),
+  );
 
   for (const damageEvent of sortedEvents) {
     if (!damageEvent.targetId) continue;
 
-    const targetEntity = Array.from(world.entities).find(
-      (candidate) =>
-        (candidate.id as unknown as number) === damageEvent.targetId,
-    ) as Entity & {
+    const targetEntity = Array.from(world.entities).find((candidate) => {
+      const entity = candidate as Entity & { id?: string; gameplayId?: string };
+      return (
+        entity.id === String(damageEvent.targetId) ||
+        entity.gameplayId === String(damageEvent.targetId)
+      );
+    }) as Entity & {
       health?: HealthState;
       hp?: number; // Legacy field, prefer health
       maxHp?: number;
@@ -97,16 +97,13 @@ export function damageSystem(
       }
 
       let killerTeam: string | undefined;
-      if (typeof damageEvent.sourceId === "number") {
-        const killerEntity = getEntityById(damageEvent.sourceId) as
-          | Entity
-          | undefined;
-        killerTeam = killerEntity?.team as string | undefined;
-      } else if (typeof damageEvent.sourceId === "string") {
-        const killerEntity = Array.from(world.entities).find((candidate) => {
-          const entity = candidate as Entity & { team?: string };
-          return getGameplayId(entity) === damageEvent.sourceId;
-        }) as Entity | undefined;
+      if (damageEvent.sourceId !== undefined) {
+        const sourceIdStr = String(damageEvent.sourceId);
+        const killerEntity =
+          getEntityById(sourceIdStr) ??
+          Array.from(world.entities).find((candidate) =>
+            getGameplayId(candidate as Entity) === sourceIdStr,
+          );
         killerTeam = killerEntity?.team as string | undefined;
       }
 

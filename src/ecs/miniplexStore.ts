@@ -36,7 +36,7 @@ export const ROBOT_BASE_STATS = {
 } as const;
 
 export interface Entity extends Partial<Transform>, RigidBodyRef, RenderRef {
-  id?: number;
+  id?: string;
   gameplayId?: string;
   team?: Team;
   hp?: number;
@@ -69,7 +69,7 @@ export const subscribeEntityChanges = entityLookup.subscribe;
 export const notifyEntityChanged = (entity: Entity | undefined) =>
   entityLookup.notify(entity);
 
-export const getEntityById = (id: number) => entityLookup.getById(id);
+export const getEntityById = (id: string) => entityLookup.getById(id);
 
 export function getGameplayId(entity: Entity): string | undefined {
   return entity.gameplayId ?? entity.robot?.id;
@@ -133,10 +133,9 @@ export function createRobotEntity(init: Partial<Entity> = {}): Entity {
   };
 
   const assignedId = entityLookup.ensureEntityId(entity);
-  const numericId = assignedId ?? (entity.id as number);
 
   const gameplayId = ensureGameplayId(
-    entity.gameplayId ?? init.robot?.id ?? numericId,
+    entity.gameplayId ?? init.robot?.id ?? assignedId ?? entity.id,
   );
   entity.gameplayId = gameplayId;
 
@@ -161,7 +160,7 @@ export function createRobotEntity(init: Partial<Entity> = {}): Entity {
   entity.team = entity.robot.team as Team;
 
   if (entity.weapon) {
-    const ownerGameplayId = entity.gameplayId ?? String(numericId);
+  const ownerGameplayId = entity.gameplayId ?? String(entity.id ?? assignedId);
     if (!entity.weapon.ownerId || entity.weapon.ownerId === "-1") {
       entity.weapon.ownerId = ownerGameplayId;
     } else {
@@ -206,9 +205,9 @@ export function clearInvulnerable(entity: Entity) {
 export function ensureAllGameplayIds() {
   for (const e of world.entities) {
     if (!e.gameplayId) {
-      const numeric = e.id ?? (world.id(e) as number | undefined);
-      if (numeric !== undefined) {
-        e.gameplayId = ensureGameplayId(numeric);
+      const idVal = e.id ?? (String(world.id(e)) as string | undefined);
+      if (idVal !== undefined) {
+        e.gameplayId = ensureGameplayId(idVal);
       }
     }
   }

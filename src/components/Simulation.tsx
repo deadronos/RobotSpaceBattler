@@ -187,7 +187,7 @@ export default function Simulation({
 
       // Build spawn requests from death events and append to the local queuedRespawns
       for (const d of events.death) {
-        const ent = resolveEntity(world, d.entityId as unknown as number);
+        const ent = resolveEntity(world, String(d.entityId));
         const team = (d.team ?? ent?.team) as string;
         const weaponType = (ent as Entity & { weapon?: { type?: WeaponType } })?.weapon?.type ?? ("gun" as WeaponType);
         queuedRespawnsRef.current.push({

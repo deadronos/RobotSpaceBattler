@@ -25,7 +25,7 @@ export type BeamOwnerEntity = Entity & {
 };
 
 interface BeamHitCandidate {
-  targetId: number;
+  targetId: string;
   position: [number, number, number];
   distance: number;
 }
@@ -486,7 +486,7 @@ function fallbackBeamRaycast(
 
     if (dist2 <= beamRadius * beamRadius) {
       hits.push({
-        targetId: candidate.id as unknown as number,
+        targetId: String(candidate.id),
         position: [cxp, cyp, czp],
         distance: proj,
       });

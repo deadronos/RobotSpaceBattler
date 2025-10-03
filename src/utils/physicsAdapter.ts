@@ -1,7 +1,7 @@
 import { extractEntityIdFromRapierHit } from "../systems/rapierHelpers";
 
 export type RaycastResult = {
-  targetId?: number;
+  targetId?: string;
   position: [number, number, number];
   normal: [number, number, number];
 };
@@ -22,9 +22,9 @@ export interface PhysicsAdapter {
 
 export function createRapierAdapter(options: {
   /** The Rapier/physics world object (as provided by react-three-rapier or Rapier directly) */
-  world?: any;
+  world?: unknown;
   /** Optional helper to map rapier collider/body objects to entity ids. If omitted, adapter will rely on heuristics. */
-  mapHitToEntityId?: (hit: unknown) => number | undefined;
+  mapHitToEntityId?: (hit: unknown) => string | undefined;
 }): PhysicsAdapter {
   const rapierWorld = options.world;
   const mapHit = options.mapHitToEntityId ?? extractEntityIdFromRapierHit;
@@ -35,12 +35,15 @@ export function createRapierAdapter(options: {
     const point = (h['point'] ?? h['hitPoint'] ?? h['position']) as unknown;
     if (point) {
       if (Array.isArray(point) && point.length >= 3) {
-        const [x,y,z] = point as unknown as number[];
-        return { pos: [x,y,z] };
+        const arr = point as unknown as Array<unknown>;
+        const x = typeof arr[0] === 'number' ? (arr[0] as number) : undefined;
+        const y = typeof arr[1] === 'number' ? (arr[1] as number) : undefined;
+        const z = typeof arr[2] === 'number' ? (arr[2] as number) : undefined;
+        if (x !== undefined && y !== undefined && z !== undefined) return { pos: [x, y, z] };
       }
-      if (typeof (point as any).x === 'number') {
-        const p = point as any;
-        return { pos: [p.x, p.y, p.z] };
+      const pRec = point as Record<string, unknown>;
+      if (typeof pRec['x'] === 'number' && typeof pRec['y'] === 'number' && typeof pRec['z'] === 'number') {
+        return { pos: [pRec['x'] as number, pRec['y'] as number, pRec['z'] as number] };
       }
     }
     return {};
@@ -76,39 +79,48 @@ export function createRapierAdapter(options: {
     try {
       // Try common APIs in prioritized order
       // 1. world.raycast(origin, dir, maxToi)
-      if (typeof (rapierWorld as any).raycast === 'function') {
-        const hit = (rapierWorld as any).raycast(origin, dir, maxToi);
+      const rw = rapierWorld as unknown as Record<string, unknown> | undefined;
+      const raycastFn = rw?.['raycast'] as ((origin: unknown, dir: unknown, maxToi: number) => unknown) | undefined;
+      if (typeof raycastFn === 'function') {
+        const hit = raycastFn(origin, dir, maxToi);
         const res = normalize(hit);
         if (res) return res;
       }
 
       // 2. world.castRay(bodies, colliders, { origin, dir }, maxToi)
-      if (typeof (rapierWorld as any).castRay === 'function') {
-        const hit = (rapierWorld as any).castRay({ origin, dir }, maxToi);
+      const castRayFn = rw?.['castRay'] as ((opts: unknown, maxToi?: number) => unknown) | undefined;
+      if (typeof castRayFn === 'function') {
+        const hit = castRayFn({ origin, dir }, maxToi);
         const res = normalize(hit);
         if (res) return res;
       }
 
       // 3. queryPipeline.castRay(bodies, colliders, ray, maxToi)
-      const qp = (rapierWorld as any)?.queryPipeline;
-      if (qp && typeof qp.castRay === 'function') {
-        try {
-          const bodies = (rapierWorld as any)['bodies'];
-          const colliders = (rapierWorld as any)['colliders'];
-          const hit = qp.castRay(bodies, colliders, { origin, dir }, maxToi);
-          const res = normalize(hit);
-          if (res) return res;
-        } catch (__) {
-          // fall through to heuristic
-          void __;
+      const qp = rw?.['queryPipeline'] as Record<string, unknown> | undefined;
+      if (qp) {
+        const qpCast = qp['castRay'] as ((...args: unknown[]) => unknown) | undefined;
+        if (typeof qpCast === 'function') {
+          try {
+            const bodies = rw?.['bodies'];
+            const colliders = rw?.['colliders'];
+            const hit = qpCast(bodies, colliders, { origin, dir }, maxToi);
+            const res = normalize(hit);
+            if (res) return res;
+          } catch (__) {
+            void __;
+          }
         }
       }
 
       // 4. raw.castRay
-      if ((rapierWorld as any).raw && typeof (rapierWorld as any).raw.castRay === 'function') {
-        const hit = (rapierWorld as any).raw.castRay(origin, dir, maxToi);
-        const res = normalize(hit);
-        if (res) return res;
+      const raw = rw?.['raw'] as Record<string, unknown> | undefined;
+      if (raw) {
+        const rawCast = raw['castRay'] as ((...args: unknown[]) => unknown) | undefined;
+        if (typeof rawCast === 'function') {
+          const hit = rawCast(origin, dir, maxToi);
+          const res = normalize(hit);
+          if (res) return res;
+        }
       }
     } catch (__) {
       // swallow and return null
@@ -122,15 +134,15 @@ export function createRapierAdapter(options: {
     if (!rapierWorld) return false;
     try {
       // Rapier may expose a queryPipeline with intersection tests
-      const qp = (rapierWorld as any)?.queryPipeline;
-      if (qp && typeof qp.intersectionsWithSphere === 'function') {
-        return qp.intersectionsWithSphere({ x: center.x, y: center.y, z: center.z }, radius);
+      const qp2 = (rapierWorld as unknown as Record<string, unknown>)?.queryPipeline as Record<string, unknown> | undefined;
+      if (qp2) {
+        const inter = qp2['intersectionsWithSphere'] as ((...args: unknown[]) => unknown) | undefined;
+        if (typeof inter === 'function') return inter({ x: center.x, y: center.y, z: center.z }, radius) as boolean;
       }
 
       // Some wrappers provide intersectionWithShape
-      if (typeof (rapierWorld as any).intersectionWithShape === 'function') {
-        return (rapierWorld as any).intersectionWithShape({ x: center.x, y: center.y, z: center.z }, radius);
-      }
+      const intersectionFn = (rapierWorld as unknown as Record<string, unknown>)['intersectionWithShape'] as ((...args: unknown[]) => unknown) | undefined;
+      if (typeof intersectionFn === 'function') return intersectionFn({ x: center.x, y: center.y, z: center.z }, radius) as boolean;
     } catch (__) {
       // ignore and fall back
       void __;
@@ -138,9 +150,8 @@ export function createRapierAdapter(options: {
 
     // Fallback conservative answer: true if world exposes any contacts (best-effort)
     try {
-      if ((rapierWorld as any).numColliders !== undefined) {
-        return (rapierWorld as any).numColliders > 0;
-      }
+      const nc = (rapierWorld as unknown as Record<string, unknown>)['numColliders'] as number | undefined;
+      if (nc !== undefined) return nc > 0;
     } catch (__) {
       // ignore
       void __;
@@ -158,6 +169,7 @@ export function createRapierAdapter(options: {
 }
 
 export function createDeterministicAdapter(_seed: number) {
+  void _seed;
   // Deterministic adapter should match the Rapier adapter behavior for canonical cases
   // used in tests. Implement a simple deterministic mapping that produces the same
   // canonical results as the Rapier adapter above.
@@ -167,9 +179,11 @@ export function createDeterministicAdapter(_seed: number) {
       return null;
     },
     overlapSphere: (_center: { x: number; y: number; z: number }, _radius: number) => {
+      void _center; void _radius;
       return true;
     },
     proximity: (_origin: { x: number; y: number; z: number }, _radius: number) => {
+      void _origin; void _radius;
       return true;
     },
   };

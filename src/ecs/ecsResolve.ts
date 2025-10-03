@@ -40,27 +40,18 @@ export function resolveEntity(
   world: World<Entity>,
   id?: number | string,
 ): (Entity & { id: string | number }) | undefined {
-  if (typeof id === "number") {
-    const direct = getEntityById(id) as
-      | (Entity & { id: string | number })
-      | undefined;
-    if (direct) {
-      return direct;
-    }
+  if (id === undefined) return undefined;
+  const idStr = String(id);
 
-    return Array.from(world.entities).find((candidate) => {
-      const numericId = candidate.id as unknown as number;
-      return numericId === id;
-    }) as (Entity & { id: string | number }) | undefined;
-  }
+  // Try direct lookup by id string first
+  const direct = getEntityById(idStr) as (Entity & { id: string | number }) | undefined;
+  if (direct) return direct;
 
-  if (typeof id === "string") {
-    return Array.from(world.entities).find(
-      (candidate) => candidate.id === id,
-    ) as (Entity & { id: string | number }) | undefined;
-  }
-
-  return undefined;
+  // Fall back to scanning gameplayId or id fields
+  return Array.from(world.entities).find((candidate) => {
+    const c = candidate as Entity & { id?: string; gameplayId?: string };
+    return c.id === idStr || c.gameplayId === idStr;
+  }) as (Entity & { id: string | number }) | undefined;
 }
 
 export function resolveOwner(

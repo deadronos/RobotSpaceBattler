@@ -10,7 +10,7 @@ import type { WeaponFiredEvent } from "./WeaponSystem";
 export interface ImpactEvent {
   position: [number, number, number];
   normal: [number, number, number];
-  targetId?: number;
+  targetId?: string;
 }
 
 export function hitscanSystem(...args: unknown[]) {
@@ -86,17 +86,18 @@ export function hitscanSystem(...args: unknown[]) {
         rapierWorld,
       );
       if (hitFromAdapter) {
+        const targetIdStr = hitFromAdapter.targetId !== undefined ? String(hitFromAdapter.targetId) : undefined;
         events.damage.push({
           sourceId: ownerLookupId,
           weaponId: fireEvent.weaponId,
-          targetId: hitFromAdapter.targetId,
+          targetId: targetIdStr,
           position: hitFromAdapter.position,
           damage: 1,
         });
         events.impact.push({
           position: hitFromAdapter.position,
           normal: hitFromAdapter.normal,
-          targetId: hitFromAdapter.targetId,
+          targetId: targetIdStr,
         });
       }
       continue;
@@ -122,6 +123,7 @@ export function hitscanSystem(...args: unknown[]) {
     );
 
     if (hit) {
+      const targetIdStr = hit.targetId !== undefined ? String(hit.targetId) : undefined;
       events.damage.push({
         sourceId: ownerLookupId,
         weaponId: fireEvent.weaponId,
@@ -133,7 +135,7 @@ export function hitscanSystem(...args: unknown[]) {
       events.impact.push({
         position: hit.position,
         normal: hit.normal,
-        targetId: hit.targetId,
+        targetId: targetIdStr,
       });
     }
   }
@@ -161,12 +163,9 @@ function performRaycast(
 ): {
   position: [number, number, number];
   normal: [number, number, number];
-  targetId?: number;
+  targetId?: number | string;
 } | null {
-  const ownerNumericId = Number(ownerId);
-  const ownerNumeric = Number.isFinite(ownerNumericId)
-    ? ownerNumericId
-    : undefined;
+  // ownerId is a gameplay id string; compare against candidate ids/gameplayId
   const [ox, oy, oz] = origin;
   const [dx, dy, dz] = direction;
 
@@ -306,11 +305,7 @@ function performRaycast(
           };
           if (!c.position) continue;
           // Skip the weapon owner itself
-          if (
-            typeof c.id === "number" &&
-            ownerNumeric !== undefined &&
-            c.id === ownerNumeric
-          ) {
+          if (String(c.id) === ownerId) {
             continue;
           }
           if (
@@ -360,7 +355,7 @@ function performRaycast(
           return {
             position: [px, py, pz],
             normal: [-dx, -dy, -dz],
-            targetId: best.e.id as unknown as number,
+            targetId: String(best.e.id),
           };
         }
       }
@@ -377,12 +372,8 @@ function performRaycast(
     },
   ) => {
     if (!candidate.position) return null;
-    // Skip the owner itself
-    if (
-      typeof candidate.id === "number" &&
-      ownerNumeric !== undefined &&
-      candidate.id === ownerNumeric
-    ) {
+    // Skip the owner itself by comparing gameplay id or id string
+    if (String(candidate.id) === ownerId) {
       return null;
     }
     if (
@@ -408,7 +399,7 @@ function performRaycast(
       return {
         position: candidate.position as [number, number, number],
         normal: [-dx, -dy, -dz] as [number, number, number],
-        targetId: candidate.id as unknown as number,
+        targetId: String(candidate.id),
       };
     }
 

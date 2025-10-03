@@ -146,17 +146,19 @@
       `tests/integration/friendlyFireToggle.test.ts` confirming Simulation injects the toggle into
       ProjectileSystem/BeamSystem via StepContext (no direct `useUI` reads).
 
-- [ ] T016A [P] Determinism guard contract tests — `tests/contracts/determinism.contract.test.ts`
+- [x] T016A [P] Determinism guard contract tests — `tests/contracts/determinism.contract.test.ts`
       - Add failing contract tests that assert systems MUST NOT use `Date.now()` or `Math.random()`.
       - Tests should verify `WeaponSystem`, `RespawnSystem`, and `AISystem` throw or explicitly
         guard when called without a `StepContext` supplying `{ simNowMs, rng, idFactory }`.
       - Purpose: make non-deterministic fallbacks fail so implementation must remove them.
       - Priority: IMMEDIATE (run before other implementation tasks).
 
-- [ ] T016C [P] Deterministic idFactory tests — `tests/unit/idFactory.test.ts`
-      - Add unit tests asserting event id generation uses `StepContext.idFactory` and that missing
-        idFactory results in a deterministic failure (explicit throw).
-      - Ensure tests fail before implementation. These tests are part of the CRITICAL remediation.
+
+- [x] T016C [P] Deterministic idFactory tests — `tests/unit/idFactory.test.ts`
+
+                  - Add unit tests asserting event id generation uses `StepContext.idFactory` and that missing
+                        idFactory results in a deterministic failure (explicit throw).
+                  - Ensure tests fail before implementation. These tests are part of the CRITICAL remediation.
 
 - [ ] T016D [P] NDJSON export performance test — `tests/unit/runtimeEventLogPerf.test.ts`
       - Create a perf test that serializes 100 `DeathAuditEntry` objects to NDJSON and measures
