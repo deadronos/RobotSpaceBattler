@@ -126,4 +126,4 @@ When the plan is validated, run `/implement` to execute tasks. The agent will fo
 and provide progress updates and artifacts under `.specify/`.
 
 For a guided walkthrough of the full Spec Kit workflow, follow the link above.
-\n
+
