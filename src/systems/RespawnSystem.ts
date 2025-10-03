@@ -57,6 +57,9 @@ export type ProcessRespawnParams = {
 };
 
 export function processRespawnQueue(params: ProcessRespawnParams) {
+  if (!params || !params.stepContext) {
+    throw new Error('processRespawnQueue requires a StepContext parameter (stepContext) for deterministic behavior');
+  }
   const { queue, stepContext, spawnConfig } = params;
   const now = stepContext.simNowMs;
   const invulnerabilityMs = spawnConfig?.invulnerabilityMs ?? DEFAULT_INVULNERABILITY_MS;
@@ -100,11 +103,16 @@ export function respawnSystem(
   }
 
   // Old API: respawnSystem(world, deathEvents, options)
+  const nowOption = (c && c.now) ?? undefined;
+  if (typeof nowOption !== 'number') {
+    throw new Error('respawnSystem old API requires deterministic "now" in options or use the new API with stepContext');
+  }
+
   const world = a as World<Entity>;
   const deathEvents = (b as DeathEvent[]) ?? [];
   const options = c ?? {};
 
-  const now = options.now ?? Date.now();
+  const now = nowOption;
   const respawnDelayMs = options.respawnDelayMs ?? DEFAULT_RESPAWN_DELAY_MS;
 
   for (const death of deathEvents) {

@@ -13,12 +13,12 @@ export interface ImpactEvent {
   targetId?: number;
 }
 
-export function hitscanSystem(...args: any[]) {
+export function hitscanSystem(...args: unknown[]) {
   // Support either positional args or single params object
-  let world: any;
-  let rng: any = () => Math.random();
-  let weaponFiredEvents: any[] = [];
-  let events: { damage: any[]; impact: any[] } = { damage: [], impact: [] };
+  let world: World<Entity>;
+  let rng: Rng;
+  let weaponFiredEvents: WeaponFiredEvent[] = [];
+  let events: { damage: DamageEvent[]; impact: ImpactEvent[] } = { damage: [], impact: [] };
   let rapierWorld: unknown | undefined = undefined;
 
   if (
@@ -27,20 +27,33 @@ export function hitscanSystem(...args: any[]) {
     typeof args[0] === "object" &&
     "world" in args[0]
   ) {
-    const p = args[0];
+    const p = args[0] as {
+      world: World<Entity>;
+      stepContext?: { rng?: Rng };
+      weaponFiredEvents?: WeaponFiredEvent[];
+      events?: { damage: DamageEvent[]; impact: ImpactEvent[] };
+      physicsAdapter?: unknown;
+      rapierWorld?: unknown;
+    };
     world = p.world;
-    if (p.stepContext) {
-      rng = p.stepContext.rng ?? rng;
+    if (!p.stepContext) {
+      throw new Error('hitscanSystem requires stepContext with a deterministic rng (stepContext.rng)');
     }
-    rng = p.rng ?? rng;
+    rng = p.stepContext.rng as Rng;
+    if (typeof rng !== 'function') {
+      throw new Error('hitscanSystem requires stepContext.rng to be a function');
+    }
     weaponFiredEvents = p.weaponFiredEvents ?? weaponFiredEvents;
     events = p.events ?? events;
     rapierWorld = p.physicsAdapter ?? p.rapierWorld;
   } else {
-    world = args[0];
-    rng = args[1] ?? rng;
-    weaponFiredEvents = args[2] ?? weaponFiredEvents;
-    events = args[3] ?? events;
+    world = args[0] as World<Entity>;
+    rng = args[1] as Rng;
+    if (typeof rng !== 'function') {
+      throw new Error('hitscanSystem positional API requires rng as second argument for deterministic behavior');
+    }
+    weaponFiredEvents = (args[2] as WeaponFiredEvent[] | undefined) ?? weaponFiredEvents;
+    events = (args[3] as { damage: DamageEvent[]; impact: ImpactEvent[] } | undefined) ?? events;
     rapierWorld = args[4];
   }
 
@@ -159,15 +172,19 @@ function performRaycast(
 
   // If a Rapier-like physics adapter is provided that exposes a simple raycast
   // function (for tests), use it directly and map the result into a hit.
-  if (rapierWorld && typeof (rapierWorld as any).raycast === 'function') {
+  if (rapierWorld) {
     try {
-      const hit = (rapierWorld as any).raycast({ origin: { x: ox, y: oy, z: oz }, dir: { x: dx, y: dy, z: dz } }, maxDistance);
-      if (hit && typeof hit === 'object') {
-        const targetId = (hit as any).targetId;
-        const position = (hit as any).position as [number, number, number] | undefined;
-        const normal = (hit as any).normal as [number, number, number] | undefined;
-        if (position && normal) {
-          return { position, normal, targetId };
+      const adapter = rapierWorld as { raycast?: (opts: unknown, maxDistance?: number) => unknown };
+      if (typeof adapter.raycast === 'function') {
+        const hit = adapter.raycast({ origin: { x: ox, y: oy, z: oz }, dir: { x: dx, y: dy, z: dz } }, maxDistance);
+        if (hit && typeof hit === 'object') {
+          const h = hit as Record<string, unknown>;
+          const targetId = h['targetId'] as number | undefined;
+          const position = h['position'] as [number, number, number] | undefined;
+          const normal = h['normal'] as [number, number, number] | undefined;
+          if (position && normal) {
+            return { position, normal, targetId };
+          }
         }
       }
     } catch {

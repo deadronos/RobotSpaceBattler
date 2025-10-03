@@ -2,11 +2,7 @@ import type { World } from "miniplex";
 
 import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
 import { type Entity, notifyEntityChanged } from "../ecs/miniplexStore";
-import type {
-  DamageEvent,
-  ProjectileComponent,
-  WeaponComponent,
-} from "../ecs/weapons";
+import type { DamageEvent, WeaponComponent, ProjectileComponent } from "../ecs/weapons";
 import type { StepContext } from "../utils/fixedStepDriver";
 import type { Rng } from "../utils/seededRng";
 import type { WeaponFiredEvent } from "./WeaponSystem";
@@ -25,13 +21,39 @@ interface RigidBodyLike {
 export function projectileSystem(
   world: World<Entity>,
   dt: number,
-  stepContext: StepContext,
+  stepContext: StepContext | (() => number) | undefined,
   weaponFiredEvents: WeaponFiredEvent[],
   events: { damage: DamageEvent[] },
   _rapierWorld?: unknown,
 ) {
-  // Extract from StepContext for determinism
-  const { rng, simNowMs, idFactory, friendlyFire = false } = stepContext;
+  // Support legacy positional API: (world, dt, rng, weaponFiredEvents, events, simNowMs)
+  let ctx: StepContext | undefined;
+  if (typeof stepContext === 'function') {
+    // Old positional: stepContext is rng, _rapierWorld is simNowMs
+    const rngFn = stepContext as unknown as () => number;
+    const simNow = typeof _rapierWorld === 'number' ? (_rapierWorld as number) : 0;
+    let seq = 0;
+    const idFactory = () => `${simNow}-${seq++}`;
+    ctx = { rng: rngFn as unknown as Rng, simNowMs: simNow, idFactory, step: dt } as StepContext;
+  } else {
+    ctx = stepContext as StepContext | undefined;
+  }
+
+  if (!ctx) {
+    throw new Error('projectileSystem requires a StepContext parameter for deterministic behavior');
+  }
+
+  const { rng, simNowMs, idFactory, friendlyFire = false } = ctx;
+  if (typeof rng !== 'function') {
+    throw new Error('projectileSystem requires stepContext.rng for deterministic randomness');
+  }
+  if (typeof simNowMs !== 'number') {
+    throw new Error('projectileSystem requires stepContext.simNowMs for deterministic timing');
+  }
+  if (typeof idFactory !== 'function') {
+    throw new Error('projectileSystem requires stepContext.idFactory for deterministic ids');
+  }
+
   // mark optional rapier arg as intentionally unused for now
   void _rapierWorld;
   for (const fireEvent of weaponFiredEvents) {
@@ -54,11 +76,16 @@ export function projectileSystem(
 
     const ownerGameplayId = weapon.ownerId ?? fireEventOwnerId;
 
-    const projectileEntity: Entity & {
+    // Using a loose type here to avoid large refactors during the deterministic
+    // guard implementation. A full migration to string gameplay ids is tracked
+    // as T052B and should be completed separately.
+    type LocalProjectileEntity = Entity & {
       projectile: ProjectileComponent;
       velocity: [number, number, number];
-    } = {
-      id: idFactory(),
+    };
+
+    const projectileEntity: LocalProjectileEntity = {
+      id: idFactory() as unknown as number,
       position: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
       team: weapon.team,
       projectile: {
@@ -70,10 +97,8 @@ export function projectileSystem(
         lifespan: 5,
         spawnTime: simNowMs,
         speed: 20,
-        homing: weapon.flags?.homing
-          ? { turnSpeed: 2, targetId: fireEvent.targetId }
-          : undefined,
-      },
+        homing: weapon.flags?.homing ? { turnSpeed: 2, targetId: fireEvent.targetId } : undefined,
+      } as unknown as ProjectileComponent,
       velocity: [0, 0, 0],
     };
 
@@ -81,7 +106,7 @@ export function projectileSystem(
     const speed = projectileEntity.projectile.speed || 20;
     projectileEntity.velocity = [dx * speed, dy * speed, dz * speed];
 
-    world.add(projectileEntity);
+  world.add(projectileEntity as unknown as Entity);
   }
 
   for (const entity of world.entities) {
@@ -283,7 +308,7 @@ function applyAoEDamage(
     ) {
       continue;
     }
-    if (candidate.weapon?.ownerId && candidate.weapon.ownerId === sourceId) {
+    if (candidate.weapon && (candidate.weapon as unknown as { ownerId?: string }).ownerId && (candidate.weapon as unknown as { ownerId?: string }).ownerId === sourceId) {
       continue;
     }
     if (!friendlyFire && candidate.team === sourceTeam) continue;

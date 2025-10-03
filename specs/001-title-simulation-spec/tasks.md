@@ -125,6 +125,55 @@
       Tests should also assert that persisted payloads do not include runtime-only
       transient fields and that any randomness is derived from StepContext.rng.
 
+## Phase 3.2: Tests First (ADDITIONAL REMEDIATION TASKS) ⚠️ MUST COMPLETE BEFORE IMPLEMENTATION
+
+- [x] T003 [P] Author failing ScoringSystem contract test in
+      `tests/contracts/scoringSystem.contract.test.ts` verifying classification, score deltas, and
+      runtime event log ordering.
+- [x] T004 [P] Author failing RespawnSystem contract test in
+      `tests/contracts/respawnSystem.contract.test.ts` covering respawn delay, queue behavior, and
+      invulnerability timestamps.
+- [x] T005 [P] Author failing runtime event log contract test in
+      `tests/contracts/runtimeEventLog.contract.test.ts` validating ring buffer capacity, ordering,
+      and deterministic IDs.
+- [x] T006 [P] Add seeded deterministic integration test in
+      `tests/integration/simulationDeterminism.test.ts` verifying identical StepContext traces across
+      repeated runs using `FixedStepDriver`.
+- [x] T007 [P] Add respawn queue integration test in
+      `tests/integration/respawnQueueDeterminism.test.ts` ensuring Simulation passes
+      `StepContext.simNowMs` into RespawnSystem and enforces queue limits.
+- [x] T008 [P] Add friendly-fire toggle integration test in
+      `tests/integration/friendlyFireToggle.test.ts` confirming Simulation injects the toggle into
+      ProjectileSystem/BeamSystem via StepContext (no direct `useUI` reads).
+
+- [ ] T016A [P] Determinism guard contract tests — `tests/contracts/determinism.contract.test.ts`
+      - Add failing contract tests that assert systems MUST NOT use `Date.now()` or `Math.random()`.
+      - Tests should verify `WeaponSystem`, `RespawnSystem`, and `AISystem` throw or explicitly
+        guard when called without a `StepContext` supplying `{ simNowMs, rng, idFactory }`.
+      - Purpose: make non-deterministic fallbacks fail so implementation must remove them.
+      - Priority: IMMEDIATE (run before other implementation tasks).
+
+- [ ] T016C [P] Deterministic idFactory tests — `tests/unit/idFactory.test.ts`
+      - Add unit tests asserting event id generation uses `StepContext.idFactory` and that missing
+        idFactory results in a deterministic failure (explicit throw).
+      - Ensure tests fail before implementation. These tests are part of the CRITICAL remediation.
+
+- [ ] T016D [P] NDJSON export performance test — `tests/unit/runtimeEventLogPerf.test.ts`
+      - Create a perf test that serializes 100 `DeathAuditEntry` objects to NDJSON and measures
+        elapsed time. Assert <50ms when `PERFORMANCE_STRICT=true` (configurable env var).
+      - Purpose: satisfy FR-016 and detect regressions in runtimeEventLog serialization.
+
+- [ ] T033A [P] Rapier hit-mapping contract tests — `tests/contracts/rapierAdapter.contract.test.ts`
+      - Add tests for `extractEntityIdFromRapierHit()` covering multiple Rapier hit payload shapes.
+      - Failures should guide adapter implementation and document collider `userData` conventions.
+
+- [ ] T016I [P] Serialization determinism integration test (IT-004) —
+      `tests/integration/serializationDeterminism.test.ts`
+      - Create an integration test that serializes events and entities used for synchronization
+        (DeathAuditEntry + relevant entity snapshots) and asserts stable/deterministic outputs
+        across repeated runs with identical seed and entity state.
+      - Link this test to T016D/T016F and ensure ordering/stable field formats are validated.
+
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 
 - [x] T009 [P] Create `src/ecs/components/robot.ts` defining deterministic Robot entity schema
@@ -201,6 +250,30 @@
       fields. Ensure `WeaponSystem` uses StepContext.rng for accuracy/spread and
       that persisted payloads are serializable for tests and export.
 
+- [ ] T016B [P] Replace non-deterministic fallbacks in systems — implementation
+      - Files: `src/systems/WeaponSystem.ts`, `src/systems/RespawnSystem.ts`, `src/systems/AISystem.ts`
+      - Remove use of `Date.now()` and `Math.random()`; require `StepContext` with `{ simNowMs, rng, idFactory }`.
+      - Policy: systems MUST throw an explicit Error when StepContext or idFactory is omitted to avoid
+        silent non-deterministic behavior. Add unit tests to cover new behavior.
+      - Depends on: T016A, T016C.
+      - Note: Immediate remediation workflow — write T016A and T016C tests, run them to confirm failures,
+        then implement T016B to make tests pass.
+
+// Update perf decision: T016G
+
+- [ ] T016G Decide perf target & update benchmarks + CI
+      - DECISION: Default (developer) target = 30ms per fixed-step; Strict CI target = 16ms per fixed-step.
+      - Update `tests/performance.benchmark.test.ts` to accept `PERFORMANCE_TARGET_MS` env var and
+        gate strict assertions when `PERFORMANCE_STRICT=true` (CI). Document decision in
+        `specs/001-title-simulation-spec/plan.md` and `docs/DEPENDENCIES.md`.
+      - Depends on: T030 (existing perf tasks).
+
+// Fix adapter path ambiguity
+
+- [ ] T033B Rapier adapter docs & implementation fixes
+      - Files: `src/utils/physicsAdapter.ts`, `docs/DEPENDENCIES.md`
+      - Implement any mapping fixes discovered by T033A and document collider `userData` expectations.
+
 ## Phase 3.5: Polish
 
 - [x] T029 [P] Add targeted unit coverage for runtime event log edge cases in
@@ -217,6 +290,17 @@
       with StepContext harness instructions and observability notes.
       Extended: added a small replay trace example and guidance for producing
       and managing golden traces for deterministic regression checks.
+
+- [ ] T016G Decide perf target & update benchmarks + CI
+      - Update `tests/performance.benchmark.test.ts` to use an authoritative 16ms step target
+        (configurable via env var). Document decision in `specs/001-title-simulation-spec/plan.md` and
+        `docs/DEPENDENCIES.md` and add CI job proposal for strict runs.
+      - Depends on: T030 (existing perf tasks).
+
+- [ ] T016H Golden trace helper (optional)
+      - Files: `tests/golden/generate.ts`, `tests/golden/README.md`
+      - Add a helper script for producing deterministic golden traces (JSON/NDJSON) from `FixedStepDriver` runs.
+      - Depends on: T016F (if NDJSON format chosen) and T016E naming parity.
 
 ## Phase 3.6: Loop Synchronization and Timing
 

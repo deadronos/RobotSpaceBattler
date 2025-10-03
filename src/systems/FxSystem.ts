@@ -44,7 +44,13 @@ export function fxSystem(
   events: { impact: ImpactEvent[]; death: DeathEvent[]; damage: DamageEvent[] },
   showFx = true,
 ) {
+  if (!stepContext) {
+    throw new Error('fxSystem requires a StepContext with idFactory for deterministic FX ids');
+  }
   const { idFactory } = stepContext;
+  if (typeof idFactory !== 'function') {
+    throw new Error('fxSystem requires stepContext.idFactory to spawn deterministic FX ids');
+  }
 
   // Spawn FX for this frame's events when enabled
   if (showFx) {
@@ -109,7 +115,7 @@ export function fxSystem(
     e.fx.age += dt;
     if (e.fx.age >= e.fx.ttl) {
       notifyEntityChanged(e as Entity);
-      world.remove(e);
+      world.remove(e as Entity);
     } else {
       notifyEntityChanged(e as Entity);
     }

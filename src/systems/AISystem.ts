@@ -76,7 +76,18 @@ export function aiSystem(
   rapierWorld?: unknown,
   simNowMs?: number,
 ) {
-  const now = typeof simNowMs === "number" ? simNowMs : Date.now();
+  if (typeof simNowMs !== "number") {
+    throw new Error(
+      "aiSystem requires simNowMs (from StepContext) to avoid Date.now fallback and ensure determinism",
+    );
+  }
+  if (typeof rng !== "function") {
+    throw new Error(
+      "aiSystem requires a deterministic rng function to ensure determinism",
+    );
+  }
+
+  const now = simNowMs;
 
   const perceptionContext: PerceptionContext = {
     world,

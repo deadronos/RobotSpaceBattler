@@ -17,6 +17,7 @@ export interface WeaponFiredEvent {
   direction: [number, number, number];
   targetId?: number | string;
   timestamp: number;
+  id?: string;
 }
 
 type RigidBodyLike = {
@@ -41,36 +42,55 @@ function getEntityPosition(
  * Weapon system coordinator - manages cooldowns, ammo, and firing decisions.
  * Emits WeaponFired events rather than directly resolving hits.
  */
-export function weaponSystem(...args: any[]) {
+export function weaponSystem(...args: unknown[]) {
   // Support two calling styles:
   // 1) positional: weaponSystem(world, dt, rng, events, simNowMs?)
   // 2) object param: weaponSystem({ world, stepContext, events, rng, idFactory })
-  let world: any;
+  let world: World<Entity>;
   let dt: number = 1 / 60;
-  let rng: any = () => Math.random();
-  let events: any = { weaponFired: [], damage: [] };
+  let rng: Rng | undefined;
+  let events: { weaponFired: WeaponFiredEvent[]; damage: DamageEvent[] } = { weaponFired: [], damage: [] };
   let simNowMs: number | undefined;
   let idFactory: (() => string) | undefined;
 
-  if (args.length === 1 && args[0] && typeof args[0] === 'object' && 'world' in args[0]) {
-    const p = args[0];
+  if (args.length === 1 && args[0] && typeof args[0] === 'object' && 'world' in (args[0] as Record<string, unknown>)) {
+    const p = args[0] as {
+      world: World<Entity>;
+      stepContext?: { simNowMs?: number; rng?: Rng; step?: number; idFactory?: () => string };
+      rng?: Rng;
+      idFactory?: () => string;
+      events?: { weaponFired: WeaponFiredEvent[]; damage: DamageEvent[] };
+    };
     world = p.world;
     if (p.stepContext) {
       simNowMs = p.stepContext.simNowMs;
       // dt could be derived from stepContext.step but default to 1/60
       dt = p.stepContext.step ?? dt;
-      rng = p.stepContext.rng ?? rng;
+      rng = p.stepContext.rng;
+      idFactory = p.stepContext.idFactory;
     }
-    rng = p.rng ?? rng;
-    idFactory = p.idFactory ?? p.stepContext?.idFactory;
+    rng = p.stepContext?.rng ?? p.rng ?? rng;
+    idFactory = p.idFactory ?? idFactory;
     events = p.events ?? events;
   } else {
     // Positional fallback
-    world = args[0];
-    dt = args[1] ?? dt;
-    rng = args[2] ?? rng;
-    events = args[3] ?? events;
-    simNowMs = args[4];
+  world = args[0] as World<Entity>;
+  dt = (args[1] as number) ?? dt;
+  rng = args[2] as Rng | undefined;
+  events = (args[3] as { weaponFired: WeaponFiredEvent[]; damage: DamageEvent[] } | undefined) ?? events;
+  simNowMs = args[4] as number | undefined;
+    // positional idFactory not supported; must be passed via stepContext or object param
+  }
+
+  // Enforce deterministic inputs
+  if (typeof simNowMs !== 'number') {
+    throw new Error('weaponSystem requires stepContext.simNowMs to be provided for deterministic behavior');
+  }
+  if (typeof rng !== 'function') {
+    throw new Error('weaponSystem requires a deterministic rng function (stepContext.rng)');
+  }
+  if (typeof idFactory !== 'function') {
+    throw new Error('weaponSystem requires an idFactory (stepContext.idFactory) to generate deterministic ids');
   }
 
   for (const entity of world.entities) {
@@ -127,7 +147,7 @@ export function weaponSystem(...args: any[]) {
 
       // Set cooldown
       state.cooldownRemaining = weapon.cooldown;
-      weapon.lastFiredAt = typeof simNowMs === "number" ? simNowMs : Date.now();
+      weapon.lastFiredAt = simNowMs;
 
       const origin = getEntityPosition(e) ?? position;
 
@@ -153,14 +173,14 @@ export function weaponSystem(...args: any[]) {
 
       // Emit weapon fired event
       events.weaponFired.push({
-        id: idFactory ? idFactory() : `${Date.now()}-${Math.floor(Math.random()*10000)}-${Math.floor(Math.random()*10000)}`,
+        id: idFactory(),
         weaponId: weapon.id,
         ownerId,
         type: weapon.type,
         origin: [origin[0], origin[1], origin[2]],
         direction,
         targetId,
-        timestamp: typeof simNowMs === "number" ? simNowMs : Date.now(),
+        timestamp: simNowMs,
       });
 
       // Consume ammo AFTER firing

@@ -15,14 +15,14 @@ export type StepContext = {
 
 type PauseToken = {
   frameCount: number;
-  simTimeMs: number;
+  simNowMs: number;
 };
 
 export class FixedStepDriver {
   private seed: number;
   private step: number;
   private frameCount = 0;
-  private simTimeMs = 0;
+  private simNowMs = 0;
   private paused = false;
   private lastContext: StepContext | null = null;
   private flags: { friendlyFire?: boolean } = {};
@@ -43,17 +43,17 @@ export class FixedStepDriver {
     }
 
     this.frameCount++;
-    this.simTimeMs += this.step * 1000;
+  this.simNowMs += this.step * 1000;
     const rngSeed = stepSeed(this.seed, this.frameCount);
     const rng = createSeededRng(rngSeed);
     const context: StepContext = {
-      frameCount: this.frameCount,
-      simNowMs: this.simTimeMs,
+  frameCount: this.frameCount,
+  simNowMs: this.simNowMs,
       rng,
       step: this.step,
       idFactory: createStepIdFactory({
         frameCount: this.frameCount,
-        simNowMs: this.simTimeMs,
+        simNowMs: this.simNowMs,
       }),
       friendlyFire: this.flags.friendlyFire,
     };
@@ -64,13 +64,13 @@ export class FixedStepDriver {
 
   pause(): PauseToken {
     this.paused = true;
-    return { frameCount: this.frameCount, simTimeMs: this.simTimeMs };
+  return { frameCount: this.frameCount, simNowMs: this.simNowMs };
   }
 
   resume(token?: PauseToken) {
     if (token) {
       this.frameCount = token.frameCount;
-      this.simTimeMs = token.simTimeMs;
+  this.simNowMs = token.simNowMs;
     }
     this.paused = false;
     this.lastContext = null;
@@ -80,7 +80,7 @@ export class FixedStepDriver {
     this.seed = seed;
     this.step = step;
     this.frameCount = 0;
-    this.simTimeMs = 0;
+  this.simNowMs = 0;
     this.paused = false;
     this.lastContext = null;
   }

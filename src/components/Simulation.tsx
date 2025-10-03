@@ -135,7 +135,7 @@ export default function Simulation({
       friendlyFire,
     },
     (ctx) => {
-      const { step, rng, simNowMs, friendlyFire: ctxFriendly, frameCount } = ctx;
+  const { step, rng, simNowMs, frameCount } = ctx;
 
       // Update fixed-step metrics for diagnostics
       const metrics = fixedStepHandle?.getMetrics?.() ?? { stepsLastFrame: 0, backlog: 0 };
@@ -153,21 +153,19 @@ export default function Simulation({
         impact: [] as ImpactEvent[],
       };
 
-      const ff = ctxFriendly ?? friendlyFire;
+  aiSystem(world, rng, rapier, simNowMs);
 
-      aiSystem(world, rng, rapier, simNowMs);
-
-      weaponSystem(world, step, rng, events, simNowMs);
-      hitscanSystem(world, rng, events.weaponFired, events, rapier);
+      // Use object param API to pass StepContext into systems that require deterministic inputs
+      weaponSystem({ world, stepContext: ctx, events });
+      hitscanSystem({ world, stepContext: ctx, weaponFiredEvents: events.weaponFired, events, rapierWorld: rapier });
       beamSystem(
         world,
         step,
         rng,
         events.weaponFired,
         events,
-        simNowMs,
+        ctx,
         rapier,
-        { friendlyFire: ff },
       );
       projectileSystem(
         world,
@@ -212,7 +210,7 @@ export default function Simulation({
       for (const r of respawned) {
         const robot = spawnRobot(r.team as Team, r.weaponType ?? ("gun" as WeaponType));
         try {
-          (robot as RobotComponent).invulnerableUntil = r.invulnerableUntil;
+          ((robot as unknown) as RobotComponent).invulnerableUntil = r.invulnerableUntil;
           notifyEntityChanged(robot);
           invalidate();
         } catch {

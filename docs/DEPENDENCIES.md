@@ -178,3 +178,18 @@ function usePhysicsAdapter() {
   return adapter;
 }
 ```
+
+### Rapier collider userData conventions
+
+When mapping Rapier collider/body objects back to ECS entities the codebase uses a small set
+of conventions to simplify adapters and unit tests. The helper `extractEntityIdFromRapierHit`
+implements the lookup heuristics used across systems. Preferred patterns:
+
+- collider.userData.id: numeric entity id (recommended when integrating 3rd-party assets)
+- collider.entityId: numeric id set directly on the collider wrapper
+- body.__entityId or collider.__entityId: internal-private numeric id used by some adapters
+
+Adapters should prefer `mapHitToEntityId(hit)` when available and fall back to
+`extractEntityIdFromRapierHit(hit)` as a heuristic. Tests assert the adapter will correctly
+read numeric ids from the locations above (see `tests/contracts/rapierAdapter.contract.test.ts`).
+

@@ -7,10 +7,7 @@ import type { Rng } from "../utils/seededRng";
 import { extractEntityIdFromRapierHit } from "./rapierHelpers";
 import type { WeaponFiredEvent } from "./WeaponSystem";
 
-// Monotonic counter to guarantee uniqueness when timestamps collide.
-// Date.now() can return the same millisecond for rapid successive events;
-// append a counter to generated beam ids to avoid duplicate React keys.
-let beamIdCounter = 0;
+// Monotonic counter was removed in favor of deterministic idFactory provided via StepContext.
 
 // no-op helper types removed; BeamComponent uses tuple vectors from ecs/weapons
 
@@ -43,25 +40,32 @@ export function beamSystem(
   _rng: Rng,
   weaponFiredEvents: WeaponFiredEvent[],
   events: { damage: DamageEvent[] },
-  simNowMs?: number,
+  stepContext: { simNowMs?: number; idFactory?: () => string; friendlyFire?: boolean },
   rapierWorld?: unknown,
-  _flags?: { friendlyFire?: boolean },
 ) {
   void _dt;
   void _rng;
-  // Deterministic requirement: do not fall back to Date.now().
-  // If simNowMs is not provided, skip processing to avoid non-determinism.
-  if (typeof simNowMs !== "number") return;
+  if (!stepContext) {
+    throw new Error('beamSystem requires a StepContext with simNowMs and idFactory for deterministic behavior');
+  }
+  const { simNowMs, idFactory, friendlyFire } = stepContext;
+  if (typeof simNowMs !== 'number') {
+    throw new Error('beamSystem requires stepContext.simNowMs');
+  }
+  if (typeof idFactory !== 'function') {
+    throw new Error('beamSystem requires stepContext.idFactory to generate deterministic beam ids');
+  }
   const now = simNowMs;
 
-  processBeamFireEvents(world, weaponFiredEvents, now);
-  processBeamTicks(world, events, now, rapierWorld, _flags);
+  processBeamFireEvents(world, weaponFiredEvents, now, idFactory);
+  processBeamTicks(world, events, now, rapierWorld, { friendlyFire: !!friendlyFire });
 }
 
 export function processBeamFireEvents(
   world: World<Entity>,
   weaponFiredEvents: WeaponFiredEvent[],
   now: number,
+  idFactory: () => string,
 ) {
   if (weaponFiredEvents.length === 0) return;
 
@@ -115,9 +119,8 @@ export function processBeamFireEvents(
       continue;
     }
 
-    const counter = ++beamIdCounter;
     const beamEntity: BeamEntity = {
-      gameplayId: `beam_${fireEvent.weaponId}_${now}_${counter}`,
+      gameplayId: idFactory(),
       position: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
       team: weapon.team,
       beam: {
@@ -493,52 +496,47 @@ function fallbackBeamRaycast(
   return hits;
 }
 
-// Helper utilities used by the beam system. These are small, deterministic
-// implementations copied/rewritten here to avoid adding new dependencies and
-// to ensure the beam system remains testable when Rapier isn't present.
-
-function vectorsEqual(
-  a: [number, number, number],
-  b: [number, number, number],
-) {
-  const EPS = 1e-5;
+// Helper utilities
+function vectorsEqual(a: [number, number, number], b: [number, number, number]) {
+  const eps = 1e-4;
   return (
-    Math.abs(a[0] - b[0]) < EPS &&
-    Math.abs(a[1] - b[1]) < EPS &&
-    Math.abs(a[2] - b[2]) < EPS
+    Math.abs(a[0] - b[0]) <= eps &&
+    Math.abs(a[1] - b[1]) <= eps &&
+    Math.abs(a[2] - b[2]) <= eps
   );
 }
 
 function normalize(v: [number, number, number]) {
-  const l = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-  if (l <= 1e-9) return null;
-  return [v[0] / l, v[1] / l, v[2] / l] as [number, number, number];
+  const len = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+  if (len <= 1e-9) return null;
+  return [v[0] / len, v[1] / len, v[2] / len] as [number, number, number];
 }
 
 function extractPointFromRapierHit(
   hit: unknown,
-  origin: [number, number, number],
-  direction: [number, number, number],
+  _origin: [number, number, number],
+  _direction: [number, number, number],
   _length: number,
-) {
+): [number, number, number] | null {
+  // Mark intentionally-unused params to satisfy linters in environments where
+  // these utilities may be called with different rapier hit shapes.
+  void _origin;
+  void _direction;
   void _length;
-  if (!hit || typeof hit !== "object") return null;
+  if (!hit || typeof hit !== 'object') return null;
   const h = hit as Record<string, unknown>;
-  if (h.point && Array.isArray(h.point) && h.point.length >= 3) {
-    return [
-      h.point[0] as number,
-      h.point[1] as number,
-      h.point[2] as number,
-    ] as [number, number, number];
+  const point = h['point'] ?? h['hitPoint'] ?? h['position'] ?? h['p'];
+  if (!point) return null;
+  if (Array.isArray(point) && point.length >= 3 && typeof point[0] === 'number') {
+    return [point[0] as number, point[1] as number, point[2] as number];
   }
-  // Fallback: if hit contains a 'toi' (time of impact) and origin/direction are available
-  if (typeof h.toi === "number") {
-    const toi = h.toi as number;
-    return [
-      origin[0] + direction[0] * toi,
-      origin[1] + direction[1] * toi,
-      origin[2] + direction[2] * toi,
-    ];
+  if (typeof point === 'object') {
+    const px = (point as Record<string, unknown>)['x'];
+    const py = (point as Record<string, unknown>)['y'];
+    const pz = (point as Record<string, unknown>)['z'];
+    if (typeof px === 'number' && typeof py === 'number' && typeof pz === 'number') {
+      return [px, py, pz];
+    }
   }
   return null;
 }
@@ -548,9 +546,11 @@ function distanceAlongRay(
   point: [number, number, number],
   direction: [number, number, number],
 ) {
-  // Project (point - origin) onto direction (assumed normalized)
-  const vx = point[0] - origin[0];
-  const vy = point[1] - origin[1];
-  const vz = point[2] - origin[2];
-  return vx * direction[0] + vy * direction[1] + vz * direction[2];
+  const dx = point[0] - origin[0];
+  const dy = point[1] - origin[1];
+  const dz = point[2] - origin[2];
+  const dot = dx * direction[0] + dy * direction[1] + dz * direction[2];
+  return dot;
 }
+
+// End of file
