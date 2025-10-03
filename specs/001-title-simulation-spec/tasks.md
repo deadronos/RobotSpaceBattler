@@ -159,23 +159,23 @@
       Simulation now accumulates spawn requests, calls `processRespawnQueue` each step, spawns
       robots via `spawnRobot`, sets `invulnerableUntil` on spawned entities, and updates the
       local queued respawn list deterministically.
-- [ ] T021 Update `src/systems/ProjectileSystem.ts` to use StepContext RNG and friendly-fire flag
+- [x] T021 Update `src/systems/ProjectileSystem.ts` to use StepContext RNG and friendly-fire flag
       instead of `useUI` state, ensuring deterministic spread.
 - [x] T022 Update `src/systems/BeamSystem.ts` to drive tick scheduling via StepContext and eliminate
       `Date.now()` usage.
-- [ ] T023 Update `src/systems/FxSystem.ts` to consume deterministic events (StepContext frame ids)
+- [x] T023 Update `src/systems/FxSystem.ts` to consume deterministic events (StepContext frame ids)
       and avoid non-deterministic timers.
-- [ ] T024 Ensure `src/systems/DamageSystem.ts` applies damage ordering deterministically using
+- [x] T024 Ensure `src/systems/DamageSystem.ts` applies damage ordering deterministically using
       StepContext frameCount (remove implicit array mutation ordering).
-- [ ] T025 Expose runtime event log accessors through `src/ecs/ecsResolve.ts` (or a new
+- [x] T025 Expose runtime event log accessors through `src/ecs/ecsResolve.ts` (or a new
       observability service) for Simulation and diagnostics consumers.
-- [ ] T026 Render runtime event log entries in `src/components/DiagnosticsOverlay.tsx` to aid
+- [x] T026 Render runtime event log entries in `src/components/DiagnosticsOverlay.tsx` to aid
       debugging and QA validation.
-- [ ] T027 Update `src/store/uiStore.ts` and `src/components/Simulation.tsx` wiring so
+- [x] T027 Update `src/store/uiStore.ts` and `src/components/Simulation.tsx` wiring so
       friendly-fire toggle flows through StepContext without systems touching the store directly.
-- [ ] T028 Add fixed-step performance metrics emission to `src/utils/sceneMetrics.ts` (or
+- [x] T028 Add fixed-step performance metrics emission to `src/utils/sceneMetrics.ts` (or
       DiagnosticsOverlay) highlighting steps-per-frame and backlog for QA.
-- [ ] T050 Health model canonicalization — Implementation: update entity
+- [x] T050 Health model canonicalization — Implementation: update entity
       factories and `src/ecs/miniplexStore.ts` to use the canonical health shape
       and migrate existing entities where necessary.
 - [ ] T052 ID & Team canonicalization — Implementation: update id factories,

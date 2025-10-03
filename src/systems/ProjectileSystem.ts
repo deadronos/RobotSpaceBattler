@@ -7,11 +7,9 @@ import type {
   ProjectileComponent,
   WeaponComponent,
 } from "../ecs/weapons";
+import type { StepContext } from "../utils/fixedStepDriver";
 import type { Rng } from "../utils/seededRng";
 import type { WeaponFiredEvent } from "./WeaponSystem";
-
-// Module-scoped serial to ensure unique projectile ids even within the same millisecond
-let projectileSerial = 0;
 
 interface RigidBodyLike {
   translation(): { x: number; y: number; z: number };
@@ -22,19 +20,18 @@ interface RigidBodyLike {
 /**
  * Projectile system for rocket weapons.
  * Spawns projectiles with physics and handles collision/AoE damage.
+ * Now uses StepContext for deterministic RNG and friendly-fire flag.
  */
 export function projectileSystem(
   world: World<Entity>,
   dt: number,
-  rng: Rng,
+  stepContext: StepContext,
   weaponFiredEvents: WeaponFiredEvent[],
   events: { damage: DamageEvent[] },
-  simNowMs?: number,
   _rapierWorld?: unknown,
-  flags?: { friendlyFire?: boolean },
 ) {
-  // Friendly-fire toggle (default false when not provided)
-  let friendlyFire = Boolean(flags?.friendlyFire ?? false);
+  // Extract from StepContext for determinism
+  const { rng, simNowMs, idFactory, friendlyFire = false } = stepContext;
   // mark optional rapier arg as intentionally unused for now
   void _rapierWorld;
   for (const fireEvent of weaponFiredEvents) {
@@ -57,12 +54,11 @@ export function projectileSystem(
 
     const ownerGameplayId = weapon.ownerId ?? fireEventOwnerId;
 
-    const now = typeof simNowMs === "number" ? simNowMs : Date.now();
     const projectileEntity: Entity & {
       projectile: ProjectileComponent;
       velocity: [number, number, number];
     } = {
-      id: `projectile_${fireEvent.weaponId}_${now}_${++projectileSerial}`,
+      id: idFactory(),
       position: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
       team: weapon.team,
       projectile: {
@@ -72,7 +68,7 @@ export function projectileSystem(
         team: weapon.team,
         aoeRadius: weapon.aoeRadius,
         lifespan: 5,
-        spawnTime: now,
+        spawnTime: simNowMs,
         speed: 20,
         homing: weapon.flags?.homing
           ? { turnSpeed: 2, targetId: fireEvent.targetId }
@@ -101,8 +97,7 @@ export function projectileSystem(
     const rigid = e.rigid as unknown as RigidBodyLike | null;
     let mutated = false;
 
-    const currentMs = typeof simNowMs === "number" ? simNowMs : Date.now();
-    const age = (currentMs - projectile.spawnTime) / 1000;
+    const age = (simNowMs - projectile.spawnTime) / 1000;
     if (age >= projectile.lifespan) {
       notifyEntityChanged(e as Entity);
       world.remove(entity);

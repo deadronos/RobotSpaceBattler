@@ -4,7 +4,11 @@ import type { Query } from "miniplex";
 import React, { useEffect, useMemo, useRef } from "react";
 
 import type { RobotComponent } from "../ecs/components/robot";
-import { resolveEntity } from "../ecs/ecsResolve";
+import {
+  clearRuntimeEventLog,
+  resolveEntity,
+  setRuntimeEventLog,
+} from "../ecs/ecsResolve";
 import { useEcsQuery } from "../ecs/hooks";
 import {
   type Entity,
@@ -38,6 +42,7 @@ import { scoringSystem } from "../systems/ScoringSystem";
 import type { WeaponFiredEvent } from "../systems/WeaponSystem";
 import { weaponSystem } from "../systems/WeaponSystem";
 import { createRuntimeEventLog } from "../utils/runtimeEventLog";
+import { updateFixedStepMetrics } from "../utils/sceneMetrics";
 // RNG is created by FixedStepDriver; no per-component RNG import needed
 import { Beam } from "./Beam";
 import { FXLayer } from "./FXLayer";
@@ -112,10 +117,16 @@ export default function Simulation({
   // Create a runtime event log instance for observability and scoring audit entries
   const runtimeEventLog = useMemo(() => createRuntimeEventLog({ capacity: 200 }), []);
 
+  // Expose runtime event log globally for diagnostics
+  useEffect(() => {
+    setRuntimeEventLog(runtimeEventLog);
+    return () => clearRuntimeEventLog();
+  }, [runtimeEventLog]);
+
   const queuedRespawnsRef = useRef<SpawnRequest[]>([]);
 
   // Use fixed-step loop hook to provide deterministic stepping
-  useFixedStepLoop(
+  const fixedStepHandle = useFixedStepLoop(
     {
       enabled: !paused,
       seed: DETERMINISTIC_SEED,
@@ -124,7 +135,17 @@ export default function Simulation({
       friendlyFire,
     },
     (ctx) => {
-      const { step, rng, simNowMs, friendlyFire: ctxFriendly } = ctx;
+      const { step, rng, simNowMs, friendlyFire: ctxFriendly, frameCount } = ctx;
+
+      // Update fixed-step metrics for diagnostics
+      const metrics = fixedStepHandle?.getMetrics?.() ?? { stepsLastFrame: 0, backlog: 0 };
+      updateFixedStepMetrics({
+        stepsLastFrame: metrics.stepsLastFrame,
+        backlog: metrics.backlog,
+        frameCount,
+        simNowMs,
+      });
+
       const events = {
         weaponFired: [] as WeaponFiredEvent[],
         damage: [] as DamageEvent[],
@@ -151,15 +172,13 @@ export default function Simulation({
       projectileSystem(
         world,
         step,
-        rng,
+        ctx,
         events.weaponFired,
         events,
-        simNowMs,
         rapier,
-        { friendlyFire: ff },
       );
 
-      damageSystem(world, events.damage, events);
+      damageSystem(world, events.damage, events, ctx.frameCount);
 
       scoringSystem({
         deathEvents: events.death,
@@ -203,7 +222,9 @@ export default function Simulation({
 
       physicsSyncSystem(world);
 
-      fxSystem(world, step, events);
+      // Pass showFx flag from UI store, allowing tests to control it via parameter
+      const showFx = useUI.getState().showFx;
+      fxSystem(world, step, ctx, events, showFx);
     },
   );
 

@@ -59,7 +59,6 @@ export type ProcessRespawnParams = {
 export function processRespawnQueue(params: ProcessRespawnParams) {
   const { queue, stepContext, spawnConfig } = params;
   const now = stepContext.simNowMs;
-  const respawnDelayMs = spawnConfig?.respawnDelayMs ?? DEFAULT_RESPAWN_DELAY_MS;
   const invulnerabilityMs = spawnConfig?.invulnerabilityMs ?? DEFAULT_INVULNERABILITY_MS;
   const maxSpawnsPerStep = spawnConfig?.maxSpawnsPerStep ?? DEFAULT_MAX_SPAWNS_PER_STEP;
 

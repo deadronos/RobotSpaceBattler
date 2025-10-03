@@ -27,6 +27,7 @@ export type FixedStepLoopHandle = {
   reset: (options?: { seed?: number; step?: number }) => void;
   getDriver: () => FixedStepDriver | null;
   getLastStepContext: () => StepContext | null;
+  getMetrics: () => { stepsLastFrame: number; backlog: number };
 };
 
 export function useFixedStepLoop(
@@ -36,6 +37,7 @@ export function useFixedStepLoop(
   const driverRef = useRef<FixedStepDriver | null>(null);
   const accumulatorRef = useRef(0);
   const lastStepContextRef = useRef<StepContext | null>(null);
+  const metricsRef = useRef({ stepsLastFrame: 0, backlog: 0 });
   const onStepRef = useRef(onStep);
   const optionsRef = useRef({
     enabled: options.enabled,
@@ -105,6 +107,12 @@ export function useFixedStepLoop(
       accumulatorRef.current -= stepSeconds;
       stepsThisFrame++;
     }
+
+    // Update metrics for diagnostics
+    metricsRef.current = {
+      stepsLastFrame: stepsThisFrame,
+      backlog: Math.floor(accumulatorRef.current / stepSeconds),
+    };
   });
 
   const pause = useCallback(() => {
@@ -131,6 +139,11 @@ export function useFixedStepLoop(
 
   const getLastStepContext = useCallback(() => lastStepContextRef.current, []);
 
+  const getMetrics = useCallback(
+    () => metricsRef.current,
+    [],
+  );
+
   const stepManual = useCallback(() => {
     return runStep();
   }, [runStep]);
@@ -143,7 +156,8 @@ export function useFixedStepLoop(
       reset,
       getDriver,
       getLastStepContext,
+      getMetrics,
     }),
-    [getDriver, getLastStepContext, pause, reset, resume, stepManual],
+    [getDriver, getLastStepContext, getMetrics, pause, reset, resume, stepManual],
   );
 }

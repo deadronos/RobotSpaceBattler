@@ -4,7 +4,7 @@ import type { FxComponent } from "../ecs/fx";
 import type { Entity } from "../ecs/miniplexStore";
 import { notifyEntityChanged } from "../ecs/miniplexStore";
 import type { DamageEvent } from "../ecs/weapons";
-import { useUI } from "../store/uiStore";
+import type { StepContext } from "../utils/fixedStepDriver";
 import type { DeathEvent } from "./DamageSystem";
 import type { ImpactEvent } from "./HitscanSystem";
 
@@ -17,9 +17,13 @@ type FxSpawn = {
   intensity?: number;
 };
 
-function spawnFx(world: World<Entity>, fx: FxSpawn) {
+function spawnFx(
+  world: World<Entity>,
+  fx: FxSpawn,
+  idFactory: () => string,
+) {
   const e: Entity = {
-    id: `fx_${fx.type}_${Math.random().toString(36).slice(2)}`,
+    id: idFactory(),
     position: [fx.position[0], fx.position[1], fx.position[2]],
     fx: {
       type: fx.type,
@@ -36,52 +40,60 @@ function spawnFx(world: World<Entity>, fx: FxSpawn) {
 export function fxSystem(
   world: World<Entity>,
   dt: number,
+  stepContext: StepContext,
   events: { impact: ImpactEvent[]; death: DeathEvent[]; damage: DamageEvent[] },
+  showFx = true,
 ) {
-  // Read UI flag safely (tests may not have store setup)
-  let show = true;
-  try {
-    show = !!useUI.getState().showFx;
-  } catch {
-    show = true;
-  }
+  const { idFactory } = stepContext;
 
   // Spawn FX for this frame's events when enabled
-  if (show) {
+  if (showFx) {
     for (const imp of events.impact) {
       // Quick hit flash
       if (imp.position) {
-        spawnFx(world, {
-          type: "hitFlash",
-          position: imp.position,
-          color: "#ffd166",
-          size: 0.4,
-          ttl: 0.25,
-          intensity: 1,
-        });
+        spawnFx(
+          world,
+          {
+            type: "hitFlash",
+            position: imp.position,
+            color: "#ffd166",
+            size: 0.4,
+            ttl: 0.25,
+            intensity: 1,
+          },
+          idFactory,
+        );
 
         // Small particle pop
-        spawnFx(world, {
-          type: "impactParticles",
-          position: imp.position,
-          color: "#ffee99",
-          size: 0.6,
-          ttl: 0.5,
-          intensity: 0.8,
-        });
+        spawnFx(
+          world,
+          {
+            type: "impactParticles",
+            position: imp.position,
+            color: "#ffee99",
+            size: 0.6,
+            ttl: 0.5,
+            intensity: 0.8,
+          },
+          idFactory,
+        );
       }
     }
 
     for (const death of events.death) {
       if (death.position) {
-        spawnFx(world, {
-          type: "explosion",
-          position: death.position,
-          color: "#ff6b6b",
-          size: 1.2,
-          ttl: 0.7,
-          intensity: 1,
-        });
+        spawnFx(
+          world,
+          {
+            type: "explosion",
+            position: death.position,
+            color: "#ff6b6b",
+            size: 1.2,
+            ttl: 0.7,
+            intensity: 1,
+          },
+          idFactory,
+        );
       }
     }
   }

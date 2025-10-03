@@ -1,11 +1,39 @@
 import type { World } from "miniplex";
 
+import type { RuntimeEventLog } from "../utils/runtimeEventLog";
 import { type Entity, getEntityById } from "./miniplexStore";
 import type { WeaponComponent } from "./weapons";
 
 export interface OwnerLookup {
   ownerId?: number | string;
   weaponId?: string;
+}
+
+// Singleton runtime event log accessor
+let _runtimeEventLog: RuntimeEventLog | null = null;
+
+/**
+ * Set the global runtime event log instance.
+ * Should be called during Simulation initialization.
+ */
+export function setRuntimeEventLog(log: RuntimeEventLog) {
+  _runtimeEventLog = log;
+}
+
+/**
+ * Get the global runtime event log instance.
+ * Returns null if not yet initialized.
+ */
+export function getRuntimeEventLog(): RuntimeEventLog | null {
+  return _runtimeEventLog;
+}
+
+/**
+ * Clear the global runtime event log reference.
+ * Useful for cleanup in tests.
+ */
+export function clearRuntimeEventLog() {
+  _runtimeEventLog = null;
 }
 
 export function resolveEntity(

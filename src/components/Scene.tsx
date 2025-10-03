@@ -4,7 +4,6 @@ import { Physics } from "@react-three/rapier";
 import React, { Suspense, useEffect } from "react";
 
 import { useUI } from "../store/uiStore";
-import DiagnosticsOverlay from "./DiagnosticsOverlay";
 import EnvironmentLayout from "./environment/EnvironmentLayout";
 import EnvironmentLighting from "./environment/EnvironmentLighting";
 import Simulation from "./Simulation";

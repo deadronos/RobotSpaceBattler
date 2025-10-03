@@ -86,3 +86,51 @@ export function collectSceneMetrics(root: Object3D | Scene): SceneMetrics {
     geometries: geometries.size,
   };
 }
+
+/**
+ * Fixed-step performance metrics for diagnostics.
+ * Provides a lightweight singleton for exposing fixed-step loop metrics
+ * without prop-drilling through the component tree.
+ */
+
+export interface FixedStepMetrics {
+  stepsLastFrame: number;
+  backlog: number;
+  frameCount: number;
+  simNowMs: number;
+}
+
+let _fixedStepMetrics: FixedStepMetrics = {
+  stepsLastFrame: 0,
+  backlog: 0,
+  frameCount: 0,
+  simNowMs: 0,
+};
+
+/**
+ * Update fixed-step metrics for diagnostics.
+ * Should be called by Simulation each fixed-step.
+ */
+export function updateFixedStepMetrics(metrics: Partial<FixedStepMetrics>) {
+  _fixedStepMetrics = { ..._fixedStepMetrics, ...metrics };
+}
+
+/**
+ * Get current fixed-step metrics.
+ * Returns a snapshot of the latest metrics.
+ */
+export function getFixedStepMetrics(): Readonly<FixedStepMetrics> {
+  return { ..._fixedStepMetrics };
+}
+
+/**
+ * Clear metrics (for cleanup/tests).
+ */
+export function clearFixedStepMetrics() {
+  _fixedStepMetrics = {
+    stepsLastFrame: 0,
+    backlog: 0,
+    frameCount: 0,
+    simNowMs: 0,
+  };
+}
