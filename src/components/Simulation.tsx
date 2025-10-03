@@ -1,20 +1,23 @@
 import { useThree } from "@react-three/fiber";
 import { CuboidCollider, RigidBody, useRapier } from "@react-three/rapier";
 import type { Query } from "miniplex";
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 
 import { useEcsQuery } from "../ecs/hooks";
 import {
   type Entity,
+  type Team,
   getRenderKey,
   subscribeEntityChanges,
   world,
+  notifyEntityChanged,
 } from "../ecs/miniplexStore";
 import { capturePauseVel, restorePauseVel } from "../ecs/pauseManager";
 import type {
   BeamComponent,
   DamageEvent,
   ProjectileComponent,
+  WeaponType,
 } from "../ecs/weapons";
 import { useFixedStepLoop } from "../hooks/useFixedStepLoop";
 import { useSimulationBootstrap } from "../hooks/useSimulationBootstrap";
@@ -27,11 +30,14 @@ import { fxSystem } from "../systems/FxSystem";
 import { hitscanSystem, type ImpactEvent } from "../systems/HitscanSystem";
 import { physicsSyncSystem } from "../systems/PhysicsSyncSystem";
 import { projectileSystem } from "../systems/ProjectileSystem";
-import { respawnSystem } from "../systems/RespawnSystem";
+import { processRespawnQueue, DEFAULT_RESPAWN_DELAY_MS, type SpawnRequest } from "../systems/RespawnSystem";
+import type { RobotComponent } from "../ecs/components/robot";
 import { scoringSystem } from "../systems/ScoringSystem";
 import type { WeaponFiredEvent } from "../systems/WeaponSystem";
 import { weaponSystem } from "../systems/WeaponSystem";
 import { createRuntimeEventLog } from "../utils/runtimeEventLog";
+import { resolveEntity } from "../ecs/ecsResolve";
+import { spawnRobot } from "../robots/spawnControls";
 // RNG is created by FixedStepDriver; no per-component RNG import needed
 import { Beam } from "./Beam";
 import { FXLayer } from "./FXLayer";
@@ -106,6 +112,8 @@ export default function Simulation({
   // Create a runtime event log instance for observability and scoring audit entries
   const runtimeEventLog = useMemo(() => createRuntimeEventLog({ capacity: 200 }), []);
 
+  const queuedRespawnsRef = useRef<SpawnRequest[]>([]);
+
   // Use fixed-step loop hook to provide deterministic stepping
   useFixedStepLoop(
     {
@@ -160,7 +168,38 @@ export default function Simulation({
         idFactory: ctx.idFactory,
       });
 
-      respawnSystem(world, events.death);
+      // Build spawn requests from death events and append to the local queuedRespawns
+      for (const d of events.death) {
+        const ent = resolveEntity(world, d.entityId as unknown as number);
+        const team = (d.team ?? ent?.team) as string;
+        const weaponType = (ent as Entity & { weapon?: { type?: WeaponType } })?.weapon?.type ?? ("gun" as WeaponType);
+        queuedRespawnsRef.current.push({
+          entityId: String(d.entityId),
+          team,
+          respawnAtMs: simNowMs + DEFAULT_RESPAWN_DELAY_MS,
+          weaponType,
+        });
+      }
+
+      // Process the queued respawns deterministically
+      const { respawned, remainingQueue } = processRespawnQueue({
+        queue: queuedRespawnsRef.current,
+        stepContext: ctx,
+      });
+
+      queuedRespawnsRef.current = remainingQueue;
+
+      // Perform runtime spawn actions and set invulnerability on spawned robots
+      for (const r of respawned) {
+        const robot = spawnRobot(r.team as Team, r.weaponType ?? ("gun" as WeaponType));
+        try {
+          (robot as RobotComponent).invulnerableUntil = r.invulnerableUntil;
+          notifyEntityChanged(robot);
+          invalidate();
+        } catch {
+          // ignore in non-runtime tests
+        }
+      }
 
       physicsSyncSystem(world);
 

@@ -153,8 +153,12 @@
       `idFactory`. It normalizes incoming death event shapes, classifies deaths deterministically,
       applies score deltas to injected or global stores, and appends deterministic audit
       entries to the runtime event log.
-- [ ] T020 Refactor `src/systems/RespawnSystem.ts` to require `StepContext.simNowMs`, enforce spawn
+- [x] T020 Refactor `src/systems/RespawnSystem.ts` to require `StepContext.simNowMs`, enforce spawn
       queue rate limiting, and set `invulnerableUntil` deadlines.
+      (Implemented) Added `processRespawnQueue` core API and updated Simulation to call it directly.
+      Simulation now accumulates spawn requests, calls `processRespawnQueue` each step, spawns
+      robots via `spawnRobot`, sets `invulnerableUntil` on spawned entities, and updates the
+      local queued respawn list deterministically.
 - [ ] T021 Update `src/systems/ProjectileSystem.ts` to use StepContext RNG and friendly-fire flag
       instead of `useUI` state, ensuring deterministic spread.
 - [ ] T022 Update `src/systems/BeamSystem.ts` to drive tick scheduling via StepContext and eliminate

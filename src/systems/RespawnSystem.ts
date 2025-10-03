@@ -8,8 +8,8 @@ import { spawnRobot } from "../robots/spawnControls";
 import type { DeathEvent } from "./DamageSystem";
 import type { StepContext } from "../utils/fixedStepDriver";
 
-const DEFAULT_RESPAWN_DELAY_MS = 5000; // contract expects 5000ms
-const DEFAULT_INVULNERABILITY_MS = 2000;
+export const DEFAULT_RESPAWN_DELAY_MS = 5000; // contract expects 5000ms
+export const DEFAULT_INVULNERABILITY_MS = 2000;
 const DEFAULT_MAX_SPAWNS_PER_STEP = 3;
 
 export type SpawnRequest = {
@@ -18,6 +18,7 @@ export type SpawnRequest = {
   respawnAtMs: number;
   retries?: number;
   spawnZoneId?: string;
+  weaponType?: WeaponType;
 };
 
 export type RespawnedEntity = {
@@ -25,6 +26,7 @@ export type RespawnedEntity = {
   team: string | Team;
   position: [number, number, number];
   invulnerableUntil: number;
+  weaponType?: WeaponType;
 };
 
 // Global queue preserved for backward compatibility with runtime wrapper
@@ -78,6 +80,7 @@ export function processRespawnQueue(params: ProcessRespawnParams) {
     team: r.team,
     position: [0, 0, 0],
     invulnerableUntil: now + invulnerabilityMs,
+    weaponType: r.weaponType,
   }));
 
   const remainingQueue: SpawnRequest[] = [...overflow, ...pending];
@@ -117,6 +120,7 @@ export function respawnSystem(
       team,
       respawnAtMs: now + respawnDelayMs,
       spawnZoneId: undefined,
+      weaponType,
     });
 
     if (entity) {
