@@ -135,11 +135,11 @@
       deterministic id assignment, and expose helpers for `invulnerableUntil` tracking.
 - [ ] T014 Align `src/ecs/weapons.ts` with deterministic team/owner id types and remove implicit
       enums in preparation for StepContext-provided flags.
-- [ ] T015 Extend `src/utils/seededRng.ts` with deterministic sequence helpers (idFactory, shuffle)
+- [x] T015 Extend `src/utils/seededRng.ts` with deterministic sequence helpers (idFactory, shuffle)
       consumed by StepContext.
-- [ ] T016 Upgrade `src/utils/fixedStepDriver.ts` to emit full StepContext (frameCount, simNowMs,
+- [x] T016 Upgrade `src/utils/fixedStepDriver.ts` to emit full StepContext (frameCount, simNowMs,
       rng, idFactory) and support deterministic step accumulation.
-- [ ] T017 Update `src/hooks/useFixedStepLoop.ts` to accumulate elapsed time, cap steps-per-frame,
+- [x] T017 Update `src/hooks/useFixedStepLoop.ts` to accumulate elapsed time, cap steps-per-frame,
       and expose StepContext-compatible driver hooks.
 - [ ] T018 Inject StepContext and test-mode entrypoint into `src/components/Simulation.tsx`, ensuring
       systems receive `simNowMs`, seeded rng, and friendly-fire flags.
