@@ -183,13 +183,19 @@ function usePhysicsAdapter() {
 
 When mapping Rapier collider/body objects back to ECS entities the codebase uses a small set
 of conventions to simplify adapters and unit tests. The helper `extractEntityIdFromRapierHit`
-implements the lookup heuristics used across systems. Preferred patterns:
+implements the lookup heuristics used across systems. Important notes:
 
-- collider.userData.id: numeric entity id (recommended when integrating 3rd-party assets)
-- collider.entityId: numeric id set directly on the collider wrapper
-- body.__entityId or collider.__entityId: internal-private numeric id used by some adapters
+- Gameplay IDs in the simulation are canonicalized to strings. When mapping a Rapier hit to
+  an ECS entity the adapter should return the entity's gameplay id as a string (`"42"`).
+
+- Preferred Rapier payload fields the adapter will inspect (in order):
+  - `collider.userData.id` — numeric or string id set on collider's userData (adapter will stringify numeric ids)
+  - `collider.entityId` — numeric or string id set directly on the collider wrapper
+  - `body.__entityId` or `collider.__entityId` — private/internal numeric markers set by some runtimes
 
 Adapters should prefer `mapHitToEntityId(hit)` when available and fall back to
-`extractEntityIdFromRapierHit(hit)` as a heuristic. Tests assert the adapter will correctly
-read numeric ids from the locations above (see `tests/contracts/rapierAdapter.contract.test.ts`).
+`extractEntityIdFromRapierHit(hit)` as a heuristic. Unit tests in
+`tests/contracts/rapierAdapter.contract.test.ts` assert that the adapter will correctly
+read ids from these common fields and that ids are returned as strings for canonical
+consumption by game systems.
 

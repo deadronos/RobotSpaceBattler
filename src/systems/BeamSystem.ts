@@ -276,7 +276,7 @@ function performBeamRaycast(
   if (!normalized) {
     return [] as Array<{
       position: [number, number, number];
-      targetId: number;
+      targetId: string;
     }>;
   }
 
@@ -343,7 +343,7 @@ function tryRapierBeamRaycast(
 
     const hit = raw as Record<string, unknown>;
     const targetId = extractEntityIdFromRapierHit(hit);
-    if (typeof targetId !== "number") {
+    if (typeof targetId !== "string") {
       return;
     }
 

@@ -287,7 +287,7 @@ function performRaycast(
         // Find nearest entity to hit point
         // First try to map rapier hit to entity id directly
         const hitEntityId = extractEntityIdFromRapierHit(hit);
-        if (typeof hitEntityId === "number") {
+        if (typeof hitEntityId === "string") {
           return {
             position: [px, py, pz],
             normal: [-dx, -dy, -dz],
