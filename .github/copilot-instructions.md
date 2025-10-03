@@ -3,6 +3,14 @@
 
 This file tells an AI coding agent how the project is structured, where to find core systems, and which commands and conventions to use.
 
+**REQUIRED READING**: `.specify/memory/constitution.md` — Contains 6 core architectural principles that ALL code changes must follow:
+1. Physics-First Authority (NON-NEGOTIABLE) — Rapier RigidBody is authoritative
+2. Deterministic Simulation — Fixed-step loop with seeded RNG
+3. Test-Driven Development (NON-NEGOTIABLE) — Unit tests + E2E validation
+4. Small, Composable Systems — <300 lines, export pure functions
+5. ECS-Driven Architecture — miniplex authoritative data model
+6. On-Demand Rendering — frameloop="demand" with explicit invalidate()
+
 Quick orientation
 - Tech: React + TypeScript + Vite + react-three-fiber (three.js) + @react-three/rapier (physics).
 - ECS: miniplex (see `src/ecs/miniplexStore.ts` and `SPEC.md`). UI state is in `src/store/uiStore.ts` (zustand).
@@ -34,6 +42,8 @@ Files to inspect for common tasks
 - ECS bootstrap: `src/ecs/miniplexStore.ts`.
 - Tests: `tests/Simulation.test.tsx` (unit), `playwright/tests/smoke.spec.ts` (e2e).
 - Design docs: `SPEC.md` contains architecture, systems and pitfalls — treat it as authoritative for system boundaries.
+- Constitution: `.specify/memory/constitution.md` defines the 6 non-negotiable architectural principles.
+- Specs & tasks: `.specify/` folder contains specs, plans, and task templates for the Spec Kit workflow.
 
 Editing & testing notes for agents
 - Hot-reload friendly: modify components and use `npm run dev` to see changes in the browser at http://localhost:5173.
@@ -50,9 +60,13 @@ Limitations / things not discoverable automatically
 
 If you change major systems
 - Update `SPEC.md` if you alter system responsibilities (physics authority, AI tick rates, projectile model). Tests may need updates.
+- Update `.specify/` documentation (specs, plans, tasks) if architectural patterns or system responsibilities change.
+- Ensure changes comply with constitution principles in `.specify/memory/constitution.md`.
 
 When in doubt
-- Follow `SPEC.md` for intent. Prefer making minimal, reversible changes and add small focused tests (Vitest) and a Playwright smoke check when behavior affects rendering/boot flow.
+- Follow `.specify/memory/constitution.md` for architectural principles (Physics-First, Deterministic, Test-Driven, etc.).
+- Follow `SPEC.md` for system intent and implementation details.
+- Prefer making minimal, reversible changes and add small focused tests (Vitest) and a Playwright smoke check when behavior affects rendering/boot flow.
 
 Feedback
 - Ask the repo maintainer (via PR comment) if you need runtime secrets, non-public endpoints, or to change project scripts.
