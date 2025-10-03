@@ -69,6 +69,21 @@ emits visual FX — so that gameplay is reproducible in tests and visually consi
 - Overlapping AoE: multiple projectiles explode same step — acceptance: damage calculations must be
   additive and deterministic given the seed.
 
+- Respawn timing & simNowMs usage (determinism hole)
+
+Files: RespawnSystem.ts, Simulation.tsx
+Spec: All systems should be driven by StepContext.simNowMs for determinism.
+Implementation: `respawnSystem` currently accepts an optional `now` parameter, but
+Simulation calls `respawnSystem(world, events.death)` without providing `simNowMs`.
+Because the system falls back to `Date.now()` the resulting respawn timings are
+non-deterministic across runs, which breaks reproducibility of tests.
+
+Clarification: RespawnSystem will require callers to provide `StepContext.simNowMs`.
+Use of `Date.now()` as a fallback is no longer acceptable for deterministic behavior.
+Simulation MUST be updated to pass `simNowMs` into RespawnSystem. Tests must
+instantiate `FixedStepDriver` with a fixed seed and pass the driver's `simNowMs`
+when invoking respawn logic.
+
 ---
 
 ## Requirements (mandatory)
@@ -78,6 +93,14 @@ emits visual FX — so that gameplay is reproducible in tests and visually consi
 - FR-001: Simulation MUST run as a deterministic fixed-step loop that produces a StepContext with
   frameCount, simNowMs, seeded RNG, and step duration for every step. (See
   `src/utils/fixedStepDriver.ts`, `src/hooks/useFixedStepLoop.ts`.)
+
+  Update: The in-app hook `useFixedStepLoop` and `Simulation` MUST implement
+  elapsed-time accumulation so that on each render frame the loop can execute
+  multiple fixed steps as needed to catch up. The hook must accept a maximum
+  steps-per-frame safeguard and a test-mode toggle. Deterministic unit and
+  integration tests SHOULD bypass `useFixedStepLoop` and use `FixedStepDriver`
+  directly. Simulation must support a test-mode that accepts an external driver
+  or `simNowMs` for deterministic control.
 
 - FR-002: Systems MUST consume the StepContext RNG for any randomness, and random decisions must
   be reproducible for a given seed. (See usages in `WeaponSystem`, `ProjectileSystem`,
@@ -99,12 +122,25 @@ emits visual FX — so that gameplay is reproducible in tests and visually consi
   integration, handle homing behavior, lifespan, and AoE damage. Projectile collisions MUST produce
   DamageEvents and respect the friendly-fire toggle. (See `src/systems/ProjectileSystem.ts`.)
 
+  Update: Systems MUST not read the global UI store (`useUI.getState()`) for
+  game-rule toggles like friendly-fire. Instead, friendly-fire and similar
+  session-level toggles MUST be provided via StepContext or explicit system
+  parameters passed in from Simulation. ProjectileSystem and other affected
+  systems must be updated to accept a `friendlyFire` boolean parameter (or read
+  it from StepContext) to improve testability and determinism.
+
 - FR-007: DamageSystem MUST consume DamageEvents, update Health components consistently, emit
   DeathEvent on lethal damage, and ensure determinism in damage application ordering. (See
   `src/systems/DamageSystem.ts`.)
 
 - FR-008: ScoringSystem and RespawnSystem MUST process DeathEvents deterministically to update
-  scores and queue respawns. (See `src/systems/ScoringSystem.ts`,
+  scores and queue respawns. ScoringSystem MUST classify deaths into: opponent kill,
+  friendly-fire, or suicide; apply score updates deterministically (team +1 for opponent
+  kills; attacker/team −1 for suicide or friendly-fire as applicable) and record a
+  serializable audit entry for each death including: simNowMs, frameCount, victimId,
+  killerId (if any), killerTeam, victimTeam, classification, and scoreDelta. Processing
+  order MUST be deterministic (for example, by ascending entity id or event queue order)
+  so that scoring traces are reproducible across runs. (See `src/systems/ScoringSystem.ts`,
   `src/systems/RespawnSystem.ts`.)
 
 - FR-009: PhysicsSyncSystem MUST copy authoritative Rapier RigidBody translations into
@@ -135,16 +171,41 @@ emits visual FX — so that gameplay is reproducible in tests and visually consi
   tests that use `FixedStepDriver` with seeded RNG for deterministic validation. (Constitution
   rule: Test-Driven Development.)
 
--- FR-016: The simulation SHOULD maintain a short-lived, in-memory runtime event log capturing kill
-  events (kill, friendly-fire kill, suicide) for observability and scoring audit during runtime.
-  This log MUST NOT be persisted to disk by default and MUST be bounded in size (e.g., last 100
-  events). Tests should be able to inspect this log for correctness.
+-- FR-016: The simulation SHOULD maintain a short-lived, in-memory runtime event log capturing
+  kill events (kill, friendly-fire kill, suicide) for observability and scoring audit during
+  runtime. This log MUST NOT be persisted to disk by default and MUST be bounded in size
+  (for example, last 100 events). Tests should be able to inspect this log for correctness.
+  The ScoringSystem (or a dedicated ObservabilitySystem invoked by ScoringSystem) MUST append
+  audit entries to this bounded log in a deterministic format using StepContext.simNowMs and
+  other deterministic identifiers.
 
 - FR-017: Respawn policy: The simulation MUST respawn dead robots after a configurable fixed delay
   (default 5s). Respawns MUST use a spawn queue to prevent overcrowding; newly respawned robots
   MUST receive a brief invulnerability period (2s) to avoid immediate kills. The respawn location
-  selection SHOULD prefer team spawn points and attempt to avoid immediate proximity to enemies when
-  possible.
+  selection SHOULD prefer team spawn points and attempt to avoid immediate proximity to enemies
+  when possible.
+
+Update: RespawnSystem MUST accept and require StepContext.simNowMs for all timing calculations;
+callers (e.g., Simulation) MUST pass simNowMs when invoking respawn processing to ensure
+determinism. RespawnSystem MUST set invulnerableUntil = simNowMs + invulnerabilityMs (default
+2000) when queuing a respawn. The default respawn delay MUST be 5000ms unless configured
+otherwise. Spawn queue logic MUST enforce a maximum spawn rate per spawn zone to avoid
+overcrowding.
+
+- FR-018: ID generation and determinism: All IDs used in gameplay logic, event
+  serialization, and scoring/audit traces MUST be deterministic and reproducible given
+  the same seed and StepContext (for example, derived from simNowMs, frameCount, and
+  the step's seeded RNG). Rendering-only identifiers (IDs used only for FX entities and
+  not part of serialized game-state) MAY use UUIDs; however they MUST include a
+  deterministic prefix (for example: `"{frameCount}-{simNowMs}-{seq}-"`) so that traces
+  and logs can correlate visual effects with the deterministic simulation step. Systems
+  that currently use module-scoped counters or non-deterministic sources (Math.random(),
+  Date.now()) MUST be updated to use either the StepContext-provided RNG or the
+  deterministic prefix scheme above.
+
+  Implementation note: `src/systems/ProjectileSystem.ts` MUST be updated to accept a friendlyFire boolean
+  rather than calling `useUI.getState()`. Add a mapping in the Simulation orchestration to supply
+  session-level flags into StepContext.
 
 ### Key Entities
 
@@ -189,26 +250,22 @@ emits visual FX — so that gameplay is reproducible in tests and visually consi
 
 ### Session 2025-10-03
 
-- Q: Scoring rules (suicides/friendly-fire/assists) → A: B (Team scoring: team +1 for opponent kills;
-  suicide −1 to killer's team; friendly-fire −1 to attacker).
+- Q: Scoring rules (suicides/friendly-fire/assists) → A: A (Implement full spec scoring: +1
+  opponent kills; −1 for suicide; −1 for friendly-fire. ScoringSystem appends a bounded
+  in-memory audit log entry for each kill with classification, simNowMs, killerId, victimId,
+  and team information.)
 
-- Q: Respawn policy → A: C (Fixed delay + spawn queue; respawned player gets 2s invulnerability).
-
-- Q: Perf target → A: B (Medium — up to 500 active entities).
-
-- Q: Deterministic logging → A: A (In-memory bounded log (last 100 events), no persistence).
-
-- Q: Networking serialization → A: B (Lockstep-ready: events/entities must be serializable
-  deterministically for lockstep sync).
+- Q: Path style for plans and artifacts → A: A (Use repository-relative paths only; avoid
+  hardcoding absolute filesystem paths in plans and specs).
 
 ---
 
 ## Ambiguities & Questions (NEEDS CLARIFICATION)
 
 1. Respawn rules: RESOLVED — Fixed delay + spawn queue; respawned player receives 2s invulnerability.
-  (Configurable delay; default 5s recommended.)
-2. Scoring rules: RESOLVED — Team scoring selected per session: team +1 for opponent kills; suicide
-   −1 to killer's team; friendly-fire −1 to attacker.
+2. Scoring rules: RESOLVED — Full scoring rules selected: team +1 for opponent kills;
+   suicide −1 to killer's team; friendly-fire −1 to attacker. ScoringSystem MUST classify
+   deaths and append a bounded in-memory audit entry for each kill (see FR-016).
 3. Perf/scale targets: RESOLVED — Target capacity: up to 500 active entities (robots + projectiles +
    beams). This target should guide pooling and query optimization decisions.
 4. Deterministic logging: RESOLVED — In-memory bounded log (last 100 events), no persistence by
@@ -321,6 +378,27 @@ emits visual FX — so that gameplay is reproducible in tests and visually consi
 - Risk R-004: Performance under high projectile counts — consider pooling and optimized queries if
   performance targets identified.
 
+- Risk R-005: Module-scoped counters and Math.random/Date.now usage in
+  `BeamSystem.ts`, `ProjectileSystem.ts`, and `FxSystem.ts` can cause
+  non-deterministic IDs and flaky tests. Mitigation: adopt the deterministic-prefix+
+  UUID strategy for rendering IDs and use StepContext-provided RNG or per-step counters
+  for gameplay IDs. Update these files to remove module-scoped counters and avoid
+  Date.now() fallback where deterministic simNowMs should be used.
+
+- Risk R-006: Current `useFixedStepLoop` ties stepping to render frames and does not
+  accumulate elapsed time, which can diverge from FixedStepDriver behavior under
+  varying framerates. Mitigation: require accumulation in `useFixedStepLoop` and
+  provide a test-mode to inject the driver for deterministic runs.
+
+- Note: `src/systems/ProjectileSystem.ts` MUST be updated to accept a friendlyFire boolean
+  rather than calling `useUI.getState()`. Add a mapping in the Simulation orchestration to
+  supply session-level flags into StepContext.
+
+- Note: Plans and spec artifacts MUST reference repository-relative paths (for example:
+  `src/components/Simulation.tsx`, `specs/001-title-simulation-spec/spec.md`) instead of
+  absolute filesystem paths. This avoids environment-specific hardcoding and improves
+  portability of generated artifacts and instructions.
+
 ---
 
 ## Files & Mapping to Current Implementation
@@ -335,9 +413,9 @@ emits visual FX — so that gameplay is reproducible in tests and visually consi
 
 - Hitscan resolver: `src/systems/HitscanSystem.ts`
 
-- Beam resolver: `src/systems/BeamSystem.ts`
+- Beam resolver: `src/systems/BeamSystem.ts` (update ID generation and use StepContext RNG)
 
-- Projectile resolver: `src/systems/ProjectileSystem.ts`
+- Projectile resolver: `src/systems/ProjectileSystem.ts` (replace module counters with deterministic ID strategy)
 
 - Physics sync: `src/systems/PhysicsSyncSystem.ts`
 
@@ -345,36 +423,5 @@ emits visual FX — so that gameplay is reproducible in tests and visually consi
 
 - Scoring & respawn: `src/systems/ScoringSystem.ts`, `src/systems/RespawnSystem.ts`
 
-- FX rendering: `src/systems/FxSystem.ts`, `src/components/FXLayer.tsx`
-
----
-
-## Review Checklist (for PR submission)
-
-- [ ] Add/Update unit tests covering any new behavior
-
-- [ ] Add deterministic integration test(s) using `FixedStepDriver` and seeded RNG
-
-- [ ] Update `SPEC.md` and memory-bank design docs if system responsibilities change
-
-- [ ] Ensure all new physics interactions preserve Physics-First rule
-
-- [ ] Run `npm run test` and `npm run playwright:test` (dev server port 5174) where relevant
-
----
-
-## Execution Status
-
-- [x] User description parsed
-
-- [x] Key concepts extracted
-
-- [x] Ambiguities marked
-
-- [x] User scenarios defined
-
-- [x] Requirements generated
-
-- [x] Entities identified
-
-- [x] Review checklist passed
+- FX rendering: `src/systems/FxSystem.ts` and `src/components/FXLayer.tsx` — make FX IDs
+  include a deterministic prefix and avoid using Math.random() for FX identifiers.
