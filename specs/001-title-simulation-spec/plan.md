@@ -55,6 +55,16 @@ render frame.
 - Primary Dependencies: React, three.js, @react-three/rapier, miniplex (ECS), zustand (UI),
   Vitest (unit tests), Playwright (E2E)
 
+- Adapting existing codebase: This plan adapts an existing frontend codebase implemented in
+  TypeScript using react-three-fiber (r3f), drei helpers, Three.js, Vite, miniplex ECS,
+  zustand for UI state, and Rapier physics. Implementation tasks should modify and extend
+  existing systems (`src/systems/*`, `src/components/Simulation.tsx`) rather than scaffold
+  new standalone apps.
+
+  Library docs and deeper dependency information are available in the repository at
+  `docs/DEPENDENCIES.md` — consult that file when updating integrations or choosing API
+  usage patterns (for example, Rapier raycasts and react-three-rapier patterns).
+
 - Storage: N/A (in-memory runtime structures only for this feature)
 
 - Testing: Vitest for unit tests and integration tests; Playwright for E2E smoke tests
