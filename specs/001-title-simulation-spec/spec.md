@@ -23,8 +23,11 @@ stack."
 ---
 
 ## ⚡ Quick Guidelines
+
 - Focus on WHAT the Simulation must do and WHY.
+
 - Avoid prescribing HOW (frameworks, exact APIs) — map to current files for context only.
+
 - All functional requirements must be testable with unit and integration tests.
 
 ---
@@ -38,9 +41,10 @@ damage and scoring, synchronizes authoritative physics positions to ECS for rend
 emits visual FX — so that gameplay is reproducible in tests and visually consistent for players.
 
 ### Acceptance Scenarios
+
 1. Given a seeded simulation start state, when the simulation runs N fixed steps with identical
-   seed and initial entity state, then the sequence of WeaponFired, Damage, and Death events must
-   be identical across runs.
+  seed and initial entity state, then the sequence of WeaponFired, Damage, and Death events must
+  be identical across runs.
 2. Given a robot that fires a gun (hitscan) at a target in line-of-sight, when WeaponSystem emits
    the WeaponFiredEvent and HitscanSystem runs, then a DamageEvent for the target must be
    produced and Health decreased accordingly.
@@ -55,10 +59,13 @@ emits visual FX — so that gameplay is reproducible in tests and visually consi
    updates and respawn events.
 
 ### Edge Cases
+
 - Rapier APIs unavailable in tests: current behavior uses defensive try/catch and heuristic fallbacks.
   Requirement: graceful fallback to deterministic heuristics for tests.
+
 - Projectile owner destroyed/respawned mid-flight: projectiles store ownerId at spawn; acceptance: use
   stored ownerId for damage and scoring regardless of owner lifecycle.
+
 - Overlapping AoE: multiple projectiles explode same step — acceptance: damage calculations must be
   additive and deterministic given the seed.
 
@@ -67,6 +74,7 @@ emits visual FX — so that gameplay is reproducible in tests and visually consi
 ## Requirements (mandatory)
 
 ### Functional Requirements
+
 - FR-001: Simulation MUST run as a deterministic fixed-step loop that produces a StepContext with
   frameCount, simNowMs, seeded RNG, and step duration for every step. (See
   `src/utils/fixedStepDriver.ts`, `src/hooks/useFixedStepLoop.ts`.)
@@ -127,7 +135,7 @@ emits visual FX — so that gameplay is reproducible in tests and visually consi
   tests that use `FixedStepDriver` with seeded RNG for deterministic validation. (Constitution
   rule: Test-Driven Development.)
 
-- FR-016: The simulation SHOULD maintain a short-lived, in-memory runtime event log capturing kill
+-- FR-016: The simulation SHOULD maintain a short-lived, in-memory runtime event log capturing kill
   events (kill, friendly-fire kill, suicide) for observability and scoring audit during runtime.
   This log MUST NOT be persisted to disk by default and MUST be bounded in size (e.g., last 100
   events). Tests should be able to inspect this log for correctness.
@@ -139,10 +147,14 @@ emits visual FX — so that gameplay is reproducible in tests and visually consi
   possible.
 
 ### Key Entities
+
 - Entity: Robot — has `position`, `rigid` (optional), `team`, `weapon`, `weaponState`, `health`,
   `ai` components.
+
 - Entity: Projectile — `position`, `velocity`, `projectile` payload, `team`, `ownerId`, `lifespan`.
+
 - Entity: Beam — `beam` payload, `position` (origin), `direction`, `activeUntil`.
+
 - Events: WeaponFiredEvent, DamageEvent, ImpactEvent, DeathEvent, SpawnEvent.
 
 ---
@@ -150,16 +162,25 @@ emits visual FX — so that gameplay is reproducible in tests and visually consi
 ## Review & Acceptance Checklist
 
 ### Content Quality
+
 - [x] No implementation details that prescribe languages or frameworks.
+
 - [x] Focused on user value and business needs (deterministic, testable simulation).
+
 - [x] Written for stakeholders and testers.
+
 - [x] All mandatory sections completed.
 
 ### Requirement Completeness
+
 - [ ] No [NEEDS CLARIFICATION] markers remain (see below)
+
 - [x] Requirements are testable and unambiguous where possible.
+
 - [x] Success criteria are measurable.
+
 - [x] Scope is clearly bounded to Simulation subsystem.
+
 - [x] Dependencies and assumptions identified.
 
 ---
@@ -170,17 +191,22 @@ emits visual FX — so that gameplay is reproducible in tests and visually consi
 
 - Q: Scoring rules (suicides/friendly-fire/assists) → A: B (Team scoring: team +1 for opponent kills;
   suicide −1 to killer's team; friendly-fire −1 to attacker).
+
 - Q: Respawn policy → A: C (Fixed delay + spawn queue; respawned player gets 2s invulnerability).
+
 - Q: Perf target → A: B (Medium — up to 500 active entities).
+
 - Q: Deterministic logging → A: A (In-memory bounded log (last 100 events), no persistence).
+
 - Q: Networking serialization → A: B (Lockstep-ready: events/entities must be serializable
   deterministically for lockstep sync).
 
 ---
 
 ## Ambiguities & Questions (NEEDS CLARIFICATION)
+
 1. Respawn rules: RESOLVED — Fixed delay + spawn queue; respawned player receives 2s invulnerability.
-   (Configurable delay; default 5s recommended.)
+  (Configurable delay; default 5s recommended.)
 2. Scoring rules: RESOLVED — Team scoring selected per session: team +1 for opponent kills; suicide
    −1 to killer's team; friendly-fire −1 to attacker.
 3. Perf/scale targets: RESOLVED — Target capacity: up to 500 active entities (robots + projectiles +
@@ -193,9 +219,11 @@ emits visual FX — so that gameplay is reproducible in tests and visually consi
 ---
 
 ## Non-Functional Requirements
+
 - NFR-001: Performance target — the simulation must support up to 500 active entities (robots +
   projectiles + beams) under typical conditions; tests should benchmark and validate performance at
   this scale.
+
 - NFR-002: Serialization: events and entities used in synchronization MUST be serializable
   deterministically (stable ordering, no floating-point randomness in serialization) to enable
   lockstep networking in future integrations.
@@ -205,53 +233,73 @@ emits visual FX — so that gameplay is reproducible in tests and visually consi
 ## Testing & Acceptance Criteria (mandatory)
 
 ### Determinism Tests (required)
+
 - DT-001: Seeded reproducibility: Run the same initial world + seed through `FixedStepDriver` for
   1000 steps; assert that sequences of `WeaponFiredEvent`, `DamageEvent`, and `DeathEvent` match a
   saved golden trace.
+
 - DT-002: RNG isolation: Verify that per-step RNG in `FixedStepDriver` yields the same sequence when
   seed is constant; ensure systems use provided RNG only.
 
 ### Unit Tests (required)
+
 - UT-001: `WeaponSystem` unit tests validating cooldown consumption, ammo depletion, reloading, and
   WeaponFiredEvent shape.
+
 - UT-002: `ProjectileSystem` unit tests for homing behavior, AoE damage falloff, lifespan
   expiration, and ownerId preservation across owner death.
+
 - UT-003: `PhysicsSyncSystem` test ensuring rigid translation updates `entity.position` only when
   threshold exceeded and triggers notify.
+
 - UT-004: `HitscanSystem` tests: both Rapier-based raycast success path (mocked) and deterministic
   fallback heuristic path.
+
 - UT-005: `BeamSystem` tests for tick intervals and damage ticks.
+
 - UT-006: `Observability` test: verify the in-memory runtime event log records kill, friendly-fire
   kill, and suicide events and respects size bounds.
+
 - UT-007: `Respawn` test: verify respawn delay (configurable), spawn queue behavior, and temporary
   invulnerability on respawn (2s) preventing immediate re-death.
 
 ### Integration Tests (required)
+
 - IT-001: Full weapon → damage → death → scoring → respawn flow test in
   `SimulationIntegration.test.tsx` with a controlled seed.
+
 - IT-002: Projectile AoE overlap test verifying deterministic additive damage and friendly-fire toggle
   behavior.
+
 - IT-003: Performance benchmark: run simulation with 500 active entities and verify step times remain
   within acceptable bounds (TBD; suggest <16ms per step as a target for dev machines).
+
 - IT-004: Serialization test: verify that event and entity serialization is stable and deterministic
   across runs with identical seed and entity state.
 
 ### Playwright / E2E (optional)
+
 - E2E-001: Smoke test ensures app boots, canvas renders, and an initial robot spawns (existing
   Playwright smoke test). Extend with a visual check that firing an initial wave renders impact FX.
 
 ---
 
 ## Constraints, Non-Goals, and Trade-offs
+
 - Constraint C-001: Physics-First Authority must be preserved; the Rapier RigidBody is authoritative
   for position when present.
+
 - Constraint C-002: Determinism is mandatory for unit/integration tests; any nondeterministic
   behavior must be isolated and flagged.
+
 - Constraint C-003: Keep systems small and pure where possible (<300 lines) and export pure testable
   functions.
+
 - Non-Goal NG-001: This spec does not mandate a networking protocol or multiplayer synchronization
   strategy.
+
 - Non-Goal NG-002: This spec does not require replacing procedural robot art or GLTF asset imports.
+
 - NFR-001: Performance target — the simulation must support up to 500 active entities (robots +
   projectiles + beams) under typical conditions; tests should benchmark and validate performance at
   this scale.
@@ -259,47 +307,74 @@ emits visual FX — so that gameplay is reproducible in tests and visually consi
 ---
 
 ## Implementation Notes & Risks
+
 - Risk R-001: Rapier API differences in test vs runtime could cause behavior divergence. Mitigation:
   defensive wrappers and deterministic fallbacks (already present in codebase). Add unit tests
   exercising both paths.
+
 - Risk R-002: Owner lifecycle and sourceId preservation — current mitigation: projectile stores
   ownerId at spawn; tests must assert scoring uses stored ownerId.
+
 - Risk R-003: AoE stacking and numerical differences — acceptance tests must assert tolerance and
   deterministic ordering for damage application.
+
 - Risk R-004: Performance under high projectile counts — consider pooling and optimized queries if
   performance targets identified.
 
 ---
 
 ## Files & Mapping to Current Implementation
+
 - Simulation orchestration: `src/components/Simulation.tsx` (fixed-step loop ordering)
+
 - Deterministic driver: `src/utils/fixedStepDriver.ts`, `src/hooks/useFixedStepLoop.ts`
+
 - RNG implementation: `src/utils/seededRng.ts`
+
 - Weapon coordinator: `src/systems/WeaponSystem.ts`
+
 - Hitscan resolver: `src/systems/HitscanSystem.ts`
+
 - Beam resolver: `src/systems/BeamSystem.ts`
+
 - Projectile resolver: `src/systems/ProjectileSystem.ts`
+
 - Physics sync: `src/systems/PhysicsSyncSystem.ts`
+
 - Damage & death: `src/systems/DamageSystem.ts`
+
 - Scoring & respawn: `src/systems/ScoringSystem.ts`, `src/systems/RespawnSystem.ts`
+
 - FX rendering: `src/systems/FxSystem.ts`, `src/components/FXLayer.tsx`
 
 ---
 
 ## Review Checklist (for PR submission)
+
 - [ ] Add/Update unit tests covering any new behavior
+
 - [ ] Add deterministic integration test(s) using `FixedStepDriver` and seeded RNG
+
 - [ ] Update `SPEC.md` and memory-bank design docs if system responsibilities change
+
 - [ ] Ensure all new physics interactions preserve Physics-First rule
+
 - [ ] Run `npm run test` and `npm run playwright:test` (dev server port 5174) where relevant
 
 ---
 
 ## Execution Status
+
 - [x] User description parsed
+
 - [x] Key concepts extracted
+
 - [x] Ambiguities marked
+
 - [x] User scenarios defined
+
 - [x] Requirements generated
+
 - [x] Entities identified
+
 - [x] Review checklist passed
