@@ -50,7 +50,12 @@ export function Projectile({ entity }: { entity: ProjectileEntity }) {
       canSleep={false}
       position={entity.position as unknown as [number, number, number]}
     >
-      <mesh ref={meshRef} castShadow={false} frustumCulled={false} name="ProjectileMesh">
+      <mesh
+        ref={meshRef}
+        castShadow={false}
+        frustumCulled={false}
+        name="ProjectileMesh"
+      >
         <sphereGeometry args={[0.28, 16, 16]} />
         <meshBasicMaterial color={colors.shell} />
       </mesh>

@@ -1,6 +1,10 @@
 import { createEntityLookup } from "./entityLookup";
 import type { FxComponent } from "./fx";
-import { clearPauseVelocity, getPauseVelocity, setPauseVelocity } from "./pauseVelocity";
+import {
+  clearPauseVelocity,
+  getPauseVelocity,
+  setPauseVelocity,
+} from "./pauseVelocity";
 import { createRenderKeyGenerator } from "./renderKey";
 import type {
   BeamComponent,

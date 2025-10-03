@@ -1,7 +1,7 @@
 import type { World } from "miniplex";
 
 import type { Entity } from "./miniplexStore";
-import { clearPauseVel,getPauseVel, setPauseVel } from "./miniplexStore";
+import { clearPauseVel, getPauseVel, setPauseVel } from "./miniplexStore";
 
 export function capturePauseVel(world: World<Entity>) {
   for (const raw of world.entities) {
@@ -11,8 +11,14 @@ export function capturePauseVel(world: World<Entity>) {
       const rigid = e.rigid as unknown as {
         linvel?: () => { x: number; y: number; z: number };
         angvel?: () => { x: number; y: number; z: number };
-        setLinvel?: (v: { x: number; y: number; z: number }, wake: boolean) => void;
-        setAngvel?: (v: { x: number; y: number; z: number }, wake: boolean) => void;
+        setLinvel?: (
+          v: { x: number; y: number; z: number },
+          wake: boolean,
+        ) => void;
+        setAngvel?: (
+          v: { x: number; y: number; z: number },
+          wake: boolean,
+        ) => void;
       };
       const lin = rigid.linvel?.() ?? null;
       const ang = rigid.angvel?.() ?? null;
@@ -33,8 +39,14 @@ export function restorePauseVel(world: World<Entity>) {
     try {
       if (!e.rigid) continue;
       const rigid = e.rigid as unknown as {
-        setLinvel?: (v: { x: number; y: number; z: number }, wake: boolean) => void;
-        setAngvel?: (v: { x: number; y: number; z: number }, wake: boolean) => void;
+        setLinvel?: (
+          v: { x: number; y: number; z: number },
+          wake: boolean,
+        ) => void;
+        setAngvel?: (
+          v: { x: number; y: number; z: number },
+          wake: boolean,
+        ) => void;
       };
       const pv = getPauseVel(e);
       if (pv?.lin) {

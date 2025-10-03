@@ -210,7 +210,10 @@ export function decideEngageAction(
   };
 
   // Back off if too close
-  if (target.position && isTooClose(selfPos, target.position, context.weaponRange)) {
+  if (
+    target.position &&
+    isTooClose(selfPos, target.position, context.weaponRange)
+  ) {
     decision.velocity = calculateBackOffVelocity(
       selfPos,
       target.position,

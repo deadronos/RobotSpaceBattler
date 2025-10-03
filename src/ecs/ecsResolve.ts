@@ -13,7 +13,9 @@ export function resolveEntity(
   id?: number | string,
 ): (Entity & { id: string | number }) | undefined {
   if (typeof id === "number") {
-    const direct = getEntityById(id) as (Entity & { id: string | number }) | undefined;
+    const direct = getEntityById(id) as
+      | (Entity & { id: string | number })
+      | undefined;
     if (direct) {
       return direct;
     }

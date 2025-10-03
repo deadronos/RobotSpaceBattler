@@ -109,8 +109,8 @@ export function projectileSystem(
     const rigid = e.rigid as unknown as RigidBodyLike | null;
     let mutated = false;
 
-  const currentMs = typeof simNowMs === "number" ? simNowMs : Date.now();
-  const age = (currentMs - projectile.spawnTime) / 1000;
+    const currentMs = typeof simNowMs === "number" ? simNowMs : Date.now();
+    const age = (currentMs - projectile.spawnTime) / 1000;
     if (age >= projectile.lifespan) {
       notifyEntityChanged(e as Entity);
       world.remove(entity);

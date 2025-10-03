@@ -17,7 +17,9 @@ export interface EntityLookup<T extends IdentifiableEntity> {
   nextNumericId(): number;
 }
 
-export function createEntityLookup<T extends IdentifiableEntity>(): EntityLookup<T> {
+export function createEntityLookup<
+  T extends IdentifiableEntity,
+>(): EntityLookup<T> {
   let nextId = 1;
   const lookup = new Map<number, T>();
   const listeners = new Set<EntityChangeListener<T>>();

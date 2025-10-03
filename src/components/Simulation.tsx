@@ -4,7 +4,12 @@ import type { Query } from "miniplex";
 import React, { useEffect, useMemo } from "react";
 
 import { useEcsQuery } from "../ecs/hooks";
-import { type Entity, getRenderKey,subscribeEntityChanges, world } from "../ecs/miniplexStore";
+import {
+  type Entity,
+  getRenderKey,
+  subscribeEntityChanges,
+  world,
+} from "../ecs/miniplexStore";
 import { capturePauseVel, restorePauseVel } from "../ecs/pauseManager";
 import type {
   BeamComponent,
@@ -95,31 +100,50 @@ export default function Simulation({
   useSimulationBootstrap(robotQuery, projectileQuery, beamQuery, invalidate);
 
   // Use fixed-step loop hook to provide deterministic stepping
-  useFixedStepLoop({ enabled: !paused, seed: DETERMINISTIC_SEED, step: FIXED_TIMESTEP }, (ctx) => {
-    const { step, rng, simNowMs } = ctx;
-    const events = {
-      weaponFired: [] as WeaponFiredEvent[],
-      damage: [] as DamageEvent[],
-      death: [] as DeathEvent[],
-      impact: [] as ImpactEvent[],
-    };
+  useFixedStepLoop(
+    { enabled: !paused, seed: DETERMINISTIC_SEED, step: FIXED_TIMESTEP },
+    (ctx) => {
+      const { step, rng, simNowMs } = ctx;
+      const events = {
+        weaponFired: [] as WeaponFiredEvent[],
+        damage: [] as DamageEvent[],
+        death: [] as DeathEvent[],
+        impact: [] as ImpactEvent[],
+      };
 
-    aiSystem(world, rng, rapier, simNowMs);
+      aiSystem(world, rng, rapier, simNowMs);
 
-    weaponSystem(world, step, rng, events, simNowMs);
-    hitscanSystem(world, rng, events.weaponFired, events, rapier);
-    beamSystem(world, step, rng, events.weaponFired, events, simNowMs, rapier);
-    projectileSystem(world, step, rng, events.weaponFired, events, simNowMs, rapier);
+      weaponSystem(world, step, rng, events, simNowMs);
+      hitscanSystem(world, rng, events.weaponFired, events, rapier);
+      beamSystem(
+        world,
+        step,
+        rng,
+        events.weaponFired,
+        events,
+        simNowMs,
+        rapier,
+      );
+      projectileSystem(
+        world,
+        step,
+        rng,
+        events.weaponFired,
+        events,
+        simNowMs,
+        rapier,
+      );
 
-    damageSystem(world, events.damage, events);
+      damageSystem(world, events.damage, events);
 
-    scoringSystem(events.death);
-    respawnSystem(world, events.death);
+      scoringSystem(events.death);
+      respawnSystem(world, events.death);
 
-    physicsSyncSystem(world);
+      physicsSyncSystem(world);
 
-    fxSystem(world, step, events);
-  });
+      fxSystem(world, step, events);
+    },
+  );
 
   // Kick the demand loop when unpausing or on mount
   useEffect(() => {

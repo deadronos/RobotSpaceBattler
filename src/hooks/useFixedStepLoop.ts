@@ -3,18 +3,20 @@ import { useEffect, useRef } from "react";
 
 import { FixedStepDriver } from "../utils/fixedStepDriver";
 
-type OnStep = (ctx: ReturnType<FixedStepDriver['stepOnce']>) => void;
+type OnStep = (ctx: ReturnType<FixedStepDriver["stepOnce"]>) => void;
 
-export function useFixedStepLoop({
-  enabled,
-  seed,
-  step,
-}: {
-  enabled: boolean;
-  seed: number;
-  step: number;
-},
-onStep: OnStep) {
+export function useFixedStepLoop(
+  {
+    enabled,
+    seed,
+    step,
+  }: {
+    enabled: boolean;
+    seed: number;
+    step: number;
+  },
+  onStep: OnStep,
+) {
   const driverRef = useRef<FixedStepDriver | null>(null);
 
   useEffect(() => {

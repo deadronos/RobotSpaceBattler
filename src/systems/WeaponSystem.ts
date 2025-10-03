@@ -98,7 +98,7 @@ export function weaponSystem(
 
       // Set cooldown
       state.cooldownRemaining = weapon.cooldown;
-  weapon.lastFiredAt = typeof simNowMs === "number" ? simNowMs : Date.now();
+      weapon.lastFiredAt = typeof simNowMs === "number" ? simNowMs : Date.now();
 
       const origin = getEntityPosition(e) ?? position;
 
@@ -131,8 +131,7 @@ export function weaponSystem(
         origin: [origin[0], origin[1], origin[2]],
         direction,
         targetId,
-        timestamp:
-          typeof simNowMs === "number" ? simNowMs : Date.now(),
+        timestamp: typeof simNowMs === "number" ? simNowMs : Date.now(),
       });
 
       // Consume ammo AFTER firing

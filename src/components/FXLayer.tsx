@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 
 import type { FxComponent } from "../ecs/fx";
 import { useEcsQuery } from "../ecs/hooks";
-import { type Entity, getRenderKey,world } from "../ecs/miniplexStore";
+import { type Entity, getRenderKey, world } from "../ecs/miniplexStore";
 
 type FxEntity = Entity & {
   fx: FxComponent;
@@ -41,7 +41,7 @@ export function FXLayer() {
               </mesh>
             );
           case "impactParticles":
-              return (
+            return (
               <mesh key={getRenderKey(e)} position={position}>
                 <octahedronGeometry args={[size * 0.4, 0]} />
                 <meshBasicMaterial
@@ -52,7 +52,7 @@ export function FXLayer() {
               </mesh>
             );
           case "explosion":
-              return (
+            return (
               <mesh key={getRenderKey(e)} position={position}>
                 <sphereGeometry args={[size, 10, 10]} />
                 <meshBasicMaterial

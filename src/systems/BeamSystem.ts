@@ -2,7 +2,11 @@ import type { World } from "miniplex";
 
 import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
 import { type Entity, notifyEntityChanged } from "../ecs/miniplexStore";
-import type { BeamComponent, DamageEvent, WeaponComponent } from "../ecs/weapons";
+import type {
+  BeamComponent,
+  DamageEvent,
+  WeaponComponent,
+} from "../ecs/weapons";
 import type { Rng } from "../utils/seededRng";
 import { extractEntityIdFromRapierHit } from "./rapierHelpers";
 import type { WeaponFiredEvent } from "./WeaponSystem";
@@ -113,20 +117,12 @@ export function processBeamFireEvents(
     const counter = ++beamIdCounter;
     const beamEntity: BeamEntity = {
       id: `beam_${fireEvent.weaponId}_${now}_${counter}`,
-      position: [
-        fireEvent.origin[0],
-        fireEvent.origin[1],
-        fireEvent.origin[2],
-      ],
+      position: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
       team: weapon.team,
       beam: {
         sourceWeaponId: fireEvent.weaponId,
         ownerId: fireEvent.ownerId,
-        origin: [
-          fireEvent.origin[0],
-          fireEvent.origin[1],
-          fireEvent.origin[2],
-        ],
+        origin: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
         direction: [
           fireEvent.direction[0],
           fireEvent.direction[1],
@@ -209,10 +205,7 @@ function syncBeamToOwner(beamEntity: BeamEntity, owner: BeamOwnerEntity) {
   let beamMutated = false;
 
   const rigid = owner.rigid;
-  if (
-    rigid &&
-    typeof rigid.translation === "function"
-  ) {
+  if (rigid && typeof rigid.translation === "function") {
     try {
       const translation = rigid.translation();
       const next: [number, number, number] = [
@@ -234,7 +227,10 @@ function syncBeamToOwner(beamEntity: BeamEntity, owner: BeamOwnerEntity) {
     return { ownerMutated, beamMutated };
   }
 
-  if (!beamEntity.beam.origin || !vectorsEqual(beamEntity.beam.origin, sourcePosition)) {
+  if (
+    !beamEntity.beam.origin ||
+    !vectorsEqual(beamEntity.beam.origin, sourcePosition)
+  ) {
     beamEntity.beam.origin = [
       sourcePosition[0],
       sourcePosition[1],
@@ -243,7 +239,10 @@ function syncBeamToOwner(beamEntity: BeamEntity, owner: BeamOwnerEntity) {
     beamMutated = true;
   }
 
-  if (!beamEntity.position || !vectorsEqual(beamEntity.position, sourcePosition)) {
+  if (
+    !beamEntity.position ||
+    !vectorsEqual(beamEntity.position, sourcePosition)
+  ) {
     beamEntity.position = [
       sourcePosition[0],
       sourcePosition[1],
@@ -266,7 +265,10 @@ function performBeamRaycast(
 ) {
   const normalized = normalize(direction);
   if (!normalized) {
-    return [] as Array<{ position: [number, number, number]; targetId: number }>;
+    return [] as Array<{
+      position: [number, number, number];
+      targetId: number;
+    }>;
   }
 
   const rapierHits =
@@ -277,9 +279,17 @@ function performBeamRaycast(
   if (candidates.length === 0) {
     candidates = fallbackBeamRaycast(origin, normalized, length, width, world);
   } else {
-    const fallback = fallbackBeamRaycast(origin, normalized, length, width, world);
+    const fallback = fallbackBeamRaycast(
+      origin,
+      normalized,
+      length,
+      width,
+      world,
+    );
     for (const candidate of fallback) {
-      if (!candidates.some((existing) => existing.targetId === candidate.targetId)) {
+      if (
+        !candidates.some((existing) => existing.targetId === candidate.targetId)
+      ) {
         candidates.push(candidate);
       }
     }
@@ -347,8 +357,8 @@ function tryRapierBeamRaycast(
 
     if (
       rw.queryPipeline &&
-      typeof (rw.queryPipeline as { intersectionsWithRay?: unknown }).intersectionsWithRay ===
-        "function"
+      typeof (rw.queryPipeline as { intersectionsWithRay?: unknown })
+        .intersectionsWithRay === "function"
     ) {
       attempted = true;
       try {
@@ -364,20 +374,31 @@ function tryRapierBeamRaycast(
         };
         const bodies = (rw as Record<string, unknown>)["bodies"];
         const colliders = (rw as Record<string, unknown>)["colliders"];
-        qp.intersectionsWithRay?.(bodies, colliders, ray, length, true, (hit) => {
-          processHit(hit);
-          return true;
-        });
+        qp.intersectionsWithRay?.(
+          bodies,
+          colliders,
+          ray,
+          length,
+          true,
+          (hit) => {
+            processHit(hit);
+            return true;
+          },
+        );
       } catch {
         /* fall back to other strategies */
       }
     }
 
-    if (
-      typeof (rw as { castRay?: unknown }).castRay === "function"
-    ) {
+    if (typeof (rw as { castRay?: unknown }).castRay === "function") {
       attempted = true;
-      processHit((rw as { castRay: (...args: unknown[]) => unknown }).castRay(ray, length, true));
+      processHit(
+        (rw as { castRay: (...args: unknown[]) => unknown }).castRay(
+          ray,
+          length,
+          true,
+        ),
+      );
     }
 
     if (
@@ -427,7 +448,8 @@ function fallbackBeamRaycast(
 
     const [ex, ey, ez] = candidate.position;
     const toEntity = [ex - ox, ey - oy, ez - oz];
-    const projectionLength = toEntity[0] * dx + toEntity[1] * dy + toEntity[2] * dz;
+    const projectionLength =
+      toEntity[0] * dx + toEntity[1] * dy + toEntity[2] * dz;
 
     if (projectionLength < 0 || projectionLength > length) continue;
 
@@ -487,7 +509,8 @@ function extractPointFromRapierHit(
     return parsedPoint;
   }
 
-  const toi = typeof hit["toi"] === "number" ? (hit["toi"] as number) : undefined;
+  const toi =
+    typeof hit["toi"] === "number" ? (hit["toi"] as number) : undefined;
   if (typeof toi === "number") {
     const distance = Math.min(Math.max(toi, 0), maxDistance);
     return [
@@ -498,7 +521,9 @@ function extractPointFromRapierHit(
   }
 
   const distance =
-    typeof hit["distance"] === "number" ? (hit["distance"] as number) : undefined;
+    typeof hit["distance"] === "number"
+      ? (hit["distance"] as number)
+      : undefined;
   if (typeof distance === "number") {
     const clamped = Math.min(Math.max(distance, 0), maxDistance);
     return [

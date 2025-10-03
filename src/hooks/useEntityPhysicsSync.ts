@@ -1,5 +1,5 @@
 import { useFrame } from "@react-three/fiber";
-import { type MutableRefObject,useCallback, useEffect, useRef } from "react";
+import { type MutableRefObject, useCallback, useEffect, useRef } from "react";
 
 import type { Entity } from "../ecs/miniplexStore";
 
@@ -34,7 +34,9 @@ export interface PhysicsSyncResult {
   rigidBodyRef: MutableRefObject<RigidBodyHandle | null>;
 }
 
-const DEFAULT_OPTIONS: Required<Pick<PhysicsSyncOptions, "updatePosition" | "syncVelocity" | "wake">> = {
+const DEFAULT_OPTIONS: Required<
+  Pick<PhysicsSyncOptions, "updatePosition" | "syncVelocity" | "wake">
+> = {
   updatePosition: true,
   syncVelocity: true,
   wake: true,
