@@ -45,9 +45,29 @@ Files to inspect for common tasks
 - Constitution: `.specify/memory/constitution.md` defines the 6 non-negotiable architectural principles.
 - Specs & tasks: `.specify/` folder contains specs, plans, and task templates for the Spec Kit workflow.
 
+Feature specs location: The repository also stores active feature specifications under a
+top-level `specs/` directory. Each feature uses a numbered folder (for example,
+`specs/001-title-simulation-spec`) that contains the spec, research, plan, and contract
+artifacts. Agents should prefer `specs/` for feature-level artifacts and `.specify/` for
+templates and the constitution governing how specs are created.
+
+Example (`specs/001-title-simulation-spec`):
+- `spec.md` — the main feature specification and acceptance criteria.
+- `plan.md` — implementation plan scaffold derived from the spec (Phase 0/1).
+- `research.md` — Phase 0 research notes and decisions.
+- `data-model.md` — canonical entities and shapes extracted from the spec.
+- `quickstart.md` — how to run deterministic tests and dev flows for this feature.
+- `contracts/` — API/behavior contracts (e.g., `scoring-contract.md`,
+  `respawn-contract.md`, `observability-contract.md`).
+
+When implementing or modifying features, update both the spec artifacts under
+`specs/` and the `.specify/` templates if responsibilities or workflow steps change.
+
 Editing & testing notes for agents
 - Hot-reload friendly: modify components and use `npm run dev` to see changes in the browser at http://localhost:5173.
-- Playwright smoke test assumes the dev server runs on port 5174. When adding tests, prefer selectors already used (`#status`, `canvas`).
+- Playwright smoke test assumes the dev server runs on port 5174. When adding tests,
+  prefer selectors already used such as the element with id "status" and the canvas
+  element.
 - When changing physics or ECS code, run unit tests and the Playwright smoke to catch regressions quickly.
 
 Examples

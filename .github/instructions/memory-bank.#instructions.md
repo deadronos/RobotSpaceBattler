@@ -5,11 +5,16 @@ Coding standards, domain knowledge, and preferences that AI should follow.
 
 # Spec Kit Context
 
-The project uses the Spec Kit (managed under `.specify/`) as the canonical place for specs, plans, and governance. After environment resets, agents should read required files from `.specify/` to understand project context and active work. Agents SHOULD read the core `.specify` files at the start of tasks.
+Hint: this project is converted to "github spec kit" workflow, constitution lives in .`specify/memory/constitution.md`.
+`specs` folder has numbered folders with specs, plans, research and implemenation task.
 
 ## Spec Kit Structure
 
-All relevant specification and plan files are in the `.specify/` folder.
+All relevant specification and plan files are in the `specs/` folder.
+
+## Legacy Memory bank
+This memory bank, if explicitly called lives in `memory-bank/` folder.
+
 
 ```mermaid
 flowchart TD
