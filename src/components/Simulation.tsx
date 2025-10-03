@@ -58,11 +58,14 @@ type BeamEntity = Entity & {
 
 export default function Simulation({
   renderFloor = false,
+  testMode = false,
 }: {
   renderFloor?: boolean;
+  testMode?: boolean;
 }) {
   const paused = useUI((s) => s.paused);
   const showFx = useUI((s) => s.showFx);
+  const friendlyFire = useUI((s) => s.friendlyFire);
   // rapier context (optional) for physics queries like raycasts
   const rapier = useRapier();
   const { invalidate } = useThree();
@@ -101,15 +104,23 @@ export default function Simulation({
 
   // Use fixed-step loop hook to provide deterministic stepping
   useFixedStepLoop(
-    { enabled: !paused, seed: DETERMINISTIC_SEED, step: FIXED_TIMESTEP },
+    {
+      enabled: !paused,
+      seed: DETERMINISTIC_SEED,
+      step: FIXED_TIMESTEP,
+      testMode: testMode,
+      friendlyFire,
+    },
     (ctx) => {
-      const { step, rng, simNowMs } = ctx;
+      const { step, rng, simNowMs, friendlyFire: ctxFriendly } = ctx;
       const events = {
         weaponFired: [] as WeaponFiredEvent[],
         damage: [] as DamageEvent[],
         death: [] as DeathEvent[],
         impact: [] as ImpactEvent[],
       };
+
+      const ff = ctxFriendly ?? friendlyFire;
 
       aiSystem(world, rng, rapier, simNowMs);
 
@@ -123,6 +134,7 @@ export default function Simulation({
         events,
         simNowMs,
         rapier,
+        { friendlyFire: ff },
       );
       projectileSystem(
         world,
@@ -132,6 +144,7 @@ export default function Simulation({
         events,
         simNowMs,
         rapier,
+        { friendlyFire: ff },
       );
 
       damageSystem(world, events.damage, events);

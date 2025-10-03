@@ -7,7 +7,6 @@ import type {
   ProjectileComponent,
   WeaponComponent,
 } from "../ecs/weapons";
-import { useUI } from "../store/uiStore";
 import type { Rng } from "../utils/seededRng";
 import type { WeaponFiredEvent } from "./WeaponSystem";
 
@@ -32,19 +31,12 @@ export function projectileSystem(
   events: { damage: DamageEvent[] },
   simNowMs?: number,
   _rapierWorld?: unknown,
+  flags?: { friendlyFire?: boolean },
 ) {
-  // Friendly-fire toggle (default false when store not initialized)
-  let friendlyFire = false;
+  // Friendly-fire toggle (default false when not provided)
+  let friendlyFire = Boolean(flags?.friendlyFire ?? false);
   // mark optional rapier arg as intentionally unused for now
   void _rapierWorld;
-  try {
-    // In React runtime, useUI is callable; in tests, this may throw if Zustand isn't set up, so fall back.
-    friendlyFire = useUI.getState
-      ? Boolean(useUI.getState().friendlyFire)
-      : false;
-  } catch {
-    friendlyFire = false;
-  }
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== "rocket") continue;
 

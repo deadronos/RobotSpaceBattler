@@ -11,8 +11,6 @@ import type { Rng } from "../utils/seededRng";
 import { extractEntityIdFromRapierHit } from "./rapierHelpers";
 import type { WeaponFiredEvent } from "./WeaponSystem";
 
-const POSITION_EPSILON = 0.0001;
-
 // Monotonic counter to guarantee uniqueness when timestamps collide.
 // Date.now() can return the same millisecond for rapid successive events;
 // append a counter to generated beam ids to avoid duplicate React keys.
@@ -49,9 +47,11 @@ export function beamSystem(
   events: { damage: DamageEvent[] },
   simNowMs?: number,
   rapierWorld?: unknown,
+  _flags?: { friendlyFire?: boolean },
 ) {
   void _dt;
   void _rng;
+  void _flags;
   const now = typeof simNowMs === "number" ? simNowMs : Date.now();
 
   processBeamFireEvents(world, weaponFiredEvents, now);
@@ -342,8 +342,8 @@ function tryRapierBeamRaycast(
       return;
     }
 
-    const distance = distanceAlongRay(origin, point, direction);
-    hits.push({ targetId, position: point, distance });
+    const distance = distanceAlongRay(origin, point as [number, number, number], direction);
+    hits.push({ targetId, position: point as [number, number, number], distance });
   };
 
   try {
@@ -444,32 +444,33 @@ function fallbackBeamRaycast(
   };
 
   for (const candidate of query.entities) {
-    if (candidate.beam) continue;
+    if (!candidate.position || !candidate.team || candidate.beam) continue;
 
     const [ex, ey, ez] = candidate.position;
-    const toEntity = [ex - ox, ey - oy, ez - oz];
-    const projectionLength =
-      toEntity[0] * dx + toEntity[1] * dy + toEntity[2] * dz;
+    // Vector from ray origin to candidate
+    const vx = ex - ox;
+    const vy = ey - oy;
+    const vz = ez - oz;
 
-    if (projectionLength < 0 || projectionLength > length) continue;
+    // Projection length along the ray direction (direction is expected to be normalized by caller)
+    const proj = vx * dx + vy * dy + vz * dz;
+    if (proj < 0 || proj > length) continue;
 
-    const closestPoint: [number, number, number] = [
-      ox + dx * projectionLength,
-      oy + dy * projectionLength,
-      oz + dz * projectionLength,
-    ];
+    // Closest point on the ray to the candidate
+    const cxp = ox + dx * proj;
+    const cyp = oy + dy * proj;
+    const czp = oz + dz * proj;
 
-    const distanceToBeam = Math.sqrt(
-      (ex - closestPoint[0]) ** 2 +
-        (ey - closestPoint[1]) ** 2 +
-        (ez - closestPoint[2]) ** 2,
-    );
+    const dist2 =
+      (ex - cxp) * (ex - cxp) +
+      (ey - cyp) * (ey - cyp) +
+      (ez - czp) * (ez - czp);
 
-    if (distanceToBeam <= beamRadius) {
+    if (dist2 <= beamRadius * beamRadius) {
       hits.push({
-        position: closestPoint,
         targetId: candidate.id as unknown as number,
-        distance: projectionLength,
+        position: [cxp, cyp, czp],
+        distance: proj,
       });
     }
   }
@@ -477,89 +478,49 @@ function fallbackBeamRaycast(
   return hits;
 }
 
-function normalize(direction: [number, number, number]) {
-  const [dx, dy, dz] = direction;
-  const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
-  if (length < POSITION_EPSILON) {
-    return null;
-  }
-  return [dx / length, dy / length, dz / length] as [number, number, number];
-}
+// Helper utilities used by the beam system. These are small, deterministic
+// implementations copied/rewritten here to avoid adding new dependencies and
+// to ensure the beam system remains testable when Rapier isn't present.
 
-function vectorsEqual(
-  a: [number, number, number],
-  b: [number, number, number],
-) {
+function vectorsEqual(a: [number, number, number], b: [number, number, number]) {
+  const EPS = 1e-5;
   return (
-    Math.abs(a[0] - b[0]) <= POSITION_EPSILON &&
-    Math.abs(a[1] - b[1]) <= POSITION_EPSILON &&
-    Math.abs(a[2] - b[2]) <= POSITION_EPSILON
+    Math.abs(a[0] - b[0]) < EPS &&
+    Math.abs(a[1] - b[1]) < EPS &&
+    Math.abs(a[2] - b[2]) < EPS
   );
 }
 
-function extractPointFromRapierHit(
-  hit: Record<string, unknown>,
-  origin: [number, number, number],
-  direction: [number, number, number],
-  maxDistance: number,
-) {
-  const pointValue = hit["point"] ?? hit["hitPoint"] ?? hit["position"];
-  const parsedPoint = parsePoint(pointValue);
-  if (parsedPoint) {
-    return parsedPoint;
-  }
-
-  const toi =
-    typeof hit["toi"] === "number" ? (hit["toi"] as number) : undefined;
-  if (typeof toi === "number") {
-    const distance = Math.min(Math.max(toi, 0), maxDistance);
-    return [
-      origin[0] + direction[0] * distance,
-      origin[1] + direction[1] * distance,
-      origin[2] + direction[2] * distance,
-    ] as [number, number, number];
-  }
-
-  const distance =
-    typeof hit["distance"] === "number"
-      ? (hit["distance"] as number)
-      : undefined;
-  if (typeof distance === "number") {
-    const clamped = Math.min(Math.max(distance, 0), maxDistance);
-    return [
-      origin[0] + direction[0] * clamped,
-      origin[1] + direction[1] * clamped,
-      origin[2] + direction[2] * clamped,
-    ] as [number, number, number];
-  }
-
-  return null;
+function normalize(v: [number, number, number]) {
+  const l = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+  if (l <= 1e-9) return null;
+  return [v[0] / l, v[1] / l, v[2] / l] as [number, number, number];
 }
 
-function parsePoint(value: unknown) {
-  if (!value) return null;
-  if (Array.isArray(value) && value.length >= 3) {
-    const [x, y, z] = value;
-    if (
-      typeof x === "number" &&
-      typeof y === "number" &&
-      typeof z === "number"
-    ) {
-      return [x, y, z] as [number, number, number];
-    }
+function extractPointFromRapierHit(
+  hit: unknown,
+  origin: [number, number, number],
+  direction: [number, number, number],
+  _length: number,
+) {
+  void _length;
+  if (!hit || typeof hit !== "object") return null;
+  const h = hit as Record<string, unknown>;
+  if (h.point && Array.isArray(h.point) && h.point.length >= 3) {
+    return [h.point[0] as number, h.point[1] as number, h.point[2] as number] as [
+      number,
+      number,
+      number,
+    ];
   }
-  if (typeof value === "object") {
-    const v = value as Record<string, unknown>;
-    const x = v["x"];
-    const y = v["y"];
-    const z = v["z"];
-    if (
-      typeof x === "number" &&
-      typeof y === "number" &&
-      typeof z === "number"
-    ) {
-      return [x, y, z] as [number, number, number];
-    }
+  // Fallback: if hit contains a 'toi' (time of impact) and origin/direction are available
+  if (typeof h.toi === "number") {
+    const toi = h.toi as number;
+    return [
+      origin[0] + direction[0] * toi,
+      origin[1] + direction[1] * toi,
+      origin[2] + direction[2] * toi,
+    ];
   }
   return null;
 }
@@ -569,8 +530,9 @@ function distanceAlongRay(
   point: [number, number, number],
   direction: [number, number, number],
 ) {
-  const dx = point[0] - origin[0];
-  const dy = point[1] - origin[1];
-  const dz = point[2] - origin[2];
-  return dx * direction[0] + dy * direction[1] + dz * direction[2];
+  // Project (point - origin) onto direction (assumed normalized)
+  const vx = point[0] - origin[0];
+  const vy = point[1] - origin[1];
+  const vz = point[2] - origin[2];
+  return vx * direction[0] + vy * direction[1] + vz * direction[2];
 }

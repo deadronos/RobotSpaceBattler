@@ -17,6 +17,7 @@ export type FixedStepLoopOptions = {
   maxStepsPerFrame?: number;
   maxAccumulatedSteps?: number;
   testMode?: boolean;
+  friendlyFire?: boolean;
 };
 
 export type FixedStepLoopHandle = {
@@ -61,6 +62,13 @@ export function useFixedStepLoop(
       driverRef.current = null;
     };
   }, [options.seed, options.step]);
+
+  // Keep driver flags in sync when friendlyFire option changes
+  useEffect(() => {
+    if (driverRef.current) {
+      driverRef.current.setFlags({ friendlyFire: options.friendlyFire });
+    }
+  }, [options.friendlyFire]);
 
   const runStep = useCallback((): StepContext | null => {
     const driver = driverRef.current;

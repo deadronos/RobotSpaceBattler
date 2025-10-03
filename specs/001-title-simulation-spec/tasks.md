@@ -141,8 +141,11 @@
       rng, idFactory) and support deterministic step accumulation.
 - [x] T017 Update `src/hooks/useFixedStepLoop.ts` to accumulate elapsed time, cap steps-per-frame,
       and expose StepContext-compatible driver hooks.
-- [ ] T018 Inject StepContext and test-mode entrypoint into `src/components/Simulation.tsx`, ensuring
+- [x] T018 Inject StepContext and test-mode entrypoint into `src/components/Simulation.tsx`, ensuring
       systems receive `simNowMs`, seeded rng, and friendly-fire flags.
+      (Implemented) Simulation now accepts a `testMode` prop and passes `friendlyFire`
+      through `useFixedStepLoop`. `FixedStepDriver` was extended to accept runtime
+      flags and `ProjectileSystem`/`BeamSystem` were updated to accept optional flags.
 - [ ] T019 Refactor `src/systems/ScoringSystem.ts` to consume StepContext, classify kills
       deterministically, and append `DeathAuditEntry` objects via the runtime event log.
 - [ ] T020 Refactor `src/systems/RespawnSystem.ts` to require `StepContext.simNowMs`, enforce spawn

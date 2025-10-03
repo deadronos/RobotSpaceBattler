@@ -10,6 +10,7 @@ export type StepContext = {
   rng: Rng;
   step: number;
   idFactory: () => string;
+  friendlyFire?: boolean;
 };
 
 type PauseToken = {
@@ -24,10 +25,16 @@ export class FixedStepDriver {
   private simTimeMs = 0;
   private paused = false;
   private lastContext: StepContext | null = null;
+  private flags: { friendlyFire?: boolean } = {};
 
   constructor(seed: number, step: number) {
     this.seed = seed;
     this.step = step;
+  }
+
+  // Allow external callers to inject runtime flags (friendly-fire, debug modes, etc.)
+  setFlags(flags: { friendlyFire?: boolean }) {
+    this.flags = { ...this.flags, ...flags };
   }
 
   stepOnce(): StepContext {
@@ -48,6 +55,7 @@ export class FixedStepDriver {
         frameCount: this.frameCount,
         simNowMs: this.simTimeMs,
       }),
+      friendlyFire: this.flags.friendlyFire,
     };
 
     this.lastContext = context;
