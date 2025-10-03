@@ -31,6 +31,7 @@ import { respawnSystem } from "../systems/RespawnSystem";
 import { scoringSystem } from "../systems/ScoringSystem";
 import type { WeaponFiredEvent } from "../systems/WeaponSystem";
 import { weaponSystem } from "../systems/WeaponSystem";
+import { createRuntimeEventLog } from "../utils/runtimeEventLog";
 // RNG is created by FixedStepDriver; no per-component RNG import needed
 import { Beam } from "./Beam";
 import { FXLayer } from "./FXLayer";
@@ -102,6 +103,9 @@ export default function Simulation({
   // Spawn & bootstrap logic extracted to hook
   useSimulationBootstrap(robotQuery, projectileQuery, beamQuery, invalidate);
 
+  // Create a runtime event log instance for observability and scoring audit entries
+  const runtimeEventLog = useMemo(() => createRuntimeEventLog({ capacity: 200 }), []);
+
   // Use fixed-step loop hook to provide deterministic stepping
   useFixedStepLoop(
     {
@@ -149,7 +153,13 @@ export default function Simulation({
 
       damageSystem(world, events.damage, events);
 
-      scoringSystem(events.death);
+      scoringSystem({
+        deathEvents: events.death,
+        stepContext: ctx,
+        runtimeEventLog: runtimeEventLog,
+        idFactory: ctx.idFactory,
+      });
+
       respawnSystem(world, events.death);
 
       physicsSyncSystem(world);

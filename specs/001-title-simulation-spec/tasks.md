@@ -146,8 +146,13 @@
       (Implemented) Simulation now accepts a `testMode` prop and passes `friendlyFire`
       through `useFixedStepLoop`. `FixedStepDriver` was extended to accept runtime
       flags and `ProjectileSystem`/`BeamSystem` were updated to accept optional flags.
-- [ ] T019 Refactor `src/systems/ScoringSystem.ts` to consume StepContext, classify kills
+- [x] T019 Refactor `src/systems/ScoringSystem.ts` to consume StepContext, classify kills
       deterministically, and append `DeathAuditEntry` objects via the runtime event log.
+      (Implemented) `scoringSystem` now accepts a parameter object containing `stepContext`,
+      an optional `runtimeEventLog`, an optional injected `scoreBoard` for tests, and
+      `idFactory`. It normalizes incoming death event shapes, classifies deaths deterministically,
+      applies score deltas to injected or global stores, and appends deterministic audit
+      entries to the runtime event log.
 - [ ] T020 Refactor `src/systems/RespawnSystem.ts` to require `StepContext.simNowMs`, enforce spawn
       queue rate limiting, and set `invulnerableUntil` deadlines.
 - [ ] T021 Update `src/systems/ProjectileSystem.ts` to use StepContext RNG and friendly-fire flag
