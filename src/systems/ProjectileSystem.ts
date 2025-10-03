@@ -7,8 +7,10 @@ import type {
   ProjectileComponent,
   WeaponComponent,
 } from "../ecs/weapons";
+import { useUI } from "../store/uiStore";
 import type { Rng } from "../utils/seededRng";
 import type { WeaponFiredEvent } from "./WeaponSystem";
+import type { StepContext } from "../utils/fixedStepDriver";
 
 // Module-scoped serial to ensure unique projectile ids even within the same millisecond
 let projectileSerial = 0;
@@ -19,24 +21,31 @@ interface RigidBodyLike {
   setLinvel(velocity: { x: number; y: number; z: number }, wake: boolean): void;
 }
 
+export type ProjectileSystemParams = {
+  world: World<Entity>;
+  stepContext: StepContext;
+  weaponFiredEvents: WeaponFiredEvent[];
+  events: { damage: DamageEvent[] };
+  rapierWorld?: unknown;
+  flags?: { friendlyFire?: boolean };
+};
+
 /**
  * Projectile system for rocket weapons.
  * Spawns projectiles with physics and handles collision/AoE damage.
  */
-export function projectileSystem(
-  world: World<Entity>,
-  dt: number,
-  rng: Rng,
-  weaponFiredEvents: WeaponFiredEvent[],
-  events: { damage: DamageEvent[] },
-  simNowMs?: number,
-  _rapierWorld?: unknown,
-  flags?: { friendlyFire?: boolean },
-) {
+export function projectileSystem(params: ProjectileSystemParams) {
+  const { world, stepContext, weaponFiredEvents, events, rapierWorld, flags } = params;
+
+  const dt = stepContext.step; // seconds per fixed step
+  const rng = stepContext.rng;
+  const simNowMs = stepContext.simNowMs;
+
   // Friendly-fire toggle (default false when not provided)
   let friendlyFire = Boolean(flags?.friendlyFire ?? false);
   // mark optional rapier arg as intentionally unused for now
-  void _rapierWorld;
+  void rapierWorld;
+
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== "rocket") continue;
 
