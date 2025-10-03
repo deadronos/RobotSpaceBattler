@@ -133,3 +133,21 @@ could introduce non-determinism.
 - [React Three Rapier Docs - Physics Configuration](https://docs.pmnd.rs/react-three-rapier)
 - See `src/components/Scene.tsx` for implementation
 - See `src/systems/PhysicsSyncSystem.ts` for ECS-physics synchronization
+
+## StepContext harness & observability
+
+- For deterministic tests, use `src/utils/fixedStepDriver.ts` to create a seeded `FixedStepDriver`.
+  The driver exposes `stepOnce()` which returns a `StepContext` object (frameCount, simNowMs,
+  rng, idFactory) that can be passed into systems for deterministic evaluation. Example:
+
+  ```ts
+  import { createFixedStepDriver } from '../src/utils/fixedStepDriver';
+  const driver = createFixedStepDriver(12345, 1/60);
+  const ctx = driver.stepOnce();
+  mySystem(world, ctx);
+  ```
+
+- Diagnostics: The project exposes a runtime event log (bounded ring buffer) and
+  fixed-step metrics. Enable `showFixedStepMetrics` in the Diagnostics overlay to surface
+  steps-per-frame, backlog, last rAF timestamp, and invalidation counts. These metrics are
+  useful when validating rAF-driven TickDriver behavior and physics update-loop coherence.

@@ -202,3 +202,14 @@ export function setInvulnerableUntil(entity: Entity, timestamp: number) {
 export function clearInvulnerable(entity: Entity) {
   setInvulnerableUntil(entity, 0);
 }
+
+export function ensureAllGameplayIds() {
+  for (const e of world.entities) {
+    if (!e.gameplayId) {
+      const numeric = e.id ?? (world.id(e) as number | undefined);
+      if (numeric !== undefined) {
+        e.gameplayId = ensureGameplayId(numeric);
+      }
+    }
+  }
+}

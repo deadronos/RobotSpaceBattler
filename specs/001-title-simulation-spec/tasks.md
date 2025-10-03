@@ -6,10 +6,6 @@
       with on-demand rAF invalidation. If `independent`, ensure Simulation's fixed-step
       stays authoritative for game logic while Rapier's own stepping continues smoothly.
       Optionally switch to `updateLoop="follow"` IF and ONLY IF tests confirm determinism
-      and visual coherence. Document decision in `docs/DEPENDENCIES.md`.60 Physics update-loop coherence: evaluate `@react-three/rapier` `updateLoop` settings
-      with on-demand rAF invalidation. If `independent`, ensure Simulation's fixed-step
-      stays authoritative for game logic while Rapier's own stepping continues smoothly.
-      Optionally switch to `updateLoop="follow"` IF and ONLY IF tests confirm determinism
       and visual coherence. Document decision in `docs/DEPENDENCIES.md`.
 ## Execution Flow (main)
 ```text
@@ -207,11 +203,11 @@
 
 ## Phase 3.5: Polish
 
-- [ ] T029 [P] Add targeted unit coverage for runtime event log edge cases in
+- [x] T029 [P] Add targeted unit coverage for runtime event log edge cases in
       `tests/unit/runtimeEventLog.test.ts` (overflow, order toggles, reset).
-- [ ] T030 [P] Extend `tests/performance.benchmark.test.ts` with a 500-entity seeded benchmark
+- [x] T030 [P] Extend `tests/performance.benchmark.test.ts` with a 500-entity seeded benchmark
       verifying <16ms per fixed-step using the upgraded driver.
-- [ ] T031 [P] Update `specs/001-title-simulation-spec/quickstart.md` and `docs/DEPENDENCIES.md`
+- [x] T031 [P] Update `specs/001-title-simulation-spec/quickstart.md` and `docs/DEPENDENCIES.md`
       with StepContext harness instructions and observability notes.
 
 ## Phase 3.6: Loop Synchronization and Timing
@@ -223,7 +219,7 @@
       - suspends when paused and resumes cleanly;
       - exposes a minimal test seam for mocking rAF in unit tests.
 
-- [ ] T060 Physics update-loop coherence: evaluate `@react-three/rapier` `updateLoop` settings
+- [x] T060 Physics update-loop coherence: evaluate `@react-three/rapier` `updateLoop` settings
       with on-demand rAF invalidation. If `independent`, ensure Simulation’s fixed-step
       stays authoritative for game logic while Rapier’s own stepping continues smoothly.
       Optionally switch to `updateLoop="follow"` IF and ONLY IF tests confirm determinism

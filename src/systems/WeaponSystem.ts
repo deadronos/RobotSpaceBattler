@@ -41,13 +41,38 @@ function getEntityPosition(
  * Weapon system coordinator - manages cooldowns, ammo, and firing decisions.
  * Emits WeaponFired events rather than directly resolving hits.
  */
-export function weaponSystem(
-  world: World<Entity>,
-  dt: number,
-  rng: Rng,
-  events: { weaponFired: WeaponFiredEvent[]; damage: DamageEvent[] },
-  simNowMs?: number,
-) {
+export function weaponSystem(...args: any[]) {
+  // Support two calling styles:
+  // 1) positional: weaponSystem(world, dt, rng, events, simNowMs?)
+  // 2) object param: weaponSystem({ world, stepContext, events, rng, idFactory })
+  let world: any;
+  let dt: number = 1 / 60;
+  let rng: any = () => Math.random();
+  let events: any = { weaponFired: [], damage: [] };
+  let simNowMs: number | undefined;
+  let idFactory: (() => string) | undefined;
+
+  if (args.length === 1 && args[0] && typeof args[0] === 'object' && 'world' in args[0]) {
+    const p = args[0];
+    world = p.world;
+    if (p.stepContext) {
+      simNowMs = p.stepContext.simNowMs;
+      // dt could be derived from stepContext.step but default to 1/60
+      dt = p.stepContext.step ?? dt;
+      rng = p.stepContext.rng ?? rng;
+    }
+    rng = p.rng ?? rng;
+    idFactory = p.idFactory ?? p.stepContext?.idFactory;
+    events = p.events ?? events;
+  } else {
+    // Positional fallback
+    world = args[0];
+    dt = args[1] ?? dt;
+    rng = args[2] ?? rng;
+    events = args[3] ?? events;
+    simNowMs = args[4];
+  }
+
   for (const entity of world.entities) {
     const e = entity as Entity & {
       weapon?: WeaponComponent;
@@ -128,6 +153,7 @@ export function weaponSystem(
 
       // Emit weapon fired event
       events.weaponFired.push({
+        id: idFactory ? idFactory() : `${Date.now()}-${Math.floor(Math.random()*10000)}-${Math.floor(Math.random()*10000)}`,
         weaponId: weapon.id,
         ownerId,
         type: weapon.type,

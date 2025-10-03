@@ -29,6 +29,25 @@ Passing StepContext.simNowMs in tests
 - When calling systems that do time-based work (RespawnSystem, BeamSystem), provide the
   driver's simNowMs. Do not rely on Date.now() in tests.
 
+StepContext harness: example
+
+- Create a seeded driver and inject `stepContext` into systems when testing:
+
+  ```ts
+  import { createFixedStepDriver } from '../../src/utils/fixedStepDriver';
+  const driver = createFixedStepDriver(12345, 1/60);
+  // Advance a few steps and call system under test with driver.stepOnce()
+  const ctx = driver.stepOnce();
+  mySystem(world, ctx);
+  ```
+
+Observability & diagnostics
+
+- Use the runtime event log and DiagnosticsOverlay to capture deterministic traces during
+  development and when debugging test failures. The overlay exposes fixed-step metrics (steps
+  per frame and backlog) and rAF timing metrics when `showFixedStepMetrics` is enabled in UI.
+  Use `getRuntimeEventLog()` from `src/ecs/ecsResolve.ts` in tests to assert audit entries.
+
 Playwright E2E
 
 - Install browsers: npm run playwright:install

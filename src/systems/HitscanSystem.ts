@@ -13,13 +13,37 @@ export interface ImpactEvent {
   targetId?: number;
 }
 
-export function hitscanSystem(
-  world: World<Entity>,
-  rng: Rng,
-  weaponFiredEvents: WeaponFiredEvent[],
-  events: { damage: DamageEvent[]; impact: ImpactEvent[] },
-  rapierWorld?: unknown,
-) {
+export function hitscanSystem(...args: any[]) {
+  // Support either positional args or single params object
+  let world: any;
+  let rng: any = () => Math.random();
+  let weaponFiredEvents: any[] = [];
+  let events: { damage: any[]; impact: any[] } = { damage: [], impact: [] };
+  let rapierWorld: unknown | undefined = undefined;
+
+  if (
+    args.length === 1 &&
+    args[0] &&
+    typeof args[0] === "object" &&
+    "world" in args[0]
+  ) {
+    const p = args[0];
+    world = p.world;
+    if (p.stepContext) {
+      rng = p.stepContext.rng ?? rng;
+    }
+    rng = p.rng ?? rng;
+    weaponFiredEvents = p.weaponFiredEvents ?? weaponFiredEvents;
+    events = p.events ?? events;
+    rapierWorld = p.physicsAdapter ?? p.rapierWorld;
+  } else {
+    world = args[0];
+    rng = args[1] ?? rng;
+    weaponFiredEvents = args[2] ?? weaponFiredEvents;
+    events = args[3] ?? events;
+    rapierWorld = args[4];
+  }
+
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== "gun") continue;
 
@@ -106,9 +130,24 @@ function performRaycast(
   const [ox, oy, oz] = origin;
   const [dx, dy, dz] = direction;
 
-  // If a Rapier world is available, attempt to perform a physics raycast and
-  // map the hit point back to a nearby entity. This gives more accurate
-  // physics-based hits when possible; otherwise fallback to the heuristic.
+  // If a Rapier-like physics adapter is provided that exposes a simple raycast
+  // function (for tests), use it directly and map the result into a hit.
+  if (rapierWorld && typeof (rapierWorld as any).raycast === 'function') {
+    try {
+      const hit = (rapierWorld as any).raycast({ origin: { x: ox, y: oy, z: oz }, dir: { x: dx, y: dy, z: dz } }, maxDistance);
+      if (hit && typeof hit === 'object') {
+        const targetId = (hit as any).targetId;
+        const position = (hit as any).position as [number, number, number] | undefined;
+        const normal = (hit as any).normal as [number, number, number] | undefined;
+        if (position && normal) {
+          return { position, normal, targetId };
+        }
+      }
+    } catch {
+      // fall through and use other methods
+    }
+  }
+
   if (rapierWorld) {
     try {
       const rw = rapierWorld as unknown as Record<string, unknown>;
@@ -321,42 +360,4 @@ function performRaycast(
 
     const dot =
       (toTarget[0] * dx + toTarget[1] * dy + toTarget[2] * dz) / distance;
-    if (dot > 0.99) {
-      return {
-        position: candidate.position as [number, number, number],
-        normal: [-dx, -dy, -dz] as [number, number, number],
-        targetId: candidate.id as unknown as number,
-      };
-    }
-
-    return null;
-  };
-
-  if (preferredTarget) {
-    const preferredHit = attemptHit(
-      preferredTarget as Entity & {
-        position?: [number, number, number];
-        team?: string;
-        weapon?: WeaponComponent;
-      },
-    );
-    if (preferredHit) {
-      return preferredHit;
-    }
-  }
-
-  for (const entity of world.entities) {
-    const candidate = entity as Entity & {
-      position?: [number, number, number];
-      team?: string;
-      weapon?: WeaponComponent;
-    };
-
-    const hit = attemptHit(candidate);
-    if (hit) {
-      return hit;
-    }
-  }
-
-  return null;
-}
+    if

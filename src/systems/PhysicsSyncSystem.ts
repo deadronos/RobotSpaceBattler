@@ -42,8 +42,10 @@ export function physicsSyncSystem(world: World<Entity>) {
           Math.abs(e.position[2] - newZ) > threshold;
 
         if (positionChanged) {
-          // Update ECS position from physics with a fresh vector reference
-          e.position = [newX, newY, newZ];
+          // Update existing position vector in-place to preserve the reference
+          e.position[0] = newX;
+          e.position[1] = newY;
+          e.position[2] = newZ;
 
           // Notify React components that this entity has changed
           notifyEntityChanged(e as Entity);
