@@ -6,7 +6,7 @@
 and AI agents MUST adhere to the 6 core principles (Physics-First Authority, Deterministic Simulation,
 Test-Driven Development, Small Composable Systems, ECS-Driven Architecture, On-Demand Rendering).
 
-Project documentation and workflow artifacts are managed in `.specify/` (specs, plans, tasks, templates).
+Project documentation and workflow artifacts are managed in `specs/` (numbered folders with specs, plans, tasks, templates).
 
 
 ## Project Structure & Module Organization

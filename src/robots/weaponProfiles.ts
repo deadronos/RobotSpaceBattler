@@ -33,7 +33,7 @@ export const weaponProfiles: Record<WeaponType, WeaponProfile> = {
     spread: 0,
     ammo: undefined,
     aoeRadius: undefined,
-    beamParams: { duration: 1000, width: 0.1, tickInterval: 100 },
+  beamParams: { durationMs: 1000, width: 0.1, tickIntervalMs: 100 },
     flags: { continuous: true },
   },
   rocket: {

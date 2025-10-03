@@ -161,7 +161,7 @@
       local queued respawn list deterministically.
 - [ ] T021 Update `src/systems/ProjectileSystem.ts` to use StepContext RNG and friendly-fire flag
       instead of `useUI` state, ensuring deterministic spread.
-- [ ] T022 Update `src/systems/BeamSystem.ts` to drive tick scheduling via StepContext and eliminate
+- [x] T022 Update `src/systems/BeamSystem.ts` to drive tick scheduling via StepContext and eliminate
       `Date.now()` usage.
 - [ ] T023 Update `src/systems/FxSystem.ts` to consume deterministic events (StepContext frame ids)
       and avoid non-deterministic timers.

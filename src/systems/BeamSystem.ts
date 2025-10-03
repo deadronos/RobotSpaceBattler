@@ -2,11 +2,7 @@ import type { World } from "miniplex";
 
 import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
 import { type Entity, notifyEntityChanged } from "../ecs/miniplexStore";
-import type {
-  BeamComponent,
-  DamageEvent,
-  WeaponComponent,
-} from "../ecs/weapons";
+import type { BeamComponent, DamageEvent, WeaponComponent } from "../ecs/weapons";
 import type { Rng } from "../utils/seededRng";
 import { extractEntityIdFromRapierHit } from "./rapierHelpers";
 import type { WeaponFiredEvent } from "./WeaponSystem";
@@ -15,6 +11,8 @@ import type { WeaponFiredEvent } from "./WeaponSystem";
 // Date.now() can return the same millisecond for rapid successive events;
 // append a counter to generated beam ids to avoid duplicate React keys.
 let beamIdCounter = 0;
+
+// no-op helper types removed; BeamComponent uses tuple vectors from ecs/weapons
 
 export type BeamEntity = Entity & {
   beam: BeamComponent;
@@ -51,11 +49,13 @@ export function beamSystem(
 ) {
   void _dt;
   void _rng;
-  void _flags;
-  const now = typeof simNowMs === "number" ? simNowMs : Date.now();
+  // Deterministic requirement: do not fall back to Date.now().
+  // If simNowMs is not provided, skip processing to avoid non-determinism.
+  if (typeof simNowMs !== "number") return;
+  const now = simNowMs;
 
   processBeamFireEvents(world, weaponFiredEvents, now);
-  processBeamTicks(world, events, now, rapierWorld);
+  processBeamTicks(world, events, now, rapierWorld, _flags);
 }
 
 export function processBeamFireEvents(
@@ -79,8 +79,8 @@ export function processBeamFireEvents(
     const weapon = owner?.weapon;
     if (!owner || !weapon) continue;
 
-    const duration = weapon.beamParams?.duration ?? 2000;
-    const width = weapon.beamParams?.width ?? 0.1;
+  const duration = weapon.beamParams?.durationMs ?? 2000;
+  const width = weapon.beamParams?.width ?? 0.1;
     const length = weapon.range || 50;
 
     const existing = beamQuery.entities.find((candidate) => {
@@ -117,13 +117,17 @@ export function processBeamFireEvents(
 
     const counter = ++beamIdCounter;
     const beamEntity: BeamEntity = {
-      id: `beam_${fireEvent.weaponId}_${now}_${counter}`,
+      gameplayId: `beam_${fireEvent.weaponId}_${now}_${counter}`,
       position: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
       team: weapon.team,
       beam: {
         sourceWeaponId: fireEvent.weaponId,
         ownerId: ownerLookupId,
-        origin: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
+        origin: [
+          fireEvent.origin[0],
+          fireEvent.origin[1],
+          fireEvent.origin[2],
+        ],
         direction: [
           fireEvent.direction[0],
           fireEvent.direction[1],
@@ -132,13 +136,13 @@ export function processBeamFireEvents(
         length,
         width,
         activeUntil: now + duration,
-        tickDamage: weapon.power / 10,
-        tickInterval: weapon.beamParams?.tickInterval ?? 100,
+        tickDamage: weapon.beamParams?.damagePerTick ?? weapon.power / 10,
+        tickInterval: weapon.beamParams?.tickIntervalMs ?? 100,
         lastTickAt: now,
         firedAt: now,
       },
     };
-    world.add(beamEntity);
+  world.add(beamEntity as unknown as Entity);
   }
 }
 
@@ -147,9 +151,11 @@ export function processBeamTicks(
   events: { damage: DamageEvent[] },
   now: number,
   rapierWorld?: unknown,
+  flags?: { friendlyFire?: boolean },
 ) {
   const beamQuery = world.with("beam") as unknown as { entities: BeamEntity[] };
   const beams = [...beamQuery.entities];
+  const friendlyFire = !!flags?.friendlyFire;
 
   for (const entity of beams) {
     const beamEntity = entity as BeamEntity;
@@ -182,6 +188,7 @@ export function processBeamTicks(
         world,
         owner.team,
         rapierWorld,
+        friendlyFire,
       );
 
       for (const hit of hits) {
@@ -228,10 +235,7 @@ function syncBeamToOwner(beamEntity: BeamEntity, owner: BeamOwnerEntity) {
     return { ownerMutated, beamMutated };
   }
 
-  if (
-    !beamEntity.beam.origin ||
-    !vectorsEqual(beamEntity.beam.origin, sourcePosition)
-  ) {
+  if (!beamEntity.beam.origin || !vectorsEqual(beamEntity.beam.origin, sourcePosition)) {
     beamEntity.beam.origin = [
       sourcePosition[0],
       sourcePosition[1],
@@ -263,6 +267,7 @@ function performBeamRaycast(
   world: World<Entity>,
   ownerTeam?: string,
   rapierWorld?: unknown,
+  friendlyFire: boolean = false,
 ) {
   const normalized = normalize(direction);
   if (!normalized) {
@@ -302,7 +307,8 @@ function performBeamRaycast(
     if (!target) continue;
 
     const team = (target as { team?: string }).team;
-    if (ownerTeam && team === ownerTeam) continue;
+    // Respect friendlyFire: only exclude same-team hits when friendlyFire is false
+    if (!friendlyFire && ownerTeam && team === ownerTeam) continue;
 
     filtered.push(candidate);
   }
