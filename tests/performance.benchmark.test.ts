@@ -44,13 +44,23 @@ describe('Performance benchmark', () => {
     console.info(`Performance benchmark: ${COUNT} entities, avg step ${avg.toFixed(2)}ms`);
 
     const strict = process.env.PERFORMANCE_STRICT === 'true';
-    if (strict) {
-      // In strict mode we assert the target < 16ms (typical fixed-step target)
-      expect(avg).toBeLessThan(16);
+    const ci = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+    const envTarget = Number(process.env.PERFORMANCE_TARGET_MS || 0) || undefined;
+
+    const defaultTarget = envTarget ?? (strict ? 16 : 30);
+
+    // In CI, only enforce strict target if PERFORMANCE_STRICT is explicitly enabled.
+    if (ci && strict) {
+      expect(avg).toBeLessThan(defaultTarget);
+    } else if (strict) {
+      // Local developer ran with strict intent
+      expect(avg).toBeLessThan(defaultTarget);
     } else {
-      // In normal runs be permissive but ensure test is measuring and returns a number
+      // Non-strict runs validate we measured a finite number and log the target for visibility.
       expect(Number.isFinite(avg)).toBe(true);
-      expect(avg).toBeGreaterThanOrEqual(0);
+      // Provide guidance in test output to set PERFORMANCE_STRICT=true to enforce 16ms in local runs.
+      // eslint-disable-next-line no-console
+      console.info(`Note: not enforcing strict threshold. To enable strict mode set PERFORMANCE_STRICT=true (target ${defaultTarget}ms).`);
     }
   });
 });

@@ -49,4 +49,58 @@ describe('RuntimeEventLog (ring buffer) edge cases', () => {
     expect(log.size()).toBe(0);
     expect(log.read().length).toBe(0);
   });
+
+  it('handles heavy interleaved append and read without corruption', () => {
+    const CAP = 50;
+    const TOTAL = 1000;
+    const log = createRuntimeEventLog({ capacity: CAP });
+
+    // Rapidly append many entries and intermittently read newest-first
+    for (let i = 0; i < TOTAL; i++) {
+      log.append(makeEntry(String(i), i, i));
+      // Every 17 appends, perform a read and validate invariants
+      if (i % 17 === 0) {
+        const entries = log.read({ order: 'newest-first' });
+        // size should never exceed capacity
+        expect(entries.length).toBeLessThanOrEqual(CAP);
+        if (entries.length > 0) {
+          // newest-first: first entry should have the highest simNowMs
+          const maxTs = Math.max(...entries.map((e) => e.simNowMs));
+          expect(entries[0].simNowMs).toBe(maxTs);
+        }
+      }
+    }
+
+    // After all appends, the ring buffer should contain the last CAP entries in oldest-first order
+    const lastEntries = log.read({ order: 'oldest-first' }).map((e) => e.id);
+    const expectedStart = TOTAL - CAP;
+    const expected = Array.from({ length: CAP }, (_, i) => String(expectedStart + i));
+    expect(lastEntries).toEqual(expected);
+  });
+
+  it('read and append interleave preserves ordering and capacity with multiple reads', () => {
+    const CAP = 20;
+    const log = createRuntimeEventLog({ capacity: CAP });
+
+    // Append CAP entries
+    for (let i = 0; i < CAP; i++) log.append(makeEntry(String(i), i, i));
+
+    // Interleave reads and appends
+    for (let i = CAP; i < CAP + 200; i++) {
+      if (i % 5 === 0) {
+        const oldest = log.read({ order: 'oldest-first' }).map((e) => e.id);
+        expect(oldest.length).toBeLessThanOrEqual(CAP);
+      }
+      log.append(makeEntry(String(i), i, i));
+    }
+
+    // Final consistency check
+    const final = log.read({ order: 'oldest-first' }).map((e) => e.id);
+    expect(final.length).toBe(CAP);
+    // ensure monotonic increasing simNowMs values
+    const sims = log.read({ order: 'oldest-first' }).map((e) => e.simNowMs);
+    for (let j = 1; j < sims.length; j++) {
+      expect(sims[j]).toBeGreaterThanOrEqual(sims[j - 1]);
+    }
+  });
 });

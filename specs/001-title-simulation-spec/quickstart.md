@@ -41,6 +41,49 @@ StepContext harness: example
   mySystem(world, ctx);
   ```
 
+Replaying and producing golden traces
+
+- You can produce a simple replay trace (JSON) from a deterministic driver run and
+  compare it against an expected golden trace to detect regressions. Example flow:
+
+  ```ts
+  import { createFixedStepDriver } from '../../src/utils/fixedStepDriver';
+  import { createRuntimeEventLog } from '../../src/utils/runtimeEventLog';
+
+  const driver = createFixedStepDriver(12345, 1/60);
+  const eventLog = createRuntimeEventLog({ capacity: 10000 });
+
+  // Example runner: advance driver N steps and capture events into a replay array
+  const replay: Array<{ frame: number; events: any[] }> = [];
+  for (let i = 0; i < 500; i++) {
+    const ctx = driver.stepOnce();
+    // Call systems under test that append into eventLog
+    // e.g. scoringSystem(world, { stepContext: ctx, runtimeEventLog: eventLog, ... })
+    // For demo: read any new audit entries and append to the replay payload
+    const recent = eventLog.read({ order: 'newest-first' }).slice(0, 20);
+    replay.push({ frame: ctx.frameCount, events: recent });
+  }
+
+  // Persist the replay as JSON for golden comparisons
+  // Node environment example (runs in tests or small script):
+  // import { writeFileSync } from 'fs';
+  // writeFileSync('replay-12345.json', JSON.stringify(replay, null, 2));
+  ```
+
+Guidance for golden trace comparisons
+
+- Keep golden traces under `tests/golden/` named by seed and scenario (for example
+  `tests/golden/seed-12345-basic-combat.json`).
+- Golden traces should be specific to the test scenario: event order, classification,
+  and critical numeric fields (ids, timestamps, score deltas). Avoid encoding transient
+  fields like runtime object refs or non-deterministic render keys.
+- To assert equality in tests, compare only the subset of fields necessary to prove
+  correctness (for example: event type, frameCount, simNowMs, victimId, killerId,
+  classification, scoreDelta). This reduces brittleness while preserving determinism checks.
+- Update golden traces intentionally via a documented workflow and a commit that includes
+  the new golden file plus a short rationale. Prefer small scenario-specific golden files
+  rather than one massive trace file.
+
 Observability & diagnostics
 
 - Use the runtime event log and DiagnosticsOverlay to capture deterministic traces during

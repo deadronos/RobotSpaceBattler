@@ -151,3 +151,30 @@ could introduce non-determinism.
   fixed-step metrics. Enable `showFixedStepMetrics` in the Diagnostics overlay to surface
   steps-per-frame, backlog, last rAF timestamp, and invalidation counts. These metrics are
   useful when validating rAF-driven TickDriver behavior and physics update-loop coherence.
+
+## Physics Adapter (Rapier integration)
+
+- The repository exposes a small physics adapter abstraction in `src/utils/physicsAdapter.ts`.
+  - `createRapierAdapter({ world, mapHitToEntityId })` wraps a Rapier-compatible world object
+    (for example the Rapier world returned by `useRapier()` or the low-level Rapier instance).
+  - The adapter exposes `raycast`, `overlapSphere` and `proximity` methods and will try
+    common Rapier entry points (`raycast`, `castRay`, `queryPipeline.castRay`, `raw.castRay`) in
+    prioritized order.
+  - `mapHitToEntityId(hit)` can be provided to map Rapier collider/body objects to ECS entity
+    ids. If omitted the adapter uses `extractEntityIdFromRapierHit()` heuristics.
+
+- Tests and contract helpers also provide `createDeterministicAdapter(seed)` for deterministic
+  unit tests and parity checks.
+
+- Usage example (in application code):
+
+```ts
+import { createRapierAdapter } from '../src/utils/physicsAdapter';
+import { useRapier } from '@react-three/rapier';
+
+function usePhysicsAdapter() {
+  const { world } = useRapier();
+  const adapter = createRapierAdapter({ world });
+  return adapter;
+}
+```

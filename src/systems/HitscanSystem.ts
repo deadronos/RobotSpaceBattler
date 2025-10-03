@@ -60,7 +60,34 @@ export function hitscanSystem(...args: any[]) {
       | undefined;
 
     const weapon = owner?.weapon;
-    if (!owner || !weapon) continue;
+    if (!owner || !weapon) {
+      // No owner in world (test harness): allow physics-only raycast path if physics adapter is available
+      const hitFromAdapter = performRaycast(
+        fireEvent.origin,
+        fireEvent.direction,
+        100,
+        world,
+        undefined,
+        ownerLookupId,
+        undefined,
+        rapierWorld,
+      );
+      if (hitFromAdapter) {
+        events.damage.push({
+          sourceId: ownerLookupId,
+          weaponId: fireEvent.weaponId,
+          targetId: hitFromAdapter.targetId,
+          position: hitFromAdapter.position,
+          damage: 1,
+        });
+        events.impact.push({
+          position: hitFromAdapter.position,
+          normal: hitFromAdapter.normal,
+          targetId: hitFromAdapter.targetId,
+        });
+      }
+      continue;
+    }
 
     const spreadAngle = weapon.spread || 0;
     const accuracy = weapon.accuracy || 1.0;
@@ -360,4 +387,42 @@ function performRaycast(
 
     const dot =
       (toTarget[0] * dx + toTarget[1] * dy + toTarget[2] * dz) / distance;
-    if
+    if (dot > 0.99) {
+      return {
+        position: candidate.position as [number, number, number],
+        normal: [-dx, -dy, -dz] as [number, number, number],
+        targetId: candidate.id as unknown as number,
+      };
+    }
+
+    return null;
+  };
+
+  if (preferredTarget) {
+    const preferredHit = attemptHit(
+      preferredTarget as Entity & {
+        position?: [number, number, number];
+        team?: string;
+        weapon?: WeaponComponent;
+      },
+    );
+    if (preferredHit) {
+      return preferredHit;
+    }
+  }
+
+  for (const entity of world.entities) {
+    const candidate = entity as Entity & {
+      position?: [number, number, number];
+      team?: string;
+      weapon?: WeaponComponent;
+    };
+
+    const hit = attemptHit(candidate);
+    if (hit) {
+      return hit;
+    }
+  }
+
+  return null;
+}
