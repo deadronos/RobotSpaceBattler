@@ -70,8 +70,9 @@ export function processBeamFireEvents(
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== "laser") continue;
 
+    const ownerLookupId = String(fireEvent.ownerId);
     const owner = resolveOwner(world, {
-      ownerId: fireEvent.ownerId,
+      ownerId: ownerLookupId,
       weaponId: fireEvent.weaponId,
     }) as BeamOwnerEntity | undefined;
 
@@ -87,7 +88,7 @@ export function processBeamFireEvents(
       return (
         beam &&
         beam.sourceWeaponId === fireEvent.weaponId &&
-        beam.ownerId === fireEvent.ownerId
+        beam.ownerId === ownerLookupId
       );
     }) as BeamEntity | undefined;
 
@@ -121,7 +122,7 @@ export function processBeamFireEvents(
       team: weapon.team,
       beam: {
         sourceWeaponId: fireEvent.weaponId,
-        ownerId: fireEvent.ownerId,
+        ownerId: ownerLookupId,
         origin: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
         direction: [
           fireEvent.direction[0],
@@ -342,8 +343,16 @@ function tryRapierBeamRaycast(
       return;
     }
 
-    const distance = distanceAlongRay(origin, point as [number, number, number], direction);
-    hits.push({ targetId, position: point as [number, number, number], distance });
+    const distance = distanceAlongRay(
+      origin,
+      point as [number, number, number],
+      direction,
+    );
+    hits.push({
+      targetId,
+      position: point as [number, number, number],
+      distance,
+    });
   };
 
   try {
@@ -482,7 +491,10 @@ function fallbackBeamRaycast(
 // implementations copied/rewritten here to avoid adding new dependencies and
 // to ensure the beam system remains testable when Rapier isn't present.
 
-function vectorsEqual(a: [number, number, number], b: [number, number, number]) {
+function vectorsEqual(
+  a: [number, number, number],
+  b: [number, number, number],
+) {
   const EPS = 1e-5;
   return (
     Math.abs(a[0] - b[0]) < EPS &&
@@ -507,11 +519,11 @@ function extractPointFromRapierHit(
   if (!hit || typeof hit !== "object") return null;
   const h = hit as Record<string, unknown>;
   if (h.point && Array.isArray(h.point) && h.point.length >= 3) {
-    return [h.point[0] as number, h.point[1] as number, h.point[2] as number] as [
-      number,
-      number,
-      number,
-    ];
+    return [
+      h.point[0] as number,
+      h.point[1] as number,
+      h.point[2] as number,
+    ] as [number, number, number];
   }
   // Fallback: if hit contains a 'toi' (time of impact) and origin/direction are available
   if (typeof h.toi === "number") {

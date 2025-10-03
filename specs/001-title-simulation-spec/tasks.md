@@ -131,9 +131,9 @@
       direction, ticks remaining, tick interval, damage per tick).
 - [x] T012 [P] Implement `src/utils/runtimeEventLog.ts` providing `DeathAuditEntry` types and a
       bounded ring buffer API (append/read/size/capacity) per observability contract.
-- [ ] T013 Refactor `src/ecs/miniplexStore.ts` to consume the new component modules, ensure
+- [x] T013 Refactor `src/ecs/miniplexStore.ts` to consume the new component modules, ensure
       deterministic id assignment, and expose helpers for `invulnerableUntil` tracking.
-- [ ] T014 Align `src/ecs/weapons.ts` with deterministic team/owner id types and remove implicit
+- [x] T014 Align `src/ecs/weapons.ts` with deterministic team/owner id types and remove implicit
       enums in preparation for StepContext-provided flags.
 - [x] T015 Extend `src/utils/seededRng.ts` with deterministic sequence helpers (idFactory, shuffle)
       consumed by StepContext.

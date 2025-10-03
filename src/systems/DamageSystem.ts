@@ -1,7 +1,11 @@
 import type { World } from "miniplex";
 
 import type { Entity } from "../ecs/miniplexStore";
-import { getEntityById, notifyEntityChanged } from "../ecs/miniplexStore";
+import {
+  getEntityById,
+  getGameplayId,
+  notifyEntityChanged,
+} from "../ecs/miniplexStore";
 import type { DamageEvent } from "../ecs/weapons";
 
 type RigidBodyLike = {
@@ -57,6 +61,12 @@ export function damageSystem(
         const killerEntity = getEntityById(damageEvent.sourceId) as
           | Entity
           | undefined;
+        killerTeam = killerEntity?.team as string | undefined;
+      } else if (typeof damageEvent.sourceId === "string") {
+        const killerEntity = Array.from(world.entities).find((candidate) => {
+          const entity = candidate as Entity & { team?: string };
+          return getGameplayId(entity) === damageEvent.sourceId;
+        }) as Entity | undefined;
         killerTeam = killerEntity?.team as string | undefined;
       }
 
