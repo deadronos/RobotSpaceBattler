@@ -30,69 +30,106 @@
 
 ## Phase 3.1: Setup
 
-- [ ] T001 Create deterministic fixed-step harness helpers in `tests/helpers/fixedStepHarness.ts` to
+- [x] T001 Create deterministic fixed-step harness helpers in `tests/helpers/fixedStepHarness.ts` to
       centralize StepContext/`FixedStepDriver` builders (seeded RNG, `simNowMs` utilities).
-- [ ] T002 Update `tests/tsconfig.json` and `tests/setup.ts` to register the new helpers and ensure
+- [x] T002 Update `tests/tsconfig.json` and `tests/setup.ts` to register the new helpers and ensure
       Vitest loads `tests/contracts/*` with the shared harness.
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 **Write these tests first and watch them fail before touching implementation.**
 
-- [ ] T003 [P] Author failing ScoringSystem contract test in
+- [x] T003 [P] Author failing ScoringSystem contract test in
       `tests/contracts/scoringSystem.contract.test.ts` verifying classification, score deltas, and
       runtime event log ordering.
-- [ ] T004 [P] Author failing RespawnSystem contract test in
+- [x] T004 [P] Author failing RespawnSystem contract test in
       `tests/contracts/respawnSystem.contract.test.ts` covering respawn delay, queue behavior, and
       invulnerability timestamps.
-- [ ] T005 [P] Author failing runtime event log contract test in
+- [x] T005 [P] Author failing runtime event log contract test in
       `tests/contracts/runtimeEventLog.contract.test.ts` validating ring buffer capacity, ordering,
       and deterministic IDs.
-- [ ] T006 [P] Add seeded deterministic integration test in
+- [x] T006 [P] Add seeded deterministic integration test in
       `tests/integration/simulationDeterminism.test.ts` verifying identical StepContext traces across
       repeated runs using `FixedStepDriver`.
-- [ ] T007 [P] Add respawn queue integration test in
+- [x] T007 [P] Add respawn queue integration test in
       `tests/integration/respawnQueueDeterminism.test.ts` ensuring Simulation passes
       `StepContext.simNowMs` into RespawnSystem and enforces queue limits.
-- [ ] T008 [P] Add friendly-fire toggle integration test in
+- [x] T008 [P] Add friendly-fire toggle integration test in
       `tests/integration/friendlyFireToggle.test.ts` confirming Simulation injects the toggle into
       ProjectileSystem/BeamSystem via StepContext (no direct `useUI` reads).
-- [ ] T032 PhysicsSync — TDD (test): create failing integration test in
+- [x] T032 PhysicsSync — TDD (test): create failing integration test in
       `tests/integration/physicsSync.contract.test.ts` verifying Rapier RigidBody
       translations are copied into ECS `position` components and that systems do not
       mutate Three.js mesh transforms when a RigidBody is present.
-- [ ] T033 Deterministic Physics Adapter — TDD (test): author contract tests in
+- [x] T033 Deterministic Physics Adapter — TDD (test): author contract tests in
       `tests/contracts/physicsAdapter.contract.test.ts` asserting parity between a
       `rapierAdapter` and a `deterministicAdapter` for canonical operations (raycast,
       overlap, proximity checks).
-- [ ] T034 WeaponSystem — TDD (test): add failing contract/unit tests in
+- [x] T034 WeaponSystem — TDD (test): add failing contract/unit tests in
       `tests/contracts/weaponSystem.contract.test.ts` to validate weapon cooldowns,
       `WeaponFiredEvent` emission semantics, and deterministic firing behavior using
       `FixedStepDriver`.
-- [ ] T035 HitscanSystem — TDD (test): add failing contract tests in
+- [x] T035 HitscanSystem — TDD (test): add failing contract tests in
       `tests/contracts/hitscanSystem.contract.test.ts` to verify authoritative
       Rapier raycast resolution and deterministic fallback behavior when the
       physics adapter is substituted.
-- [ ] T036 Pause/Resume determinism — TDD (test): create tests in
+- [x] T036 Pause/Resume determinism — TDD (test): create tests in
       `tests/pause/pauseResume.test.ts` that assert pause captures velocities using
       `src/ecs/pauseManager.ts`, suspends the `FixedStepDriver`, and restores
       velocities deterministically on resume.
-- [ ] T037 Team & ID normalization — TDD (test): add unit tests in
+- [x] T037 Team & ID normalization — TDD (test): add unit tests in
       `tests/unit/idAndTeamTypes.test.ts` asserting canonical types (string-based
       gameplay IDs and unified `Team` enum).
-- [ ] T038 Spawn placement & proximity heuristic — TDD (test): author an
-      integration test `tests/integration/spawnPlacement.test.ts` validating spawn
-      queue behavior, a minimum distance threshold from enemies, and
-      deterministic placement using StepContext.rng.
+- [x] T038 Spawn placement & proximity heuristic — TDD (test): author an
+      integration test `tests/integration/spawnPlacement.test.ts` that asserts:
+      - every respawned robot is >= `minSpawnDistance` (default 3.0 units) from
+        any enemy entity;
+      - RespawnSystem attempts up to `maxSpawnRetries` (default 10) before
+        falling back to team spawn points;
+      - a spawn zone capacity limit of `maxSpawnPerZone` (default 3) is
+        enforced; and
+      - any randomized offsets are drawn from StepContext.rng. Seed the
+        FixedStepDriver to validate deterministic placement across repeated
+        runs.
+- [x] T048 Event-driven ordering test — TDD (test): add a small integration
+      test `tests/integration/eventOrdering.test.ts` that exercises a canonical
+      weapon → hitscan → damage → death flow and asserts that emitted
+      events occur in deterministic order (weapon fired → damage → death →
+      scoring) and that ScoringSystem consumes DeathEvents in deterministic
+      order (for example, sorted by event.id or frameCount). Implement any
+      required helpers in test harness to capture and assert event sequences.
+- [x] T049 Health model canonicalization — TDD (test): add unit tests in
+      `tests/unit/healthModel.test.ts` asserting the canonical health shape
+      `{ current:number, max:number, alive:boolean }` is used by DamageSystem,
+      RespawnSystem, and entity factories. Tests should fail until code is
+      updated.
+- [x] T051 ID & Team canonicalization — TDD (test): add unit tests in
+      `tests/unit/idAndTeamTypes.test.ts` asserting gameplay and audit ids are
+      strings produced by the idFactory and that `Team` values map to
+      `'red'|'blue'` for gameplay logic.
+- [x] T053 Score model — TDD (test): add unit tests in
+      `tests/unit/scoreBoard.test.ts` asserting ScoringSystem writes deterministic
+      deltas to a `ScoreBoard` component/service and that scores match expected
+      values for canonical death sequences.
+- [x] T055 Spawn model canonicalization — TDD (test): add unit/integration tests
+      in `tests/unit/spawnModel.test.ts` and `tests/integration/spawnPlacement.test.ts`
+      that assert `SpawnZone`, `SpawnPoint`, `SpawnRequest`, and `SpawnQueue`
+      shapes and default parameters behave as specified.
+- [x] T057 WeaponPayload schema — TDD (test): add unit tests
+      `tests/unit/weaponPayload.test.ts` asserting persisted `WeaponPayload`
+      shape includes required fields (`id,type,power`) and optional fields
+      (`range,cooldownMs,accuracy,spreadRad,ammo,projectilePrefab,beamParams,flags`).
+      Tests should also assert that persisted payloads do not include runtime-only
+      transient fields and that any randomness is derived from StepContext.rng.
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 
-- [ ] T009 [P] Create `src/ecs/components/robot.ts` defining deterministic Robot entity schema
+- [x] T009 [P] Create `src/ecs/components/robot.ts` defining deterministic Robot entity schema
       (id, team, health, weapon state, `invulnerableUntil`) per data-model and export helpers.
-- [ ] T010 [P] Create `src/ecs/components/projectile.ts` defining deterministic Projectile component
+- [x] T010 [P] Create `src/ecs/components/projectile.ts` defining deterministic Projectile component
       (ownerId, team, position, velocity, spawn time, lifespan, aoeRadius, damage).
-- [ ] T011 [P] Create `src/ecs/components/beam.ts` defining deterministic Beam component (origin,
+- [x] T011 [P] Create `src/ecs/components/beam.ts` defining deterministic Beam component (origin,
       direction, ticks remaining, tick interval, damage per tick).
-- [ ] T012 [P] Implement `src/utils/runtimeEventLog.ts` providing `DeathAuditEntry` types and a
+- [x] T012 [P] Implement `src/utils/runtimeEventLog.ts` providing `DeathAuditEntry` types and a
       bounded ring buffer API (append/read/size/capacity) per observability contract.
 - [ ] T013 Refactor `src/ecs/miniplexStore.ts` to consume the new component modules, ensure
       deterministic id assignment, and expose helpers for `invulnerableUntil` tracking.
@@ -126,6 +163,24 @@
       friendly-fire toggle flows through StepContext without systems touching the store directly.
 - [ ] T028 Add fixed-step performance metrics emission to `src/utils/sceneMetrics.ts` (or
       DiagnosticsOverlay) highlighting steps-per-frame and backlog for QA.
+- [ ] T050 Health model canonicalization — Implementation: update entity
+      factories and `src/ecs/miniplexStore.ts` to use the canonical health shape
+      and migrate existing entities where necessary.
+- [ ] T052 ID & Team canonicalization — Implementation: update id factories,
+      component types, and code (including `src/ecs/miniplexStore.ts`) to ensure
+      gameplay IDs are strings and `Team` types are canonical. Add migration or
+      adapter utilities if numeric ids remain present in legacy code.
+- [ ] T054 Score model — Implementation: add `TeamScore`/`ScoreBoard` component
+      definitions and implement deterministic updates in `src/systems/ScoringSystem.ts`.
+- [ ] T056 Spawn model canonicalization — Implementation: implement
+      `SpawnZone`/`SpawnQueue` types and `src/utils/spawnPlacement.ts` or
+      integrate into `src/systems/RespawnSystem.ts` and wire defaults
+      (`minSpawnDistance=3.0`, `maxSpawnRetries=10`, `maxSpawnPerZone=3`).
+- [ ] T058 WeaponPayload — Implementation: update persisted payload handling and
+      entity factories so that `WeaponPayload` conforms to the canonical schema
+      and that `WeaponSystem` and serialization code persist only the declared
+      fields. Ensure `WeaponSystem` uses StepContext.rng for accuracy/spread and
+      that persisted payloads are serializable for tests and export.
 
 ## Phase 3.5: Polish
 
