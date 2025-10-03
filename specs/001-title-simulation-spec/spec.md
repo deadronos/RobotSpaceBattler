@@ -305,6 +305,28 @@ when invoking respawn logic.
 
 - NFR-001: Performance target — the simulation must support up to 500 active entities (robots +
   projectiles + beams) under typical conditions; tests should benchmark and validate performance at
+
+---
+
+## Rendering Loop Synchronization (rAF TickDriver)
+
+Problem: With `frameloop="demand"`, the current TickDriver uses `setInterval` while Rapier can
+run its own internal timing using `requestAnimationFrame` (`updateLoop="independent"`). The two
+loops are not synchronized which may cause uneven invalidations and perceived jitter.
+
+Requirement: The TickDriver MUST be rAF-driven to align with the browser render cadence while
+preserving deterministic fixed-step behavior. On each rAF tick, it shall accumulate elapsed time,
+compute the number of fixed steps to catch up (capped), and call `invalidate()` accordingly.
+Pausing MUST suspend rAF scheduling; resuming MUST restart deterministically.
+
+Acceptance:
+
+- Given mocked rAF timestamps and a configured fixed-step, the driver MUST request the expected
+  number of invalidations per tick and cap steps-per-frame.
+- With `updateLoop="independent"`, Simulation remains authoritative for gameplay logic using
+  StepContext, while Rapier continues advancing physics; visuals remain coherent under tests.
+- If a follow mode provides better coherence without hurting determinism, switching to
+  `updateLoop="follow"` is acceptable if validated by tests.
   this scale.
 
 - NFR-002: Serialization: events and entities used in synchronization MUST be serializable

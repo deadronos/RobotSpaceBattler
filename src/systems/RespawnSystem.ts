@@ -5,8 +5,8 @@ import type { Entity, Team } from "../ecs/miniplexStore";
 import { removeEntity } from "../ecs/miniplexStore";
 import type { WeaponComponent, WeaponType } from "../ecs/weapons";
 import { spawnRobot } from "../robots/spawnControls";
-import type { DeathEvent } from "./DamageSystem";
 import type { StepContext } from "../utils/fixedStepDriver";
+import type { DeathEvent } from "./DamageSystem";
 
 export const DEFAULT_RESPAWN_DELAY_MS = 5000; // contract expects 5000ms
 export const DEFAULT_INVULNERABILITY_MS = 2000;

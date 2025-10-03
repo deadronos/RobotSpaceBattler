@@ -40,11 +40,11 @@ export default function Scene() {
           gravity={[0, -9.81, 0]}
           paused={paused}
           updateLoop="independent"
-          timeStep={1 / 60}
+          timeStep={1/60}
         >
           <Simulation renderFloor={!ENABLE_ENVIRONMENT} />
         </Physics>
-        <DiagnosticsOverlay updateHz={8} />
+        {/*<DiagnosticsOverlay updateHz={8} />*/}
       </Suspense>
       <OrbitControls makeDefault />
       <Stats />

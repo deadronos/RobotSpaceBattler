@@ -3,14 +3,16 @@ import { CuboidCollider, RigidBody, useRapier } from "@react-three/rapier";
 import type { Query } from "miniplex";
 import React, { useEffect, useMemo, useRef } from "react";
 
+import type { RobotComponent } from "../ecs/components/robot";
+import { resolveEntity } from "../ecs/ecsResolve";
 import { useEcsQuery } from "../ecs/hooks";
 import {
   type Entity,
-  type Team,
   getRenderKey,
-  subscribeEntityChanges,
-  world,
   notifyEntityChanged,
+  subscribeEntityChanges,
+  type Team,
+  world,
 } from "../ecs/miniplexStore";
 import { capturePauseVel, restorePauseVel } from "../ecs/pauseManager";
 import type {
@@ -22,6 +24,7 @@ import type {
 import { useFixedStepLoop } from "../hooks/useFixedStepLoop";
 import { useSimulationBootstrap } from "../hooks/useSimulationBootstrap";
 import { Robot } from "../robots/robotPrefab";
+import { spawnRobot } from "../robots/spawnControls";
 import { useUI } from "../store/uiStore";
 import { aiSystem } from "../systems/AISystem";
 import { beamSystem } from "../systems/BeamSystem";
@@ -30,14 +33,11 @@ import { fxSystem } from "../systems/FxSystem";
 import { hitscanSystem, type ImpactEvent } from "../systems/HitscanSystem";
 import { physicsSyncSystem } from "../systems/PhysicsSyncSystem";
 import { projectileSystem } from "../systems/ProjectileSystem";
-import { processRespawnQueue, DEFAULT_RESPAWN_DELAY_MS, type SpawnRequest } from "../systems/RespawnSystem";
-import type { RobotComponent } from "../ecs/components/robot";
+import { DEFAULT_RESPAWN_DELAY_MS, processRespawnQueue, type SpawnRequest } from "../systems/RespawnSystem";
 import { scoringSystem } from "../systems/ScoringSystem";
 import type { WeaponFiredEvent } from "../systems/WeaponSystem";
 import { weaponSystem } from "../systems/WeaponSystem";
 import { createRuntimeEventLog } from "../utils/runtimeEventLog";
-import { resolveEntity } from "../ecs/ecsResolve";
-import { spawnRobot } from "../robots/spawnControls";
 // RNG is created by FixedStepDriver; no per-component RNG import needed
 import { Beam } from "./Beam";
 import { FXLayer } from "./FXLayer";

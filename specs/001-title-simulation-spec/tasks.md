@@ -203,6 +203,35 @@
 - [ ] T031 [P] Update `specs/001-title-simulation-spec/quickstart.md` and `docs/DEPENDENCIES.md`
       with StepContext harness instructions and observability notes.
 
+## Phase 3.6: Loop Synchronization and Timing
+
+- [ ] T059 Switch TickDriver to requestAnimationFrame in `src/components/Scene.tsx`.
+      Replace `setInterval` with a rAF-driven driver that:
+      - tracks elapsed real time and accumulates fixed steps via `invalidate()` calls;
+      - respects `frameloop="demand"` by batching invalidations per rAF tick;
+      - suspends when paused and resumes cleanly;
+      - exposes a minimal test seam for mocking rAF in unit tests.
+
+- [ ] T060 Physics update-loop coherence: evaluate `@react-three/rapier` `updateLoop` settings
+      with on-demand rAF invalidation. If `independent`, ensure Simulation’s fixed-step
+      stays authoritative for game logic while Rapier’s own stepping continues smoothly.
+      Optionally switch to `updateLoop="follow"` IF and ONLY IF tests confirm determinism
+      and visual coherence. Document decision in `docs/DEPENDENCIES.md`.
+
+- [ ] T061 Add timing determinism tests: create `tests/pause/rafDriver.test.ts` to assert
+      that with mocked rAF timestamps, the TickDriver requests the expected number of
+      invalidations for a given elapsed time and caps steps per frame. Validate pause
+      suspends invalidation and resume restarts cleanly.
+
+- [ ] T062 Diagnostics: extend `DiagnosticsOverlay` to optionally display last rAF timestamp,
+      accumulated step backlog, and invalidations per rAF tick to aid QA of loop sync.
+
+### Dependencies
+
+- T059 precedes T061 (driver must exist before unit tests) and is independent from other systems.
+- T060 can run in parallel with T061; updateLoop choice is verified by tests.
+- T062 runs after T059 so the driver metrics exist.
+
 ## Dependencies
 
 - T001 → T002 → (T003–T008): harness and config before any tests.

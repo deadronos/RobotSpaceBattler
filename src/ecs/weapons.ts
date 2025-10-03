@@ -4,7 +4,6 @@ import type {
   WeaponBeamParams,
   WeaponFlags,
   WeaponPayload,
-  WeaponType,
 } from "./weaponPayload";
 
 export type { WeaponType } from "./weaponPayload";

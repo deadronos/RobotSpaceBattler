@@ -1,14 +1,14 @@
-import { createEntityLookup } from "./entityLookup";
-import { createWorldController } from "./worldFactory";
-import { createRenderKeyGenerator } from "./renderKey";
-import { clearPauseVelocity, getPauseVelocity, setPauseVelocity } from "./pauseVelocity";
-import { ensureGameplayId, normalizeTeam } from "./id";
-import type { Team } from "./id";
 import type { ProjectileComponent } from "./components/projectile";
-import type { FxComponent } from "./fx";
-import type { BeamComponent, WeaponComponent, WeaponStateComponent } from "./weapons";
-import { createRobotComponent } from "./components/robot";
 import type { RobotComponent, RobotInit } from "./components/robot";
+import { createRobotComponent } from "./components/robot";
+import { createEntityLookup } from "./entityLookup";
+import type { FxComponent } from "./fx";
+import type { Team } from "./id";
+import { ensureGameplayId, normalizeTeam } from "./id";
+import { clearPauseVelocity, getPauseVelocity, setPauseVelocity } from "./pauseVelocity";
+import { createRenderKeyGenerator } from "./renderKey";
+import type { BeamComponent, WeaponComponent, WeaponStateComponent } from "./weapons";
+import { createWorldController } from "./worldFactory";
 
 export type { Team } from "./id";
 

@@ -82,6 +82,30 @@ render frame.
 
 - Scale/Scope: Up to 500 active entities (robots + projectiles + beams)
 
+---
+
+## Loop Synchronization Plan (rAF TickDriver)
+
+Motivation: The current `TickDriver` uses `setInterval` while Rapier typically advances on
+`requestAnimationFrame` (`updateLoop="independent"`). This split timing can create irregular
+invalidations in on-demand rendering.
+
+Plan:
+
+- Replace `setInterval` in `src/components/Scene.tsx` TickDriver with an rAF-driven loop that
+  accumulates elapsed time and issues batched `invalidate()` calls per rAF, respecting a
+  steps-per-frame cap.
+- Keep Simulation deterministic: fixed-step updates remain driven by `useFixedStepLoop` and
+  StepContext; rAF merely schedules when frames are invalidated.
+- Evaluate `@react-three/rapier` `updateLoop`:
+  - Default: keep `independent` and verify visual coherence with the rAF driver.
+  - Alternative: `follow` if tests show improved sync without determinism regressions.
+
+Validation:
+
+- Unit test with mocked rAF timestamps to assert deterministic invalidation counts and pause/resume.
+- Integration check: ensure no regressions in Playwright smoke tests; verify pause/unpause works.
+
 ## Constitution Check
 
 - Initial Constitution Check: PASS — planned changes align with constitution principles:

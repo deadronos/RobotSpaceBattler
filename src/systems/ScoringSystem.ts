@@ -1,8 +1,8 @@
-import { getScores, incrementScore, resetScores } from "../store/scoreStore";
-import type { RuntimeEventLog, DeathAuditEntry } from "../utils/runtimeEventLog";
-import type { StepContext } from "../utils/fixedStepDriver";
 import type { Team } from "../ecs/miniplexStore";
+import { getScores, incrementScore, resetScores } from "../store/scoreStore";
 import type { DeathEvent as DamageDeathEvent } from "../systems/DamageSystem";
+import type { StepContext } from "../utils/fixedStepDriver";
+import type { DeathAuditEntry,RuntimeEventLog } from "../utils/runtimeEventLog";
 
 function isTeam(value: unknown): value is Team {
   return value === "red" || value === "blue";

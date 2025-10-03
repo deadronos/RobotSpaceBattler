@@ -1,7 +1,7 @@
 import type { World } from "miniplex";
 
 import { resolveEntity } from "../ecs/ecsResolve";
-import { getGameplayId, type Entity } from "../ecs/miniplexStore";
+import { type Entity,getGameplayId } from "../ecs/miniplexStore";
 import type {
   DamageEvent,
   WeaponComponent,
