@@ -1,6 +1,7 @@
 import {
   createRobotEntity,
   type Entity,
+  getGameplayId,
   notifyEntityChanged,
   resetWorld,
   type Team,
@@ -75,7 +76,7 @@ export function spawnRobot(
   const initialWeapon = {
     id: `weapon_${team}_${weaponType}_${spawnIndex}`,
     type: weaponType,
-    ownerId: -1, // will be corrected after entity is created
+    ownerId: "pending", // will be corrected after entity is created
     team,
     ...weaponProfiles[weaponType],
   } as WeaponComponent;
@@ -94,7 +95,8 @@ export function spawnRobot(
 
   // Now that the entity has an id, fix the ownerId to the correct value.
   if (robot.weapon) {
-    robot.weapon.ownerId = robot.id as number;
+    const gameplayId = getGameplayId(robot) ?? String(robot.id ?? "");
+    robot.weapon.ownerId = gameplayId;
   }
 
   return robot;

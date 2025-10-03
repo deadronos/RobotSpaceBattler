@@ -40,8 +40,9 @@ export function projectileSystem(
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== "rocket") continue;
 
+    const fireEventOwnerId = String(fireEvent.ownerId);
     const owner = resolveOwner(world, {
-      ownerId: fireEvent.ownerId,
+      ownerId: fireEventOwnerId,
       weaponId: fireEvent.weaponId,
     }) as
       | (Entity & {
@@ -54,8 +55,7 @@ export function projectileSystem(
     const weapon = owner?.weapon;
     if (!owner || !weapon) continue;
 
-    const ownerEntityId =
-      typeof owner.id === "number" ? owner.id : fireEvent.ownerId;
+    const ownerGameplayId = weapon.ownerId ?? fireEventOwnerId;
 
     const now = typeof simNowMs === "number" ? simNowMs : Date.now();
     const projectileEntity: Entity & {
@@ -67,7 +67,7 @@ export function projectileSystem(
       team: weapon.team,
       projectile: {
         sourceWeaponId: fireEvent.weaponId,
-        ownerId: ownerEntityId,
+        ownerId: ownerGameplayId,
         damage: weapon.power,
         team: weapon.team,
         aoeRadius: weapon.aoeRadius,
@@ -204,9 +204,13 @@ function checkProjectileCollision(
   position: [number, number, number],
   world: World<Entity>,
   projectileTeam: string,
-  ownerId: number,
+  ownerId: string,
   friendlyFire: boolean,
 ): { targetId?: number } | null {
+  const ownerNumericId = Number(ownerId);
+  const ownerNumeric = Number.isFinite(ownerNumericId)
+    ? ownerNumericId
+    : undefined;
   let impactedAny = false;
   for (const entity of world.entities) {
     const candidate = entity as Entity & {
@@ -221,10 +225,12 @@ function checkProjectileCollision(
     }
     // Ignore the owner itself (match by numeric id or weapon ownerId)
     const isOwnerById =
-      typeof candidate.id === "number" && candidate.id === ownerId;
+      typeof candidate.id === "number" &&
+      ownerNumeric !== undefined &&
+      candidate.id === ownerNumeric;
     const isOwnerByWeapon = !!(
       candidate.weapon &&
-      typeof candidate.weapon.ownerId === "number" &&
+      typeof candidate.weapon.ownerId === "string" &&
       candidate.weapon.ownerId === ownerId
     );
     if (isOwnerById || isOwnerByWeapon) continue;
@@ -254,11 +260,15 @@ function applyAoEDamage(
   radius: number,
   damage: number,
   sourceTeam: string,
-  sourceId: number,
+  sourceId: string,
   world: World<Entity>,
   events: { damage: DamageEvent[] },
   friendlyFire: boolean,
 ) {
+  const sourceNumericId = Number(sourceId);
+  const sourceNumeric = Number.isFinite(sourceNumericId)
+    ? sourceNumericId
+    : undefined;
   for (const entity of world.entities) {
     const candidate = entity as Entity & {
       position?: [number, number, number];
@@ -271,6 +281,16 @@ function applyAoEDamage(
       continue;
     }
     if (candidate.weapon) continue;
+    if (
+      typeof candidate.id === "number" &&
+      sourceNumeric !== undefined &&
+      candidate.id === sourceNumeric
+    ) {
+      continue;
+    }
+    if (candidate.weapon?.ownerId && candidate.weapon.ownerId === sourceId) {
+      continue;
+    }
     if (!friendlyFire && candidate.team === sourceTeam) continue;
 
     const [ex, ey, ez] = candidate.position;

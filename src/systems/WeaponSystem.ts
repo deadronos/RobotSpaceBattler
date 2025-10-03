@@ -1,7 +1,7 @@
 import type { World } from "miniplex";
 
 import { resolveEntity } from "../ecs/ecsResolve";
-import { type Entity } from "../ecs/miniplexStore";
+import { getGameplayId, type Entity } from "../ecs/miniplexStore";
 import type {
   DamageEvent,
   WeaponComponent,
@@ -11,11 +11,11 @@ import type { Rng } from "../utils/seededRng";
 
 export interface WeaponFiredEvent {
   weaponId: string;
-  ownerId: number;
-  type: "gun" | "laser" | "rocket";
+  ownerId: string;
+  type: WeaponComponent["type"];
   origin: [number, number, number];
   direction: [number, number, number];
-  targetId?: number;
+  targetId?: number | string;
   timestamp: number;
 }
 
@@ -86,13 +86,17 @@ export function weaponSystem(
       !state.reloading;
 
     if (canFire) {
-      if (typeof weapon.ownerId !== "number" && typeof e.id === "number") {
-        weapon.ownerId = e.id;
+      if (!weapon.ownerId) {
+        const fallbackId =
+          getGameplayId(e) ??
+          (typeof e.id !== "undefined" ? String(e.id) : undefined);
+        if (fallbackId) {
+          weapon.ownerId = fallbackId;
+        }
       }
 
-      const ownerId =
-        typeof weapon.ownerId === "number" ? weapon.ownerId : undefined;
-      if (ownerId === undefined) {
+      const ownerId = weapon.ownerId;
+      if (!ownerId) {
         continue;
       }
 
@@ -103,8 +107,7 @@ export function weaponSystem(
       const origin = getEntityPosition(e) ?? position;
 
       let direction: [number, number, number] = [1, 0, 0];
-      let targetId: number | undefined =
-        typeof e.targetId === "number" ? e.targetId : undefined;
+      let targetId: number | string | undefined = e.targetId;
       if (targetId !== undefined) {
         const targetEntity = resolveEntity(world, targetId);
         if (targetEntity) {

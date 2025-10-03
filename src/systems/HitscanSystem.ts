@@ -23,8 +23,9 @@ export function hitscanSystem(
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== "gun") continue;
 
+    const ownerLookupId = String(fireEvent.ownerId);
     const owner = resolveOwner(world, {
-      ownerId: fireEvent.ownerId,
+      ownerId: ownerLookupId,
       weaponId: fireEvent.weaponId,
     }) as
       | (Entity & {
@@ -51,14 +52,14 @@ export function hitscanSystem(
       weapon.range || 100,
       world,
       targetEntity,
-      fireEvent.ownerId,
+      ownerLookupId,
       owner.team,
       rapierWorld,
     );
 
     if (hit) {
       events.damage.push({
-        sourceId: fireEvent.ownerId,
+        sourceId: ownerLookupId,
         weaponId: fireEvent.weaponId,
         targetId: hit.targetId,
         position: hit.position,
@@ -90,7 +91,7 @@ function performRaycast(
   maxDistance: number,
   world: World<Entity>,
   preferredTarget: Entity | undefined,
-  ownerId: number,
+  ownerId: string,
   ownerTeam?: string,
   rapierWorld?: unknown,
 ): {
@@ -98,6 +99,10 @@ function performRaycast(
   normal: [number, number, number];
   targetId?: number;
 } | null {
+  const ownerNumericId = Number(ownerId);
+  const ownerNumeric = Number.isFinite(ownerNumericId)
+    ? ownerNumericId
+    : undefined;
   const [ox, oy, oz] = origin;
   const [dx, dy, dz] = direction;
 
@@ -218,7 +223,19 @@ function performRaycast(
           };
           if (!c.position) continue;
           // Skip the weapon owner itself
-          if (typeof c.id === "number" && c.id === ownerId) continue;
+          if (
+            typeof c.id === "number" &&
+            ownerNumeric !== undefined &&
+            c.id === ownerNumeric
+          ) {
+            continue;
+          }
+          if (
+            typeof c.weapon?.ownerId === "string" &&
+            c.weapon.ownerId === ownerId
+          ) {
+            continue;
+          }
           // Do not skip entities just because they have a `weapon` component —
           // robots are valid targets even though they own weapons. Previously
           // filtering by `weapon` prevented hits from resolving against robots.
@@ -278,8 +295,19 @@ function performRaycast(
   ) => {
     if (!candidate.position) return null;
     // Skip the owner itself
-    if (typeof candidate.id === "number" && candidate.id === ownerId)
+    if (
+      typeof candidate.id === "number" &&
+      ownerNumeric !== undefined &&
+      candidate.id === ownerNumeric
+    ) {
       return null;
+    }
+    if (
+      typeof candidate.weapon?.ownerId === "string" &&
+      candidate.weapon.ownerId === ownerId
+    ) {
+      return null;
+    }
     // Do not exclude targets simply because they have a `weapon` component.
     if (ownerTeam && candidate.team === ownerTeam) return null;
 
