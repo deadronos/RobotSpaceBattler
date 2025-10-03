@@ -5,7 +5,7 @@
 **Updated:** 2025-10-03
 
 ## Original Request
-Add detailed design documents to memory-bank/designs/ covering Weapons System, AI System, and Physics Sync with diagrams, interfaces, and implementation details.
+Add detailed design documents to `.specify/designs/` covering Weapons System, AI System, and Physics Sync with diagrams, interfaces, and implementation details.
 
 ## Thought Process
 - Weapons System handles three resolution paths (hitscan/beam/projectile) with complex event flows and sourceId propagation
@@ -34,8 +34,8 @@ Add detailed design documents to memory-bank/designs/ covering Weapons System, A
 ## Progress Log
 
 ### 2025-10-03
-- Created `memory-bank/designs/weapons-design.md` with weapon profiles, resolution systems, event flows
-- Created `memory-bank/designs/ai-design.md` with state machine diagram, decision modules, test patterns
-- Created `memory-bank/designs/physics-sync-design.md` with sync flow, pause/resume sequences, entity lifecycle
+- Created `.specify/designs/weapons-design.md` with weapon profiles, resolution systems, event flows
+- Created `.specify/designs/ai-design.md` with state machine diagram, decision modules, test patterns
+- Created `.specify/designs/physics-sync-design.md` with sync flow, pause/resume sequences, entity lifecycle
 - All three docs include mermaid diagrams and code examples
 - Created this task file and updated tasks/_index.md

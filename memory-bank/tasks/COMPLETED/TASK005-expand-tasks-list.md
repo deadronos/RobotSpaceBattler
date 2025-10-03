@@ -8,14 +8,14 @@
 
 **Acceptance criteria:**
 
-- An updated `memory-bank/tasks/_index.md` containing the new tasks and statuses.
+- An updated `.specify/tasks/_index.md` containing the new tasks and statuses.
 - Each new task file follows the TASK file template.
 
 ## Work performed
 
 - Scanned repository for TODO/FIXME markers and reviewed `src/` and `tests/` to identify gaps.
 - Created task files for discovered work: `TASK009` (FX system scaffold) and `TASK010` (projectile pooling & performance profiling).
-- Updated `memory-bank/tasks/_index.md` to add pending tasks and move this task to Completed.
+- Updated `.specify/tasks/_index.md` to add pending tasks and move this task to Completed.
 
 ## Progress Log
 

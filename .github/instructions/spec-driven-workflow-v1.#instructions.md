@@ -4,9 +4,9 @@ applyTo: '**'
 ---
 
 # Spec-Driven Workflow — Quick Loop
-Hint: use memory-bank folder ( look at .github/instructions/memory-bank.instructions.md for templates)
-use /memory-bank/designs folder to store designs
-use /memory-bank/tasks folder to store task files
+Hint: use the `.specify` folder (look at `.github/instructions/specify.instructions.md` for templates)
+use `.specify/designs` folder to store designs
+use `.specify/tasks` folder to store task files
 
 
 
@@ -66,18 +66,18 @@ End.
   - **Interfaces:** API contracts, schemas, public-facing function signatures.
   - **Data Models:** Data structures and database schemas.
 
-> Note: This repository uses a centralized Memory Bank for project context and task tracking. Store design and related artifacts under the `/memory-bank` folder so they are discoverable by agents and maintainers (for example: `memory-bank/designs/design.md`, `memory-bank/requirements.md`).
+> Note: This repository uses the Spec Kit workflow for project context and task tracking. Store design and related artifacts under the `.specify/` folder so they are discoverable by agents and maintainers (for example: `.specify/designs/design.md`, `.specify/requirements.md`).
 
-**Recommended memory placement:**
+**Recommended placement:**
 
-- Requirements: `memory-bank/requirements.md` (EARS-style requirements)
-- Design: `memory-bank/designs/design.md` (architecture, interfaces, diagrams)
-- Tasks & plan: `memory-bank/tasks/_index.md` and `memory-bank/tasks/TASKID-*.md`
-- Active context & progress: `memory-bank/activeContext.md`, `memory-bank/progress.md`
+- Requirements: `.specify/requirements.md` (EARS-style requirements)
+- Design: `.specify/designs/design.md` (architecture, interfaces, diagrams)
+- Tasks & plan: `.specify/tasks/_index.md` and `.specify/tasks/TASKID-*.md`
+- Active context & progress: `.specify/activeContext.md`, `.specify/progress.md`
 
 - [ ] **Document error handling:**
 
-> Store implementation plans and task files inside the memory bank tasks folder (`memory-bank/tasks/`) following the Memory Bank structure required by the project. Use `memory-bank/tasks/_index.md` as the master index and create `memory-bank/tasks/TASKID-taskname.md` for each task.
+> Store implementation plans and task files inside `.specify/tasks/`. Use `.specify/tasks/_index.md` as the master index and create `.specify/tasks/TASKID-taskname.md` for each task.
   - Create an error matrix with procedures and expected responses.
 
 - [ ] **Define unit testing strategy.**

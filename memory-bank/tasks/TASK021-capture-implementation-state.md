@@ -5,7 +5,7 @@
 **Updated:** 2025-10-03
 
 ## Original Request
-Create memory-bank artifacts that capture the current implementation state: `memory-bank/requirements.md` (EARS-style requirements) and `memory-bank/designs/design.md` (architecture, interfaces, diagrams).
+Create project context artifacts that capture the current implementation state: `.specify/requirements.md` (EARS-style requirements) and `.specify/designs/design.md` (architecture, interfaces, diagrams).
 
 ## Thought Process
 - Read existing memory bank files to ensure alignment with project conventions and active context.
@@ -14,10 +14,10 @@ Create memory-bank artifacts that capture the current implementation state: `mem
 - Produce a design snapshot that documents architecture, component interfaces, data flows, and extension points.
 
 ## Implementation Plan
-- Read `memory-bank/*` core files.
+- Read `.specify/*` core files.
 - Scan `src/` for key files and read representative modules.
-- Draft `memory-bank/requirements.md` with EARS-style requirements and acceptance mappings.
-- Draft `memory-bank/designs/design.md` with architecture diagrams, data models, interfaces, and operational notes.
+- Draft `.specify/requirements.md` with EARS-style requirements and acceptance mappings.
+- Draft `.specify/designs/design.md` with architecture diagrams, data models, interfaces, and operational notes.
 - Create task record and update tasks index.
 
 ## Progress Tracking
@@ -26,7 +26,7 @@ Create memory-bank artifacts that capture the current implementation state: `mem
 ### Subtasks
 | ID | Description | Status | Updated | Notes |
 |----|-------------|--------|---------|-------|
-| 1 | Read memory-bank core files | Completed | 2025-10-03 | Verified projectbrief, productContext, systemPatterns, techContext, activeContext, progress. |
+| 1 | Read `.specify` core files | Completed | 2025-10-03 | Verified projectbrief, productContext, systemPatterns, techContext, activeContext, progress. |
 | 2 | Scan src/ and inspect core modules | Completed | 2025-10-03 | Read Simulation, Scene, miniplexStore, worldFactory, entityLookup, systems, spawnControls, robotPrefab, fixedStepDriver, seededRng, hooks. |
 | 3 | Draft `requirements.md` | Completed | 2025-10-03 | EARS-style reqs created and acceptance checks mapped to existing tests. |
 | 4 | Draft `design.md` | Completed | 2025-10-03 | Architecture, data flows, interfaces, mermaid diagrams added. |
@@ -35,7 +35,7 @@ Create memory-bank artifacts that capture the current implementation state: `mem
 ## Progress Log
 ### 2025-10-03
 - Completed reading memory bank files and core source files.
-- Wrote `memory-bank/requirements.md` and `memory-bank/designs/design.md` capturing the current implementation.
+- Wrote `.specify/requirements.md` and `.specify/designs/design.md` capturing the current implementation.
 - Created this task file and updated `_index.md`.
 
 

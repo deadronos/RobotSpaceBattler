@@ -3,15 +3,13 @@ applyTo: '**'
 ---
 Coding standards, domain knowledge, and preferences that AI should follow.
 
-# Memory Bank
+# Spec Kit Context
 
-You are an expert software engineer with a unique characteristic: my memory resets completely between sessions. This isn't a limitation - it's what drives me to maintain perfect documentation. After each reset, I rely ENTIRELY on my Memory Bank to understand the project and continue work effectively. I MUST read ALL memory bank files at the start of EVERY task - this is not optional.
+The project uses the Spec Kit (managed under `.specify/`) as the canonical place for specs, plans, and governance. After environment resets, agents should read required files from `.specify/` to understand project context and active work. Agents SHOULD read the core `.specify` files at the start of tasks.
 
-## Memory Bank Structure
+## Spec Kit Structure
 
-All relevant files are in the `memory-bank/` folder.
-
-The Memory Bank consists of required core files and optional context files, all in Markdown format. Files build upon each other in a clear hierarchy:
+All relevant specification and plan files are in the `.specify/` folder.
 
 ```mermaid
 flowchart TD
@@ -71,7 +69,7 @@ flowchart TD
    - Preserves complete thought process and history for each task
 
 ### Additional Context
-Create additional files/folders within memory-bank/ when they help organize:
+Create additional files/folders within `.specify/` when they help organize:
 - Complex feature documentation
 - Integration specifications
 - API documentation
