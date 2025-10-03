@@ -101,3 +101,35 @@ This document is generated from package.json and installed package metadata. It 
 - vitest ^3.2.4 — Next generation testing framework powered by Vite
   - Repo: [github.com/vitest-dev/vitest](https://github.com/vitest-dev/vitest)
   - Docs: [vitest.dev](https://vitest.dev)
+
+## Physics Loop Configuration (React-Three-Rapier)
+
+**Decision**: Use `updateLoop="independent"` for @react-three/rapier
+
+**Rationale**:
+
+- Rapier runs its own physics loop independent of the render frame rate
+- Ensures smooth physics simulation even when rendering is slower or on-demand
+- The Simulation's fixed-step loop (via `useFixedStepLoop`) remains authoritative
+  for game logic and determinism
+- Physics updates are synced to ECS via `PhysicsSyncSystem` which copies RigidBody
+  transforms to entity positions
+- This separation allows visual coherence while maintaining deterministic gameplay
+  logic
+
+**Alternative Considered**: `updateLoop="follow"` would tie Rapier's updates directly
+to render frames, but this would couple physics timing to render performance and
+could introduce non-determinism.
+
+**Verification**: Integration tests confirm that with `independent` mode:
+
+1. Fixed-step gameplay logic remains deterministic (seeded tests produce identical
+   traces)
+2. Physics visuals remain smooth during variable frame rates
+3. Pause/resume functionality works correctly without physics drift
+
+**References**:
+
+- [React Three Rapier Docs - Physics Configuration](https://docs.pmnd.rs/react-three-rapier)
+- See `src/components/Scene.tsx` for implementation
+- See `src/systems/PhysicsSyncSystem.ts` for ECS-physics synchronization

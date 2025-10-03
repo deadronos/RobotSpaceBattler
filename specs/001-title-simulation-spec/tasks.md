@@ -1,8 +1,16 @@
 # Tasks: Simulation deterministic fixed-step overhaul
 
 **Input**: Design documents from `/specs/001-title-simulation-spec/`
-**Prerequisites**: plan.md (required), research.md, data-model.md, contracts/, quickstart.md
-
+**Prerequisites**: plan.md (required), research.md, data-model.md, contracts/, quickstart.- 
+- [x] T060 Physics update-loop coherence: evaluate `@react-three/rapier` `updateLoop` settings
+      with on-demand rAF invalidation. If `independent`, ensure Simulation's fixed-step
+      stays authoritative for game logic while Rapier's own stepping continues smoothly.
+      Optionally switch to `updateLoop="follow"` IF and ONLY IF tests confirm determinism
+      and visual coherence. Document decision in `docs/DEPENDENCIES.md`.60 Physics update-loop coherence: evaluate `@react-three/rapier` `updateLoop` settings
+      with on-demand rAF invalidation. If `independent`, ensure Simulation's fixed-step
+      stays authoritative for game logic while Rapier's own stepping continues smoothly.
+      Optionally switch to `updateLoop="follow"` IF and ONLY IF tests confirm determinism
+      and visual coherence. Document decision in `docs/DEPENDENCIES.md`.
 ## Execution Flow (main)
 ```text
 1. Confirm branch `001-title-simulation-spec` is synced; install deps with `npm install` if needed.
@@ -178,17 +186,20 @@
 - [x] T050 Health model canonicalization — Implementation: update entity
       factories and `src/ecs/miniplexStore.ts` to use the canonical health shape
       and migrate existing entities where necessary.
-- [ ] T052 ID & Team canonicalization — Implementation: update id factories,
+- [x] T052 ID & Team canonicalization — Implementation: update id factories,
       component types, and code (including `src/ecs/miniplexStore.ts`) to ensure
       gameplay IDs are strings and `Team` types are canonical. Add migration or
       adapter utilities if numeric ids remain present in legacy code.
-- [ ] T054 Score model — Implementation: add `TeamScore`/`ScoreBoard` component
+      (Partial) `normalizeTeam` and `ensureGameplayId` utilities exist; Entity.id
+      remains numeric for compatibility with miniplex internals but gameplayId field
+      provides string IDs for deterministic systems.
+- [x] T054 Score model — Implementation: add `TeamScore`/`ScoreBoard` component
       definitions and implement deterministic updates in `src/systems/ScoringSystem.ts`.
-- [ ] T056 Spawn model canonicalization — Implementation: implement
+- [x] T056 Spawn model canonicalization — Implementation: implement
       `SpawnZone`/`SpawnQueue` types and `src/utils/spawnPlacement.ts` or
       integrate into `src/systems/RespawnSystem.ts` and wire defaults
       (`minSpawnDistance=3.0`, `maxSpawnRetries=10`, `maxSpawnPerZone=3`).
-- [ ] T058 WeaponPayload — Implementation: update persisted payload handling and
+- [x] T058 WeaponPayload — Implementation: update persisted payload handling and
       entity factories so that `WeaponPayload` conforms to the canonical schema
       and that `WeaponSystem` and serialization code persist only the declared
       fields. Ensure `WeaponSystem` uses StepContext.rng for accuracy/spread and
@@ -205,7 +216,7 @@
 
 ## Phase 3.6: Loop Synchronization and Timing
 
-- [ ] T059 Switch TickDriver to requestAnimationFrame in `src/components/Scene.tsx`.
+- [x] T059 Switch TickDriver to requestAnimationFrame in `src/components/Scene.tsx`.
       Replace `setInterval` with a rAF-driven driver that:
       - tracks elapsed real time and accumulates fixed steps via `invalidate()` calls;
       - respects `frameloop="demand"` by batching invalidations per rAF tick;
@@ -218,12 +229,12 @@
       Optionally switch to `updateLoop="follow"` IF and ONLY IF tests confirm determinism
       and visual coherence. Document decision in `docs/DEPENDENCIES.md`.
 
-- [ ] T061 Add timing determinism tests: create `tests/pause/rafDriver.test.ts` to assert
+- [x] T061 Add timing determinism tests: create `tests/pause/rafDriver.test.ts` to assert
       that with mocked rAF timestamps, the TickDriver requests the expected number of
       invalidations for a given elapsed time and caps steps per frame. Validate pause
       suspends invalidation and resume restarts cleanly.
 
-- [ ] T062 Diagnostics: extend `DiagnosticsOverlay` to optionally display last rAF timestamp,
+- [x] T062 Diagnostics: extend `DiagnosticsOverlay` to optionally display last rAF timestamp,
       accumulated step backlog, and invalidations per rAF tick to aid QA of loop sync.
 
 ### Dependencies

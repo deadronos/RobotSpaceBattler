@@ -44,6 +44,14 @@ export default function DiagnosticsOverlay({
         if (showFixedStepMetrics) {
           const stepMetrics = getFixedStepMetrics();
           text += ` | Steps: ${stepMetrics.stepsLastFrame} | Backlog: ${stepMetrics.backlog}`;
+          
+          // Add rAF timing metrics if available
+          if (stepMetrics.lastRafTimestamp !== undefined) {
+            text += ` | rAF: ${stepMetrics.lastRafTimestamp.toFixed(0)}ms`;
+          }
+          if (stepMetrics.invalidationsPerRaf !== undefined) {
+            text += ` | Inv: ${stepMetrics.invalidationsPerRaf}`;
+          }
         }
         
         el.textContent = text;

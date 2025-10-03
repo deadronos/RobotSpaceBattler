@@ -98,6 +98,8 @@ export interface FixedStepMetrics {
   backlog: number;
   frameCount: number;
   simNowMs: number;
+  lastRafTimestamp?: number;
+  invalidationsPerRaf?: number;
 }
 
 let _fixedStepMetrics: FixedStepMetrics = {
@@ -105,6 +107,8 @@ let _fixedStepMetrics: FixedStepMetrics = {
   backlog: 0,
   frameCount: 0,
   simNowMs: 0,
+  lastRafTimestamp: 0,
+  invalidationsPerRaf: 0,
 };
 
 /**
@@ -132,5 +136,7 @@ export function clearFixedStepMetrics() {
     backlog: 0,
     frameCount: 0,
     simNowMs: 0,
+    lastRafTimestamp: 0,
+    invalidationsPerRaf: 0,
   };
 }
