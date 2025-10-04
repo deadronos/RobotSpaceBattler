@@ -23,12 +23,12 @@ A light ambient motion improves scene life without heavy effects. Keep animation
 
 ## Subtasks
 
-| ID | Description | Status | Updated | Notes |
-|----|-------------|--------|---------|-------|
-| 3.1 | Implement `EmissivePanel` component | Completed | 2025-09-17 | Flicker-enabled panel using emissive material |
-| 3.2 | Implement `useEmissiveFlicker` hook | Completed | 2025-09-17 | Hook updates emissive intensity with sine modulation |
-| 3.3 | Integrate panels into `EnvironmentLayout` | Completed | 2025-09-17 | Panels on each wall |
-| 3.4 | Unit test: flicker modulates intensity within bounds | Deferred | 2025-09-17 | Visual hook covered indirectly; consider future simulation harness |
+| ID  | Description                                          | Status    | Updated    | Notes                                                              |
+| --- | ---------------------------------------------------- | --------- | ---------- | ------------------------------------------------------------------ |
+| 3.1 | Implement `EmissivePanel` component                  | Completed | 2025-09-17 | Flicker-enabled panel using emissive material                      |
+| 3.2 | Implement `useEmissiveFlicker` hook                  | Completed | 2025-09-17 | Hook updates emissive intensity with sine modulation               |
+| 3.3 | Integrate panels into `EnvironmentLayout`            | Completed | 2025-09-17 | Panels on each wall                                                |
+| 3.4 | Unit test: flicker modulates intensity within bounds | Deferred  | 2025-09-17 | Visual hook covered indirectly; consider future simulation harness |
 
 ## Acceptance Criteria
 

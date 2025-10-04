@@ -1,0 +1,40 @@
+name: CI - Performance Benchmark
+
+on:
+  push:
+    branches: [ main, '001-title-simulation-spec' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  perf:
+    name: Performance benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run perf tests (strict)
+        env:
+          CI: true
+          PERFORMANCE_STRICT: 'true'
+        run: |
+          mkdir -p perf-output
+          npm run ci:test:perf 2>&1 | tee perf-output/perf-output.txt
+
+      - name: Upload perf output
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-output
+          path: perf-output/perf-output.txt

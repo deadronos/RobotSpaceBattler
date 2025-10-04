@@ -1,6 +1,19 @@
-import { createRobotEntity, type Entity, resetWorld, type Team, type Vec3,world } from '../ecs/miniplexStore';
-import type { WeaponComponent, WeaponStateComponent, WeaponType } from '../ecs/weapons';
-import { weaponProfiles } from './weaponProfiles';
+import {
+  createRobotEntity,
+  type Entity,
+  getGameplayId,
+  notifyEntityChanged,
+  resetWorld,
+  type Team,
+  type Vec3,
+  world,
+} from "../ecs/miniplexStore";
+import type {
+  WeaponComponent,
+  WeaponStateComponent,
+  WeaponType,
+} from "../ecs/weapons";
+import { weaponProfiles } from "./weaponProfiles";
 
 export const DEFAULT_TEAM_SIZE = 10;
 const GRID_COLUMNS = 5;
@@ -31,7 +44,7 @@ function computeGridPosition(team: Team, index: number): Vec3 {
   const column = index % GRID_COLUMNS;
   const row = Math.floor(index / GRID_COLUMNS);
 
-  const direction = team === 'red' ? 1 : -1;
+  const direction = team === "red" ? 1 : -1;
 
   return [
     baseX + column * GRID_SPACING * direction,
@@ -51,7 +64,7 @@ function createWeaponState(): WeaponStateComponent {
 export function spawnRobot(
   team: Team,
   weaponType: WeaponType,
-  options: { position?: Vec3; indexOverride?: number } = {}
+  options: { position?: Vec3; indexOverride?: number; idFactory?: () => string } = {},
 ) {
   const spawnIndex = options.indexOverride ?? countTeamRobots(team);
   const position = options.position ?? computeGridPosition(team, spawnIndex);
@@ -63,23 +76,30 @@ export function spawnRobot(
   const initialWeapon = {
     id: `weapon_${team}_${weaponType}_${spawnIndex}`,
     type: weaponType,
-    ownerId: -1, // will be corrected after entity is created
+    ownerId: "pending", // will be corrected after entity is created
     team,
     ...weaponProfiles[weaponType],
   } as WeaponComponent;
 
   const initialWeaponState = createWeaponState();
 
+  // Use provided idFactory to produce a deterministic gameplayId if present
+  const providedGameplayId = options.idFactory ? options.idFactory() : undefined;
   const robot = createRobotEntity({
     team,
     position,
     weapon: initialWeapon,
     weaponState: initialWeaponState,
-  }) as Entity & { weapon?: WeaponComponent; weaponState?: WeaponStateComponent };
+    gameplayId: providedGameplayId,
+  }) as Entity & {
+    weapon?: WeaponComponent;
+    weaponState?: WeaponStateComponent;
+  };
 
   // Now that the entity has an id, fix the ownerId to the correct value.
   if (robot.weapon) {
-    robot.weapon.ownerId = robot.id as number;
+    const gameplayId = getGameplayId(robot) ?? String(robot.id ?? "");
+    robot.weapon.ownerId = gameplayId;
   }
 
   return robot;
@@ -88,14 +108,20 @@ export function spawnRobot(
 export function spawnTeam(
   team: Team,
   loadout: WeaponType[],
-  count = DEFAULT_TEAM_SIZE
+  count = DEFAULT_TEAM_SIZE,
+  options?: { idFactory?: () => string },
 ) {
   const created: Entity[] = [];
   let spawnIndex = countTeamRobots(team);
 
   for (let i = 0; i < count; i += 1) {
     const weaponType = loadout[i % loadout.length];
-    created.push(spawnRobot(team, weaponType, { indexOverride: spawnIndex }));
+    created.push(
+      spawnRobot(team, weaponType, {
+        indexOverride: spawnIndex,
+        idFactory: options?.idFactory,
+      }),
+    );
     spawnIndex += 1;
   }
 
@@ -104,9 +130,13 @@ export function spawnTeam(
 
 export function resetAndSpawnDefaultTeams() {
   resetWorld();
-  spawnTeam('red', ['gun', 'laser', 'rocket']);
-  spawnTeam('blue', ['rocket', 'gun', 'laser']);
+  spawnTeam("red", ["gun", "laser", "rocket"]);
+  spawnTeam("blue", ["rocket", "gun", "laser"]);
+  // Notify subscribers that the world entity set has changed.
+  // This helps hooks that need an initial nudge on first load.
+  try {
+    notifyEntityChanged(undefined);
+  } catch {
+    // non-fatal; used only to wake subscribers
+  }
 }
-
-
-

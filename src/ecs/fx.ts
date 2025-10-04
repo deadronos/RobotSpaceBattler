@@ -1,4 +1,4 @@
-export type FxType = 'hitFlash' | 'impactParticles' | 'explosion';
+export type FxType = "hitFlash" | "impactParticles" | "explosion";
 
 export interface FxComponent {
   type: FxType;

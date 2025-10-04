@@ -1,30 +1,40 @@
 # Project Brief — RobotSpaceBattler
 
-**Status:** Starter brief (auto-generated)
+**Status:** Canonical memory (auto-updated)
+
+**Last updated:** 2025-10-03
 
 ## Purpose
 
-RobotSpaceBattler is an experimental browser-based 3D arena where procedurally-generated robots fight under physics simulation. This project demonstrates a small game loop built with React + TypeScript + react-three-fiber and Rapier physics, and is intended as a learning and prototyping playground.
+RobotSpaceBattler is a compact, educational browser-based 3D arena for experimenting with physics-driven gameplay, procedural content, and modular systems engineering. The repository emphasizes a physics-first simulation model and testability while using modern React + Three.js + Rapier tooling.
 
-## Goals
+## High-level goals
 
-- Provide a clean, modular simulation driven by an ECS (miniplex) and Rapier physics.
-- Keep components small and testable so features can be experimented with quickly.
-- Provide a clear path to replace procedural assets with glTF models.
+- Maintain a physics-first, testable simulation architecture where Rapier bodies are authoritative for transforms and rendering is driven from the simulation state.
+- Use a deterministic fixed-step simulation loop for game logic (see `useFixedStepLoop`) and an on-demand render model so frames are only produced when needed.
+- Keep systems small, well-tested, and composable so contributors can iteratively extend AI, weapons, and FX.
+- Provide reproducible developer workflows (Vite, Vitest, Playwright) so simulation behavior is verifiable in CI and locally.
 
 ## Scope
 
-- Core simulation and renderer (Three.js + react-three-fiber)
-- Procedural robot generation and basic AI
-- Projectiles, weapons, and health/score systems
-- Developer tooling: Vitest unit tests and Playwright smoke tests
+- Core simulation and renderer (react-three-fiber + Three.js)
+- Procedural robot prefabs, AI behaviors, and weapon systems (hitscan, projectile, beam)
+- Physics integration via `@react-three/rapier` with Rapier `RigidBody` authoritative; Physics is driven with `updateLoop="independent"` and a fixed `timeStep` for consistency
+- Deterministic step driver (`useFixedStepLoop`) that supplies a seeded RNG and fixed timestep to systems
+- Test infrastructure (Vitest unit tests, Playwright smoke E2E)
 
-## Non-goals
+## Out of scope (explicit)
 
-- No multiplayer networking in the initial scope
-- Not intended to be production-grade; focus is on prototyping and experiments
+- Multiplayer/networking (not planned in current scope)
 
-## How to contribute
+## Contribution guidance
 
-- Follow repo coding standards in `AGENTS.md` / `README.md`.
-- Run tests (`npm run test`) and lint (`npm run lint`) before opening PRs.
+- Follow code style and contributor guidance (`AGENTS.md`, `CONTRIBUTING.md`).
+- Run lint, format, and tests before submitting changes (`npm run lint && npm run format && npm run test`).
+- Small, tested changes are preferred; update `.specify` core files when altering architecture or integration points.
+
+## Acceptance criteria for core features
+
+- Simulation systems are test-covered (Vitest) and deterministic when using the fixed-step driver.
+- Rapier remains authoritative for physical transforms; systems read positions from `RigidBody` when present and use `physicsSyncSystem` to reconcile state.
+- Playwright smoke verifies basic UI and canvas rendering in CI (webServer is configured to start on port 5174 by Playwright config).

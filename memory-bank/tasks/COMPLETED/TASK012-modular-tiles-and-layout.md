@@ -23,12 +23,12 @@ Modular components keep geometry simple and reusable; a small arena confirms sca
 
 ## Subtasks
 
-| ID | Description | Status | Updated | Notes |
-|----|-------------|--------|---------|-------|
+| ID  | Description                                                | Status    | Updated    | Notes                                     |
+| --- | ---------------------------------------------------------- | --------- | ---------- | ----------------------------------------- |
 | 2.1 | Scaffold environment components folder and tile components | Completed | 2025-09-17 | Floor/Wall/Corner tile components created |
-| 2.2 | Implement `EnvironmentLayout` with a basic arena | Completed | 2025-09-17 | 10×10 arena with perimeter walls |
-| 2.3 | Wire shared materials and verify tiling/UVs | Completed | 2025-09-17 | Shared material instances reused |
-| 2.4 | Add quick story/demo in `Scene.tsx` behind a flag | Completed | 2025-09-17 | `ENABLE_ENVIRONMENT` toggle in Scene |
+| 2.2 | Implement `EnvironmentLayout` with a basic arena           | Completed | 2025-09-17 | 10×10 arena with perimeter walls          |
+| 2.3 | Wire shared materials and verify tiling/UVs                | Completed | 2025-09-17 | Shared material instances reused          |
+| 2.4 | Add quick story/demo in `Scene.tsx` behind a flag          | Completed | 2025-09-17 | `ENABLE_ENVIRONMENT` toggle in Scene      |
 
 ## Acceptance Criteria
 

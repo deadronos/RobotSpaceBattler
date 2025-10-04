@@ -1,23 +1,24 @@
+import type { Team } from "./id";
+import type {
+  WeaponAmmo,
+  WeaponBeamParams,
+  WeaponFlags,
+  WeaponPayload,
+} from "./weaponPayload";
 
-export type WeaponType = 'gun' | 'laser' | 'rocket';
+export type { WeaponType } from "./weaponPayload";
 
-export interface WeaponComponent {
-  id: string;
-  type: WeaponType;
-  ownerId: number;
-  team: 'red' | 'blue';
-  range: number;
-  cooldown: number; // seconds
+export interface WeaponComponent extends WeaponPayload {
+  ownerId: string;
+  team: Team;
+  cooldown: number; // seconds (runtime convenience)
   lastFiredAt?: number;
-  power: number; // base damage
-  accuracy?: number; // 0..1
-  spread?: number; // radians
-  ammo?: { clip: number; clipSize: number; reserve: number };
-  energyCost?: number;
-  projectilePrefab?: string;
-  aoeRadius?: number;
-  beamParams?: { duration?: number; width?: number; tickInterval?: number };
-  flags?: { continuous?: boolean; chargeable?: boolean; burst?: boolean; homing?: boolean };
+  spread?: number; // legacy radians convenience
+  ammo?: WeaponAmmo;
+  beamParams?: WeaponBeamParams;
+  flags?: WeaponFlags & {
+    friendlyFire?: boolean;
+  };
 }
 
 export interface WeaponStateComponent {
@@ -27,21 +28,11 @@ export interface WeaponStateComponent {
   cooldownRemaining?: number;
 }
 
-export interface ProjectileComponent {
-  sourceWeaponId: string;
-  ownerId: number;
-  damage: number;
-  team: 'red' | 'blue';
-  aoeRadius?: number;
-  lifespan: number;
-  spawnTime: number;
-  speed?: number;
-  homing?: { turnSpeed: number; targetId?: number };
-}
+// (ProjectileComponent is defined in ./components/projectile; imports should use that canonical location.)
 
 export interface BeamComponent {
   sourceWeaponId: string;
-  ownerId: number;
+  ownerId: string;
   firedAt: number;
   origin: [number, number, number];
   direction: [number, number, number];
@@ -54,9 +45,9 @@ export interface BeamComponent {
 }
 
 export interface DamageEvent {
-  sourceId: number;
+  sourceId: string | number;
   weaponId?: string;
-  targetId?: number;
+  targetId?: number | string;
   position?: [number, number, number];
   damage: number;
 }

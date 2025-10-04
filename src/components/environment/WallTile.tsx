@@ -1,5 +1,5 @@
-import React from 'react';
-import { Material } from 'three';
+import React from "react";
+import { Material } from "three";
 
 export interface WallTileProps {
   width?: number;
@@ -19,7 +19,13 @@ export default function WallTile({
   material,
 }: WallTileProps) {
   return (
-    <mesh position={position} rotation={rotation} castShadow receiveShadow material={material}>
+    <mesh
+      position={position}
+      rotation={rotation}
+      castShadow
+      receiveShadow
+      material={material}
+    >
       <boxGeometry args={[width, height, depth]} />
     </mesh>
   );

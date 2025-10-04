@@ -1,7 +1,7 @@
-import { Environment, Lightformer } from '@react-three/drei';
-import { useThree } from '@react-three/fiber';
-import React, { useEffect } from 'react';
-import { BackSide } from 'three';
+import { Environment, Lightformer } from "@react-three/drei";
+import { useThree } from "@react-three/fiber";
+import React, { useEffect } from "react";
+import { BackSide } from "three";
 
 export interface EnvironmentLightingProps {
   exposure?: number;
@@ -53,9 +53,24 @@ export default function EnvironmentLighting({
         shadow-mapSize-height={shadowSize}
         shadow-bias={-0.0001}
       />
-      <pointLight position={[0, 3.5, 0]} intensity={0.45} distance={40} color="#5ec2ff" />
-      <pointLight position={[6, 2.4, -6]} intensity={0.3} distance={20} color="#b7fbff" />
-      <pointLight position={[-6, 2.4, 6]} intensity={0.3} distance={20} color="#b7fbff" />
+      <pointLight
+        position={[0, 3.5, 0]}
+        intensity={0.45}
+        distance={40}
+        color="#5ec2ff"
+      />
+      <pointLight
+        position={[6, 2.4, -6]}
+        intensity={0.3}
+        distance={20}
+        color="#b7fbff"
+      />
+      <pointLight
+        position={[-6, 2.4, 6]}
+        intensity={0.3}
+        distance={20}
+        color="#b7fbff"
+      />
     </group>
   );
 }
