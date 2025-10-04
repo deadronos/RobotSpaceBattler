@@ -33,9 +33,18 @@ describe('Determinism guards (contract)', () => {
 
     // New API: processRespawnQueue must throw if stepContext is missing
     expect(() => {
-      // @ts-expect-error intentionally call with missing stepContext
       processRespawnQueue({ queue: [], spawnConfig: {} as any } as any);
     }).toThrow();
+
+    // If a deterministic now is provided but no idFactory, it should still throw (no implicit id fallbacks)
+    expect(() => {
+      respawnSystem(world, [], { now: 12345 });
+    }).toThrow();
+
+    // With both deterministic now and an idFactory provided, it should not throw for empty events
+    expect(() => {
+      respawnSystem(world, [], { now: 12345, idFactory: () => 'test' } as any);
+    }).not.toThrow();
   });
 
   it('aiSystem must throw when simNowMs is not provided (no Date.now fallback)', () => {

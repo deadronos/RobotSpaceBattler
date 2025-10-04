@@ -169,12 +169,15 @@
       - Add tests for `extractEntityIdFromRapierHit()` covering multiple Rapier hit payload shapes.
       - Failures should guide adapter implementation and document collider `userData` conventions.
 
-- [ ] T016I [P] Serialization determinism integration test (IT-004) —
+- [x] T016I [P] Serialization determinism integration test (IT-004) —
       `tests/integration/serializationDeterminism.test.ts`
       - Create an integration test that serializes events and entities used for synchronization
         (DeathAuditEntry + relevant entity snapshots) and asserts stable/deterministic outputs
         across repeated runs with identical seed and entity state.
       - Link this test to T016D/T016F and ensure ordering/stable field formats are validated.
+      - IMPLEMENTED: Added `src/utils/serialization.ts` canonical serializer and
+        `tests/integration/serialization.determinism.test.ts` which compares NDJSON outputs
+        for event logs, persisted projectile payloads, and entity snapshots across seeded runs.
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 
@@ -262,36 +265,6 @@
         then implement T016B to make tests pass.
 
 // Update perf decision: T016G
-
-- [ ] T016G Decide perf target & update benchmarks + CI
-      - DECISION: Default (developer) target = 30ms per fixed-step; Strict CI target = 16ms per fixed-step.
-      - Update `tests/performance.benchmark.test.ts` to accept `PERFORMANCE_TARGET_MS` env var and
-        gate strict assertions when `PERFORMANCE_STRICT=true` (CI). Document decision in
-        `specs/001-title-simulation-spec/plan.md` and `docs/DEPENDENCIES.md`.
-      - Depends on: T030 (existing perf tasks).
-
-// Fix adapter path ambiguity
-
-- [x] T033B Rapier adapter docs & implementation fixes
-      - Files: `src/utils/physicsAdapter.ts`, `docs/DEPENDENCIES.md`
-      - Implement any mapping fixes discovered by T033A and document collider `userData` expectations.
-
-## Phase 3.5: Polish
-
-- [x] T029 [P] Add targeted unit coverage for runtime event log edge cases in
-      `tests/unit/runtimeEventLog.test.ts` (overflow, order toggles, reset).
-      Extended: added heavy interleaved append/read stress tests to validate
-      ring buffer invariants under intensive workloads and repeated reads.
-- [x] T030 [P] Extend `tests/performance.benchmark.test.ts` with a 500-entity seeded benchmark
-      verifying average step timing. Tightened thresholds and added CI gating:
-      - Default non-strict target: 30ms
-      - Strict mode (PERFORMANCE_STRICT=true) target: 16ms
-      - Optional override: PERFORMANCE_TARGET_MS env var
-      - In CI strict assertions are only enforced when PERFORMANCE_STRICT is enabled to avoid flakes.
-- [x] T031 [P] Update `specs/001-title-simulation-spec/quickstart.md` and `docs/DEPENDENCIES.md`
-      with StepContext harness instructions and observability notes.
-      Extended: added a small replay trace example and guidance for producing
-      and managing golden traces for deterministic regression checks.
 
 - [ ] T016G Decide perf target & update benchmarks + CI
       - Update `tests/performance.benchmark.test.ts` to use an authoritative 16ms step target

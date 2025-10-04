@@ -1,10 +1,10 @@
 import type { ProjectileComponent } from "../ecs/components/projectile";
 import { fromPersistedProjectile, type PersistedProjectile,toPersistedProjectile, validatePersistedProjectile } from "../ecs/projectilePayload";
+import { toNDJSON } from './serialization';
 
 export function projectilesToNDJSON(projectiles: ProjectileComponent[]): string {
-  return projectiles
-    .map((p) => JSON.stringify(toPersistedProjectile(p)))
-    .join("\n");
+  // Use canonical stringify to ensure deterministic key ordering
+  return toNDJSON(projectiles.map((p) => toPersistedProjectile(p)));
 }
 
 export function projectilesFromNDJSON(

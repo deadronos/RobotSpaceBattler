@@ -35,6 +35,7 @@ const respawnQueue: SpawnRequest[] = [];
 export interface RespawnSystemOptions {
   respawnDelayMs?: number;
   now?: number;
+  idFactory?: () => string; // require deterministic idFactory for old API
 }
 
 function resolveWeaponType(entity: Entity | undefined): WeaponType {
@@ -104,8 +105,14 @@ export function respawnSystem(
 
   // Old API: respawnSystem(world, deathEvents, options)
   const nowOption = (c && c.now) ?? undefined;
+  const idFactoryOption = (c && c.idFactory) ?? undefined;
   if (typeof nowOption !== 'number') {
     throw new Error('respawnSystem old API requires deterministic "now" in options or use the new API with stepContext');
+  }
+
+  // Enforce deterministic idFactory instead of silently synthesizing one
+  if (typeof idFactoryOption !== 'function') {
+    throw new Error('respawnSystem old API requires a deterministic idFactory in options (idFactory) to avoid implicit non-deterministic ids');
   }
 
   const world = a as World<Entity>;
@@ -135,13 +142,13 @@ export function respawnSystem(
     }
   }
 
-  // Process the global queue deterministically using a synthetic stepContext
+  // Build a deterministic StepContext from provided options
   const syntheticStepContext: StepContext = {
     frameCount: 0,
     simNowMs: now,
-    rng: () => 0,
+    rng: () => 0, // deterministic no-op RNG; respawn logic does not use RNG currently
     step: 1 / 60,
-    idFactory: () => String(now),
+    idFactory: idFactoryOption as () => string,
   };
 
   const { respawned, remainingQueue } = processRespawnQueue({
