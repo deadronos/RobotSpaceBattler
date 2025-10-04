@@ -28,6 +28,7 @@
 ```
 
 **IMPORTANT**: The /plan command STOPS at step 7. Phases 2-4 are executed by other commands:
+
 - Phase 2: /tasks command creates tasks.md
 - Phase 3-4: Implementation execution (manual or via tools)
 
@@ -106,6 +107,19 @@ Validation:
 - Unit test with mocked rAF timestamps to assert deterministic invalidation counts and pause/resume.
 - Integration check: ensure no regressions in Playwright smoke tests; verify pause/unpause works.
 
+## Performance Benchmark Policy (T016G)
+
+- **Baseline target**: 16ms average step time when exercising 500 active entities in
+  `tests/performance.benchmark.test.ts`.
+- **Configurability**: set `PERFORMANCE_TARGET_MS` to override the 16ms threshold when
+  profiling different hardware. Use `PERFORMANCE_MODE=observe` or `PERFORMANCE_DISABLE=true`
+  to gather measurements without failing the suite (strict mode overrides disables).
+- **Strict gating**: CI runs `npm run ci:test:perf`, which sets `PERFORMANCE_STRICT=true`
+  to enforce the configured threshold on every pipeline run.
+- **Rationale**: adopting the stricter 16ms envelope keeps fixed-step execution aligned
+  with the frame budget for 60 FPS scenarios and surfaces regressions quickly while
+  still allowing developers to experiment locally via environment overrides.
+
 ## Constitution Check
 
 - Initial Constitution Check: PASS — planned changes align with constitution principles:
@@ -170,9 +184,7 @@ complete (Phase 4). Prioritize remediation and CI/benchmark decisions.
     `{ simNowMs, rng, idFactory }` rather than silently falling back to
     `Date.now()` or `Math.random()`.
 
-- T016G — Decide perf target & update benchmarks + CI
-  - Decision required: developer default target (30ms) vs strict CI target (16ms)
-  - Files: `tests/performance.benchmark.test.ts` and CI pipeline configuration.
+- ✅ T016G — Performance target finalized at 16ms with CI enforcement
 
 - T016I — Serialization determinism integration test (IT-004)
   - Create `tests/integration/serializationDeterminism.test.ts` to assert stable

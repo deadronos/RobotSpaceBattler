@@ -1,3 +1,4 @@
+import { ensureGameplayId } from "../../ecs/id";
 import type { Entity } from "../../ecs/miniplexStore";
 import type { AIState } from "../AISystem";
 
@@ -17,7 +18,7 @@ export interface AIContext {
 export interface AIDecision {
   nextState?: AIState;
   stateSince?: number;
-  targetId?: number | undefined;
+  targetId?: string;
   shouldFire?: boolean;
   velocity?: { x: number; y: number; z: number };
 }
@@ -124,7 +125,7 @@ export function decideIdleAction(
     return {
       nextState: "engage",
       stateSince: context.now,
-      targetId: target.id as number,
+      targetId: ensureGameplayId(target.id),
     };
   }
 
@@ -155,7 +156,7 @@ export function decidePatrolAction(
     return {
       nextState: "engage",
       stateSince: context.now,
-      targetId: target.id as number,
+      targetId: ensureGameplayId(target.id),
     };
   }
 
@@ -205,7 +206,7 @@ export function decideEngageAction(
 
   // Has target and LOS - engage
   const decision: AIDecision = {
-    targetId: target.id as number,
+    targetId: ensureGameplayId(target.id),
     shouldFire: true,
   };
 

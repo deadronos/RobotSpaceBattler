@@ -266,16 +266,20 @@
 
 // Update perf decision: T016G
 
-- [ ] T016G Decide perf target & update benchmarks + CI
-      - Update `tests/performance.benchmark.test.ts` to use an authoritative 16ms step target
-        (configurable via env var). Document decision in `specs/001-title-simulation-spec/plan.md` and
-        `docs/DEPENDENCIES.md` and add CI job proposal for strict runs.
+- [x] T016G Decide perf target & update benchmarks + CI
+      - Adopted a 16ms default threshold via `tests/helpers/performanceBudget.ts` and updated
+        `tests/performance.benchmark.test.ts` to enforce it with configurable environment overrides.
+      - Documented the decision in `specs/001-title-simulation-spec/plan.md`,
+        `docs/DEPENDENCIES.md`, and captured `npm run ci:test:perf` as the strict CI gate.
       - Depends on: T030 (existing perf tasks).
 
 - [x] T016H Golden trace helper (optional)
       - Files: `tests/golden/generate.ts`, `tests/golden/README.md`
       - Add a helper script for producing deterministic golden traces (JSON/NDJSON) from `FixedStepDriver` runs.
-      - IMPLEMENTED: Added `src/utils/golden.ts` (builders/readers/comparators), `tests/golden/generate.ts` script and `tests/golden/README.md`. Helpers produce combined NDJSON traces (events / projectiles / entity snapshots) and compare them against checked-in golden fixtures.
+      - IMPLEMENTED: Added `src/utils/golden.ts` (builders/readers/comparators),
+        `tests/golden/generate.ts` script and `tests/golden/README.md`. Helpers produce
+        combined NDJSON traces (events / projectiles / entity snapshots) and compare
+        them against checked-in golden fixtures.
 
 ## Phase 3.6: Loop Synchronization and Timing
 

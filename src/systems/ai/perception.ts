@@ -1,6 +1,7 @@
 import type { World } from "miniplex";
 
 import type { Entity } from "../../ecs/miniplexStore";
+import type { RapierWorldOrAdapter } from "../../utils/physicsAdapter";
 import { performLineOfSight } from "../perception";
 
 /**
@@ -10,7 +11,7 @@ import { performLineOfSight } from "../perception";
 
 export interface PerceptionContext {
   world: World<Entity>;
-  rapierWorld?: unknown;
+  rapierWorld?: RapierWorldOrAdapter;
 }
 
 /**

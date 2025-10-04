@@ -2,6 +2,7 @@ import type { World } from "miniplex";
 
 import type { Entity } from "../ecs/miniplexStore";
 import { notifyEntityChanged } from "../ecs/miniplexStore";
+import type { RapierWorldOrAdapter } from "../utils/physicsAdapter";
 import {
   type AIContext,
   type AIDecision,
@@ -73,7 +74,7 @@ function applyDecision(
 export function aiSystem(
   world: World<Entity>,
   rng: () => number,
-  rapierWorld?: unknown,
+  rapierWorld?: RapierWorldOrAdapter,
   simNowMs?: number,
 ) {
   if (typeof simNowMs !== "number") {

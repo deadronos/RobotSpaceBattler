@@ -199,3 +199,14 @@ Adapters should prefer `mapHitToEntityId(hit)` when available and fall back to
 read ids from these common fields and that ids are returned as strings for canonical
 consumption by game systems.
 
+## Performance Benchmarks
+
+- `tests/performance.benchmark.test.ts` now enforces a 16ms average fixed-step budget by
+  default. Override the threshold with `PERFORMANCE_TARGET_MS` when profiling different
+  hardware, or set `PERFORMANCE_MODE=observe` / `PERFORMANCE_DISABLE=true` to gather
+  metrics without failing the suite (strict mode overrides these relaxations).
+- CI pipelines should run `npm run ci:test:perf`, which sets `PERFORMANCE_STRICT=true`
+  to guarantee the 16ms target remains enforced on every merge.
+- The shared helper `tests/helpers/performanceBudget.ts` centralizes the environment
+  parsing logic so contract and integration performance tests stay aligned.
+

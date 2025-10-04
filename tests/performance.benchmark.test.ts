@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createWorldController } from '../src/ecs/worldFactory';
 import { createFixedStepDriver } from '../src/utils/fixedStepDriver';
+import { resolvePerformanceBudget } from './helpers/performanceBudget';
 
 // IT-003: Performance benchmark
 // Runs a small simulation with the target number of active entities and measures step timing.
@@ -43,24 +44,17 @@ describe('Performance benchmark', () => {
     // eslint-disable-next-line no-console
     console.info(`Performance benchmark: ${COUNT} entities, avg step ${avg.toFixed(2)}ms`);
 
-    const strict = process.env.PERFORMANCE_STRICT === 'true';
-    const ci = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
-    const envTarget = Number(process.env.PERFORMANCE_TARGET_MS || 0) || undefined;
+    const budget = resolvePerformanceBudget();
+    const headline = `Performance benchmark: ${COUNT} entities, avg step ${avg.toFixed(2)}ms (target ${budget.targetMs}ms, mode=${budget.mode})`;
+    // eslint-disable-next-line no-console
+    console.info(headline);
 
-    const defaultTarget = envTarget ?? (strict ? 16 : 30);
-
-    // In CI, only enforce strict target if PERFORMANCE_STRICT is explicitly enabled.
-    if (ci && strict) {
-      expect(avg).toBeLessThan(defaultTarget);
-    } else if (strict) {
-      // Local developer ran with strict intent
-      expect(avg).toBeLessThan(defaultTarget);
+    if (budget.enforce) {
+      expect(avg).toBeLessThanOrEqual(budget.targetMs);
     } else {
-      // Non-strict runs validate we measured a finite number and log the target for visibility.
       expect(Number.isFinite(avg)).toBe(true);
-      // Provide guidance in test output to set PERFORMANCE_STRICT=true to enforce 16ms in local runs.
       // eslint-disable-next-line no-console
-      console.info(`Note: not enforcing strict threshold. To enable strict mode set PERFORMANCE_STRICT=true (target ${defaultTarget}ms).`);
+      console.info(`[Performance] Enforcement disabled — ${budget.summary}.`);
     }
   });
 });
