@@ -69,6 +69,28 @@ type BeamEntity = Entity & {
   beam: BeamComponent;
 };
 
+// Test-only instrumentation hook type
+type SimulationInstrumentationHook = (event: string, context?: unknown) => void;
+
+// Test-only: global hook for observing Simulation events (guarded by NODE_ENV)
+let __testSimulationInstrumentationHook: SimulationInstrumentationHook | null = null;
+
+export function __testSetSimulationInstrumentationHook(hook: SimulationInstrumentationHook | null) {
+  if (process.env.NODE_ENV === 'test') {
+    __testSimulationInstrumentationHook = hook;
+  }
+}
+
+// Test-only: global reference to fixedStepHandle for manual stepping in tests
+let __testFixedStepHandle: ReturnType<typeof useFixedStepLoop> | null = null;
+
+export function __testGetFixedStepHandle() {
+  if (process.env.NODE_ENV === 'test') {
+    return __testFixedStepHandle;
+  }
+  return null;
+}
+
 export default function Simulation({
   renderFloor = false,
   testMode = false,
@@ -82,6 +104,10 @@ export default function Simulation({
   // rapier context (optional) for physics queries like raycasts
   const rapier = useRapier();
   const { invalidate } = useThree();
+  
+  // Wrap invalidate for test instrumentation (keeps reference stable)
+  const invalidateRef = useRef(invalidate);
+  invalidateRef.current = invalidate;
   // internal step/frame counters are held by the FixedStepDriver
   const projectileQuery = useMemo(
     () => world.with("projectile", "position") as Query<ProjectileEntity>,
@@ -157,7 +183,12 @@ export default function Simulation({
         impact: [] as ImpactEvent[],
       };
 
-  aiSystem(world, rng, physicsAdapter, simNowMs);
+  // Test-only: emit before systems run
+      if (process.env.NODE_ENV === 'test' && __testSimulationInstrumentationHook) {
+        __testSimulationInstrumentationHook('beforeSystems', { frameCount });
+      }
+
+      aiSystem(world, rng, physicsAdapter, simNowMs);
 
       // Use object param API to pass StepContext into systems that require deterministic inputs
       weaponSystem({ world, stepContext: ctx, events });
@@ -216,7 +247,7 @@ export default function Simulation({
         try {
           ((robot as unknown) as RobotComponent).invulnerableUntil = r.invulnerableUntil;
           notifyEntityChanged(robot);
-          invalidate();
+          invalidateRef.current();
         } catch {
           // ignore in non-runtime tests
         }
@@ -224,16 +255,38 @@ export default function Simulation({
 
       physicsSyncSystem(world);
 
+      // Test-only: emit after physicsSyncSystem
+      if (process.env.NODE_ENV === 'test' && __testSimulationInstrumentationHook) {
+        __testSimulationInstrumentationHook('afterPhysicsSync', { frameCount });
+      }
+
       // Pass showFx flag from UI store, allowing tests to control it via parameter
       const showFx = useUI.getState().showFx;
       fxSystem(world, step, ctx, events, showFx);
+
+      // Test-only: emit after all systems complete
+      if (process.env.NODE_ENV === 'test' && __testSimulationInstrumentationHook) {
+        __testSimulationInstrumentationHook('afterSystems', { frameCount });
+      }
     },
   );
 
+  // Test-only: expose fixedStepHandle for manual stepping in tests
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'test') {
+      __testFixedStepHandle = fixedStepHandle;
+    }
+    return () => {
+      if (process.env.NODE_ENV === 'test') {
+        __testFixedStepHandle = null;
+      }
+    };
+  }, [fixedStepHandle]);
+
   // Kick the demand loop when unpausing or on mount
   useEffect(() => {
-    if (!paused) invalidate();
-  }, [paused, invalidate]);
+    if (!paused) invalidateRef.current();
+  }, [paused]);
 
   // Use centralized ECS render-key helper for stable unique keys
   // (see miniplexStore.getRenderKey)
@@ -249,12 +302,16 @@ export default function Simulation({
 
   useEffect(() => {
     const unsubscribe = subscribeEntityChanges(() => {
-      invalidate();
+      // Test-only instrumentation
+      if (process.env.NODE_ENV === 'test' && __testSimulationInstrumentationHook) {
+        __testSimulationInstrumentationHook('invalidate', {});
+      }
+      invalidateRef.current();
     });
     return () => {
       unsubscribe();
     };
-  }, [invalidate]);
+  }, []); // Empty dependency array - subscription is stable
 
   const sceneGroup = (
     <group>

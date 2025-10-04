@@ -20,6 +20,9 @@ export type FixedStepLoopOptions = {
   friendlyFire?: boolean;
 };
 
+// Test-only instrumentation for T074/T076
+type TestInstrumentationHook = (event: string, context?: unknown) => void;
+
 export type FixedStepLoopHandle = {
   step: () => StepContext | null;
   pause: () => PauseToken | undefined;
@@ -28,6 +31,8 @@ export type FixedStepLoopHandle = {
   getDriver: () => FixedStepDriver | null;
   getLastStepContext: () => StepContext | null;
   getMetrics: () => { stepsLastFrame: number; backlog: number };
+  // Test-only: hook to observe internal events (guarded by NODE_ENV === 'test')
+  __testSetInstrumentationHook?: (hook: TestInstrumentationHook | null) => void;
 };
 
 export function useFixedStepLoop(
@@ -47,6 +52,8 @@ export function useFixedStepLoop(
     maxAccumulatedSteps: options.maxAccumulatedSteps,
     testMode: options.testMode,
   });
+  // Test-only instrumentation hook (guarded by NODE_ENV)
+  const instrumentationHookRef = useRef<TestInstrumentationHook | null>(null);
 
   onStepRef.current = onStep;
   optionsRef.current.enabled = options.enabled;
@@ -75,9 +82,17 @@ export function useFixedStepLoop(
   const runStep = useCallback((): StepContext | null => {
     const driver = driverRef.current;
     if (!driver) return null;
+    // Test-only instrumentation: emit before stepping
+    if (process.env.NODE_ENV === 'test' && instrumentationHookRef.current) {
+      instrumentationHookRef.current('beforeStep', {});
+    }
     const context = driver.stepOnce();
     lastStepContextRef.current = context;
     onStepRef.current?.(context);
+    // Test-only instrumentation: emit after stepping
+    if (process.env.NODE_ENV === 'test' && instrumentationHookRef.current) {
+      instrumentationHookRef.current('afterStep', { frameCount: context.frameCount });
+    }
     return context;
   }, []);
 
@@ -148,6 +163,13 @@ export function useFixedStepLoop(
     return runStep();
   }, [runStep]);
 
+  // Test-only hook setter (guarded by NODE_ENV)
+  const setInstrumentationHook = useCallback((hook: TestInstrumentationHook | null) => {
+    if (process.env.NODE_ENV === 'test') {
+      instrumentationHookRef.current = hook;
+    }
+  }, []);
+
   return useMemo(
     () => ({
       step: stepManual,
@@ -157,7 +179,9 @@ export function useFixedStepLoop(
       getDriver,
       getLastStepContext,
       getMetrics,
+      // Only expose instrumentation hook in test mode
+      ...(process.env.NODE_ENV === 'test' ? { __testSetInstrumentationHook: setInstrumentationHook } : {}),
     }),
-    [getDriver, getLastStepContext, getMetrics, pause, reset, resume, stepManual],
+    [getDriver, getLastStepContext, getMetrics, pause, reset, resume, stepManual, setInstrumentationHook],
   );
 }
