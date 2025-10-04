@@ -50,19 +50,23 @@ export function createRapierAdapter(options: {
   function extractPointFromHit(hit: unknown): { pos?: [number, number, number]; normal?: [number, number, number] } {
     if (!hit || typeof hit !== 'object') return {};
     const h = hit as Record<string, unknown>;
-    const point = (h['point'] ?? h['hitPoint'] ?? h['position']) as unknown;
-    if (point) {
-      if (Array.isArray(point) && point.length >= 3) {
-        const arr = point as unknown as Array<unknown>;
-        const x = typeof arr[0] === 'number' ? (arr[0] as number) : undefined;
-        const y = typeof arr[1] === 'number' ? (arr[1] as number) : undefined;
-        const z = typeof arr[2] === 'number' ? (arr[2] as number) : undefined;
-        if (x !== undefined && y !== undefined && z !== undefined) return { pos: [x, y, z] };
-      }
-      const pRec = point as Record<string, unknown>;
-      if (typeof pRec['x'] === 'number' && typeof pRec['y'] === 'number' && typeof pRec['z'] === 'number') {
-        return { pos: [pRec['x'] as number, pRec['y'] as number, pRec['z'] as number] };
-      }
+    const point = (h['point'] ?? h['hitPoint'] ?? h['position']);
+    let px: number | undefined = undefined;
+    let py: number | undefined = undefined;
+    let pz: number | undefined = undefined;
+    if (point && typeof point === "object") {
+      // common shapes: { x,y,z } or array-like [x,y,z]
+      const po = point as Record<string, unknown>;
+      const arr = Array.isArray(point) ? (point as unknown[]) : undefined;
+      const vx = typeof po["x"] === "number" ? (po["x"] as number) : undefined;
+      const vy = typeof po["y"] === "number" ? (po["y"] as number) : undefined;
+      const vz = typeof po["z"] === "number" ? (po["z"] as number) : undefined;
+      px = vx ?? (arr && typeof arr[0] === "number" ? (arr[0] as number) : undefined);
+      py = vy ?? (arr && typeof arr[1] === "number" ? (arr[1] as number) : undefined);
+      pz = vz ?? (arr && typeof arr[2] === "number" ? (arr[2] as number) : undefined);
+    }
+    if (px !== undefined && py !== undefined && pz !== undefined) {
+      return { pos: [px, py, pz] };
     }
     return {};
   }
@@ -168,7 +172,8 @@ export function createRapierAdapter(options: {
 
     // Fallback conservative answer: true if world exposes any contacts (best-effort)
     try {
-      const nc = (rapierWorld as unknown as Record<string, unknown>)['numColliders'] as number | undefined;
+      const rwRec = rapierWorld as Record<string, unknown> | undefined;
+      const nc = rwRec ? (rwRec['numColliders'] as number | undefined) : undefined;
       if (nc !== undefined) return nc > 0;
     } catch (__) {
       // ignore

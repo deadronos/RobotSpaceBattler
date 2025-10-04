@@ -23,9 +23,7 @@ export function physicsSyncSystem(world: World<Entity>) {
     if (!e.rigid || !e.position) continue;
 
     // Attempt to read physics position from rigid body
-    const rigid = e.rigid as unknown as {
-      translation?: () => { x: number; y: number; z: number };
-    };
+    const rigid = e.rigid as RigidBodyLike | undefined;
 
     if (rigid && typeof rigid.translation === "function") {
       try {
@@ -56,4 +54,8 @@ export function physicsSyncSystem(world: World<Entity>) {
       }
     }
   }
+}
+
+interface RigidBodyLike {
+  translation?: () => { x: number; y: number; z: number };
 }

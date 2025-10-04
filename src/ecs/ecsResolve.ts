@@ -1,4 +1,4 @@
-import type { World } from "miniplex";
+import type { Query,World } from "miniplex";
 
 import type { RuntimeEventLog } from "../utils/runtimeEventLog";
 import { type Entity, getEntityById } from "./miniplexStore";
@@ -68,9 +68,7 @@ export function resolveOwner(
   }
 
   try {
-    const query = world.with("weapon") as unknown as {
-      entities: Array<Entity & { weapon?: WeaponComponent }>;
-    };
+    const query = world.with("weapon") as Query<Entity & { weapon?: WeaponComponent }>;
 
     const match = query.entities.find(
       (candidate) => candidate.weapon?.id === lookup.weaponId,

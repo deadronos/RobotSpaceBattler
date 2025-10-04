@@ -265,7 +265,7 @@ function performRaycast(
         if (point && typeof point === "object") {
           // common shapes: { x,y,z } or array-like [x,y,z]
           const po = point as Record<string, unknown>;
-          const arr = point as unknown as unknown[];
+          const arr = Array.isArray(point) ? (point as unknown[]) : undefined;
           const vx =
             typeof po["x"] === "number" ? (po["x"] as number) : undefined;
           const vy =

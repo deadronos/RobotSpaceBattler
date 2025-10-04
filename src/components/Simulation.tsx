@@ -83,17 +83,10 @@ export default function Simulation({
   const { invalidate } = useThree();
   // internal step/frame counters are held by the FixedStepDriver
   const projectileQuery = useMemo(
-    () =>
-      world.with(
-        "projectile",
-        "position",
-      ) as unknown as Query<ProjectileEntity>,
+    () => world.with("projectile", "position") as Query<ProjectileEntity>,
     [],
   );
-  const beamQuery = useMemo(
-    () => world.with("beam") as unknown as Query<BeamEntity>,
-    [],
-  );
+  const beamQuery = useMemo(() => world.with("beam") as Query<BeamEntity>, []);
 
   // Robots query (used for rendering Robot prefabs)
   // Important: do NOT require 'rigid' here; the Robot prefab sets entity.rigid on mount.

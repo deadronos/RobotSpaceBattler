@@ -30,11 +30,9 @@ export function toPersistedProjectile(
   if (typeof projectile.aoeRadius === "number") out.aoeRadius = projectile.aoeRadius;
   if (typeof projectile.lifespan === "number") out.lifespan = projectile.lifespan;
   if (typeof projectile.speed === "number") out.speed = projectile.speed;
-  if (projectile.homing) {
-    out.homing = {
-      turnSpeed: (projectile.homing as unknown as { turnSpeed?: number }).turnSpeed,
-      targetId: (projectile.homing as unknown as { targetId?: string | number }).targetId,
-    };
+  if (projectile.homing && typeof projectile.homing === "object") {
+    const h = projectile.homing as { turnSpeed?: number; targetId?: string | number };
+    out.homing = { turnSpeed: h.turnSpeed ?? 1, targetId: h.targetId };
   }
 
   return out;

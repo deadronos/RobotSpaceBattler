@@ -28,8 +28,7 @@ export interface WeaponStateComponent {
   cooldownRemaining?: number;
 }
 
-// ProjectileComponent is now defined canonically in ./components/projectile
-// (imports should reference that module directly). Previously re-exported here.
+// (ProjectileComponent is defined in ./components/projectile; imports should use that canonical location.)
 
 export interface BeamComponent {
   sourceWeaponId: string;

@@ -29,7 +29,7 @@ export function Projectile({ entity }: { entity: ProjectileEntity }) {
   useEffect(() => {
     const mesh = meshRef.current;
     if (mesh) {
-      entity.render = mesh as unknown;
+      entity.render = mesh;
     }
     return () => {
       if (entity.render === mesh) {
@@ -48,7 +48,7 @@ export function Projectile({ entity }: { entity: ProjectileEntity }) {
       angularDamping={0}
       gravityScale={0}
       canSleep={false}
-      position={entity.position as unknown as [number, number, number]}
+      position={entity.position as [number, number, number]}
     >
       <mesh
         ref={meshRef}

@@ -1,4 +1,4 @@
-import type { World } from "miniplex";
+import type { Query,World } from "miniplex";
 
 import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
 import { type Entity, notifyEntityChanged } from "../ecs/miniplexStore";
@@ -69,7 +69,7 @@ export function processBeamFireEvents(
 ) {
   if (weaponFiredEvents.length === 0) return;
 
-  const beamQuery = world.with("beam") as unknown as { entities: BeamEntity[] };
+  const beamQuery = world.with("beam") as Query<BeamEntity>;
 
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== "laser") continue;
@@ -145,7 +145,7 @@ export function processBeamFireEvents(
         firedAt: now,
       },
     };
-  world.add(beamEntity as unknown as Entity);
+  world.add(beamEntity);
   }
 }
 
@@ -156,7 +156,7 @@ export function processBeamTicks(
   rapierWorld?: unknown,
   flags?: { friendlyFire?: boolean },
 ) {
-  const beamQuery = world.with("beam") as unknown as { entities: BeamEntity[] };
+  const beamQuery = world.with("beam") as Query<BeamEntity>;
   const beams = [...beamQuery.entities];
   const friendlyFire = !!flags?.friendlyFire;
 
@@ -451,15 +451,13 @@ function fallbackBeamRaycast(
 
   const beamRadius = Math.max(width * 0.5, 0.5);
 
-  const query = world.with("team", "position") as unknown as {
-    entities: Array<
-      Entity & {
-        position: [number, number, number];
-        team?: string;
-        beam?: BeamComponent;
-      }
-    >;
-  };
+  const query = world.with("team", "position") as Query<
+    Entity & {
+      position: [number, number, number];
+      team?: string;
+      beam?: BeamComponent;
+    }
+  >;
 
   for (const candidate of query.entities) {
     if (!candidate.position || !candidate.team || candidate.beam) continue;
