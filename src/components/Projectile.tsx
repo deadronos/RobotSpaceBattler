@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef } from "react";
 import { Mesh } from "three";
 
 import type { Entity } from "../ecs/miniplexStore";
-import type { ProjectileComponent } from "../ecs/weapons";
+import type { ProjectileComponent } from "../ecs/components/projectile";
 import { useEntityPhysicsSync } from "../hooks/useEntityPhysicsSync";
 import { ProjectileStreak } from "./ProjectileStreak";
 

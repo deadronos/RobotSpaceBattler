@@ -6,7 +6,8 @@ import type { Team } from "./id";
 import { ensureGameplayId, normalizeTeam } from "./id";
 import { clearPauseVelocity, getPauseVelocity, setPauseVelocity } from "./pauseVelocity";
 import { createRenderKeyGenerator } from "./renderKey";
-import type { BeamComponent, ProjectileComponent,WeaponComponent, WeaponStateComponent } from "./weapons";
+import type { BeamComponent, WeaponComponent, WeaponStateComponent } from "./weapons";
+import type { ProjectileComponent } from "./components/projectile";
 import { createWorldController } from "./worldFactory";
 
 export type { Team } from "./id";

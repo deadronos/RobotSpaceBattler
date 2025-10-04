@@ -2,7 +2,8 @@ import type { World } from "miniplex";
 
 import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
 import { type Entity, notifyEntityChanged } from "../ecs/miniplexStore";
-import type { DamageEvent, ProjectileComponent,WeaponComponent } from "../ecs/weapons";
+import type { DamageEvent, WeaponComponent } from "../ecs/weapons";
+import type { ProjectileComponent } from "../ecs/components/projectile";
 import type { StepContext } from "../utils/fixedStepDriver";
 import type { Rng } from "../utils/seededRng";
 import type { WeaponFiredEvent } from "./WeaponSystem";

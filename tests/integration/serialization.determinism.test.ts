@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { createRuntimeEventLog } from '../../src/utils/runtimeEventLog';
 import { createTestDriver, runDriverSteps } from '../helpers/fixedStepHarness';
+import { projectilesToNDJSON } from '../../src/utils/replay';
+import { createProjectileComponent } from '../../src/ecs/components/projectile';
 
 describe('serialization determinism', () => {
   it('produces identical NDJSON output across two runs with the same seed', () => {
@@ -46,6 +48,32 @@ describe('serialization determinism', () => {
     const nd1 = log1.read({ order: 'oldest-first' }).map((e) => JSON.stringify(e)).join('\n');
     const nd2 = log2.read({ order: 'oldest-first' }).map((e) => JSON.stringify(e)).join('\n');
 
+    // Also verify projectile NDJSON determinism for the same seeded runs
+    const projectiles1 = steps.map((ctx, i) =>
+      createProjectileComponent({
+        sourceWeaponId: i,
+        ownerId: `owner-${i}`,
+        team: 'red',
+        damage: i + 1,
+        lifespan: 3,
+        spawnTime: ctx.simNowMs,
+      }),
+    );
+    const projectiles2 = steps2.map((ctx, i) =>
+      createProjectileComponent({
+        sourceWeaponId: i,
+        ownerId: `owner-${i}`,
+        team: 'red',
+        damage: i + 1,
+        lifespan: 3,
+        spawnTime: ctx.simNowMs,
+      }),
+    );
+
+    const pnd1 = projectilesToNDJSON(projectiles1);
+    const pnd2 = projectilesToNDJSON(projectiles2);
+
     expect(nd1).toEqual(nd2);
+    expect(pnd1).toEqual(pnd2);
   });
 });

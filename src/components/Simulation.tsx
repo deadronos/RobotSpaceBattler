@@ -22,9 +22,9 @@ import { capturePauseVel, restorePauseVel } from "../ecs/pauseManager";
 import type {
   BeamComponent,
   DamageEvent,
-  ProjectileComponent,
   WeaponType,
 } from "../ecs/weapons";
+import type { ProjectileComponent } from "../ecs/components/projectile";
 import { useFixedStepLoop } from "../hooks/useFixedStepLoop";
 import { useSimulationBootstrap } from "../hooks/useSimulationBootstrap";
 import { Robot } from "../robots/robotPrefab";
