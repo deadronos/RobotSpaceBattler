@@ -5,6 +5,7 @@ import React, { useMemo, useRef, useState } from "react";
 import { getRuntimeEventLog } from "../ecs/ecsResolve";
 import type { DeathAuditEntry } from "../utils/runtimeEventLog";
 import { getFixedStepMetrics } from "../utils/sceneMetrics";
+import { useTime } from '../utils/timeProvider';
 
 export default function DiagnosticsOverlay({
   updateHz = 8,
@@ -15,18 +16,20 @@ export default function DiagnosticsOverlay({
   showEventLog?: boolean;
   showFixedStepMetrics?: boolean;
 }) {
+  const time = useTime();
+
   const textRef = useRef<HTMLDivElement | null>(null);
   const eventLogRef = useRef<HTMLDivElement | null>(null);
   const samples = useMemo(
-    () => ({ last: Date.now(), fps: 0, acc: 0, frames: 0 }),
-    [],
+    () => ({ last: time.now(), fps: 0, acc: 0, frames: 0 }),
+    [time],
   );
   const interval = 1000 / Math.max(1, updateHz);
-  const nextUpdateRef = useRef(Date.now() + interval);
+  const nextUpdateRef = useRef(time.now() + interval);
   const [recentEvents, setRecentEvents] = useState<DeathAuditEntry[]>([]);
 
   useFrame((_, dt) => {
-    const now = Date.now();
+    const now = time.now();
     samples.frames += 1;
     samples.acc += dt;
     if (now >= nextUpdateRef.current) {

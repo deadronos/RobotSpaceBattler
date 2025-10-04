@@ -43,6 +43,9 @@ import type { WeaponFiredEvent } from "../systems/WeaponSystem";
 import { weaponSystem } from "../systems/WeaponSystem";
 import { createRuntimeEventLog } from "../utils/runtimeEventLog";
 import { updateFixedStepMetrics } from "../utils/sceneMetrics";
+import { createRapierAdapter } from '../utils/physicsAdapter';
+import { TimeProviderComponent } from '../utils/timeProvider';
+import { RngProvider } from '../utils/rngProvider';
 // RNG is created by FixedStepDriver; no per-component RNG import needed
 import { Beam } from "./Beam";
 import { FXLayer } from "./FXLayer";
@@ -65,8 +68,6 @@ type ProjectileEntity = Entity & {
 type BeamEntity = Entity & {
   beam: BeamComponent;
 };
-
-// pickNearestEnemy removed — AI decisions are handled by the centralized aiSystem
 
 export default function Simulation({
   renderFloor = false,
@@ -95,14 +96,9 @@ export default function Simulation({
     () => world.with("team", "weapon", "weaponState") as Query<Entity>,
     [],
   );
-  // debug logs removed
   const projectiles = useEcsQuery(projectileQuery);
   const beams = useEcsQuery(beamQuery);
   const robots = useEcsQuery(robotQuery);
-
-  // debug logs removed
-
-  // RNG is created per-frame deterministically; no persistent RNG state needed
 
   // Spawn & bootstrap logic extracted to hook
   useSimulationBootstrap(robotQuery, projectileQuery, beamQuery, invalidate);
@@ -118,6 +114,17 @@ export default function Simulation({
 
   const queuedRespawnsRef = useRef<SpawnRequest[]>([]);
 
+  // Provide stable refs for simNowMs and rng so providers can expose stable identities
+  const simNowRef = useRef<number>(0);
+  const rngRef = useRef<() => number>(() => Math.random());
+
+  // Create stable provider identities that read from refs; avoids per-tick provider object churn
+  const timeProvider = useMemo(() => ({ now: () => simNowRef.current }), []);
+  const rngProviderFn = useMemo(() => () => rngRef.current(), []);
+
+  // Build a PhysicsAdapter for passing to systems (normalizes Rapier world or test adapters)
+  const physicsAdapter = useMemo(() => createRapierAdapter({ world: rapier?.world }), [rapier]);
+
   // Use fixed-step loop hook to provide deterministic stepping
   const fixedStepHandle = useFixedStepLoop(
     {
@@ -129,6 +136,10 @@ export default function Simulation({
     },
     (ctx) => {
   const { step, rng, simNowMs, frameCount } = ctx;
+
+      // Update refs so providers read the latest values without changing identity
+      simNowRef.current = simNowMs;
+      rngRef.current = rng;
 
       // Update fixed-step metrics for diagnostics
       const metrics = fixedStepHandle?.getMetrics?.() ?? { stepsLastFrame: 0, backlog: 0 };
@@ -146,11 +157,11 @@ export default function Simulation({
         impact: [] as ImpactEvent[],
       };
 
-  aiSystem(world, rng, rapier, simNowMs);
+  aiSystem(world, rng, physicsAdapter, simNowMs);
 
       // Use object param API to pass StepContext into systems that require deterministic inputs
       weaponSystem({ world, stepContext: ctx, events });
-      hitscanSystem({ world, stepContext: ctx, weaponFiredEvents: events.weaponFired, events, rapierWorld: rapier });
+      hitscanSystem({ world, stepContext: ctx, weaponFiredEvents: events.weaponFired, events, rapierWorld: physicsAdapter });
       beamSystem(
         world,
         step,
@@ -158,7 +169,7 @@ export default function Simulation({
         events.weaponFired,
         events,
         ctx,
-        rapier,
+        physicsAdapter,
       );
       projectileSystem(
         world,
@@ -166,7 +177,7 @@ export default function Simulation({
         ctx,
         events.weaponFired,
         events,
-        rapier,
+        physicsAdapter,
       );
 
       damageSystem(world, events.damage, events, ctx.frameCount);
@@ -245,7 +256,7 @@ export default function Simulation({
     };
   }, [invalidate]);
 
-  return (
+  const sceneGroup = (
     <group>
       {/* Arena floor: visual plane optional; collider always present. */}
       <RigidBody type="fixed" colliders={false}>
@@ -278,6 +289,16 @@ export default function Simulation({
       {showFx ? <FXLayer /> : null}
     </group>
   );
+
+  if (testMode) {
+    return (
+      <TimeProviderComponent provider={timeProvider}>
+        <RngProvider rng={rngProviderFn}>{sceneGroup}</RngProvider>
+      </TimeProviderComponent>
+    );
+  }
+
+  return sceneGroup;
 }
 
 // Movement and firing helpers removed — AI responsibilities moved to aiSystem

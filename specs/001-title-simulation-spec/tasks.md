@@ -255,14 +255,14 @@
       fields. Ensure `WeaponSystem` uses StepContext.rng for accuracy/spread and
       that persisted payloads are serializable for tests and export.
 
-- [ ] T016B [P] Replace non-deterministic fallbacks in systems — implementation
+- [x] T016B [P] Replace non-deterministic fallbacks in systems — implementation
       - Files: `src/systems/WeaponSystem.ts`, `src/systems/RespawnSystem.ts`, `src/systems/AISystem.ts`
       - Remove use of `Date.now()` and `Math.random()`; require `StepContext` with `{ simNowMs, rng, idFactory }`.
       - Policy: systems MUST throw an explicit Error when StepContext or idFactory is omitted to avoid
         silent non-deterministic behavior. Add unit tests to cover new behavior.
       - Depends on: T016A, T016C.
-      - Note: Immediate remediation workflow — write T016A and T016C tests, run them to confirm failures,
-        then implement T016B to make tests pass.
+      - IMPLEMENTED: WeaponSystem and AISystem already enforce `StepContext` requirements; RespawnSystem was updated to require a deterministic `idFactory` for the old API and `processRespawnQueue` requires a `StepContext`.
+      - Tests: Added `tests/contracts/determinism.contract.test.ts` and `tests/unit/determinismGuards.test.ts` asserting that WeaponSystem, RespawnSystem, and AISystem throw when required deterministic inputs are missing.
 
 // Update perf decision: T016G
 
@@ -367,3 +367,10 @@ tasks run T009
   simulation code.
 - Commit after each task; rerun `npm run lint` and `npm run test` frequently to validate
   determinism.
+
+// Sweep results
+
+- [x] T016B-SWEEP Repo sweep for non-deterministic calls (Date.now/Math.random)
+      - Action: Scanned repository for `Date.now()` and `Math.random()` usages and classified them.
+      - Result: Simulation-critical code (under `src/systems`) contains no `Date.now()`/`Math.random()` calls.
+      - Remaining uses are limited to UI and perf tests. See `docs/non-deterministic-usage.md` for details.

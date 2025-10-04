@@ -14,7 +14,8 @@ describe('golden trace helper', () => {
     const combined = buildCombinedTrace({ events, projectilesNDJSON, entitySnapshots: snaps });
 
     const outDir = tmpdir();
-    const name = `golden-test-${Date.now()}`;
+    // Use deterministic filename for tests to avoid flaky Date.now usage
+    const name = `golden-test-fixed`;
     const filePath = writeGoldenTrace(outDir, name, combined);
 
     const matches = compareWithGolden(filePath, combined);
