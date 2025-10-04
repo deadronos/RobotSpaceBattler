@@ -1,6 +1,6 @@
-import { ensureGameplayId, normalizeTeam } from "./id";
-import { createProjectileComponent } from "./components/projectile";
 import type { ProjectileComponent, ProjectileInit } from "./components/projectile";
+import { createProjectileComponent } from "./components/projectile";
+import { ensureGameplayId, normalizeTeam } from "./id";
 
 export interface PersistedProjectile {
   // ids may be numeric in older persisted forms; allow both and normalize on load

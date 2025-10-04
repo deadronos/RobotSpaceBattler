@@ -3,6 +3,7 @@ import { CuboidCollider, RigidBody, useRapier } from "@react-three/rapier";
 import type { Query } from "miniplex";
 import React, { useEffect, useMemo, useRef } from "react";
 
+import type { ProjectileComponent } from "../ecs/components/projectile";
 import type { RobotComponent } from "../ecs/components/robot";
 import {
   clearRuntimeEventLog,
@@ -24,7 +25,6 @@ import type {
   DamageEvent,
   WeaponType,
 } from "../ecs/weapons";
-import type { ProjectileComponent } from "../ecs/components/projectile";
 import { useFixedStepLoop } from "../hooks/useFixedStepLoop";
 import { useSimulationBootstrap } from "../hooks/useSimulationBootstrap";
 import { Robot } from "../robots/robotPrefab";

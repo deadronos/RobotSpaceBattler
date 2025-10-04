@@ -1,5 +1,5 @@
-import { toPersistedProjectile, fromPersistedProjectile, validatePersistedProjectile } from "../ecs/projectilePayload";
 import type { ProjectileComponent } from "../ecs/components/projectile";
+import { fromPersistedProjectile, toPersistedProjectile, validatePersistedProjectile } from "../ecs/projectilePayload";
 
 export function projectilesToNDJSON(projectiles: ProjectileComponent[]): string {
   return projectiles
