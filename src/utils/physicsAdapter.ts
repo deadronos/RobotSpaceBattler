@@ -139,7 +139,7 @@ export type RapierWorldLike = {
 export type RapierWorldOrAdapter = RapierWorldLike | PhysicsAdapter;
 
 // Extract a 3D point from a hit payload if possible. Handles {x,y,z} and [x,y,z].
-function extractPoint(hit: unknown): [number, number, number] | undefined {
+export function extractPoint(hit: unknown): [number, number, number] | undefined {
   if (!hit || typeof hit !== 'object') return undefined;
   const h = hit as Record<string, unknown>;
   const point = h['point'] ?? h['hitPoint'] ?? h['position'];

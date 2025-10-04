@@ -29,9 +29,11 @@ describe('ecsResolve helpers', () => {
   it('resolveOwner should find owner by ownerId or weaponId', () => {
     resetWorld();
     const owner = createRobotEntity({ gameplayId: 'owner-1', team: 'red' });
-    // Attach a weapon id to the owner
+    // Attach a weapon id to the owner (ensure weapon component exists for the test)
     const weaponId = 'weapon-xyz';
-    if (owner.weapon) {
+    if (!owner.weapon) {
+      owner.weapon = { id: weaponId, type: 'gun', power: 1, ownerId: 'owner-1', team: 'red', cooldown: 0 } as any;
+    } else {
       owner.weapon.id = weaponId;
       owner.weapon.ownerId = 'owner-1';
     }

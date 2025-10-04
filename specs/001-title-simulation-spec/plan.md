@@ -151,10 +151,37 @@ in these real paths:
     - specs/001-title-simulation-spec/contracts/respawn-contract.md
     - specs/001-title-simulation-spec/contracts/observability-contract.md
 
-- [ ] Phase 2: Task planning complete (/tasks command)
-- [ ] Phase 3: Tasks generated
+- [x] Phase 2: Task planning complete (/tasks command)
+- [x] Phase 3: Tasks generated
 - [ ] Phase 4: Implementation complete
 - [ ] Phase 5: Validation passed
+
+## What's left (phase summary)
+
+The `/specs/001-title-simulation-spec/tasks.md` has been generated. A small number
+of high-priority tasks remain open and should be scheduled for Phase 3/4
+implementation. These outstanding items were extracted from `tasks.md` and
+represent the current work-blockers before we can declare Implementation
+complete (Phase 4). Prioritize remediation and CI/benchmark decisions.
+
+- T016B — Replace non-deterministic fallbacks in systems (implementation)
+  - Files: `src/systems/WeaponSystem.ts`, `src/systems/RespawnSystem.ts`, `src/systems/AISystem.ts`
+  - Policy: systems must throw or explicitly require `StepContext` with
+    `{ simNowMs, rng, idFactory }` rather than silently falling back to
+    `Date.now()` or `Math.random()`.
+
+- T016G — Decide perf target & update benchmarks + CI
+  - Decision required: developer default target (30ms) vs strict CI target (16ms)
+  - Files: `tests/performance.benchmark.test.ts` and CI pipeline configuration.
+
+- T016I — Serialization determinism integration test (IT-004)
+  - Create `tests/integration/serializationDeterminism.test.ts` to assert stable
+    NDJSON serialization of `DeathAuditEntry` + entity snapshots under fixed seeds.
+
+- T016H — Golden trace helper (optional)
+  - Files: `tests/golden/generate.ts`, `tests/golden/README.md`
+  - Optional helper for producing deterministic golden traces (NDJSON/JSON) for
+    regression checks and CI artifact comparison.
 
 ## Gate Status
 

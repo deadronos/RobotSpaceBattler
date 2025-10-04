@@ -3,7 +3,7 @@ import type { Query,World } from "miniplex";
 import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
 import { type Entity, notifyEntityChanged } from "../ecs/miniplexStore";
 import type { BeamComponent, DamageEvent, WeaponComponent } from "../ecs/weapons";
-import { callIntersectionsWithRay, type RapierWorldOrAdapter } from "../utils/physicsAdapter";
+import { callIntersectionsWithRay, extractPoint, type RapierWorldOrAdapter } from "../utils/physicsAdapter";
 import type { Rng } from "../utils/seededRng";
 import { extractEntityIdFromRapierHit } from "./rapierHelpers";
 import type { WeaponFiredEvent } from "./WeaponSystem";
@@ -343,7 +343,7 @@ function tryRapierBeamRaycast(
       for (const nested of raw) {
         const id = extractEntityIdFromRapierHit(nested);
         if (typeof id !== 'string') continue;
-        const point = extractPointFromRapierHit(nested, origin, direction, length);
+        const point = extractPoint(nested);
         if (!point) continue;
         const distance = distanceAlongRay(origin, point as [number, number, number], direction);
         hits.push({ targetId: id, position: point as [number, number, number], distance });
@@ -352,7 +352,7 @@ function tryRapierBeamRaycast(
     }
     const id = extractEntityIdFromRapierHit(raw);
     if (typeof id !== 'string') continue;
-    const point = extractPointFromRapierHit(raw, origin, direction, length);
+    const point = extractPoint(raw);
     if (!point) continue;
     const distance = distanceAlongRay(origin, point as [number, number, number], direction);
     hits.push({ targetId: id, position: point as [number, number, number], distance });
@@ -431,35 +431,6 @@ function normalize(v: [number, number, number]) {
   const len = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
   if (len <= 1e-9) return null;
   return [v[0] / len, v[1] / len, v[2] / len] as [number, number, number];
-}
-
-function extractPointFromRapierHit(
-  hit: unknown,
-  _origin: [number, number, number],
-  _direction: [number, number, number],
-  _length: number,
-): [number, number, number] | null {
-  // Mark intentionally-unused params to satisfy linters in environments where
-  // these utilities may be called with different rapier hit shapes.
-  void _origin;
-  void _direction;
-  void _length;
-  if (!hit || typeof hit !== 'object') return null;
-  const h = hit as Record<string, unknown>;
-  const point = h['point'] ?? h['hitPoint'] ?? h['position'] ?? h['p'];
-  if (!point) return null;
-  if (Array.isArray(point) && point.length >= 3 && typeof point[0] === 'number') {
-    return [point[0] as number, point[1] as number, point[2] as number];
-  }
-  if (typeof point === 'object') {
-    const px = (point as Record<string, unknown>)['x'];
-    const py = (point as Record<string, unknown>)['y'];
-    const pz = (point as Record<string, unknown>)['z'];
-    if (typeof px === 'number' && typeof py === 'number' && typeof pz === 'number') {
-      return [px, py, pz];
-    }
-  }
-  return null;
 }
 
 function distanceAlongRay(
