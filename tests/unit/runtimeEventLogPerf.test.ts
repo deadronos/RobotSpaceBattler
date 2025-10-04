@@ -24,11 +24,12 @@ describe('runtimeEventLog performance', () => {
       log.append(makeEntry(1000, i));
     }
 
-    const start = Date.now();
-    // produce NDJSON
-  const entries = log.read({ order: 'oldest-first' });
-  const ndjson = entries.map((e: DeathAuditEntry) => JSON.stringify(e)).join('\n');
-    const elapsed = Date.now() - start;
+    // Use high-resolution timer for performance-sensitive measurement
+    const start = typeof performance !== 'undefined' && typeof performance.now === 'function' ? performance.now() : Date.now();
+    const entries = log.read({ order: 'oldest-first' });
+    const ndjson = entries.map((e: DeathAuditEntry) => JSON.stringify(e)).join('\n');
+    const end = typeof performance !== 'undefined' && typeof performance.now === 'function' ? performance.now() : Date.now();
+    const elapsed = end - start;
 
     // basic sanity
     expect(ndjson).toContain('victim-0');

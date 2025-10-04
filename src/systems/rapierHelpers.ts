@@ -4,7 +4,7 @@ export function extractEntityIdFromRapierHit(hit: unknown): string | undefined {
   try {
     // If it's an array of hits, take the first
     const first = Array.isArray(hit) && hit.length > 0 ? hit[0] : hit;
-    const h = first as unknown as Record<string, unknown>;
+    const h = first as Record<string, unknown>;
 
     // Common shapes: hit.collider or hit.colliderObject, hit.rigid, hit.body
     const collider =

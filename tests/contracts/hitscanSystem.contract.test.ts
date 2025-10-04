@@ -49,7 +49,7 @@ describe("HitscanSystem contract", () => {
     });
 
     expect(events.damage).toHaveLength(1);
-    expect(events.damage[0].targetId).toBe(42);
+    expect(events.damage[0].targetId).toBe('42');
     expect(events.impact[0].position).toEqual([1, 0, 0]);
   });
 });

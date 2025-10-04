@@ -30,11 +30,11 @@ export function projectileSystem(
   let ctx: StepContext | undefined;
   if (typeof stepContext === 'function') {
     // Old positional: stepContext is rng, _rapierWorld is simNowMs
-    const rngFn = stepContext as unknown as () => number;
+    const rngFn = stepContext as () => number;
     const simNow = typeof _rapierWorld === 'number' ? (_rapierWorld as number) : 0;
     let seq = 0;
     const idFactory = () => `${simNow}-${seq++}`;
-    ctx = { rng: rngFn as unknown as Rng, simNowMs: simNow, idFactory, step: dt } as StepContext;
+    ctx = { rng: rngFn, simNowMs: simNow, idFactory, step: dt } as StepContext;
   } else {
     ctx = stepContext as StepContext | undefined;
   }
@@ -79,7 +79,7 @@ export function projectileSystem(
     // Using a loose type here to avoid large refactors during the deterministic
     // guard implementation. A full migration to string gameplay ids is tracked
     // as T052B and should be completed separately.
-    const projectileEntity: unknown = {
+    const projectileEntity: Entity = {
       id: idFactory(),
       position: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
       team: weapon.team,
@@ -98,11 +98,11 @@ export function projectileSystem(
     };
 
     const [dx, dy, dz] = fireEvent.direction;
-  const p = projectileEntity as { projectile: { speed?: number }; velocity?: [number, number, number] };
-  const speed = p.projectile.speed || 20;
-  p.velocity = [dx * speed, dy * speed, dz * speed];
+    const projectileComp = projectileEntity.projectile!;
+    const speed = projectileComp.speed ?? 20;
+    projectileEntity.velocity = [dx * speed, dy * speed, dz * speed];
 
-  world.add(projectileEntity as unknown as Entity);
+    world.add(projectileEntity);
   }
 
   for (const entity of world.entities) {
@@ -115,7 +115,7 @@ export function projectileSystem(
 
     const { projectile, position, velocity } = e;
     if (!projectile || !position || !velocity) continue;
-    const rigid = e.rigid as unknown as RigidBodyLike | null;
+    const rigid = e.rigid as RigidBodyLike | null;
     let mutated = false;
 
     const age = (simNowMs - projectile.spawnTime) / 1000;
@@ -287,11 +287,10 @@ function applyAoEDamage(
     if (!candidate.position || !candidate.team || candidate.projectile) {
       continue;
     }
-    if (candidate.weapon) continue;
     if (String(candidate.id) === sourceId) {
       continue;
     }
-    if (candidate.weapon && (candidate.weapon as unknown as { ownerId?: string }).ownerId && (candidate.weapon as unknown as { ownerId?: string }).ownerId === sourceId) {
+    if (candidate.weapon && candidate.weapon.ownerId && candidate.weapon.ownerId === sourceId) {
       continue;
     }
     if (!friendlyFire && candidate.team === sourceTeam) continue;

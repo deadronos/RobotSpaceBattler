@@ -29,6 +29,24 @@ export function createRapierAdapter(options: {
   const rapierWorld = options.world;
   const mapHit = options.mapHitToEntityId ?? extractEntityIdFromRapierHit;
 
+  // Narrow Rapier-like world shape for safe runtime access
+  type RapierWorldLike = {
+    raycast?: (origin: unknown, dir: unknown, maxToi?: number) => unknown;
+    castRay?: (opts: unknown, maxToi?: number) => unknown;
+    queryPipeline?: Record<string, unknown> & {
+      castRay?: (...args: unknown[]) => unknown;
+      intersectionsWithRay?: (...args: unknown[]) => void;
+      intersectionsWithSphere?: (...args: unknown[]) => unknown;
+    };
+    raw?: { castRay?: (...args: unknown[]) => unknown };
+    intersectionWithShape?: (...args: unknown[]) => unknown;
+    numColliders?: number;
+    bodies?: unknown;
+    colliders?: unknown;
+  } | undefined;
+
+  const rw = rapierWorld as RapierWorldLike | undefined;
+
   function extractPointFromHit(hit: unknown): { pos?: [number, number, number]; normal?: [number, number, number] } {
     if (!hit || typeof hit !== 'object') return {};
     const h = hit as Record<string, unknown>;
@@ -79,8 +97,7 @@ export function createRapierAdapter(options: {
     try {
       // Try common APIs in prioritized order
       // 1. world.raycast(origin, dir, maxToi)
-      const rw = rapierWorld as unknown as Record<string, unknown> | undefined;
-      const raycastFn = rw?.['raycast'] as ((origin: unknown, dir: unknown, maxToi: number) => unknown) | undefined;
+      const raycastFn = rw?.raycast;
       if (typeof raycastFn === 'function') {
         const hit = raycastFn(origin, dir, maxToi);
         const res = normalize(hit);
@@ -88,7 +105,7 @@ export function createRapierAdapter(options: {
       }
 
       // 2. world.castRay(bodies, colliders, { origin, dir }, maxToi)
-      const castRayFn = rw?.['castRay'] as ((opts: unknown, maxToi?: number) => unknown) | undefined;
+      const castRayFn = rw?.castRay;
       if (typeof castRayFn === 'function') {
         const hit = castRayFn({ origin, dir }, maxToi);
         const res = normalize(hit);
@@ -96,31 +113,25 @@ export function createRapierAdapter(options: {
       }
 
       // 3. queryPipeline.castRay(bodies, colliders, ray, maxToi)
-      const qp = rw?.['queryPipeline'] as Record<string, unknown> | undefined;
-      if (qp) {
-        const qpCast = qp['castRay'] as ((...args: unknown[]) => unknown) | undefined;
-        if (typeof qpCast === 'function') {
-          try {
-            const bodies = rw?.['bodies'];
-            const colliders = rw?.['colliders'];
-            const hit = qpCast(bodies, colliders, { origin, dir }, maxToi);
-            const res = normalize(hit);
-            if (res) return res;
-          } catch (__) {
-            void __;
-          }
+      const qp = rw?.queryPipeline;
+      if (qp && typeof qp.castRay === 'function') {
+        try {
+          const bodies = rw?.bodies;
+          const colliders = rw?.colliders;
+          const hit = qp.castRay!(bodies, colliders, { origin, dir }, maxToi);
+          const res = normalize(hit);
+          if (res) return res;
+        } catch (__) {
+          void __;
         }
       }
 
       // 4. raw.castRay
-      const raw = rw?.['raw'] as Record<string, unknown> | undefined;
-      if (raw) {
-        const rawCast = raw['castRay'] as ((...args: unknown[]) => unknown) | undefined;
-        if (typeof rawCast === 'function') {
-          const hit = rawCast(origin, dir, maxToi);
-          const res = normalize(hit);
-          if (res) return res;
-        }
+      const raw = rw?.raw;
+      if (raw && typeof raw.castRay === 'function') {
+        const hit = raw.castRay(origin, dir, maxToi);
+        const res = normalize(hit);
+        if (res) return res;
       }
     } catch (__) {
       // swallow and return null
@@ -133,18 +144,25 @@ export function createRapierAdapter(options: {
   function overlapSphere(center: { x:number;y:number;z:number }, radius: number) {
     if (!rapierWorld) return false;
     try {
+      const rp = rapierWorld as RapierWorldLike | undefined;
       // Rapier may expose a queryPipeline with intersection tests
-      const qp2 = (rapierWorld as unknown as Record<string, unknown>)?.queryPipeline as Record<string, unknown> | undefined;
-      if (qp2) {
-        const inter = qp2['intersectionsWithSphere'] as ((...args: unknown[]) => unknown) | undefined;
-        if (typeof inter === 'function') return inter({ x: center.x, y: center.y, z: center.z }, radius) as boolean;
+      if (rp?.queryPipeline && typeof rp.queryPipeline.intersectionsWithSphere === 'function') {
+        try {
+          return rp.queryPipeline.intersectionsWithSphere({ x: center.x, y: center.y, z: center.z }, radius) as boolean;
+        } catch {
+          // fall through to other strategies
+        }
       }
 
       // Some wrappers provide intersectionWithShape
-      const intersectionFn = (rapierWorld as unknown as Record<string, unknown>)['intersectionWithShape'] as ((...args: unknown[]) => unknown) | undefined;
-      if (typeof intersectionFn === 'function') return intersectionFn({ x: center.x, y: center.y, z: center.z }, radius) as boolean;
+      if (rp && typeof rp.intersectionWithShape === 'function') {
+        try {
+          return rp.intersectionWithShape({ x: center.x, y: center.y, z: center.z }, radius) as boolean;
+        } catch {
+          // ignore and fall back
+        }
+      }
     } catch (__) {
-      // ignore and fall back
       void __;
     }
 

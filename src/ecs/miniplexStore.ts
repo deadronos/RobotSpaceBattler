@@ -1,4 +1,3 @@
-import type { ProjectileComponent } from "./components/projectile";
 import type { RobotComponent, RobotInit } from "./components/robot";
 import { createRobotComponent } from "./components/robot";
 import { createEntityLookup } from "./entityLookup";
@@ -7,7 +6,7 @@ import type { Team } from "./id";
 import { ensureGameplayId, normalizeTeam } from "./id";
 import { clearPauseVelocity, getPauseVelocity, setPauseVelocity } from "./pauseVelocity";
 import { createRenderKeyGenerator } from "./renderKey";
-import type { BeamComponent, WeaponComponent, WeaponStateComponent } from "./weapons";
+import type { BeamComponent, ProjectileComponent,WeaponComponent, WeaponStateComponent } from "./weapons";
 import { createWorldController } from "./worldFactory";
 
 export type { Team } from "./id";
@@ -46,6 +45,7 @@ export interface Entity extends Partial<Transform>, RigidBodyRef, RenderRef {
   turnSpeed?: number;
   targetId?: number | string;
   pauseVel?: { lin?: Vec3; ang?: Vec3 };
+  velocity?: Vec3;
   beam?: BeamComponent;
   projectile?: ProjectileComponent;
   weapon?: WeaponComponent;

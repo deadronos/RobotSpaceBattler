@@ -160,12 +160,12 @@
                         idFactory results in a deterministic failure (explicit throw).
                   - Ensure tests fail before implementation. These tests are part of the CRITICAL remediation.
 
-- [ ] T016D [P] NDJSON export performance test — `tests/unit/runtimeEventLogPerf.test.ts`
+- [x] T016D [P] NDJSON export performance test — `tests/unit/runtimeEventLogPerf.test.ts`
       - Create a perf test that serializes 100 `DeathAuditEntry` objects to NDJSON and measures
         elapsed time. Assert <50ms when `PERFORMANCE_STRICT=true` (configurable env var).
       - Purpose: satisfy FR-016 and detect regressions in runtimeEventLog serialization.
 
-- [ ] T033A [P] Rapier hit-mapping contract tests — `tests/contracts/rapierAdapter.contract.test.ts`
+- [x] T033A [P] Rapier hit-mapping contract tests — `tests/contracts/rapierAdapter.contract.test.ts`
       - Add tests for `extractEntityIdFromRapierHit()` covering multiple Rapier hit payload shapes.
       - Failures should guide adapter implementation and document collider `userData` conventions.
 
@@ -272,7 +272,7 @@
 
 // Fix adapter path ambiguity
 
-- [ ] T033B Rapier adapter docs & implementation fixes
+- [x] T033B Rapier adapter docs & implementation fixes
       - Files: `src/utils/physicsAdapter.ts`, `docs/DEPENDENCIES.md`
       - Implement any mapping fixes discovered by T033A and document collider `userData` expectations.
 

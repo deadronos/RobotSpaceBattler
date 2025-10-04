@@ -27,7 +27,7 @@ type RigidBodyLike = {
 function getEntityPosition(
   entity: Entity & { position?: [number, number, number] },
 ): [number, number, number] | undefined {
-  const rigid = entity.rigid as unknown as RigidBodyLike | null;
+  const rigid = entity.rigid as RigidBodyLike | null;
   if (rigid) {
     const { x, y, z } = rigid.translation();
     return [x, y, z];

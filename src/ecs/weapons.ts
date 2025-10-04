@@ -28,18 +28,7 @@ export interface WeaponStateComponent {
   cooldownRemaining?: number;
 }
 
-export interface ProjectileComponent {
-  sourceWeaponId: string;
-  ownerId: string;
-  damage: number;
-  team: Team;
-  ownerTeam?: Team;
-  aoeRadius?: number;
-  lifespan: number;
-  spawnTime: number;
-  speed?: number;
-  homing?: { turnSpeed: number; targetId?: number | string };
-}
+export type { ProjectileComponent } from "./components/projectile";
 
 export interface BeamComponent {
   sourceWeaponId: string;

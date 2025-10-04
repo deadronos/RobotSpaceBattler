@@ -7,6 +7,11 @@ import type { Rng } from "../utils/seededRng";
 import { extractEntityIdFromRapierHit } from "./rapierHelpers";
 import type { WeaponFiredEvent } from "./WeaponSystem";
 
+interface RigidBodyLike {
+  translation?: () => { x: number; y: number; z: number };
+  setLinvel?: (v: { x: number; y: number; z: number }, wake: boolean) => void;
+}
+
 export interface ImpactEvent {
   position: [number, number, number];
   normal: [number, number, number];
@@ -193,10 +198,10 @@ function performRaycast(
 
   if (rapierWorld) {
     try {
-      const rw = rapierWorld as unknown as Record<string, unknown>;
+      const rw = rapierWorld as Record<string, unknown> | undefined;
       let hit: unknown = undefined;
 
-      if (typeof (rw as { castRay?: unknown }).castRay === "function") {
+      if (rw && typeof (rw as { castRay?: unknown }).castRay === "function") {
         const fn = (rw as { castRay?: (...args: unknown[]) => unknown })
           .castRay!;
         hit = fn(
@@ -207,6 +212,7 @@ function performRaycast(
 
       if (
         !hit &&
+        rw &&
         rw.queryPipeline &&
         typeof (rw.queryPipeline as { castRay?: unknown }).castRay ===
           "function"
@@ -232,6 +238,7 @@ function performRaycast(
 
       if (
         !hit &&
+        rw &&
         rw.raw &&
         typeof (rw.raw as { castRay?: unknown }).castRay === "function"
       ) {
@@ -329,10 +336,7 @@ function performRaycast(
               "function"
           ) {
             try {
-              // translation may be exposed on the rapier rigid ref
-              const t = (c.rigid as unknown as Record<string, unknown>)[
-                "translation"
-              ] as (() => { x: number; y: number; z: number }) | undefined;
+              const t = (c.rigid as RigidBodyLike | null)?.translation;
               if (t) {
                 const tv = t();
                 cx = tv.x;

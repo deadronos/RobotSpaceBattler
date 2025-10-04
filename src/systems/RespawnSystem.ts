@@ -156,7 +156,7 @@ export function respawnSystem(
   // Perform real spawns for runtime
   for (const r of respawned) {
     // Use resolved weapon type where possible; simple spawn for now
-    spawnRobot(r.team as Team, ("gun" as WeaponType));
+    spawnRobot(r.team as Team, ("gun" as WeaponType), { position: r.position, idFactory: syntheticStepContext.idFactory });
   }
 
   return;

@@ -1,46 +1,53 @@
 /**
- * Deterministic Projectile component schema.
+ * Canonical runtime Projectile component used by weapon systems and projectiles.
+ *
+ * This type is the single source of truth for runtime projectile payloads and is
+ * used by systems (ProjectileSystem, HitscanSystem fallbacks, BeamSystem AoE,
+ * FX, and damage application). The shape favors small, primitive fields and
+ * uses string gameplay IDs for owner/source references.
  */
 
 import { ensureGameplayId, normalizeTeam, type Team } from "../id";
 
 export interface ProjectileComponent {
-  id: string;
+  sourceWeaponId: string;
   ownerId: string;
-  ownerTeam: Team;
-  team: Team;
-  position: { x: number; y: number; z: number };
-  velocity: { x: number; y: number; z: number };
-  lifespanMs: number;
-  spawnedAtMs: number;
-  aoeRadius?: number;
   damage: number;
+  team: Team;
+  ownerTeam?: Team;
+  aoeRadius?: number;
+  // lifespan in seconds
+  lifespan: number;
+  // spawn time in milliseconds (simNowMs)
+  spawnTime: number;
+  speed?: number;
+  homing?: { turnSpeed: number; targetId?: number | string };
 }
 
 export interface ProjectileInit {
-  id: string | number;
+  sourceWeaponId: string | number;
   ownerId: string | number;
-  ownerTeam: string | number;
   team: string | number;
-  position: { x: number; y: number; z: number };
-  velocity: { x: number; y: number; z: number };
-  lifespanMs: number;
-  spawnedAtMs: number;
+  ownerTeam?: string | number;
   damage: number;
+  lifespan: number;
+  spawnTime: number;
+  speed?: number;
   aoeRadius?: number;
+  homing?: { turnSpeed: number; targetId?: number | string };
 }
 
 export function createProjectileComponent(init: ProjectileInit): ProjectileComponent {
   return {
-    id: ensureGameplayId(init.id),
+    sourceWeaponId: ensureGameplayId(init.sourceWeaponId),
     ownerId: ensureGameplayId(init.ownerId),
-    ownerTeam: normalizeTeam(init.ownerTeam),
     team: normalizeTeam(init.team),
-    position: { ...init.position },
-    velocity: { ...init.velocity },
-    lifespanMs: init.lifespanMs,
-    spawnedAtMs: init.spawnedAtMs,
+    ownerTeam: init.ownerTeam ? normalizeTeam(init.ownerTeam) : undefined,
     damage: init.damage,
+    lifespan: init.lifespan,
+    spawnTime: init.spawnTime,
+    speed: init.speed,
     aoeRadius: init.aoeRadius,
+    homing: init.homing,
   };
 }

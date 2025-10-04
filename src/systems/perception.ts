@@ -48,7 +48,7 @@ export function performLineOfSight(
       const originVec = { x: ox, y: oy, z: oz };
 
       // Try a few common call patterns that different rapier wrappers expose.
-      const rw = rapierWorld as unknown as Record<string, unknown>;
+      const rw = rapierWorld as Record<string, unknown> | undefined;
       let hit: unknown = undefined;
 
       // Common wrapper: world.castRay(origin, dir, maxDistance)
@@ -61,6 +61,7 @@ export function performLineOfSight(
       // Some wrappers expose a queryPipeline/castRay API
       if (
         !hit &&
+        rw &&
         rw.queryPipeline &&
         typeof (rw.queryPipeline as { castRay?: unknown }).castRay ===
           "function"
@@ -82,6 +83,7 @@ export function performLineOfSight(
       // Some wasm bindings expose raw methods
       if (
         !hit &&
+        rw &&
         rw.raw &&
         typeof (rw.raw as { castRay?: unknown }).castRay === "function"
       ) {
