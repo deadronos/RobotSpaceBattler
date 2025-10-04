@@ -10,6 +10,13 @@ export function useEcsQuery<T extends Entity>(query: Query<T>) {
   // phase are visible to the query subscription immediately. Connect is
   // defensive (try/catch) and returns a simple disconnect wrapper.
   const connRef = useRef<{ disconnect?: () => void } | null>(null);
+  // Track a revision so snapshots update even when the underlying
+  // query.entities array reference is reused by miniplex.
+  const revisionRef = useRef(0);
+  const snapshotRef = useRef<{ revision: number; value: T[] }>({
+    revision: -1,
+    value: query.entities.slice() as T[],
+  });
   if (connRef.current === null) {
     try {
       connRef.current = query.connect();
@@ -20,22 +27,22 @@ export function useEcsQuery<T extends Entity>(query: Query<T>) {
 
   return useSyncExternalStore(
     (onStoreChange) => {
+      const emitChange = () => {
+        revisionRef.current += 1;
+        onStoreChange();
+      };
       // Wire up listeners to forward miniplex query events into React.
-      const unsubscribeAdded = query.onEntityAdded.subscribe(() =>
-        onStoreChange(),
-      );
-      const unsubscribeRemoved = query.onEntityRemoved.subscribe(() =>
-        onStoreChange(),
-      );
+      const unsubscribeAdded = query.onEntityAdded.subscribe(emitChange);
+      const unsubscribeRemoved = query.onEntityRemoved.subscribe(emitChange);
       const unsubscribeChanged = subscribeEntityChanges((entity) => {
-        if (!entity || query.has(entity as T)) onStoreChange();
+        if (!entity || query.has(entity as T)) emitChange();
       });
 
       // Immediately notify once to ensure first paint reflects the current
       // world state. This avoids a lost initial update if entities were
       // added before the component subscribed.
       try {
-        onStoreChange();
+        emitChange();
       } catch {
         // defensive - ignore errors from React internals
       }
@@ -51,7 +58,23 @@ export function useEcsQuery<T extends Entity>(query: Query<T>) {
         connRef.current = null;
       };
     },
-    () => query.entities as T[],
-    () => query.entities as T[],
+    () => {
+      if (snapshotRef.current.revision !== revisionRef.current) {
+        snapshotRef.current = {
+          revision: revisionRef.current,
+          value: query.entities.slice() as T[],
+        };
+      }
+      return snapshotRef.current.value;
+    },
+    () => {
+      if (snapshotRef.current.revision !== revisionRef.current) {
+        snapshotRef.current = {
+          revision: revisionRef.current,
+          value: query.entities.slice() as T[],
+        };
+      }
+      return snapshotRef.current.value;
+    },
   );
 }

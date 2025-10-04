@@ -2,6 +2,7 @@ import { useFrame } from "@react-three/fiber";
 import { type MutableRefObject, useCallback, useEffect, useRef } from "react";
 
 import type { Entity } from "../ecs/miniplexStore";
+import { notifyEntityChanged } from "../ecs/miniplexStore";
 
 export type RigidBodyHandle = {
   translation?: () => { x: number; y: number; z: number };
@@ -85,12 +86,28 @@ export function useEntityPhysicsSync<E extends PhysicsEntity>(
     const body = bodyRef.current;
     if (!body) return;
 
+    let positionChanged = false;
+
     if (opts.updatePosition) {
       const translation = body.translation?.();
       if (translation) {
+        const oldX = entity.position[0];
+        const oldY = entity.position[1];
+        const oldZ = entity.position[2];
+        
         entity.position[0] = translation.x;
         entity.position[1] = translation.y;
         entity.position[2] = translation.z;
+        
+        // Check if position actually changed
+        const threshold = 0.0001;
+        if (
+          Math.abs(oldX - translation.x) > threshold ||
+          Math.abs(oldY - translation.y) > threshold ||
+          Math.abs(oldZ - translation.z) > threshold
+        ) {
+          positionChanged = true;
+        }
       }
     }
 
@@ -105,6 +122,11 @@ export function useEntityPhysicsSync<E extends PhysicsEntity>(
       ) {
         body.setLinvel({ x: vx, y: vy, z: vz }, opts.wake);
       }
+    }
+
+    // Notify React components if position changed
+    if (positionChanged) {
+      notifyEntityChanged(entity as Entity);
     }
   });
 
