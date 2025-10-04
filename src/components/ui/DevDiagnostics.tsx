@@ -6,16 +6,29 @@ import {
   spawnRobot,
   spawnTeam,
 } from "../../robots/spawnControls";
+import { getFixedStepMetrics } from "../../utils/sceneMetrics";
 
 const RED_LOADOUT = ["gun", "laser", "rocket"] as const;
 const BLUE_LOADOUT = ["rocket", "gun", "laser"] as const;
 const REINFORCEMENT_COUNT = 3;
 
 export default function DevDiagnostics() {
-  const [counts, setCounts] = React.useState({
+  const [counts, setCounts] = React.useState<{
+    entities: number;
+    red: number;
+    blue: number;
+    stepsLastFrame?: number;
+    backlog?: number;
+    frameCount?: number;
+    invalidationsPerRaf?: number | undefined;
+  }>({
     entities: 0,
     red: 0,
     blue: 0,
+    stepsLastFrame: 0,
+    backlog: 0,
+    frameCount: 0,
+    invalidationsPerRaf: 0,
   });
 
   React.useEffect(() => {
@@ -26,10 +39,18 @@ export default function DevDiagnostics() {
       const red = robots.filter((entity) => entity.team === "red").length;
       const blue = robots.filter((entity) => entity.team === "blue").length;
 
+      const metrics = getFixedStepMetrics();
+
       setCounts({
         entities: world.entities.length,
         red,
         blue,
+        // Expose a couple of fixed-step diagnostics values here so we
+        // can observe invalidation rate / backlog without using DevTools.
+        stepsLastFrame: metrics.stepsLastFrame,
+        backlog: metrics.backlog,
+        frameCount: metrics.frameCount,
+        invalidationsPerRaf: metrics.invalidationsPerRaf,
       });
     }, 100);
 
@@ -38,6 +59,10 @@ export default function DevDiagnostics() {
 
   return (
     <div className="ui dev">
+      <span>stepsLastFrame: {counts.stepsLastFrame ?? 0}</span>
+      <span>backlog: {counts.backlog ?? 0}</span>
+      <span>frame: {counts.frameCount ?? 0}</span>
+      <span>invalidations/rAF: {counts.invalidationsPerRaf ?? 0}</span>
       <span>Entities: {counts.entities}</span>
       <span>
         Robots - Red: {counts.red} | Blue: {counts.blue}

@@ -1,5 +1,5 @@
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 
 import type { Entity } from "../ecs/miniplexStore";
 
@@ -12,11 +12,14 @@ export function Robot({ entity }: { entity: Entity }) {
     rbRef.current = r;
     if (r) {
       entity.rigid = r;
-      
+
       // Set initial position from entity ONLY on first mount
       if (entity.position) {
         try {
-          const rb = r as { translation: () => { x: number; y: number; z: number }; setTranslation: (pos: { x: number; y: number; z: number }, wake: boolean) => void };
+          const rb = r as {
+            translation: () => { x: number; y: number; z: number };
+            setTranslation: (pos: { x: number; y: number; z: number }, wake: boolean) => void;
+          };
           const translation = rb.translation();
           // Only set if the rigid body is at origin (hasn't been positioned yet)
           if (translation.x === 0 && translation.y === 0 && translation.z === 0) {
@@ -29,7 +32,7 @@ export function Robot({ entity }: { entity: Entity }) {
           // ignore if API not available
         }
       }
-      
+
       // Set entity id tracking
       try {
         if (typeof r === "object") {

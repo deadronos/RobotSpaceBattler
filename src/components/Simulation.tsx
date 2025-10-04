@@ -301,13 +301,26 @@ export default function Simulation({
   }, [paused]);
 
   useEffect(() => {
-    const unsubscribe = subscribeEntityChanges(() => {
-      // Test-only instrumentation
-      if (process.env.NODE_ENV === 'test' && __testSimulationInstrumentationHook) {
-        __testSimulationInstrumentationHook('invalidate', {});
-      }
-      invalidateRef.current();
-    });
+    // Coalesce notifications so multiple notifyEntityChanged calls within the
+    // same tick only trigger a single invalidate() call. This avoids render
+    // storms that make DevTools unresponsive while preserving ordering.
+    let scheduled = false;
+    const handler = () => {
+      if (scheduled) return;
+      scheduled = true;
+      // Schedule at microtask boundary so multiple synchronous notify calls
+      // collapse into one update.
+      Promise.resolve().then(() => {
+        scheduled = false;
+        // Test-only instrumentation
+        if (process.env.NODE_ENV === 'test' && __testSimulationInstrumentationHook) {
+          __testSimulationInstrumentationHook('invalidate', {});
+        }
+        invalidateRef.current();
+      });
+    };
+
+    const unsubscribe = subscribeEntityChanges(handler);
     return () => {
       unsubscribe();
     };
