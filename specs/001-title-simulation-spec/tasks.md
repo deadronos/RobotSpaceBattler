@@ -108,191 +108,67 @@
   not fire). Depends on T037 and T016A/T016B (ID canonicalization and determinism guards).
   Place tests under `tests/unit/decisions.test.ts` and follow TDD (write failing tests first).  
 
-## Phase 3.2: Tests First (ADDITIONAL REMEDIATION TASKS) ⚠️ MUST COMPLETE BEFORE IMPLEMENTATION
+## Phase: Rendering & TickDriver diagnostics (TDD-first)
 
-- [x] T003 [P] Author failing ScoringSystem contract test in
-      `tests/contracts/scoringSystem.contract.test.ts` verifying classification, score deltas, and
-      runtime event log ordering.
-- [x] T004 [P] Author failing RespawnSystem contract test in
-      `tests/contracts/respawnSystem.contract.test.ts` covering respawn delay, queue behavior, and
-      invulnerability timestamps.
-- [x] T005 [P] Author failing runtime event log contract test in
-      `tests/contracts/runtimeEventLog.contract.test.ts` validating ring buffer capacity, ordering,
-      and deterministic IDs.
-- [x] T006 [P] Add seeded deterministic integration test in
-      `tests/integration/simulationDeterminism.test.ts` verifying identical StepContext traces across
-      repeated runs using `FixedStepDriver`.
-- [x] T007 [P] Add respawn queue integration test in
-      `tests/integration/respawnQueueDeterminism.test.ts` ensuring Simulation passes
-      `StepContext.simNowMs` into RespawnSystem and enforces queue limits.
-- [x] T008 [P] Add friendly-fire toggle integration test in
-      `tests/integration/friendlyFireToggle.test.ts` confirming Simulation injects the toggle into
-      ProjectileSystem/BeamSystem via StepContext (no direct `useUI` reads).
+- [ ] T070 [P] Rendering invalidation test: write a unit/integration test that runs a deterministic
+      fixed-step sequence and asserts that `invalidate()` is invoked after a batch of steps and
+      that mesh transforms update as expected. Test harness should stub `invalidate()` to assert
+      invocations. (test-first)
 
-- [x] T016A [P] Determinism guard contract tests — `tests/contracts/determinism.contract.test.ts`
-      - Add failing contract tests that assert systems MUST NOT use `Date.now()` or `Math.random()`.
-      - Tests should verify `WeaponSystem`, `RespawnSystem`, and `AISystem` throw or explicitly
-        guard when called without a `StepContext` supplying `{ simNowMs, rng, idFactory }`.
-      - Purpose: make non-deterministic fallbacks fail so implementation must remove them.
-      - Priority: IMMEDIATE (run before other implementation tasks).
+- [ ] T071 [P] PhysicsSync test: add unit tests for `PhysicsSyncSystem` (or equivalent) that mock
+      a RigidBody translation and assert `entity.position` is updated with the authoritative
+      translation after a fixed step. (test-first)
 
+- [ ] T072 [P] Renderer subscription test: author a unit test that mounts a minimal renderer
+      component bound to an entity and asserts it re-renders (via notify hooks) when
+      `notifyEntityChanged()` is called. (test-first)
 
-- [x] T016C [P] Deterministic idFactory tests — `tests/unit/idFactory.test.ts` (see T052A)
+- [ ] T073 [P] Render-key & memoization test: write tests that verify render-key generation and
+      memoization do not block transform updates (for example, by asserting prop changes reach
+      the mesh transform updates during reconciliation). (test-first)
 
-                  - Add unit tests asserting event id generation uses `StepContext.idFactory` and that missing
-                        idFactory results in a deterministic failure (explicit throw).
-                  - Ensure tests fail before implementation. These tests are part of the CRITICAL remediation.
+- [ ] T074 [P] Authority-ordering test: create a test that ensures only the authoritative source
+      (RigidBody translation) wins the final transform, and that no secondary updates overwrite
+      it after physics sync. (test-first)
 
-- [x] T016D [P] NDJSON export performance test — `tests/unit/runtimeEventLogPerf.test.ts`
-      - Create a perf test that serializes 100 `DeathAuditEntry` objects to NDJSON and measures
-        elapsed time. Assert <50ms when `PERFORMANCE_STRICT=true` (configurable env var).
-      - Purpose: satisfy FR-016 and detect regressions in runtimeEventLog serialization.
+- [ ] T075 [P] Single-world instance test: add tests that assert there is one `world` instance
+      used by both simulation systems and renderer; detect accidental second instances in tests.
+      (test-first)
 
-- [x] T033A [P] Rapier hit-mapping contract tests — `tests/contracts/rapierAdapter.contract.test.ts`
-      - Add tests for `extractEntityIdFromRapierHit()` covering multiple Rapier hit payload shapes.
-      - Failures should guide adapter implementation and document collider `userData` conventions.
+- [ ] T076 [P] Physics stepping order test: author tests asserting the stepping order is:
+      Rapier step -> PhysicsSync -> Systems/AI -> invalidate() -> render. Fail the test if order
+      is violated. (test-first)
 
-- [x] T016I [P] Serialization determinism integration test (IT-004) —
-      `tests/integration/serializationDeterminism.test.ts`
-      - Create an integration test that serializes events and entities used for synchronization
-        (DeathAuditEntry + relevant entity snapshots) and asserts stable/deterministic outputs
-        across repeated runs with identical seed and entity state.
-      - Link this test to T016D/T016F and ensure ordering/stable field formats are validated.
-      - IMPLEMENTED: Added `src/utils/serialization.ts` canonical serializer and
-        `tests/integration/serialization.determinism.test.ts` which compares NDJSON outputs
-        for event logs, persisted projectile payloads, and entity snapshots across seeded runs.
+- [ ] T077 [P] Instrumentation helpers: add temporary test-only instrumentation hooks/logs to
+      `useFixedStepLoop`/Simulation/PhysicsSync to make the previous assertions observable in
+      unit tests. These hooks must be test-only and removable after green tests. (test-first)
 
-## Phase 3.3: Core Implementation (ONLY after tests are failing)
+// Implementation tasks (ONLY run after tests fail) — map 1:1 to the tests above
+## Phase 3.3: Rendering & TickDriver fixes (implementation)
 
-- [x] T009 [P] Create `src/ecs/components/robot.ts` defining deterministic Robot entity schema
-      (id, team, health, weapon state, `invulnerableUntil`) per data-model and export helpers.
-- [x] T010 [P] Create `src/ecs/components/projectile.ts` defining deterministic Projectile component
-      (ownerId, team, position, velocity, spawn time, lifespan, aoeRadius, damage).
-- [x] T011 [P] Create `src/ecs/components/beam.ts` defining deterministic Beam component (origin,
-      direction, ticks remaining, tick interval, damage per tick).
-- [x] T012 [P] Implement `src/utils/runtimeEventLog.ts` providing `DeathAuditEntry` types and a
-      bounded ring buffer API (append/read/size/capacity) per observability contract.
-- [x] T013 Refactor `src/ecs/miniplexStore.ts` to consume the new component modules, ensure
-      deterministic id assignment, and expose helpers for `invulnerableUntil` tracking.
-- [x] T014 Align `src/ecs/weapons.ts` with deterministic team/owner id types and remove implicit
-      enums in preparation for StepContext-provided flags.
-- [x] T015 Extend `src/utils/seededRng.ts` with deterministic sequence helpers (idFactory, shuffle)
-      consumed by StepContext.
-- [x] T016 Upgrade `src/utils/fixedStepDriver.ts` to emit full StepContext (frameCount, simNowMs,
-      rng, idFactory) and support deterministic step accumulation.
-- [x] T017 Update `src/hooks/useFixedStepLoop.ts` to accumulate elapsed time, cap steps-per-frame,
-      and expose StepContext-compatible driver hooks.
-- [x] T018 Inject StepContext and test-mode entrypoint into `src/components/Simulation.tsx`, ensuring
-      systems receive `simNowMs`, seeded rng, and friendly-fire flags.
-      (Implemented) Simulation now accepts a `testMode` prop and passes `friendlyFire`
-      through `useFixedStepLoop`. `FixedStepDriver` was extended to accept runtime
-      flags and `ProjectileSystem`/`BeamSystem` were updated to accept optional flags.
-- [x] T019 Refactor `src/systems/ScoringSystem.ts` to consume StepContext, classify kills
-      deterministically, and append `DeathAuditEntry` objects via the runtime event log.
-      (Implemented) `scoringSystem` now accepts a parameter object containing `stepContext`,
-      an optional `runtimeEventLog`, an optional injected `scoreBoard` for tests, and
-      `idFactory`. It normalizes incoming death event shapes, classifies deaths deterministically,
-      applies score deltas to injected or global stores, and appends deterministic audit
-      entries to the runtime event log.
-- [x] T020 Refactor `src/systems/RespawnSystem.ts` to require `StepContext.simNowMs`, enforce spawn
-      queue rate limiting, and set `invulnerableUntil` deadlines.
-      (Implemented) Added `processRespawnQueue` core API and updated Simulation to call it directly.
-      Simulation now accumulates spawn requests, calls `processRespawnQueue` each step, spawns
-      robots via `spawnRobot`, sets `invulnerableUntil` on spawned entities, and updates the
-      local queued respawn list deterministically.
-- [x] T021 Update `src/systems/ProjectileSystem.ts` to use StepContext RNG and friendly-fire flag
-      instead of `useUI` state, ensuring deterministic spread.
-- [x] T022 Update `src/systems/BeamSystem.ts` to drive tick scheduling via StepContext and eliminate
-      `Date.now()` usage.
-- [x] T023 Update `src/systems/FxSystem.ts` to consume deterministic events (StepContext frame ids)
-      and avoid non-deterministic timers.
-- [x] T024 Ensure `src/systems/DamageSystem.ts` applies damage ordering deterministically using
-      StepContext frameCount (remove implicit array mutation ordering).
-- [x] T025 Expose runtime event log accessors through `src/ecs/ecsResolve.ts` (or a new
-      observability service) for Simulation and diagnostics consumers.
-- [x] T026 Render runtime event log entries in `src/components/DiagnosticsOverlay.tsx` to aid
-      debugging and QA validation.
-- [x] T027 Update `src/store/uiStore.ts` and `src/components/Simulation.tsx` wiring so
-      friendly-fire toggle flows through StepContext without systems touching the store directly.
-- [x] T028 Add fixed-step performance metrics emission to `src/utils/sceneMetrics.ts` (or
-      DiagnosticsOverlay) highlighting steps-per-frame and backlog for QA.
-- [x] T050 Health model canonicalization — Implementation: update entity
-      factories and `src/ecs/miniplexStore.ts` to use the canonical health shape
-      and migrate existing entities where necessary.
-- [x] T052 ID & Team canonicalization — Implementation: update id factories,
-      component types, and code (including `src/ecs/miniplexStore.ts`) to ensure
-      gameplay IDs are strings and `Team` types are canonical. Add migration or
-      adapter utilities if numeric ids remain present in legacy code. (see T052A)
-      (Partial) `normalizeTeam` and `ensureGameplayId` utilities exist; Entity.id
-      remains numeric for compatibility with miniplex internals but gameplayId field
-      provides string IDs for deterministic systems.
-- [x] T054 Score model — Implementation: add `TeamScore`/`ScoreBoard` component
-      definitions and implement deterministic updates in `src/systems/ScoringSystem.ts`.
-- [x] T056 Spawn model canonicalization — Implementation: implement
-      `SpawnZone`/`SpawnQueue` types and `src/utils/spawnPlacement.ts` or
-      integrate into `src/systems/RespawnSystem.ts` and wire defaults
-      (`minSpawnDistance=3.0`, `maxSpawnRetries=10`, `maxSpawnPerZone=3`).
-- [x] T058 WeaponPayload — Implementation: update persisted payload handling and
-      entity factories so that `WeaponPayload` conforms to the canonical schema
-      and that `WeaponSystem` and serialization code persist only the declared
-      fields. Ensure `WeaponSystem` uses StepContext.rng for accuracy/spread and
-      that persisted payloads are serializable for tests and export.
+- [ ] T170 Implement invalidate triggering: ensure `useFixedStepLoop`/Simulation calls
+      `invalidate()` after fixed-step batches or when entity state changes affect rendering.
+      (depends-on T070)
 
-- [x] T016B [P] Replace non-deterministic fallbacks in systems — implementation (see T052A)
-      - Files: `src/systems/WeaponSystem.ts`, `src/systems/RespawnSystem.ts`, `src/systems/AISystem.ts`
-      - Remove use of `Date.now()` and `Math.random()`; require `StepContext` with `{ simNowMs, rng, idFactory }`.
-      - Policy: systems MUST throw an explicit Error when StepContext or idFactory is omitted to avoid
-        silent non-deterministic behavior. Add unit tests to cover new behavior.
-      - Depends on: T016A, T016C.
-      - IMPLEMENTED: WeaponSystem and AISystem already enforce `StepContext` requirements; RespawnSystem was updated to require a deterministic `idFactory` for the old API and `processRespawnQueue` requires a `StepContext`.
-      - Tests: Added `tests/contracts/determinism.contract.test.ts` and `tests/unit/determinismGuards.test.ts` asserting that WeaponSystem, RespawnSystem, and AISystem throw when required deterministic inputs are missing.
+- [ ] T171 Fix PhysicsSync: ensure authoritative RigidBody translations are copied into
+      `entity.position` reliably and add robust defensive checks for Rapier API errors.
+      (depends-on T071)
 
-// Update perf decision: T016G
+- [ ] T172 Renderer subscription API: add or fix subscription hooks so render components react
+      to `notifyEntityChanged` and propagate changes into React render/props. (depends-on T072)
 
-- [x] T016G Decide perf target & update benchmarks + CI
-      - Adopted a 16ms default threshold via `tests/helpers/performanceBudget.ts` and updated
-        `tests/performance.benchmark.test.ts` to enforce it with configurable environment overrides.
-      - Documented the decision in `specs/001-title-simulation-spec/plan.md` and
-        `docs/DEPENDENCIES.md`, and captured `npm run ci:test:perf` as the strict CI gate.
-      - Notes: removed the unresolved dependency on T030; any additional perf-tuning tasks
-        should be created explicitly as numbered tasks (for example: T030) if required.
+- [ ] T173 Render-key / memoization updates: update `getRenderKey` or component memoization to
+      ensure transforms are applied and components re-render when positions change.
+      (depends-on T073)
 
-- [x] T016H Golden trace helper (optional)
-      - Files: `tests/golden/generate.ts`, `tests/golden/README.md`
-      - Add a helper script for producing deterministic golden traces (JSON/NDJSON) from `FixedStepDriver` runs.
-      - IMPLEMENTED: Added `src/utils/golden.ts` (builders/readers/comparators),
-        `tests/golden/generate.ts` script and `tests/golden/README.md`. Helpers produce
-        combined NDJSON traces (events / projectiles / entity snapshots) and compare
-        them against checked-in golden fixtures.
+- [ ] T174 Authority consolidation: ensure a single source-of-truth for transforms (physics-first)
+      and avoid conflicting direct mesh writes; add ordering guarantees in Simulation. (depends-on T074)
 
-## Phase 3.6: Loop Synchronization and Timing
+- [ ] T175 Single-world consolidation: audit and fix imports to guarantee only a single `world`
+      instance is shared by renderer and simulation. (depends-on T075)
 
-- [x] T059 Switch TickDriver to requestAnimationFrame in `src/components/Scene.tsx`.
-      Replace `setInterval` with a rAF-driven driver that:
-      - tracks elapsed real time and accumulates fixed steps via `invalidate()` calls;
-      - respects `frameloop="demand"` by batching invalidations per rAF tick;
-      - suspends when paused and resumes cleanly;
-      - exposes a minimal test seam for mocking rAF in unit tests.
-
-- [x] T060 Physics update-loop coherence: evaluate `@react-three/rapier` `updateLoop` settings
-      with on-demand rAF invalidation. If `independent`, ensure Simulation’s fixed-step
-      stays authoritative for game logic while Rapier’s own stepping continues smoothly.
-      Optionally switch to `updateLoop="follow"` IF and ONLY IF tests confirm determinism
-      and visual coherence. Document decision in `docs/DEPENDENCIES.md`.
-
-- [x] T061 Add timing determinism tests: create `tests/pause/rafDriver.test.ts` to assert
-      that with mocked rAF timestamps, the TickDriver requests the expected number of
-      invalidations for a given elapsed time and caps steps per frame. Validate pause
-      suspends invalidation and resume restarts cleanly.
-
-- [x] T062 Diagnostics: extend `DiagnosticsOverlay` to optionally display last rAF timestamp,
-      accumulated step backlog, and invalidations per rAF tick to aid QA of loop sync.
-
-### Dependencies
-
-- T059 precedes T061 (driver must exist before unit tests) and is independent from other systems.
-- T060 can run in parallel with T061; updateLoop choice is verified by tests.
-- T062 runs after T059 so the driver metrics exist.
+- [ ] T176 TickDriver step ordering: update the loop ordering or hooks so Rapier stepping,
+      physics sync, systems, and invalidate occur in the documented order and add tests. (depends-on T076)
 
 ## Dependencies
 
