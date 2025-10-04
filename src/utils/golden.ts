@@ -1,7 +1,8 @@
-import { writeFileSync, readFileSync, mkdirSync } from 'fs';
+import { mkdirSync,readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { toNDJSON, canonicalJSONStringify } from './serialization';
+
 import type { DeathAuditEntry } from './runtimeEventLog';
+import { canonicalJSONStringify,toNDJSON } from './serialization';
 
 export type GoldenTraceParts = {
   events?: DeathAuditEntry[];

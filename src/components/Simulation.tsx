@@ -41,11 +41,11 @@ import { DEFAULT_RESPAWN_DELAY_MS, processRespawnQueue, type SpawnRequest } from
 import { scoringSystem } from "../systems/ScoringSystem";
 import type { WeaponFiredEvent } from "../systems/WeaponSystem";
 import { weaponSystem } from "../systems/WeaponSystem";
+import { createRapierAdapter } from "../utils/physicsAdapter";
+import { RngProvider } from "../utils/rngProvider";
 import { createRuntimeEventLog } from "../utils/runtimeEventLog";
 import { updateFixedStepMetrics } from "../utils/sceneMetrics";
-import { createRapierAdapter } from '../utils/physicsAdapter';
-import { TimeProviderComponent } from '../utils/timeProvider';
-import { RngProvider } from '../utils/rngProvider';
+import { TimeProviderComponent } from "../utils/timeProvider";
 // RNG is created by FixedStepDriver; no per-component RNG import needed
 import { Beam } from "./Beam";
 import { FXLayer } from "./FXLayer";

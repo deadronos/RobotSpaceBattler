@@ -1,6 +1,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { MeshStandardMaterial } from "three";
+
 import { useRng } from '../../utils/rngProvider';
 
 export interface EmissiveFlickerOptions {

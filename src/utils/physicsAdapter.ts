@@ -1,4 +1,5 @@
 import { extractEntityIdFromRapierHit } from "../systems/rapierHelpers";
+import { stableHash } from "./hash";
 
 export type RaycastResult = {
   targetId?: string;
@@ -341,7 +342,20 @@ export function callIntersectionsWithRay(
         hits.push(hit);
         return true;
       });
-      return hits.length > 0 ? hits : null;
+      if (hits.length === 0) return null;
+
+      // Deterministically sort hits: prefer numeric TOI/timeOfImpact ascending when present,
+      // otherwise use a stable hash derived from hit payload to break ties in a platform
+      // and adapter-independent way.
+      const normalized = hits.map((h) => {
+        const rec = (h as Record<string, unknown>) || {};
+        const toi = typeof rec['toi'] === 'number' ? (rec['toi'] as number) : (typeof rec['timeOfImpact'] === 'number' ? (rec['timeOfImpact'] as number) : undefined);
+        const sortKey = toi !== undefined ? String(toi).padStart(12, '0') : stableHash(rec);
+        return { hit: h, sortKey };
+      });
+
+      normalized.sort((a, b) => (a.sortKey < b.sortKey ? -1 : a.sortKey > b.sortKey ? 1 : 0));
+      return normalized.map((n) => n.hit);
     } catch {
       // ignore and continue
     }
