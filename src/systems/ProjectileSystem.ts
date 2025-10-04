@@ -1,18 +1,13 @@
 import type { World } from "miniplex";
 
+import type { ProjectileComponent } from "../ecs/components/projectile";
 import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
 import { type Entity, notifyEntityChanged } from "../ecs/miniplexStore";
-import type {
-  DamageEvent,
-  ProjectileComponent,
-  WeaponComponent,
-} from "../ecs/weapons";
-import { useUI } from "../store/uiStore";
+import type { DamageEvent, WeaponComponent } from "../ecs/weapons";
+import type { StepContext } from "../utils/fixedStepDriver";
+import { callOverlapSphere, callOverlapSphereEntities, callRaycast, type RapierWorldOrAdapter as RapierWorldOrAdapterType } from "../utils/physicsAdapter";
 import type { Rng } from "../utils/seededRng";
 import type { WeaponFiredEvent } from "./WeaponSystem";
-
-// Module-scoped serial to ensure unique projectile ids even within the same millisecond
-let projectileSerial = 0;
 
 interface RigidBodyLike {
   translation(): { x: number; y: number; z: number };
@@ -23,33 +18,52 @@ interface RigidBodyLike {
 /**
  * Projectile system for rocket weapons.
  * Spawns projectiles with physics and handles collision/AoE damage.
+ * Now uses StepContext for deterministic RNG and friendly-fire flag.
  */
 export function projectileSystem(
   world: World<Entity>,
   dt: number,
-  rng: Rng,
+  stepContext: StepContext | (() => number) | undefined,
   weaponFiredEvents: WeaponFiredEvent[],
   events: { damage: DamageEvent[] },
-  simNowMs?: number,
-  _rapierWorld?: unknown,
+  _rapierWorld?: RapierWorldOrAdapterType | number | undefined,
 ) {
-  // Friendly-fire toggle (default false when store not initialized)
-  let friendlyFire = false;
+  // Support legacy positional API: (world, dt, rng, weaponFiredEvents, events, simNowMs)
+  let ctx: StepContext | undefined;
+  if (typeof stepContext === 'function') {
+    // Old positional: stepContext is rng, _rapierWorld is simNowMs
+    const rngFn = stepContext as () => number;
+    const simNow = typeof _rapierWorld === 'number' ? (_rapierWorld as number) : 0;
+    let seq = 0;
+    const idFactory = () => `${simNow}-${seq++}`;
+    ctx = { rng: rngFn, simNowMs: simNow, idFactory, step: dt } as StepContext;
+  } else {
+    ctx = stepContext as StepContext | undefined;
+  }
+
+  if (!ctx) {
+    throw new Error('projectileSystem requires a StepContext parameter for deterministic behavior');
+  }
+
+  const { rng, simNowMs, idFactory, friendlyFire = false } = ctx;
+  if (typeof rng !== 'function') {
+    throw new Error('projectileSystem requires stepContext.rng for deterministic randomness');
+  }
+  if (typeof simNowMs !== 'number') {
+    throw new Error('projectileSystem requires stepContext.simNowMs for deterministic timing');
+  }
+  if (typeof idFactory !== 'function') {
+    throw new Error('projectileSystem requires stepContext.idFactory for deterministic ids');
+  }
+
   // mark optional rapier arg as intentionally unused for now
   void _rapierWorld;
-  try {
-    // In React runtime, useUI is callable; in tests, this may throw if Zustand isn't set up, so fall back.
-    friendlyFire = useUI.getState
-      ? Boolean(useUI.getState().friendlyFire)
-      : false;
-  } catch {
-    friendlyFire = false;
-  }
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== "rocket") continue;
 
+    const fireEventOwnerId = String(fireEvent.ownerId);
     const owner = resolveOwner(world, {
-      ownerId: fireEvent.ownerId,
+      ownerId: fireEventOwnerId,
       weaponId: fireEvent.weaponId,
     }) as
       | (Entity & {
@@ -62,35 +76,32 @@ export function projectileSystem(
     const weapon = owner?.weapon;
     if (!owner || !weapon) continue;
 
-    const ownerEntityId =
-      typeof owner.id === "number" ? owner.id : fireEvent.ownerId;
+    const ownerGameplayId = weapon.ownerId ?? fireEventOwnerId;
 
-    const now = typeof simNowMs === "number" ? simNowMs : Date.now();
-    const projectileEntity: Entity & {
-      projectile: ProjectileComponent;
-      velocity: [number, number, number];
-    } = {
-      id: `projectile_${fireEvent.weaponId}_${now}_${++projectileSerial}`,
+    // Using a loose type here to avoid large refactors during the deterministic
+    // guard implementation. A full migration to string gameplay ids is tracked
+    // as T052B and should be completed separately.
+    const projectileEntity: Entity = {
+      id: idFactory(),
       position: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
       team: weapon.team,
       projectile: {
         sourceWeaponId: fireEvent.weaponId,
-        ownerId: ownerEntityId,
+        ownerId: ownerGameplayId,
         damage: weapon.power,
         team: weapon.team,
         aoeRadius: weapon.aoeRadius,
         lifespan: 5,
-        spawnTime: now,
+        spawnTime: simNowMs,
         speed: 20,
-        homing: weapon.flags?.homing
-          ? { turnSpeed: 2, targetId: fireEvent.targetId }
-          : undefined,
-      },
+        homing: weapon.flags?.homing ? { turnSpeed: 2, targetId: fireEvent.targetId } : undefined,
+      } as ProjectileComponent,
       velocity: [0, 0, 0],
     };
 
     const [dx, dy, dz] = fireEvent.direction;
-    const speed = projectileEntity.projectile.speed || 20;
+    const projectileComp = projectileEntity.projectile!;
+    const speed = projectileComp.speed ?? 20;
     projectileEntity.velocity = [dx * speed, dy * speed, dz * speed];
 
     world.add(projectileEntity);
@@ -106,11 +117,10 @@ export function projectileSystem(
 
     const { projectile, position, velocity } = e;
     if (!projectile || !position || !velocity) continue;
-    const rigid = e.rigid as unknown as RigidBodyLike | null;
+    const rigid = e.rigid as RigidBodyLike | null;
     let mutated = false;
 
-    const currentMs = typeof simNowMs === "number" ? simNowMs : Date.now();
-    const age = (currentMs - projectile.spawnTime) / 1000;
+    const age = (simNowMs - projectile.spawnTime) / 1000;
     if (age >= projectile.lifespan) {
       notifyEntityChanged(e as Entity);
       world.remove(entity);
@@ -130,12 +140,16 @@ export function projectileSystem(
       mutated = true;
     }
 
+    const rapierObj = typeof _rapierWorld === 'object' ? (_rapierWorld as RapierWorldOrAdapterType) : undefined;
     const hit = checkProjectileCollision(
       position,
+      velocity,
+      dt,
       world,
       projectile.team,
       projectile.ownerId,
       friendlyFire,
+      rapierObj,
     );
     if (hit) {
       if (projectile.aoeRadius && projectile.aoeRadius > 0) {
@@ -210,12 +224,80 @@ export function projectileSystem(
 
 function checkProjectileCollision(
   position: [number, number, number],
+  velocity: [number, number, number],
+  dt: number,
   world: World<Entity>,
   projectileTeam: string,
-  ownerId: number,
+  ownerId: string,
   friendlyFire: boolean,
-): { targetId?: number } | null {
+  rapierWorld?: RapierWorldOrAdapterType | undefined,
+): { targetId?: string } | null {
+  // ownerId is a gameplay id string; compare by string
   let impactedAny = false;
+
+  // Try physics adapter proximity check first when available: if any collider is
+  // overlapping the projectile's position, attempt to map that to an entity
+  // using a short raycast along the projectile's backward vector. This avoids
+  // scanning the entire world when a physics engine is present.
+  if (rapierWorld) {
+    try {
+      const ids = callOverlapSphereEntities(rapierWorld, { x: position[0], y: position[1], z: position[2] }, 1);
+      if (ids !== null) {
+        // Adapter provided an entity list (maybe empty). If entities are
+        // present, prefer the first mapped valid target that satisfies
+        // friendly-fire rules.
+        for (const idRaw of ids) {
+          const idStr = String(idRaw);
+          const target = resolveEntity(world, idStr);
+          if (!target) continue;
+          if (!friendlyFire && (target as { team?: string }).team === projectileTeam) {
+            impactedAny = true; // mark as impacted for AoE behaviour
+            continue;
+          }
+          return { targetId: idStr };
+        }
+        // If ids array empty or no valid target found, fall through to other
+        // strategies (short raycast or world scan below).
+      } else {
+        // Fallback for adapters that do not support entity-list queries: keep
+        // the previous conservative overlap+raycast mapping approach.
+        const overlap = callOverlapSphere(rapierWorld, { x: position[0], y: position[1], z: position[2] }, 1);
+        if (overlap) {
+          const prevPos: [number, number, number] = [
+            position[0] - velocity[0] * dt,
+            position[1] - velocity[1] * dt,
+            position[2] - velocity[2] * dt,
+          ];
+          const dir = [
+            position[0] - prevPos[0],
+            position[1] - prevPos[1],
+            position[2] - prevPos[2],
+          ] as [number, number, number];
+          const len = Math.sqrt(dir[0]*dir[0] + dir[1]*dir[1] + dir[2]*dir[2]);
+          const normDir: [number, number, number] = len > 1e-9 ? [dir[0]/len, dir[1]/len, dir[2]/len] : [0,0,0];
+          const rayRes = callRaycast(rapierWorld, { x: prevPos[0], y: prevPos[1], z: prevPos[2] }, { x: normDir[0], y: normDir[1], z: normDir[2] }, len || 1);
+          if (rayRes && typeof rayRes === 'object') {
+            const id = (rayRes as Record<string, unknown>)['targetId'] ?? (rayRes as Record<string, unknown>)['id'];
+            if (id !== undefined) {
+              const idStr = String(id);
+              const target = resolveEntity(world, idStr);
+              if (target) {
+                if (!friendlyFire && (target as { team?: string }).team === projectileTeam) {
+                  impactedAny = true;
+                } else {
+                  return { targetId: idStr };
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch {
+      // Fall back to scanning world if physics adapter calls fail
+    }
+  }
+
+  // Fallback: scan world entities like legacy code did
   for (const entity of world.entities) {
     const candidate = entity as Entity & {
       position?: [number, number, number];
@@ -227,12 +309,11 @@ function checkProjectileCollision(
     if (!candidate.position || !candidate.team || candidate.projectile) {
       continue;
     }
-    // Ignore the owner itself (match by numeric id or weapon ownerId)
-    const isOwnerById =
-      typeof candidate.id === "number" && candidate.id === ownerId;
+    // Ignore the owner itself by comparing gameplay id or id string
+    const isOwnerById = String(candidate.id) === ownerId;
     const isOwnerByWeapon = !!(
       candidate.weapon &&
-      typeof candidate.weapon.ownerId === "number" &&
+      typeof candidate.weapon.ownerId === "string" &&
       candidate.weapon.ownerId === ownerId
     );
     if (isOwnerById || isOwnerByWeapon) continue;
@@ -250,7 +331,7 @@ function checkProjectileCollision(
     }
 
     if (distance < 1) {
-      return { targetId: candidate.id as unknown as number };
+      return { targetId: String(candidate.id) };
     }
   }
 
@@ -262,11 +343,12 @@ function applyAoEDamage(
   radius: number,
   damage: number,
   sourceTeam: string,
-  sourceId: number,
+  sourceId: string,
   world: World<Entity>,
   events: { damage: DamageEvent[] },
   friendlyFire: boolean,
 ) {
+  // sourceId is a gameplay id string
   for (const entity of world.entities) {
     const candidate = entity as Entity & {
       position?: [number, number, number];
@@ -278,7 +360,12 @@ function applyAoEDamage(
     if (!candidate.position || !candidate.team || candidate.projectile) {
       continue;
     }
-    if (candidate.weapon) continue;
+    if (String(candidate.id) === sourceId) {
+      continue;
+    }
+    if (candidate.weapon && candidate.weapon.ownerId && candidate.weapon.ownerId === sourceId) {
+      continue;
+    }
     if (!friendlyFire && candidate.team === sourceTeam) continue;
 
     const [ex, ey, ez] = candidate.position;
@@ -293,7 +380,7 @@ function applyAoEDamage(
 
       events.damage.push({
         sourceId,
-        targetId: candidate.id as unknown as number,
+        targetId: String(candidate.id),
         position: [center[0], center[1], center[2]],
         damage: finalDamage,
       });
@@ -327,7 +414,7 @@ function updateHomingBehavior(
 
     if (targets.length > 0) {
       const target = targets[Math.floor(rng() * targets.length)];
-      homing.targetId = target.id as unknown as number;
+      homing.targetId = String(target.id);
     }
   }
 

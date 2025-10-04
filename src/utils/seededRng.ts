@@ -13,3 +13,20 @@ export function createSeededRng(seed: number): Rng {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
+
+export function createStepIdFactory(options: {
+  frameCount: number;
+  simNowMs: number;
+  prefix?: string;
+}): () => string {
+  let seq = 0;
+  const base = options.prefix ? `${options.prefix}-` : "";
+  return () => `${base}${options.frameCount}-${options.simNowMs}-${seq++}`;
+}
+
+export function shuffleInPlace<T>(items: T[], rng: Rng) {
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+}

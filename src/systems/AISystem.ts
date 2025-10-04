@@ -2,6 +2,7 @@ import type { World } from "miniplex";
 
 import type { Entity } from "../ecs/miniplexStore";
 import { notifyEntityChanged } from "../ecs/miniplexStore";
+import type { RapierWorldOrAdapter } from "../utils/physicsAdapter";
 import {
   type AIContext,
   type AIDecision,
@@ -73,10 +74,21 @@ function applyDecision(
 export function aiSystem(
   world: World<Entity>,
   rng: () => number,
-  rapierWorld?: unknown,
+  rapierWorld?: RapierWorldOrAdapter,
   simNowMs?: number,
 ) {
-  const now = typeof simNowMs === "number" ? simNowMs : Date.now();
+  if (typeof simNowMs !== "number") {
+    throw new Error(
+      "aiSystem requires simNowMs (from StepContext) to avoid Date.now fallback and ensure determinism",
+    );
+  }
+  if (typeof rng !== "function") {
+    throw new Error(
+      "aiSystem requires a deterministic rng function to ensure determinism",
+    );
+  }
+
+  const now = simNowMs;
 
   const perceptionContext: PerceptionContext = {
     world,

@@ -13,7 +13,7 @@ type FxEntity = Entity & {
 
 export function FXLayer() {
   const query = useMemo(
-    () => world.with("fx", "position") as unknown as Query<FxEntity>,
+    () => world.with("fx", "position") as Query<FxEntity>,
     [],
   );
   const fxs = useEcsQuery(query);

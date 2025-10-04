@@ -23,9 +23,7 @@ export function physicsSyncSystem(world: World<Entity>) {
     if (!e.rigid || !e.position) continue;
 
     // Attempt to read physics position from rigid body
-    const rigid = e.rigid as unknown as {
-      translation?: () => { x: number; y: number; z: number };
-    };
+    const rigid = e.rigid as RigidBodyLike | undefined;
 
     if (rigid && typeof rigid.translation === "function") {
       try {
@@ -42,8 +40,10 @@ export function physicsSyncSystem(world: World<Entity>) {
           Math.abs(e.position[2] - newZ) > threshold;
 
         if (positionChanged) {
-          // Update ECS position from physics with a fresh vector reference
-          e.position = [newX, newY, newZ];
+          // Update existing position vector in-place to preserve the reference
+          e.position[0] = newX;
+          e.position[1] = newY;
+          e.position[2] = newZ;
 
           // Notify React components that this entity has changed
           notifyEntityChanged(e as Entity);
@@ -54,4 +54,8 @@ export function physicsSyncSystem(world: World<Entity>) {
       }
     }
   }
+}
+
+interface RigidBodyLike {
+  translation?: () => { x: number; y: number; z: number };
 }

@@ -171,41 +171,74 @@ when invoking respawn logic.
   tests that use `FixedStepDriver` with seeded RNG for deterministic validation. (Constitution
   rule: Test-Driven Development.)
 
--- FR-016: The simulation SHOULD maintain a short-lived, in-memory runtime event log capturing
+- FR-016: The simulation SHOULD maintain a short-lived, in-memory runtime event log capturing
   kill events (kill, friendly-fire kill, suicide) for observability and scoring audit during
   runtime. This log MUST NOT be persisted to disk by default and MUST be bounded in size
-  (for example, last 100 events). Tests should be able to inspect this log for correctness.
+  (default capacity = 100 entries). Tests should be able to inspect this log for correctness.
   The ScoringSystem (or a dedicated ObservabilitySystem invoked by ScoringSystem) MUST append
   audit entries to this bounded log in a deterministic format using StepContext.simNowMs and
   other deterministic identifiers.
 
+  Acceptance criteria (audit & export):
+
+  - Export format: default export SHALL be newline-delimited JSON (NDJSON/JSONL).
+    Each line represents one `DeathAuditEntry` in chronological order (oldest →
+    newest) unless caller requests reverse ordering.
+
+  - Schema: every exported entry MUST include these keys: `id`, `simNowMs`,
+    `frameCount`, `victimId`, `killerId` (nullable), `victimTeam`, `killerTeam`
+    (nullable), `classification`, `scoreDelta`. Additional diagnostic fields MAY
+    be present but are optional.
+
+  - Determinism: Given identical StepContext (seed, frameCount, simNowMs
+    progression) and identical event inputs, exported NDJSON must be
+    byte-for-byte identical across runs.
+
+  - Capacity handling: exports that request more entries than available MUST
+    return the available entries only; exports SHALL NOT mutate the runtime
+    event log.
+
+  - Performance: exporting 100 entries to JSONL SHALL complete within 50ms on a
+    developer workstation (reasonable CI threshold may be higher). Tests should
+    assert ordering and schema correctness; performance checks may be optional
+    in unit tests but included in a small performance benchmark (T030).
+
 - FR-017: Respawn policy: The simulation MUST respawn dead robots after a configurable fixed delay
-  (default 5s). Respawns MUST use a spawn queue to prevent overcrowding; newly respawned robots
-  MUST receive a brief invulnerability period (2s) to avoid immediate kills. The respawn location
-  selection SHOULD prefer team spawn points and attempt to avoid immediate proximity to enemies
-  when possible.
+  (default 5000 ms). Respawns MUST use a spawn queue to prevent overcrowding; newly respawned robots
+  MUST receive a brief invulnerability period (default 2000 ms) to avoid immediate kills. The
+  respawn location selection SHOULD prefer team spawn points and attempt to avoid immediate
+  proximity to enemies when possible.
 
-Update: RespawnSystem MUST accept and require StepContext.simNowMs for all timing calculations;
-callers (e.g., Simulation) MUST pass simNowMs when invoking respawn processing to ensure
-determinism. RespawnSystem MUST set invulnerableUntil = simNowMs + invulnerabilityMs (default
-2000) when queuing a respawn. The default respawn delay MUST be 5000ms unless configured
-otherwise. Spawn queue logic MUST enforce a maximum spawn rate per spawn zone to avoid
-overcrowding.
+  Acceptance criteria (spawn placement):
 
-- FR-018: ID generation and determinism: All IDs used in gameplay logic, event
-  serialization, and scoring/audit traces MUST be deterministic and reproducible given
-  the same seed and StepContext (for example, derived from simNowMs, frameCount, and
-  the step's seeded RNG). Rendering-only identifiers (IDs used only for FX entities and
-  not part of serialized game-state) MAY use UUIDs; however they MUST include a
-  deterministic prefix (for example: `"{frameCount}-{simNowMs}-{seq}-"`) so that traces
-  and logs can correlate visual effects with the deterministic simulation step. Systems
-  that currently use module-scoped counters or non-deterministic sources (Math.random(),
-  Date.now()) MUST be updated to use either the StepContext-provided RNG or the
-  deterministic prefix scheme above.
+  - Minimum distance: every respawned robot SHALL be placed at least
+    `minSpawnDistance` units away from any enemy entity. Default
+    `minSpawnDistance` = 3.0 units (game units/meters).
 
-  Implementation note: `src/systems/ProjectileSystem.ts` MUST be updated to accept a friendlyFire boolean
-  rather than calling `useUI.getState()`. Add a mapping in the Simulation orchestration to supply
-  session-level flags into StepContext.
+  - Spawn retries: when a chosen spawn point violates the minimum distance
+    constraint, the RespawnSystem SHALL attempt up to `maxSpawnRetries`
+    (default = 10) alternative placements before falling back to the team
+    spawn point regardless of proximity.
+
+  - Spawn zone capacity: a single spawn zone SHALL not accept more than
+    `maxSpawnPerZone` simultaneous pending respawns (default = 3) to prevent
+    overcrowding. New respawn requests beyond capacity SHALL be queued for the
+    next available slot.
+
+  - Deterministic placement: any randomized offset applied to a spawn position
+    MUST be drawn from StepContext.rng so that placement is reproducible for
+    identical seeds.
+
+  - Testability: `tests/integration/spawnPlacement.test.ts` MUST assert the
+    above thresholds deterministically by seeding the FixedStepDriver and
+    verifying placement distances and queue behavior across deterministic runs.
+
+- FR-018: Systems that resolve entity targets (for example, AI decision logic and weapon resolution)
+  MUST use canonicalized gameplay IDs (via project helpers/getters) when emitting or persisting
+  target references. These systems MUST not call id-canonicalization utilities with undefined
+  values; when a target does not have a resolvable gameplay id the system MUST handle the case
+  deterministically (for example: treat as 'no target' and avoid transitioning to an engage state
+  or firing). Unit tests MUST cover this fallback behavior.
 
 ### Key Entities
 
@@ -258,6 +291,10 @@ overcrowding.
 - Q: Path style for plans and artifacts → A: A (Use repository-relative paths only; avoid
   hardcoding absolute filesystem paths in plans and specs).
 
+### Session 2025-10-04
+
+- Q: Tie-breaker for raycast hits when multiple colliders are at identical `toi` → A: Deterministic stable hash of collider metadata (sorted keys JSON).
+
 ---
 
 ## Ambiguities & Questions (NEEDS CLARIFICATION)
@@ -279,6 +316,28 @@ overcrowding.
 
 - NFR-001: Performance target — the simulation must support up to 500 active entities (robots +
   projectiles + beams) under typical conditions; tests should benchmark and validate performance at
+
+---
+
+## Rendering Loop Synchronization (rAF TickDriver)
+
+Problem: With `frameloop="demand"`, the current TickDriver uses `setInterval` while Rapier can
+run its own internal timing using `requestAnimationFrame` (`updateLoop="independent"`). The two
+loops are not synchronized which may cause uneven invalidations and perceived jitter.
+
+Requirement: The TickDriver MUST be rAF-driven to align with the browser render cadence while
+preserving deterministic fixed-step behavior. On each rAF tick, it shall accumulate elapsed time,
+compute the number of fixed steps to catch up (capped), and call `invalidate()` accordingly.
+Pausing MUST suspend rAF scheduling; resuming MUST restart deterministically.
+
+Acceptance:
+
+- Given mocked rAF timestamps and a configured fixed-step, the driver MUST request the expected
+  number of invalidations per tick and cap steps-per-frame.
+- With `updateLoop="independent"`, Simulation remains authoritative for gameplay logic using
+  StepContext, while Rapier continues advancing physics; visuals remain coherent under tests.
+- If a follow mode provides better coherence without hurting determinism, switching to
+  `updateLoop="follow"` is acceptable if validated by tests.
   this scale.
 
 - NFR-002: Serialization: events and entities used in synchronization MUST be serializable
@@ -399,6 +458,8 @@ overcrowding.
   absolute filesystem paths. This avoids environment-specific hardcoding and improves
   portability of generated artifacts and instructions.
 
+<!-- integration note: adapter parity tie-breaker recorded above; see physics-adapter-contract.md for canonical rules -->
+
 ---
 
 ## Files & Mapping to Current Implementation
@@ -425,3 +486,32 @@ overcrowding.
 
 - FX rendering: `src/systems/FxSystem.ts` and `src/components/FXLayer.tsx` — make FX IDs
   include a deterministic prefix and avoid using Math.random() for FX identifiers.
+
+---
+
+## Performance target (finalized)
+
+The project has adopted a concrete developer/CI performance target for fixed-step simulation:
+
+- Baseline target: 16ms average per fixed-step when exercising 500 active entities under the
+  benchmark harness. This target is enforced via the `PERFORMANCE_TARGET_MS`/`PERFORMANCE_STRICT`
+  environment variables in CI and local performance runs. See `specs/001-title-simulation-spec/plan.md` for
+  the policy rationale and CI job patterns.
+
+Acceptance: the IT-003 performance benchmark and `tests/performance.benchmark.test.ts` assert the
+average step time against this target; CI uses `npm run ci:test:perf` to gate on `PERFORMANCE_STRICT`.
+
+### Physics adapter parity (summary)
+
+Physics-dependent systems (Hitscan, Projectile, Spawn proximity checks) must rely on a
+small physics adapter interface. To ensure deterministic unit tests and reproducible
+behavior across environments, the project requires parity between the Rapier-backed
+adapter and the deterministic testing adapter. The parity contract is specified in:
+
+- `specs/001-title-simulation-spec/contracts/physics-adapter-contract.md`
+
+The contract enumerates the exact returned fields, error behaviors, and ordering guarantees
+for adapter operations (raycast, overlap checks, proximity queries). Implementations and
+tests must reference that contract for acceptance.
+
+<!-- integration note: adapter parity tie-breaker recorded above; see physics-adapter-contract.md for canonical rules -->

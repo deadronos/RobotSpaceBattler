@@ -1,4 +1,6 @@
+import { ensureGameplayId } from "../../ecs/id";
 import type { Entity } from "../../ecs/miniplexStore";
+import { getGameplayId } from "../../ecs/miniplexStore";
 import type { AIState } from "../AISystem";
 
 /**
@@ -17,7 +19,7 @@ export interface AIContext {
 export interface AIDecision {
   nextState?: AIState;
   stateSince?: number;
-  targetId?: number | undefined;
+  targetId?: string;
   shouldFire?: boolean;
   velocity?: { x: number; y: number; z: number };
 }
@@ -121,11 +123,14 @@ export function decideIdleAction(
 ): AIDecision {
   // Check for engagement opportunity
   if (hasTarget && hasLOS && target) {
-    return {
-      nextState: "engage",
-      stateSince: context.now,
-      targetId: target.id as number,
-    };
+    const tid = getGameplayId(target);
+    if (tid) {
+      return {
+        nextState: "engage",
+        stateSince: context.now,
+        targetId: ensureGameplayId(tid),
+      };
+    }
   }
 
   // Randomly switch to patrol
@@ -152,11 +157,14 @@ export function decidePatrolAction(
 ): AIDecision {
   // Check for engagement opportunity
   if (hasTarget && hasLOS && target) {
-    return {
-      nextState: "engage",
-      stateSince: context.now,
-      targetId: target.id as number,
-    };
+    const tid = getGameplayId(target);
+    if (tid) {
+      return {
+        nextState: "engage",
+        stateSince: context.now,
+        targetId: ensureGameplayId(tid),
+      };
+    }
   }
 
   // Revert to idle after duration
@@ -203,9 +211,20 @@ export function decideEngageAction(
     };
   }
 
-  // Has target and LOS - engage
+  // Has target and LOS - ensure target has a stable gameplay id before engaging
+  const targetGameplayId = getGameplayId(target);
+  if (!targetGameplayId) {
+    // Treat as lost/unidentifiable target
+    return {
+      nextState: "idle",
+      stateSince: context.now,
+      shouldFire: false,
+      targetId: undefined,
+    };
+  }
+
   const decision: AIDecision = {
-    targetId: target.id as number,
+    targetId: ensureGameplayId(targetGameplayId),
     shouldFire: true,
   };
 

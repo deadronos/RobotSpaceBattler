@@ -1,10 +1,10 @@
 import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Physics } from "@react-three/rapier";
-import React, { Suspense, useEffect } from "react";
+import React, { Suspense, useEffect, useRef } from "react";
 
 import { useUI } from "../store/uiStore";
-import DiagnosticsOverlay from "./DiagnosticsOverlay";
+import { updateFixedStepMetrics } from "../utils/sceneMetrics";
 import EnvironmentLayout from "./environment/EnvironmentLayout";
 import EnvironmentLighting from "./environment/EnvironmentLighting";
 import Simulation from "./Simulation";
@@ -35,16 +35,21 @@ export default function Scene() {
         {/**
          * Tie Rapier's stepping to the render loop so visuals advance with frames,
          * and use a fixed timestep for consistency across machines.
+         * 
+         * updateLoop="independent": Rapier runs its own physics loop independent
+         * of the render frame rate. This ensures smooth physics simulation even
+         * when rendering is slower. The Simulation's fixed-step loop remains
+         * authoritative for game logic and determinism.
          */}
         <Physics
           gravity={[0, -9.81, 0]}
           paused={paused}
           updateLoop="independent"
-          timeStep={1 / 60}
+          timeStep={1/60}
         >
           <Simulation renderFloor={!ENABLE_ENVIRONMENT} />
         </Physics>
-        <DiagnosticsOverlay updateHz={8} />
+        {/*<DiagnosticsOverlay updateHz={8} />*/}
       </Suspense>
       <OrbitControls makeDefault />
       <Stats />
@@ -54,11 +59,47 @@ export default function Scene() {
 
 function TickDriver({ active, hz = 60 }: { active: boolean; hz?: number }) {
   const { invalidate } = useThree();
+  const invalidationCountRef = useRef<number>(0);
+  
   useEffect(() => {
     if (!active) return;
-    const interval = Math.max(1, Math.floor(1000 / hz));
-    const id = setInterval(() => invalidate(), interval);
-    return () => clearInterval(id);
+    
+    let frameId: number | null = null;
+    let lastTime = performance.now();
+    const frameInterval = 1000 / hz;
+    let accumulated = 0;
+    
+    const tick = (now: number) => {
+      const delta = now - lastTime;
+      lastTime = now;
+      accumulated += delta;
+      
+      // Invalidate when enough time has accumulated
+      // This batches invalidations to match the target hz
+      if (accumulated >= frameInterval) {
+        invalidate();
+        accumulated = accumulated % frameInterval;
+        invalidationCountRef.current += 1;
+        
+        // Update rAF metrics for diagnostics
+        updateFixedStepMetrics({
+          lastRafTimestamp: now,
+          invalidationsPerRaf: invalidationCountRef.current,
+        });
+      }
+      
+      frameId = requestAnimationFrame(tick);
+    };
+    
+    frameId = requestAnimationFrame(tick);
+    
+    return () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+    };
   }, [active, hz, invalidate]);
+  
   return null;
 }
+

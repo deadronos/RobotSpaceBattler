@@ -1,44 +1,96 @@
-import { createSeededRng } from "../utils/seededRng";
+import {
+  createSeededRng,
+  createStepIdFactory,
+  type Rng,
+} from "./seededRng";
 
 export type StepContext = {
   frameCount: number;
   simNowMs: number;
-  rng: ReturnType<typeof createSeededRng>;
+  rng: Rng;
   step: number;
+  idFactory: () => string;
+  friendlyFire?: boolean;
+};
+
+type PauseToken = {
+  frameCount: number;
+  simNowMs: number;
 };
 
 export class FixedStepDriver {
   private seed: number;
   private step: number;
   private frameCount = 0;
-  private simTimeMs = 0;
+  private simNowMs = 0;
+  private paused = false;
+  private lastContext: StepContext | null = null;
+  private flags: { friendlyFire?: boolean } = {};
 
   constructor(seed: number, step: number) {
     this.seed = seed;
     this.step = step;
   }
 
-  // Advance the driver by a single fixed step and return the step context
+  // Allow external callers to inject runtime flags (friendly-fire, debug modes, etc.)
+  setFlags(flags: { friendlyFire?: boolean }) {
+    this.flags = { ...this.flags, ...flags };
+  }
+
   stepOnce(): StepContext {
+    if (this.paused && this.lastContext) {
+      return this.lastContext;
+    }
+
     this.frameCount++;
-    this.simTimeMs += this.step * 1000;
-    const rng = createSeededRng(this.seed + this.frameCount);
-    return {
-      frameCount: this.frameCount,
-      simNowMs: this.simTimeMs,
+  this.simNowMs += this.step * 1000;
+    const rngSeed = stepSeed(this.seed, this.frameCount);
+    const rng = createSeededRng(rngSeed);
+    const context: StepContext = {
+  frameCount: this.frameCount,
+  simNowMs: this.simNowMs,
       rng,
       step: this.step,
+      idFactory: createStepIdFactory({
+        frameCount: this.frameCount,
+        simNowMs: this.simNowMs,
+      }),
+      friendlyFire: this.flags.friendlyFire,
     };
+
+    this.lastContext = context;
+    return context;
+  }
+
+  pause(): PauseToken {
+    this.paused = true;
+  return { frameCount: this.frameCount, simNowMs: this.simNowMs };
+  }
+
+  resume(token?: PauseToken) {
+    if (token) {
+      this.frameCount = token.frameCount;
+  this.simNowMs = token.simNowMs;
+    }
+    this.paused = false;
+    this.lastContext = null;
   }
 
   reset(seed: number, step: number) {
     this.seed = seed;
     this.step = step;
     this.frameCount = 0;
-    this.simTimeMs = 0;
+  this.simNowMs = 0;
+    this.paused = false;
+    this.lastContext = null;
   }
 }
 
 export function createFixedStepDriver(seed: number, step: number) {
   return new FixedStepDriver(seed, step);
+}
+
+function stepSeed(base: number, frame: number) {
+  const constant = 0x9e3779b9;
+  return (base ^ (frame * constant)) >>> 0;
 }
