@@ -183,6 +183,11 @@ complete (Phase 4). Prioritize remediation and CI/benchmark decisions.
   - Policy: systems must throw or explicitly require `StepContext` with
     `{ simNowMs, rng, idFactory }` rather than silently falling back to
     `Date.now()` or `Math.random()`.
+  - Note: As part of T016B, AISystem should resolve target references using the
+    canonical helper (`getGameplayId(...)`) and guard against missing gameplay ids.
+    Treat unresolvable targets deterministically (for example: do not transition
+    to "engage" and do not emit firing commands). Add unit tests to validate this
+    behavior as part of the determinism guard tasks.
 
 - ✅ T016G — Performance target finalized at 16ms with CI enforcement
 

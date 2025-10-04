@@ -233,6 +233,13 @@ when invoking respawn logic.
     above thresholds deterministically by seeding the FixedStepDriver and
     verifying placement distances and queue behavior across deterministic runs.
 
+- FR-018: Systems that resolve entity targets (for example, AI decision logic and weapon resolution)
+  MUST use canonicalized gameplay IDs (via project helpers/getters) when emitting or persisting
+  target references. These systems MUST not call id-canonicalization utilities with undefined
+  values; when a target does not have a resolvable gameplay id the system MUST handle the case
+  deterministically (for example: treat as 'no target' and avoid transitioning to an engage state
+  or firing). Unit tests MUST cover this fallback behavior.
+
 ### Key Entities
 
 - Entity: Robot — has `position`, `rigid` (optional), `team`, `weapon`, `weaponState`, `health`,

@@ -100,49 +100,13 @@
       `src/ecs/pauseManager.ts`, suspends the `FixedStepDriver`, and restores
       velocities deterministically on resume.
 - [x] T037 Team & ID normalization — TDD (test): add unit tests in
-      `tests/unit/idAndTeamTypes.test.ts` asserting canonical types (string-based
-      gameplay IDs and unified `Team` enum).
-- [x] T038 Spawn placement & proximity heuristic — TDD (test): author an
-      integration test `tests/integration/spawnPlacement.test.ts` that asserts:
-      - every respawned robot is >= `minSpawnDistance` (default 3.0 units) from
-        any enemy entity;
-      - RespawnSystem attempts up to `maxSpawnRetries` (default 10) before
-        falling back to team spawn points;
-      - a spawn zone capacity limit of `maxSpawnPerZone` (default 3) is
-        enforced; and
-      - any randomized offsets are drawn from StepContext.rng. Seed the
-        FixedStepDriver to validate deterministic placement across repeated
-        runs.
-- [x] T048 Event-driven ordering test — TDD (test): add a small integration
-      test `tests/integration/eventOrdering.test.ts` that exercises a canonical
-      weapon → hitscan → damage → death flow and asserts that emitted
-      events occur in deterministic order (weapon fired → damage → death →
-      scoring) and that ScoringSystem consumes DeathEvents in deterministic
-      order (for example, sorted by event.id or frameCount). Implement any
-      required helpers in test harness to capture and assert event sequences.
-- [x] T049 Health model canonicalization — TDD (test): add unit tests in
-      `tests/unit/healthModel.test.ts` asserting the canonical health shape
-      `{ current:number, max:number, alive:boolean }` is used by DamageSystem,
-      RespawnSystem, and entity factories. Tests should fail until code is
-      updated.
-- [x] T051 ID & Team canonicalization — TDD (test): add unit tests in
-      `tests/unit/idAndTeamTypes.test.ts` asserting gameplay and audit ids are
-      strings produced by the idFactory and that `Team` values map to
-      `'red'|'blue'` for gameplay logic.
-- [x] T053 Score model — TDD (test): add unit tests in
-      `tests/unit/scoreBoard.test.ts` asserting ScoringSystem writes deterministic
-      deltas to a `ScoreBoard` component/service and that scores match expected
-      values for canonical death sequences.
-- [x] T055 Spawn model canonicalization — TDD (test): add unit/integration tests
-      in `tests/unit/spawnModel.test.ts` and `tests/integration/spawnPlacement.test.ts`
-      that assert `SpawnZone`, `SpawnPoint`, `SpawnRequest`, and `SpawnQueue`
-      shapes and default parameters behave as specified.
-- [x] T057 WeaponPayload schema — TDD (test): add unit tests
-      `tests/unit/weaponPayload.test.ts` asserting persisted `WeaponPayload`
-      shape includes required fields (`id,type,power`) and optional fields
-      (`range,cooldownMs,accuracy,spreadRad,ammo,projectilePrefab,beamParams,flags`).
-      Tests should also assert that persisted payloads do not include runtime-only
-      transient fields and that any randomness is derived from StepContext.rng.
+       `tests/unit/idAndTeamTypes.test.ts` asserting canonical types (string-based
+       gameplay IDs and unified `Team` enum). (see T052A)
+- [x] T016C [P] Deterministic idFactory tests — `tests/unit/idFactory.test.ts` (see T052A)
+- [ ] T039 [P] AI decision id-guard tests: add unit tests for `src/systems/ai/decisions.ts` to
+  assert safe handling when a target lacks a gameplay id (do not transition to "engage"; do
+  not fire). Depends on T037 and T016A/T016B (ID canonicalization and determinism guards).
+  Place tests under `tests/unit/decisions.test.ts` and follow TDD (write failing tests first).  
 
 ## Phase 3.2: Tests First (ADDITIONAL REMEDIATION TASKS) ⚠️ MUST COMPLETE BEFORE IMPLEMENTATION
 
@@ -173,7 +137,7 @@
       - Priority: IMMEDIATE (run before other implementation tasks).
 
 
-- [x] T016C [P] Deterministic idFactory tests — `tests/unit/idFactory.test.ts`
+- [x] T016C [P] Deterministic idFactory tests — `tests/unit/idFactory.test.ts` (see T052A)
 
                   - Add unit tests asserting event id generation uses `StepContext.idFactory` and that missing
                         idFactory results in a deterministic failure (explicit throw).
@@ -258,7 +222,7 @@
 - [x] T052 ID & Team canonicalization — Implementation: update id factories,
       component types, and code (including `src/ecs/miniplexStore.ts`) to ensure
       gameplay IDs are strings and `Team` types are canonical. Add migration or
-      adapter utilities if numeric ids remain present in legacy code.
+      adapter utilities if numeric ids remain present in legacy code. (see T052A)
       (Partial) `normalizeTeam` and `ensureGameplayId` utilities exist; Entity.id
       remains numeric for compatibility with miniplex internals but gameplayId field
       provides string IDs for deterministic systems.
@@ -274,7 +238,7 @@
       fields. Ensure `WeaponSystem` uses StepContext.rng for accuracy/spread and
       that persisted payloads are serializable for tests and export.
 
-- [x] T016B [P] Replace non-deterministic fallbacks in systems — implementation
+- [x] T016B [P] Replace non-deterministic fallbacks in systems — implementation (see T052A)
       - Files: `src/systems/WeaponSystem.ts`, `src/systems/RespawnSystem.ts`, `src/systems/AISystem.ts`
       - Remove use of `Date.now()` and `Math.random()`; require `StepContext` with `{ simNowMs, rng, idFactory }`.
       - Policy: systems MUST throw an explicit Error when StepContext or idFactory is omitted to avoid
@@ -430,3 +394,23 @@ tasks run T009
         choice in a comment so tests can recreate expected hash values.
       - Depends on: T033B (tests reference the helper in parity scenarios) — implement helper first or in
         parallel with contract tests; mark as [P] because it touches different files.
+
+## ID & Team canonicalization — Consolidated group
+
+- [ ] T052A ID & Team canonicalization & determinism guard (group)
+  - Purpose: unify test-first and implementation tasks that ensure gameplay IDs are
+    canonicalized, idFactory behavior is deterministic, and systems (including AISystem)
+    guard against missing/unresolvable gameplay ids. This group reduces duplication and
+    centralizes acceptance criteria and dependencies.
+
+  - Subtasks / mappings:
+    - T052A.1 — Team & ID unit tests (refs: T037) — `tests/unit/idAndTeamTypes.test.ts`
+    - T052A.2 — IdFactory deterministic tests (refs: T016C) — `tests/unit/idFactory.test.ts`
+    - T052A.3 — AI decision guard tests (refs: T039) — `tests/unit/decisions.test.ts`
+    - T052A.4 — Implementation: miniplex/idFactory/miniplexStore updates (refs: T052)
+    - T052A.5 — Determinism guards & system enforcement (refs: T016B/T016A)
+
+  - Acceptance: All subtasks must be present and passing. Systems must not throw when
+    presented with target entities lacking a resolvable gameplay id; unit tests must
+    assert safe fallback behavior. Implementation changes must update references in
+    code to use canonical getter helpers and add test coverage.
