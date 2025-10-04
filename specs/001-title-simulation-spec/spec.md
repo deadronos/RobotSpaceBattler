@@ -473,3 +473,30 @@ Acceptance:
 
 - FX rendering: `src/systems/FxSystem.ts` and `src/components/FXLayer.tsx` — make FX IDs
   include a deterministic prefix and avoid using Math.random() for FX identifiers.
+
+---
+
+## Performance target (finalized)
+
+The project has adopted a concrete developer/CI performance target for fixed-step simulation:
+
+- Baseline target: 16ms average per fixed-step when exercising 500 active entities under the
+  benchmark harness. This target is enforced via the `PERFORMANCE_TARGET_MS`/`PERFORMANCE_STRICT`
+  environment variables in CI and local performance runs. See `specs/001-title-simulation-spec/plan.md` for
+  the policy rationale and CI job patterns.
+
+Acceptance: the IT-003 performance benchmark and `tests/performance.benchmark.test.ts` assert the
+average step time against this target; CI uses `npm run ci:test:perf` to gate on `PERFORMANCE_STRICT`.
+
+### Physics adapter parity (summary)
+
+Physics-dependent systems (Hitscan, Projectile, Spawn proximity checks) must rely on a
+small physics adapter interface. To ensure deterministic unit tests and reproducible
+behavior across environments, the project requires parity between the Rapier-backed
+adapter and the deterministic testing adapter. The parity contract is specified in:
+
+- `specs/001-title-simulation-spec/contracts/physics-adapter-contract.md`
+
+The contract enumerates the exact returned fields, error behaviors, and ordering guarantees
+for adapter operations (raycast, overlap checks, proximity queries). Implementations and
+tests must reference that contract for acceptance.

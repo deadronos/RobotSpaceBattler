@@ -269,9 +269,10 @@
 - [x] T016G Decide perf target & update benchmarks + CI
       - Adopted a 16ms default threshold via `tests/helpers/performanceBudget.ts` and updated
         `tests/performance.benchmark.test.ts` to enforce it with configurable environment overrides.
-      - Documented the decision in `specs/001-title-simulation-spec/plan.md`,
+      - Documented the decision in `specs/001-title-simulation-spec/plan.md` and
         `docs/DEPENDENCIES.md`, and captured `npm run ci:test:perf` as the strict CI gate.
-      - Depends on: T030 (existing perf tasks).
+      - Notes: removed the unresolved dependency on T030; any additional perf-tuning tasks
+        should be created explicitly as numbered tasks (for example: T030) if required.
 
 - [x] T016H Golden trace helper (optional)
       - Files: `tests/golden/generate.ts`, `tests/golden/README.md`
