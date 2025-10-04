@@ -5,7 +5,7 @@ import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
 import { type Entity, notifyEntityChanged } from "../ecs/miniplexStore";
 import type { DamageEvent, WeaponComponent } from "../ecs/weapons";
 import type { StepContext } from "../utils/fixedStepDriver";
-import type { RapierWorldOrAdapter } from "../utils/physicsAdapter";
+import { callOverlapSphere, callRaycast, type RapierWorldOrAdapter as RapierWorldOrAdapterType } from "../utils/physicsAdapter";
 import type { Rng } from "../utils/seededRng";
 import type { WeaponFiredEvent } from "./WeaponSystem";
 
@@ -26,7 +26,7 @@ export function projectileSystem(
   stepContext: StepContext | (() => number) | undefined,
   weaponFiredEvents: WeaponFiredEvent[],
   events: { damage: DamageEvent[] },
-  _rapierWorld?: RapierWorldOrAdapter | number | undefined,
+  _rapierWorld?: RapierWorldOrAdapterType | number | undefined,
 ) {
   // Support legacy positional API: (world, dt, rng, weaponFiredEvents, events, simNowMs)
   let ctx: StepContext | undefined;
@@ -140,12 +140,16 @@ export function projectileSystem(
       mutated = true;
     }
 
+    const rapierObj = typeof _rapierWorld === 'object' ? (_rapierWorld as RapierWorldOrAdapterType) : undefined;
     const hit = checkProjectileCollision(
       position,
+      velocity,
+      dt,
       world,
       projectile.team,
       projectile.ownerId,
       friendlyFire,
+      rapierObj,
     );
     if (hit) {
       if (projectile.aoeRadius && projectile.aoeRadius > 0) {
@@ -220,13 +224,61 @@ export function projectileSystem(
 
 function checkProjectileCollision(
   position: [number, number, number],
+  velocity: [number, number, number],
+  dt: number,
   world: World<Entity>,
   projectileTeam: string,
   ownerId: string,
   friendlyFire: boolean,
+  rapierWorld?: RapierWorldOrAdapterType | undefined,
 ): { targetId?: string } | null {
   // ownerId is a gameplay id string; compare by string
   let impactedAny = false;
+
+  // Try physics adapter proximity check first when available: if any collider is
+  // overlapping the projectile's position, attempt to map that to an entity
+  // using a short raycast along the projectile's backward vector. This avoids
+  // scanning the entire world when a physics engine is present.
+  if (rapierWorld) {
+    try {
+      const overlap = callOverlapSphere(rapierWorld, { x: position[0], y: position[1], z: position[2] }, 1);
+      if (overlap) {
+        // Compute a short ray from previous position to current position to
+        // try and get a mapped target id from physics.
+        const prevPos: [number, number, number] = [
+          position[0] - velocity[0] * dt,
+          position[1] - velocity[1] * dt,
+          position[2] - velocity[2] * dt,
+        ];
+        const dir = [
+          position[0] - prevPos[0],
+          position[1] - prevPos[1],
+          position[2] - prevPos[2],
+        ] as [number, number, number];
+        const len = Math.sqrt(dir[0]*dir[0] + dir[1]*dir[1] + dir[2]*dir[2]);
+        const normDir: [number, number, number] = len > 1e-9 ? [dir[0]/len, dir[1]/len, dir[2]/len] : [0,0,0];
+        const rayRes = callRaycast(rapierWorld, { x: prevPos[0], y: prevPos[1], z: prevPos[2] }, { x: normDir[0], y: normDir[1], z: normDir[2] }, len || 1);
+        if (rayRes && typeof rayRes === 'object') {
+          const id = (rayRes as Record<string, unknown>)['targetId'] ?? (rayRes as Record<string, unknown>)['id'];
+          if (id !== undefined) {
+            const idStr = String(id);
+            const target = resolveEntity(world, idStr);
+            if (target) {
+              if (!friendlyFire && (target as { team?: string }).team === projectileTeam) {
+                impactedAny = true;
+              } else {
+                return { targetId: idStr };
+              }
+            }
+          }
+        }
+      }
+    } catch {
+      // Fall back to scanning world if physics adapter calls fail
+    }
+  }
+
+  // Fallback: scan world entities like legacy code did
   for (const entity of world.entities) {
     const candidate = entity as Entity & {
       position?: [number, number, number];
@@ -309,7 +361,7 @@ function applyAoEDamage(
 
       events.damage.push({
         sourceId,
-  targetId: String(candidate.id),
+        targetId: String(candidate.id),
         position: [center[0], center[1], center[2]],
         damage: finalDamage,
       });
@@ -343,7 +395,7 @@ function updateHomingBehavior(
 
     if (targets.length > 0) {
       const target = targets[Math.floor(rng() * targets.length)];
-  homing.targetId = String(target.id);
+      homing.targetId = String(target.id);
     }
   }
 
