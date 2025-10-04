@@ -401,13 +401,7 @@ tasks run T009
 
 - [x] T030 Performance CI integration & benchmark enforcement
       - Files: `.github/workflows/ci-perf.yml` (created), `tests/performance.benchmark.test.ts`
-      - Create a CI job proposal/workflow that runs `npm run ci:test:perf` with
-        `PERFORMANCE_STRICT=true` and publishes benchmark output as build
-        artifacts.
-      - Ensure the job is toggleable and document runner size/labels for
-        consistent CI runs.
-      - Purpose: make the 16ms enforcement reproducible in CI and provide an artifact for maintainers.
-      - Depends on: T016G (policy) — run after the performance target has been finalized.
+      - CI run will store perf output at `perf-output/perf-output.txt` as an artifact.
 
 - [x] T033 Deterministic Physics Adapter — TDD (test): author contract tests in
       `tests/contracts/physicsAdapter.contract.test.ts` asserting parity between a
@@ -417,14 +411,14 @@ tasks run T009
         defines expected shapes, tie-breaker rules, and acceptance scenarios; implement tests to reference
         that contract directly.
 
-- [P] T033B Physics adapter parity contract test — `tests/contracts/physicsAdapter.contract.test.ts`
+- [x] T033B Physics adapter parity contract test — `tests/contracts/physicsAdapter.contract.test.ts`
       - Files: `specs/001-title-simulation-spec/contracts/physics-adapter-contract.md`,
         `tests/contracts/physicsAdapter.contract.test.ts`
       - Author contract tests that exercise raycast, overlapSphere, and proximityQuery parity scenarios
         described in the contract. Include edge grazing and multiple-collider tie-breaker verification.
       - Parallelizable: can run independently of other contract tests.
 
-- [P] T033C Implement canonical collider metadata hash helper
+- [x] T033C Implement canonical collider metadata hash helper
       - Files: `src/utils/physicsAdapter.ts`, `src/utils/hash.ts`, `tests/unit/physicsAdapterHash.test.ts`
       - Implement a small helper that extracts deterministic collider metadata,
         serializes with sorted keys, and produces a stable non-cryptographic
