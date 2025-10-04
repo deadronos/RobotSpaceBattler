@@ -31,7 +31,7 @@ RobotSpaceBattler is a compact, educational browser-based 3D arena for experimen
 
 - Follow code style and contributor guidance (`AGENTS.md`, `CONTRIBUTING.md`).
 - Run lint, format, and tests before submitting changes (`npm run lint && npm run format && npm run test`).
-- Small, tested changes are preferred; update `memory-bank` core files when altering architecture or integration points.
+- Small, tested changes are preferred; update `.specify` core files when altering architecture or integration points.
 
 ## Acceptance criteria for core features
 

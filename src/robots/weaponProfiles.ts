@@ -1,17 +1,17 @@
 import type { WeaponComponent, WeaponType } from "../ecs/weapons";
 
-type WeaponProfile = Pick<
-  WeaponComponent,
-  | "range"
-  | "cooldown"
-  | "power"
-  | "accuracy"
-  | "spread"
-  | "ammo"
-  | "aoeRadius"
-  | "beamParams"
-  | "flags"
->;
+type WeaponProfile = Required<Pick<WeaponComponent, "range">> &
+  Pick<
+    WeaponComponent,
+    | "cooldown"
+    | "power"
+    | "accuracy"
+    | "spread"
+    | "ammo"
+    | "aoeRadius"
+    | "beamParams"
+    | "flags"
+  >;
 
 export const weaponProfiles: Record<WeaponType, WeaponProfile> = {
   gun: {
@@ -33,7 +33,7 @@ export const weaponProfiles: Record<WeaponType, WeaponProfile> = {
     spread: 0,
     ammo: undefined,
     aoeRadius: undefined,
-    beamParams: { duration: 1000, width: 0.1, tickInterval: 100 },
+    beamParams: { durationMs: 1000, width: 0.1, tickIntervalMs: 100 },
     flags: { continuous: true },
   },
   rocket: {

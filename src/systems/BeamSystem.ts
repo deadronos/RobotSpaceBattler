@@ -1,18 +1,16 @@
-import type { World } from "miniplex";
+import type { Query,World } from "miniplex";
 
 import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
 import { type Entity, notifyEntityChanged } from "../ecs/miniplexStore";
 import type { BeamComponent, DamageEvent, WeaponComponent } from "../ecs/weapons";
+import { callIntersectionsWithRay, extractPoint, type RapierWorldOrAdapter } from "../utils/physicsAdapter";
 import type { Rng } from "../utils/seededRng";
 import { extractEntityIdFromRapierHit } from "./rapierHelpers";
 import type { WeaponFiredEvent } from "./WeaponSystem";
 
-const POSITION_EPSILON = 0.0001;
+// Monotonic counter was removed in favor of deterministic idFactory provided via StepContext.
 
-// Monotonic counter to guarantee uniqueness when timestamps collide.
-// Date.now() can return the same millisecond for rapid successive events;
-// append a counter to generated beam ids to avoid duplicate React keys.
-let beamIdCounter = 0;
+// no-op helper types removed; BeamComponent uses tuple vectors from ecs/weapons
 
 export type BeamEntity = Entity & {
   beam: BeamComponent;
@@ -28,7 +26,7 @@ export type BeamOwnerEntity = Entity & {
 };
 
 interface BeamHitCandidate {
-  targetId: number;
+  targetId: string;
   position: [number, number, number];
   distance: number;
 }
@@ -43,39 +41,51 @@ export function beamSystem(
   _rng: Rng,
   weaponFiredEvents: WeaponFiredEvent[],
   events: { damage: DamageEvent[] },
-  simNowMs?: number,
+  stepContext: { simNowMs?: number; idFactory?: () => string; friendlyFire?: boolean },
   rapierWorld?: unknown,
 ) {
   void _dt;
   void _rng;
-  const now = typeof simNowMs === "number" ? simNowMs : Date.now();
+  if (!stepContext) {
+    throw new Error('beamSystem requires a StepContext with simNowMs and idFactory for deterministic behavior');
+  }
+  const { simNowMs, idFactory, friendlyFire } = stepContext;
+  if (typeof simNowMs !== 'number') {
+    throw new Error('beamSystem requires stepContext.simNowMs');
+  }
+  if (typeof idFactory !== 'function') {
+    throw new Error('beamSystem requires stepContext.idFactory to generate deterministic beam ids');
+  }
+  const now = simNowMs;
 
-  processBeamFireEvents(world, weaponFiredEvents, now);
-  processBeamTicks(world, events, now, rapierWorld);
+  processBeamFireEvents(world, weaponFiredEvents, now, idFactory);
+  processBeamTicks(world, events, now, rapierWorld, { friendlyFire: !!friendlyFire });
 }
 
 export function processBeamFireEvents(
   world: World<Entity>,
   weaponFiredEvents: WeaponFiredEvent[],
   now: number,
+  idFactory: () => string,
 ) {
   if (weaponFiredEvents.length === 0) return;
 
-  const beamQuery = world.with("beam") as unknown as { entities: BeamEntity[] };
+  const beamQuery = world.with("beam") as Query<BeamEntity>;
 
   for (const fireEvent of weaponFiredEvents) {
     if (fireEvent.type !== "laser") continue;
 
+    const ownerLookupId = String(fireEvent.ownerId);
     const owner = resolveOwner(world, {
-      ownerId: fireEvent.ownerId,
+      ownerId: ownerLookupId,
       weaponId: fireEvent.weaponId,
     }) as BeamOwnerEntity | undefined;
 
     const weapon = owner?.weapon;
     if (!owner || !weapon) continue;
 
-    const duration = weapon.beamParams?.duration ?? 2000;
-    const width = weapon.beamParams?.width ?? 0.1;
+  const duration = weapon.beamParams?.durationMs ?? 2000;
+  const width = weapon.beamParams?.width ?? 0.1;
     const length = weapon.range || 50;
 
     const existing = beamQuery.entities.find((candidate) => {
@@ -83,7 +93,7 @@ export function processBeamFireEvents(
       return (
         beam &&
         beam.sourceWeaponId === fireEvent.weaponId &&
-        beam.ownerId === fireEvent.ownerId
+        beam.ownerId === ownerLookupId
       );
     }) as BeamEntity | undefined;
 
@@ -110,18 +120,13 @@ export function processBeamFireEvents(
       continue;
     }
 
-    const counter = ++beamIdCounter;
     const beamEntity: BeamEntity = {
-      id: `beam_${fireEvent.weaponId}_${now}_${counter}`,
-      position: [
-        fireEvent.origin[0],
-        fireEvent.origin[1],
-        fireEvent.origin[2],
-      ],
+      gameplayId: idFactory(),
+      position: [fireEvent.origin[0], fireEvent.origin[1], fireEvent.origin[2]],
       team: weapon.team,
       beam: {
         sourceWeaponId: fireEvent.weaponId,
-        ownerId: fireEvent.ownerId,
+        ownerId: ownerLookupId,
         origin: [
           fireEvent.origin[0],
           fireEvent.origin[1],
@@ -135,13 +140,13 @@ export function processBeamFireEvents(
         length,
         width,
         activeUntil: now + duration,
-        tickDamage: weapon.power / 10,
-        tickInterval: weapon.beamParams?.tickInterval ?? 100,
+        tickDamage: weapon.beamParams?.damagePerTick ?? weapon.power / 10,
+        tickInterval: weapon.beamParams?.tickIntervalMs ?? 100,
         lastTickAt: now,
         firedAt: now,
       },
     };
-    world.add(beamEntity);
+  world.add(beamEntity);
   }
 }
 
@@ -150,9 +155,11 @@ export function processBeamTicks(
   events: { damage: DamageEvent[] },
   now: number,
   rapierWorld?: unknown,
+  flags?: { friendlyFire?: boolean },
 ) {
-  const beamQuery = world.with("beam") as unknown as { entities: BeamEntity[] };
+  const beamQuery = world.with("beam") as Query<BeamEntity>;
   const beams = [...beamQuery.entities];
+  const friendlyFire = !!flags?.friendlyFire;
 
   for (const entity of beams) {
     const beamEntity = entity as BeamEntity;
@@ -185,6 +192,7 @@ export function processBeamTicks(
         world,
         owner.team,
         rapierWorld,
+        friendlyFire,
       );
 
       for (const hit of hits) {
@@ -209,10 +217,7 @@ function syncBeamToOwner(beamEntity: BeamEntity, owner: BeamOwnerEntity) {
   let beamMutated = false;
 
   const rigid = owner.rigid;
-  if (
-    rigid &&
-    typeof rigid.translation === "function"
-  ) {
+  if (rigid && typeof rigid.translation === "function") {
     try {
       const translation = rigid.translation();
       const next: [number, number, number] = [
@@ -243,7 +248,10 @@ function syncBeamToOwner(beamEntity: BeamEntity, owner: BeamOwnerEntity) {
     beamMutated = true;
   }
 
-  if (!beamEntity.position || !vectorsEqual(beamEntity.position, sourcePosition)) {
+  if (
+    !beamEntity.position ||
+    !vectorsEqual(beamEntity.position, sourcePosition)
+  ) {
     beamEntity.position = [
       sourcePosition[0],
       sourcePosition[1],
@@ -263,10 +271,14 @@ function performBeamRaycast(
   world: World<Entity>,
   ownerTeam?: string,
   rapierWorld?: unknown,
+  friendlyFire: boolean = false,
 ) {
   const normalized = normalize(direction);
   if (!normalized) {
-    return [] as Array<{ position: [number, number, number]; targetId: number }>;
+    return [] as Array<{
+      position: [number, number, number];
+      targetId: string;
+    }>;
   }
 
   const rapierHits =
@@ -277,9 +289,17 @@ function performBeamRaycast(
   if (candidates.length === 0) {
     candidates = fallbackBeamRaycast(origin, normalized, length, width, world);
   } else {
-    const fallback = fallbackBeamRaycast(origin, normalized, length, width, world);
+    const fallback = fallbackBeamRaycast(
+      origin,
+      normalized,
+      length,
+      width,
+      world,
+    );
     for (const candidate of fallback) {
-      if (!candidates.some((existing) => existing.targetId === candidate.targetId)) {
+      if (
+        !candidates.some((existing) => existing.targetId === candidate.targetId)
+      ) {
         candidates.push(candidate);
       }
     }
@@ -291,7 +311,8 @@ function performBeamRaycast(
     if (!target) continue;
 
     const team = (target as { team?: string }).team;
-    if (ownerTeam && team === ownerTeam) continue;
+    // Respect friendlyFire: only exclude same-team hits when friendlyFire is false
+    if (!friendlyFire && ownerTeam && team === ownerTeam) continue;
 
     filtered.push(candidate);
   }
@@ -312,88 +333,29 @@ function tryRapierBeamRaycast(
 ): BeamHitCandidate[] | null {
   if (!rapierWorld) return null;
 
+  const rawHits = callIntersectionsWithRay(rapierWorld as RapierWorldOrAdapter | undefined, { x: origin[0], y: origin[1], z: origin[2] }, { x: direction[0], y: direction[1], z: direction[2] }, length);
+  if (!rawHits) return null;
+
   const hits: BeamHitCandidate[] = [];
-
-  const processHit = (raw: unknown) => {
-    if (!raw) return;
+  for (const raw of rawHits) {
+    if (!raw) continue;
     if (Array.isArray(raw)) {
-      for (const nested of raw) processHit(nested);
-      return;
-    }
-
-    const hit = raw as Record<string, unknown>;
-    const targetId = extractEntityIdFromRapierHit(hit);
-    if (typeof targetId !== "number") {
-      return;
-    }
-
-    const point = extractPointFromRapierHit(hit, origin, direction, length);
-    if (!point) {
-      return;
-    }
-
-    const distance = distanceAlongRay(origin, point, direction);
-    hits.push({ targetId, position: point, distance });
-  };
-
-  try {
-    const rw = rapierWorld as Record<string, unknown>;
-    let attempted = false;
-
-    const ray = {
-      origin: { x: origin[0], y: origin[1], z: origin[2] },
-      dir: { x: direction[0], y: direction[1], z: direction[2] },
-    };
-
-    if (
-      rw.queryPipeline &&
-      typeof (rw.queryPipeline as { intersectionsWithRay?: unknown }).intersectionsWithRay ===
-        "function"
-    ) {
-      attempted = true;
-      try {
-        const qp = rw.queryPipeline as {
-          intersectionsWithRay?: (
-            bodies: unknown,
-            colliders: unknown,
-            ray: unknown,
-            maxToi: number,
-            solid?: boolean,
-            callback?: (hit: unknown) => boolean,
-          ) => void;
-        };
-        const bodies = (rw as Record<string, unknown>)["bodies"];
-        const colliders = (rw as Record<string, unknown>)["colliders"];
-        qp.intersectionsWithRay?.(bodies, colliders, ray, length, true, (hit) => {
-          processHit(hit);
-          return true;
-        });
-      } catch {
-        /* fall back to other strategies */
+      for (const nested of raw) {
+        const id = extractEntityIdFromRapierHit(nested);
+        if (typeof id !== 'string') continue;
+        const point = extractPoint(nested);
+        if (!point) continue;
+        const distance = distanceAlongRay(origin, point as [number, number, number], direction);
+        hits.push({ targetId: id, position: point as [number, number, number], distance });
       }
+      continue;
     }
-
-    if (
-      typeof (rw as { castRay?: unknown }).castRay === "function"
-    ) {
-      attempted = true;
-      processHit((rw as { castRay: (...args: unknown[]) => unknown }).castRay(ray, length, true));
-    }
-
-    if (
-      rw.raw &&
-      typeof (rw.raw as { castRay?: unknown }).castRay === "function"
-    ) {
-      attempted = true;
-      const raw = rw.raw as { castRay: (...args: unknown[]) => unknown };
-      processHit(raw.castRay(ray, length, true));
-    }
-
-    if (!attempted) {
-      return null;
-    }
-  } catch {
-    return null;
+    const id = extractEntityIdFromRapierHit(raw);
+    if (typeof id !== 'string') continue;
+    const point = extractPoint(raw);
+    if (!point) continue;
+    const distance = distanceAlongRay(origin, point as [number, number, number], direction);
+    hits.push({ targetId: id, position: point as [number, number, number], distance });
   }
 
   return hits.length > 0 ? hits : null;
@@ -412,42 +374,42 @@ function fallbackBeamRaycast(
 
   const beamRadius = Math.max(width * 0.5, 0.5);
 
-  const query = world.with("team", "position") as unknown as {
-    entities: Array<
-      Entity & {
-        position: [number, number, number];
-        team?: string;
-        beam?: BeamComponent;
-      }
-    >;
-  };
+  const query = world.with("team", "position") as Query<
+    Entity & {
+      position: [number, number, number];
+      team?: string;
+      beam?: BeamComponent;
+    }
+  >;
 
   for (const candidate of query.entities) {
-    if (candidate.beam) continue;
+    if (!candidate.position || !candidate.team || candidate.beam) continue;
 
     const [ex, ey, ez] = candidate.position;
-    const toEntity = [ex - ox, ey - oy, ez - oz];
-    const projectionLength = toEntity[0] * dx + toEntity[1] * dy + toEntity[2] * dz;
+    // Vector from ray origin to candidate
+    const vx = ex - ox;
+    const vy = ey - oy;
+    const vz = ez - oz;
 
-    if (projectionLength < 0 || projectionLength > length) continue;
+    // Projection length along the ray direction (direction is expected to be normalized by caller)
+    const proj = vx * dx + vy * dy + vz * dz;
+    if (proj < 0 || proj > length) continue;
 
-    const closestPoint: [number, number, number] = [
-      ox + dx * projectionLength,
-      oy + dy * projectionLength,
-      oz + dz * projectionLength,
-    ];
+    // Closest point on the ray to the candidate
+    const cxp = ox + dx * proj;
+    const cyp = oy + dy * proj;
+    const czp = oz + dz * proj;
 
-    const distanceToBeam = Math.sqrt(
-      (ex - closestPoint[0]) ** 2 +
-        (ey - closestPoint[1]) ** 2 +
-        (ez - closestPoint[2]) ** 2,
-    );
+    const dist2 =
+      (ex - cxp) * (ex - cxp) +
+      (ey - cyp) * (ey - cyp) +
+      (ez - czp) * (ez - czp);
 
-    if (distanceToBeam <= beamRadius) {
+    if (dist2 <= beamRadius * beamRadius) {
       hits.push({
-        position: closestPoint,
-        targetId: candidate.id as unknown as number,
-        distance: projectionLength,
+        targetId: String(candidate.id),
+        position: [cxp, cyp, czp],
+        distance: proj,
       });
     }
   }
@@ -455,88 +417,20 @@ function fallbackBeamRaycast(
   return hits;
 }
 
-function normalize(direction: [number, number, number]) {
-  const [dx, dy, dz] = direction;
-  const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
-  if (length < POSITION_EPSILON) {
-    return null;
-  }
-  return [dx / length, dy / length, dz / length] as [number, number, number];
-}
-
-function vectorsEqual(
-  a: [number, number, number],
-  b: [number, number, number],
-) {
+// Helper utilities
+function vectorsEqual(a: [number, number, number], b: [number, number, number]) {
+  const eps = 1e-4;
   return (
-    Math.abs(a[0] - b[0]) <= POSITION_EPSILON &&
-    Math.abs(a[1] - b[1]) <= POSITION_EPSILON &&
-    Math.abs(a[2] - b[2]) <= POSITION_EPSILON
+    Math.abs(a[0] - b[0]) <= eps &&
+    Math.abs(a[1] - b[1]) <= eps &&
+    Math.abs(a[2] - b[2]) <= eps
   );
 }
 
-function extractPointFromRapierHit(
-  hit: Record<string, unknown>,
-  origin: [number, number, number],
-  direction: [number, number, number],
-  maxDistance: number,
-) {
-  const pointValue = hit["point"] ?? hit["hitPoint"] ?? hit["position"];
-  const parsedPoint = parsePoint(pointValue);
-  if (parsedPoint) {
-    return parsedPoint;
-  }
-
-  const toi = typeof hit["toi"] === "number" ? (hit["toi"] as number) : undefined;
-  if (typeof toi === "number") {
-    const distance = Math.min(Math.max(toi, 0), maxDistance);
-    return [
-      origin[0] + direction[0] * distance,
-      origin[1] + direction[1] * distance,
-      origin[2] + direction[2] * distance,
-    ] as [number, number, number];
-  }
-
-  const distance =
-    typeof hit["distance"] === "number" ? (hit["distance"] as number) : undefined;
-  if (typeof distance === "number") {
-    const clamped = Math.min(Math.max(distance, 0), maxDistance);
-    return [
-      origin[0] + direction[0] * clamped,
-      origin[1] + direction[1] * clamped,
-      origin[2] + direction[2] * clamped,
-    ] as [number, number, number];
-  }
-
-  return null;
-}
-
-function parsePoint(value: unknown) {
-  if (!value) return null;
-  if (Array.isArray(value) && value.length >= 3) {
-    const [x, y, z] = value;
-    if (
-      typeof x === "number" &&
-      typeof y === "number" &&
-      typeof z === "number"
-    ) {
-      return [x, y, z] as [number, number, number];
-    }
-  }
-  if (typeof value === "object") {
-    const v = value as Record<string, unknown>;
-    const x = v["x"];
-    const y = v["y"];
-    const z = v["z"];
-    if (
-      typeof x === "number" &&
-      typeof y === "number" &&
-      typeof z === "number"
-    ) {
-      return [x, y, z] as [number, number, number];
-    }
-  }
-  return null;
+function normalize(v: [number, number, number]) {
+  const len = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+  if (len <= 1e-9) return null;
+  return [v[0] / len, v[1] / len, v[2] / len] as [number, number, number];
 }
 
 function distanceAlongRay(
@@ -547,5 +441,8 @@ function distanceAlongRay(
   const dx = point[0] - origin[0];
   const dy = point[1] - origin[1];
   const dz = point[2] - origin[2];
-  return dx * direction[0] + dy * direction[1] + dz * direction[2];
+  const dot = dx * direction[0] + dy * direction[1] + dz * direction[2];
+  return dot;
 }
+
+// End of file

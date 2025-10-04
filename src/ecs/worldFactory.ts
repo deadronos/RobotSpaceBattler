@@ -15,7 +15,7 @@ export interface WorldController<T extends object> {
 }
 
 export function createWorldController<T extends object>(
-  options: WorldFactoryOptions<T> = {}
+  options: WorldFactoryOptions<T> = {},
 ): WorldController<T> {
   const world = new World<T>();
 
@@ -38,4 +38,3 @@ export function createWorldController<T extends object>(
 
   return { world, add, remove, reset };
 }
-

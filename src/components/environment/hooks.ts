@@ -2,6 +2,8 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { MeshStandardMaterial } from "three";
 
+import { useRng } from '../../utils/rngProvider';
+
 export interface EmissiveFlickerOptions {
   enabled?: boolean;
   baseIntensity?: number;
@@ -13,11 +15,12 @@ export function useEmissiveFlicker(
   material: MeshStandardMaterial,
   options: EmissiveFlickerOptions = {},
 ) {
+  const rng = useRng();
   const { enabled = true, speed = 2.4, amount = 0.18 } = options;
   const baseIntensityRef = useRef(
     options.baseIntensity ?? material.emissiveIntensity,
   );
-  const offset = useMemo(() => Math.random() * Math.PI * 2, []);
+  const offset = useMemo(() => rng() * Math.PI * 2, [rng]);
 
   useEffect(() => {
     baseIntensityRef.current =

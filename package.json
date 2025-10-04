@@ -17,6 +17,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "ci:test": "cross-env CI=true vitest run --coverage",
+    "ci:test:perf": "cross-env CI=true PERFORMANCE_STRICT=true vitest run --reporter verbose",
     "playwright:install": "playwright install",
     "playwright:test": "playwright test"
   },

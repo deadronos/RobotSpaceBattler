@@ -2,7 +2,7 @@
 
 **Last updated:** 2025-10-03
 
-This summary indexes the canonical Memory Bank files and describes their purpose. Keep this file brief — the authoritative content is in the individual files under `memory-bank/`.
+This summary indexes the canonical project context files and describes their purpose. Keep this file brief — the authoritative content is in the individual files now managed under `.specify/`.
 
 ## Purpose
 

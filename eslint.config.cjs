@@ -121,6 +121,24 @@ module.exports = [
     }
   },
 
+  // forbid Date.now() and Math.random() in simulation systems to prevent non-deterministic fallbacks
+  {
+    files: ['src/systems/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "MemberExpression[object.name='Date'][property.name='now']",
+          message: 'Use StepContext.simNowMs or a time provider instead of Date.now() in simulation systems.'
+        },
+        {
+          selector: "MemberExpression[object.name='Math'][property.name='random']",
+          message: 'Use StepContext.rng or a seeded RNG provider instead of Math.random() in simulation systems.'
+        }
+      ],
+    }
+  },
+
   // (vitest/playwright rules will be applied within the test-specific override where plugins are defined)
 
   // test-specific overrides (keep test env and a small set of local rules)

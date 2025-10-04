@@ -1,5 +1,5 @@
 import type { Query } from "miniplex";
-import { useRef,useSyncExternalStore } from "react";
+import { useRef, useSyncExternalStore } from "react";
 
 import type { Entity } from "./miniplexStore";
 import { subscribeEntityChanges } from "./miniplexStore";
@@ -21,8 +21,12 @@ export function useEcsQuery<T extends Entity>(query: Query<T>) {
   return useSyncExternalStore(
     (onStoreChange) => {
       // Wire up listeners to forward miniplex query events into React.
-      const unsubscribeAdded = query.onEntityAdded.subscribe(() => onStoreChange());
-      const unsubscribeRemoved = query.onEntityRemoved.subscribe(() => onStoreChange());
+      const unsubscribeAdded = query.onEntityAdded.subscribe(() =>
+        onStoreChange(),
+      );
+      const unsubscribeRemoved = query.onEntityRemoved.subscribe(() =>
+        onStoreChange(),
+      );
       const unsubscribeChanged = subscribeEntityChanges((entity) => {
         if (!entity || query.has(entity as T)) onStoreChange();
       });
@@ -47,7 +51,7 @@ export function useEcsQuery<T extends Entity>(query: Query<T>) {
         connRef.current = null;
       };
     },
-    () => query.entities as unknown as T[],
-    () => query.entities as unknown as T[],
+    () => query.entities as T[],
+    () => query.entities as T[],
   );
 }

@@ -2,8 +2,8 @@ import { BallCollider, RigidBody } from "@react-three/rapier";
 import React, { useEffect, useMemo, useRef } from "react";
 import { Mesh } from "three";
 
+import type { ProjectileComponent } from "../ecs/components/projectile";
 import type { Entity } from "../ecs/miniplexStore";
-import type { ProjectileComponent } from "../ecs/weapons";
 import { useEntityPhysicsSync } from "../hooks/useEntityPhysicsSync";
 import { ProjectileStreak } from "./ProjectileStreak";
 
@@ -29,7 +29,7 @@ export function Projectile({ entity }: { entity: ProjectileEntity }) {
   useEffect(() => {
     const mesh = meshRef.current;
     if (mesh) {
-      entity.render = mesh as unknown;
+      entity.render = mesh;
     }
     return () => {
       if (entity.render === mesh) {
@@ -48,9 +48,14 @@ export function Projectile({ entity }: { entity: ProjectileEntity }) {
       angularDamping={0}
       gravityScale={0}
       canSleep={false}
-      position={entity.position as unknown as [number, number, number]}
+      position={entity.position as [number, number, number]}
     >
-      <mesh ref={meshRef} castShadow={false} frustumCulled={false} name="ProjectileMesh">
+      <mesh
+        ref={meshRef}
+        castShadow={false}
+        frustumCulled={false}
+        name="ProjectileMesh"
+      >
         <sphereGeometry args={[0.28, 16, 16]} />
         <meshBasicMaterial color={colors.shell} />
       </mesh>

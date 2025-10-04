@@ -56,7 +56,10 @@ export function updateStreakState(
   }
 
   const speed = Math.sqrt(speedSq);
-  const length = Math.min(MAX_LENGTH, Math.max(MIN_LENGTH, speed * LENGTH_SCALE));
+  const length = Math.min(
+    MAX_LENGTH,
+    Math.max(MIN_LENGTH, speed * LENGTH_SCALE),
+  );
   const inv = 1 / speed;
   const nx = vx * inv;
   const ny = vy * inv;
@@ -112,7 +115,12 @@ export function ProjectileStreak({
   });
 
   return (
-    <mesh ref={meshRef} frustumCulled={false} castShadow={false} name="ProjectileStreak">
+    <mesh
+      ref={meshRef}
+      frustumCulled={false}
+      castShadow={false}
+      name="ProjectileStreak"
+    >
       <cylinderGeometry args={[0.5, 0.5, 1, 6, 1, true]} />
       <meshBasicMaterial color={color} transparent opacity={opacity} />
     </mesh>

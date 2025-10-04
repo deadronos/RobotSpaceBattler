@@ -1,6 +1,7 @@
 import {
   createRobotEntity,
   type Entity,
+  getGameplayId,
   notifyEntityChanged,
   resetWorld,
   type Team,
@@ -63,7 +64,7 @@ function createWeaponState(): WeaponStateComponent {
 export function spawnRobot(
   team: Team,
   weaponType: WeaponType,
-  options: { position?: Vec3; indexOverride?: number } = {},
+  options: { position?: Vec3; indexOverride?: number; idFactory?: () => string } = {},
 ) {
   const spawnIndex = options.indexOverride ?? countTeamRobots(team);
   const position = options.position ?? computeGridPosition(team, spawnIndex);
@@ -75,18 +76,21 @@ export function spawnRobot(
   const initialWeapon = {
     id: `weapon_${team}_${weaponType}_${spawnIndex}`,
     type: weaponType,
-    ownerId: -1, // will be corrected after entity is created
+    ownerId: "pending", // will be corrected after entity is created
     team,
     ...weaponProfiles[weaponType],
   } as WeaponComponent;
 
   const initialWeaponState = createWeaponState();
 
+  // Use provided idFactory to produce a deterministic gameplayId if present
+  const providedGameplayId = options.idFactory ? options.idFactory() : undefined;
   const robot = createRobotEntity({
     team,
     position,
     weapon: initialWeapon,
     weaponState: initialWeaponState,
+    gameplayId: providedGameplayId,
   }) as Entity & {
     weapon?: WeaponComponent;
     weaponState?: WeaponStateComponent;
@@ -94,7 +98,8 @@ export function spawnRobot(
 
   // Now that the entity has an id, fix the ownerId to the correct value.
   if (robot.weapon) {
-    robot.weapon.ownerId = robot.id as number;
+    const gameplayId = getGameplayId(robot) ?? String(robot.id ?? "");
+    robot.weapon.ownerId = gameplayId;
   }
 
   return robot;
@@ -104,13 +109,19 @@ export function spawnTeam(
   team: Team,
   loadout: WeaponType[],
   count = DEFAULT_TEAM_SIZE,
+  options?: { idFactory?: () => string },
 ) {
   const created: Entity[] = [];
   let spawnIndex = countTeamRobots(team);
 
   for (let i = 0; i < count; i += 1) {
     const weaponType = loadout[i % loadout.length];
-    created.push(spawnRobot(team, weaponType, { indexOverride: spawnIndex }));
+    created.push(
+      spawnRobot(team, weaponType, {
+        indexOverride: spawnIndex,
+        idFactory: options?.idFactory,
+      }),
+    );
     spawnIndex += 1;
   }
 

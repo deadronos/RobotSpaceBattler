@@ -50,9 +50,9 @@ export function Robot({ entity }: { entity: Entity }) {
     <RigidBody
       ref={(r) => {
         // store in ref and on entity
-        rbRef.current = r as unknown;
+        rbRef.current = r;
       }}
-      position={entity.position as unknown as [number, number, number]}
+      position={entity.position as [number, number, number]}
       colliders={false}
       canSleep={false}
     >
@@ -64,7 +64,7 @@ export function Robot({ entity }: { entity: Entity }) {
       </mesh>
       <CuboidCollider
         ref={(c) => {
-          colliderRef.current = c as unknown;
+          colliderRef.current = c;
         }}
         args={[0.4, 0.6, 0.4]}
       />

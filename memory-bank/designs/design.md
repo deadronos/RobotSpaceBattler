@@ -119,6 +119,3 @@ Note: The canonical `Entity` type is defined in `src/ecs/miniplexStore.ts` as a 
 - `src/ecs/miniplexStore.ts` — Entity typing and world wiring.
 - `src/systems/*` — Individual systems and their published events.
 - `src/hooks/useFixedStepLoop.ts`, `src/utils/fixedStepDriver.ts`, `src/utils/seededRng.ts` — determinism primitives.
-
-
-

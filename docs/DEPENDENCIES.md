@@ -101,3 +101,112 @@ This document is generated from package.json and installed package metadata. It 
 - vitest ^3.2.4 — Next generation testing framework powered by Vite
   - Repo: [github.com/vitest-dev/vitest](https://github.com/vitest-dev/vitest)
   - Docs: [vitest.dev](https://vitest.dev)
+
+## Physics Loop Configuration (React-Three-Rapier)
+
+**Decision**: Use `updateLoop="independent"` for @react-three/rapier
+
+**Rationale**:
+
+- Rapier runs its own physics loop independent of the render frame rate
+- Ensures smooth physics simulation even when rendering is slower or on-demand
+- The Simulation's fixed-step loop (via `useFixedStepLoop`) remains authoritative
+  for game logic and determinism
+- Physics updates are synced to ECS via `PhysicsSyncSystem` which copies RigidBody
+  transforms to entity positions
+- This separation allows visual coherence while maintaining deterministic gameplay
+  logic
+
+**Alternative Considered**: `updateLoop="follow"` would tie Rapier's updates directly
+to render frames, but this would couple physics timing to render performance and
+could introduce non-determinism.
+
+**Verification**: Integration tests confirm that with `independent` mode:
+
+1. Fixed-step gameplay logic remains deterministic (seeded tests produce identical
+   traces)
+2. Physics visuals remain smooth during variable frame rates
+3. Pause/resume functionality works correctly without physics drift
+
+**References**:
+
+- [React Three Rapier Docs - Physics Configuration](https://docs.pmnd.rs/react-three-rapier)
+- See `src/components/Scene.tsx` for implementation
+- See `src/systems/PhysicsSyncSystem.ts` for ECS-physics synchronization
+
+## StepContext harness & observability
+
+- For deterministic tests, use `src/utils/fixedStepDriver.ts` to create a seeded `FixedStepDriver`.
+  The driver exposes `stepOnce()` which returns a `StepContext` object (frameCount, simNowMs,
+  rng, idFactory) that can be passed into systems for deterministic evaluation. Example:
+
+  ```ts
+  import { createFixedStepDriver } from '../src/utils/fixedStepDriver';
+  const driver = createFixedStepDriver(12345, 1/60);
+  const ctx = driver.stepOnce();
+  mySystem(world, ctx);
+  ```
+
+- Diagnostics: The project exposes a runtime event log (bounded ring buffer) and
+  fixed-step metrics. Enable `showFixedStepMetrics` in the Diagnostics overlay to surface
+  steps-per-frame, backlog, last rAF timestamp, and invalidation counts. These metrics are
+  useful when validating rAF-driven TickDriver behavior and physics update-loop coherence.
+
+## Physics Adapter (Rapier integration)
+
+- The repository exposes a small physics adapter abstraction in `src/utils/physicsAdapter.ts`.
+  - `createRapierAdapter({ world, mapHitToEntityId })` wraps a Rapier-compatible world object
+    (for example the Rapier world returned by `useRapier()` or the low-level Rapier instance).
+  - The adapter exposes `raycast`, `overlapSphere` and `proximity` methods and will try
+    common Rapier entry points (`raycast`, `castRay`, `queryPipeline.castRay`, `raw.castRay`) in
+    prioritized order.
+  - `mapHitToEntityId(hit)` can be provided to map Rapier collider/body objects to ECS entity
+    ids. If omitted the adapter uses `extractEntityIdFromRapierHit()` heuristics.
+
+- Tests and contract helpers also provide `createDeterministicAdapter(seed)` for deterministic
+  unit tests and parity checks.
+
+- Usage example (in application code):
+
+```ts
+import { createRapierAdapter } from '../src/utils/physicsAdapter';
+import { useRapier } from '@react-three/rapier';
+
+function usePhysicsAdapter() {
+  const { world } = useRapier();
+  const adapter = createRapierAdapter({ world });
+  return adapter;
+}
+```
+
+### Rapier collider userData conventions
+
+When mapping Rapier collider/body objects back to ECS entities the codebase uses a small set
+of conventions to simplify adapters and unit tests. The helper `extractEntityIdFromRapierHit`
+implements the lookup heuristics used across systems. Important notes:
+
+- Gameplay IDs in the simulation are canonicalized to strings. When mapping a Rapier hit to
+  an ECS entity the adapter should return the entity's gameplay id as a string (`"42"`).
+
+- Preferred Rapier payload fields the adapter will inspect (in order):
+  - `collider.userData.id` — numeric or string id set on collider's userData (adapter will stringify numeric ids)
+  - `collider.entityId` — numeric or string id set directly on the collider wrapper
+  - `body.__entityId` or `collider.__entityId` — private/internal numeric markers set by some runtimes
+
+Adapters should prefer `mapHitToEntityId(hit)` when available and fall back to
+`extractEntityIdFromRapierHit(hit)` as a heuristic. Unit tests in
+`tests/contracts/rapierAdapter.contract.test.ts` assert that the adapter will correctly
+read ids from these common fields and that ids are returned as strings for canonical
+consumption by game systems.
+
+## Performance Benchmarks
+
+- `tests/performance.benchmark.test.ts` now enforces a 16ms average fixed-step budget by
+  default. Override the threshold with `PERFORMANCE_TARGET_MS` when profiling different
+  hardware, or set `PERFORMANCE_MODE=observe` / `PERFORMANCE_DISABLE=true` to gather
+  metrics without failing the suite (strict mode overrides these relaxations).
+- CI pipelines should run `npm run ci:test:perf`, which sets `PERFORMANCE_STRICT=true`
+  to guarantee the 16ms target remains enforced on every merge.
+- The shared helper `tests/helpers/performanceBudget.ts` centralizes the environment
+  parsing logic so contract and integration performance tests stay aligned.
+

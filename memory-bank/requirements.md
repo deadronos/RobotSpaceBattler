@@ -31,4 +31,4 @@ All requirements below are written in EARS format. Each requirement includes an 
 
 Notes:
 - These requirements are intentionally implementation-aligned: they describe the current authoritative behaviors and map to existing tests so they can be used as acceptance checks during future changes.
-- If a requirement needs to be broadened (for example to include networking), add a research/Design task to `memory-bank/tasks/` and include acceptance criteria for the new behavior.
+- If a requirement needs to be broadened (for example to include networking), add a research/Design task to `.specify/tasks/` and include acceptance criteria for the new behavior.

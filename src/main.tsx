@@ -11,18 +11,19 @@ import { resetAndSpawnDefaultTeams } from "./robots/spawnControls";
 // that any query connections created during the first render will see the
 // initial entities and render them immediately.
 if (world.entities.length === 0) {
-	try {
-		resetAndSpawnDefaultTeams();
-	} catch {
-		// ignore errors during early dev-time boot
-	}
+  try {
+    resetAndSpawnDefaultTeams();
+  } catch {
+    // ignore errors during early dev-time boot
+  }
 }
 
 const root = createRoot(document.getElementById("root")!);
 root.render(
-	<StrictMode>
-		<App />
-	</StrictMode>);
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
 
 // DEV: expose ECS world for end-to-end debugging and automated checks
 // dev-only debug hooks removed

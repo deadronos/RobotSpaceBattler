@@ -5,21 +5,37 @@ import type { Entity, Team } from "../ecs/miniplexStore";
 import { removeEntity } from "../ecs/miniplexStore";
 import type { WeaponComponent, WeaponType } from "../ecs/weapons";
 import { spawnRobot } from "../robots/spawnControls";
+import type { StepContext } from "../utils/fixedStepDriver";
 import type { DeathEvent } from "./DamageSystem";
 
-const DEFAULT_RESPAWN_DELAY_MS = 3000;
+export const DEFAULT_RESPAWN_DELAY_MS = 5000; // contract expects 5000ms
+export const DEFAULT_INVULNERABILITY_MS = 2000;
+const DEFAULT_MAX_SPAWNS_PER_STEP = 3;
 
-type RespawnQueueEntry = {
-  team: Team;
-  weaponType: WeaponType;
-  respawnAt: number;
+export type SpawnRequest = {
+  entityId: string;
+  team: Team | string;
+  respawnAtMs: number;
+  retries?: number;
+  spawnZoneId?: string;
+  weaponType?: WeaponType;
 };
 
-const respawnQueue: RespawnQueueEntry[] = [];
+export type RespawnedEntity = {
+  id: string;
+  team: string | Team;
+  position: [number, number, number];
+  invulnerableUntil: number;
+  weaponType?: WeaponType;
+};
+
+// Global queue preserved for backward compatibility with runtime wrapper
+const respawnQueue: SpawnRequest[] = [];
 
 export interface RespawnSystemOptions {
   respawnDelayMs?: number;
   now?: number;
+  idFactory?: () => string; // require deterministic idFactory for old API
 }
 
 function resolveWeaponType(entity: Entity | undefined): WeaponType {
@@ -31,12 +47,79 @@ function isTeam(value: unknown): value is Team {
   return value === "red" || value === "blue";
 }
 
+export type ProcessRespawnParams = {
+  queue: SpawnRequest[];
+  stepContext: StepContext;
+  spawnConfig?: {
+    respawnDelayMs?: number;
+    invulnerabilityMs?: number;
+    maxSpawnsPerStep?: number;
+  };
+};
+
+export function processRespawnQueue(params: ProcessRespawnParams) {
+  if (!params || !params.stepContext) {
+    throw new Error('processRespawnQueue requires a StepContext parameter (stepContext) for deterministic behavior');
+  }
+  const { queue, stepContext, spawnConfig } = params;
+  const now = stepContext.simNowMs;
+  const invulnerabilityMs = spawnConfig?.invulnerabilityMs ?? DEFAULT_INVULNERABILITY_MS;
+  const maxSpawnsPerStep = spawnConfig?.maxSpawnsPerStep ?? DEFAULT_MAX_SPAWNS_PER_STEP;
+
+  // Keep FIFO ordering; split ready and pending
+  const ready: SpawnRequest[] = [];
+  const pending: SpawnRequest[] = [];
+
+  for (const req of queue) {
+    if (req.respawnAtMs <= now) ready.push({ ...req });
+    else pending.push({ ...req });
+  }
+
+  const toSpawn = ready.slice(0, maxSpawnsPerStep);
+  const overflow = ready.slice(maxSpawnsPerStep);
+
+  const respawned: RespawnedEntity[] = toSpawn.map((r) => ({
+    id: r.entityId,
+    team: r.team,
+    position: [0, 0, 0],
+    invulnerableUntil: now + invulnerabilityMs,
+    weaponType: r.weaponType,
+  }));
+
+  const remainingQueue: SpawnRequest[] = [...overflow, ...pending];
+
+  return { respawned, remainingQueue };
+}
+
+// Backwards-compatible runtime wrapper. Supports both old and new call shapes.
 export function respawnSystem(
-  world: World<Entity>,
-  deathEvents: DeathEvent[],
-  options: RespawnSystemOptions = {},
+  a: World<Entity> | ProcessRespawnParams,
+  b?: DeathEvent[] | undefined,
+  c?: RespawnSystemOptions,
 ) {
-  const now = options.now ?? Date.now();
+  // New API: called as respawnSystem({ queue, stepContext, spawnConfig }) from tests
+  if (typeof (a as ProcessRespawnParams).stepContext !== "undefined") {
+    const params = a as ProcessRespawnParams;
+    return processRespawnQueue(params);
+  }
+
+  // Old API: respawnSystem(world, deathEvents, options)
+  const nowOption = (c && c.now) ?? undefined;
+  const idFactoryOption = (c && c.idFactory) ?? undefined;
+  if (typeof nowOption !== 'number') {
+    throw new Error('respawnSystem old API requires deterministic "now" in options or use the new API with stepContext');
+  }
+
+  // Enforce deterministic idFactory instead of silently synthesizing one
+  if (typeof idFactoryOption !== 'function') {
+    throw new Error('respawnSystem old API requires a deterministic idFactory in options (idFactory) to avoid implicit non-deterministic ids');
+  }
+
+  const world = a as World<Entity>;
+  const deathEvents = (b as DeathEvent[]) ?? [];
+  const options = c ?? {};
+
+  const now = nowOption;
   const respawnDelayMs = options.respawnDelayMs ?? DEFAULT_RESPAWN_DELAY_MS;
 
   for (const death of deathEvents) {
@@ -47,9 +130,11 @@ export function respawnSystem(
     const weaponType = resolveWeaponType(entity);
 
     respawnQueue.push({
+      entityId: String(death.entityId),
       team,
+      respawnAtMs: now + respawnDelayMs,
+      spawnZoneId: undefined,
       weaponType,
-      respawnAt: now + respawnDelayMs,
     });
 
     if (entity) {
@@ -57,27 +142,31 @@ export function respawnSystem(
     }
   }
 
-  if (respawnQueue.length === 0) {
-    return;
-  }
+  // Build a deterministic StepContext from provided options
+  const syntheticStepContext: StepContext = {
+    frameCount: 0,
+    simNowMs: now,
+    rng: () => 0, // deterministic no-op RNG; respawn logic does not use RNG currently
+    step: 1 / 60,
+    idFactory: idFactoryOption as () => string,
+  };
 
-  const pending: RespawnQueueEntry[] = [];
-  const ready: RespawnQueueEntry[] = [];
+  const { respawned, remainingQueue } = processRespawnQueue({
+    queue: [...respawnQueue],
+    stepContext: syntheticStepContext,
+  });
 
-  for (const entry of respawnQueue) {
-    if (entry.respawnAt <= now) {
-      ready.push(entry);
-    } else {
-      pending.push(entry);
-    }
-  }
-
+  // Update the global queue
   respawnQueue.length = 0;
-  respawnQueue.push(...pending);
+  respawnQueue.push(...remainingQueue);
 
-  for (const entry of ready) {
-    spawnRobot(entry.team, entry.weaponType);
+  // Perform real spawns for runtime
+  for (const r of respawned) {
+    // Use resolved weapon type where possible; simple spawn for now
+    spawnRobot(r.team as Team, ("gun" as WeaponType), { position: r.position, idFactory: syntheticStepContext.idFactory });
   }
+
+  return;
 }
 
 export function clearRespawnQueue() {

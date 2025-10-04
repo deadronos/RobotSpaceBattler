@@ -55,7 +55,7 @@
 - [TASK009] Simulation: FX system scaffold - Completed on 2025-09-17.
 
   - Added event-driven `FxSystem`, `FXLayer` renderer, `showFx` flag, and unit test.
-- [TASK001] Bootstrap memory bank files - Created initial `memory-bank` files and tasks.
+- [TASK001] Bootstrap project context files - Created initial `.specify` files and tasks.
 - [TASK002] Add deterministic RNG helper - Completed on 2025-09-15.
 - [TASK003] Add unit tests for physics sync - Completed.
 

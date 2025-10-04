@@ -1,4 +1,4 @@
-export type EntityId = number | string;
+export type EntityId = string;
 
 export interface IdentifiableEntity {
   id?: EntityId;
@@ -7,40 +7,43 @@ export interface IdentifiableEntity {
 export type EntityChangeListener<T> = (entity: T | undefined) => void;
 
 export interface EntityLookup<T extends IdentifiableEntity> {
-  ensureEntityId(entity: T): number | undefined;
+  ensureEntityId(entity: T): string | undefined;
   track(entity: T): void;
   untrack(entity: T): void;
-  getById(id: number): T | undefined;
+  getById(id: string): T | undefined;
   clear(): void;
   subscribe(listener: EntityChangeListener<T>): () => void;
   notify(entity: T | undefined): void;
   nextNumericId(): number;
 }
 
-export function createEntityLookup<T extends IdentifiableEntity>(): EntityLookup<T> {
+export function createEntityLookup<
+  T extends IdentifiableEntity,
+>(): EntityLookup<T> {
   let nextId = 1;
-  const lookup = new Map<number, T>();
+  const lookup = new Map<string, T>();
   const listeners = new Set<EntityChangeListener<T>>();
 
   const track = (entity: T) => {
-    if (typeof entity.id === "number") {
+    if (typeof entity.id === "string") {
       lookup.set(entity.id, entity);
-      if (entity.id >= nextId) {
-        nextId = entity.id + 1;
+      const asNum = Number(entity.id);
+      if (!Number.isNaN(asNum) && asNum >= nextId) {
+        nextId = Math.floor(asNum) + 1;
       }
     }
   };
 
   const untrack = (entity: T) => {
-    if (typeof entity.id === "number") {
+    if (typeof entity.id === "string") {
       lookup.delete(entity.id);
     }
   };
 
   const ensureEntityId = (entity: T) => {
-    if (typeof entity.id !== "number") {
-      const generatedId = nextId++;
-      (entity as T & { id: number }).id = generatedId;
+    if (typeof entity.id !== "string") {
+      const generatedId = String(nextId++);
+      (entity as T & { id: string }).id = generatedId;
       lookup.set(generatedId, entity);
       return generatedId;
     }
@@ -49,7 +52,7 @@ export function createEntityLookup<T extends IdentifiableEntity>(): EntityLookup
     return entity.id;
   };
 
-  const getById = (id: number) => lookup.get(id);
+  const getById = (id: string) => lookup.get(id);
 
   const clear = () => {
     lookup.clear();
