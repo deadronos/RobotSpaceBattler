@@ -272,10 +272,10 @@
         `docs/DEPENDENCIES.md` and add CI job proposal for strict runs.
       - Depends on: T030 (existing perf tasks).
 
-- [ ] T016H Golden trace helper (optional)
+- [x] T016H Golden trace helper (optional)
       - Files: `tests/golden/generate.ts`, `tests/golden/README.md`
       - Add a helper script for producing deterministic golden traces (JSON/NDJSON) from `FixedStepDriver` runs.
-      - Depends on: T016F (if NDJSON format chosen) and T016E naming parity.
+      - IMPLEMENTED: Added `src/utils/golden.ts` (builders/readers/comparators), `tests/golden/generate.ts` script and `tests/golden/README.md`. Helpers produce combined NDJSON traces (events / projectiles / entity snapshots) and compare them against checked-in golden fixtures.
 
 ## Phase 3.6: Loop Synchronization and Timing
 
