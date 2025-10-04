@@ -33,9 +33,19 @@ Contract: raycast
 - Tolerances: when using deterministic adapter heuristics, `toi` may be computed geometrically;
   tests should allow a tolerance of 1e-6 for floating-point differences.
 - Determinism: for identical origin/direction/maxDistance, adapters must produce equivalent
-  results (same `targetId` and `toi` ordering). If multiple colliders exist at the same `toi`,
-  adapters must deterministically choose the same hit according to a stable tie-breaker
-  (for example, collider id string ascending).
+  results (same `targetId` and `toi` ordering). If multiple colliders exist at the same `toi`, adapters must deterministically choose
+  the same hit using a stable metadata-based tie-breaker. Implementations SHOULD:
+
+  1. Collect a deterministic metadata object from the collider (for example: sorted
+     subset of `collider.userData` keys that are stable across runs).
+  2. Serialize that metadata using a canonical order (sort object keys), then compute
+     a stable, deterministic hash (for example, FNV-1a or another stable, non-cryptographic
+     hash) over the serialized string.
+  3. Use the resulting hash value to break ties (ascending hash value) so both adapters
+     choose the same hit given identical scene state.
+
+  Tests should assert that both adapters resolve the same `targetId` and chosen hit
+  when multiple colliders share an identical `toi` in canonical scenarios.
 
 Contract: overlapSphere
 

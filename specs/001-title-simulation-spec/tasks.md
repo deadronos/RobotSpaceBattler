@@ -379,3 +379,41 @@ tasks run T009
       - Action: Scanned repository for `Date.now()` and `Math.random()` usages and classified them.
       - Result: Simulation-critical code (under `src/systems`) contains no `Date.now()`/`Math.random()` calls.
       - Remaining uses are limited to UI and perf tests. See `docs/non-deterministic-usage.md` for details.
+
+- [ ] T030 Performance CI integration & benchmark enforcement
+      - Files: `.github/workflows/ci-perf.yml` (proposed), `tests/performance.benchmark.test.ts`
+      - Create a CI job proposal/workflow that runs `npm run ci:test:perf` with
+        `PERFORMANCE_STRICT=true` and publishes benchmark output as build
+        artifacts.
+      - Ensure the job is toggleable and document runner size/labels for
+        consistent CI runs.
+      - Purpose: make the 16ms enforcement reproducible in CI and provide an artifact for maintainers.
+      - Depends on: T016G (policy) — run after the performance target has been finalized.
+
+- [x] T033 Deterministic Physics Adapter — TDD (test): author contract tests in
+      `tests/contracts/physicsAdapter.contract.test.ts` asserting parity between a
+      `rapierAdapter` and a `deterministicAdapter` for canonical operations (raycast,
+      overlap, proximity checks).
+      - Note: a new contract file `specs/001-title-simulation-spec/contracts/physics-adapter-contract.md`
+        defines expected shapes, tie-breaker rules, and acceptance scenarios; implement tests to reference
+        that contract directly.
+
+- [P] T033B Physics adapter parity contract test — `tests/contracts/physicsAdapter.contract.test.ts`
+      - Files: `specs/001-title-simulation-spec/contracts/physics-adapter-contract.md`,
+        `tests/contracts/physicsAdapter.contract.test.ts`
+      - Author contract tests that exercise raycast, overlapSphere, and proximityQuery parity scenarios
+        described in the contract. Include edge grazing and multiple-collider tie-breaker verification.
+      - Parallelizable: can run independently of other contract tests.
+
+- [P] T033C Implement canonical collider metadata hash helper
+      - Files: `src/utils/physicsAdapter.ts`, `src/utils/hash.ts`, `tests/unit/physicsAdapterHash.test.ts`
+      - Implement a small helper that extracts deterministic collider metadata,
+        serializes with sorted keys, and produces a stable non-cryptographic
+        hash.
+      - Export this helper and use it from both the Rapier adapter and the
+        deterministic adapter to ensure identical tie-breaking. Add unit tests
+        asserting stable outputs across example inputs.
+      - Notes: keep helper small (<120 LOC). Use a non-crypto algorithm (FNV or similar) and document algorithm
+        choice in a comment so tests can recreate expected hash values.
+      - Depends on: T033B (tests reference the helper in parity scenarios) — implement helper first or in
+        parallel with contract tests; mark as [P] because it touches different files.

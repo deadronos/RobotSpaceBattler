@@ -284,6 +284,10 @@ when invoking respawn logic.
 - Q: Path style for plans and artifacts → A: A (Use repository-relative paths only; avoid
   hardcoding absolute filesystem paths in plans and specs).
 
+### Session 2025-10-04
+
+- Q: Tie-breaker for raycast hits when multiple colliders are at identical `toi` → A: Deterministic stable hash of collider metadata (sorted keys JSON).
+
 ---
 
 ## Ambiguities & Questions (NEEDS CLARIFICATION)
@@ -447,6 +451,8 @@ Acceptance:
   absolute filesystem paths. This avoids environment-specific hardcoding and improves
   portability of generated artifacts and instructions.
 
+<!-- integration note: adapter parity tie-breaker recorded above; see physics-adapter-contract.md for canonical rules -->
+
 ---
 
 ## Files & Mapping to Current Implementation
@@ -500,3 +506,5 @@ adapter and the deterministic testing adapter. The parity contract is specified 
 The contract enumerates the exact returned fields, error behaviors, and ordering guarantees
 for adapter operations (raycast, overlap checks, proximity queries). Implementations and
 tests must reference that contract for acceptance.
+
+<!-- integration note: adapter parity tie-breaker recorded above; see physics-adapter-contract.md for canonical rules -->

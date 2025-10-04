@@ -239,3 +239,12 @@ complete (Phase 4). Prioritize remediation and CI/benchmark decisions.
   implementation task: update `src/systems/ScoringSystem.ts` to implement deterministic
   classification, scoring deltas, and append audit entries to a new
   `src/utils/runtimeEventLog.ts`.
+
+## Physics Adapter (Rapier integration)
+
+...existing content...
+
+- Tie-breaker decision: when multiple colliders report identical `toi`, adapters shall break ties
+  using a deterministic stable hash of serialized collider metadata (sorted keys JSON). See
+  `specs/001-title-simulation-spec/contracts/physics-adapter-contract.md` for the canonical rules
+  and recommended hashing approach.
