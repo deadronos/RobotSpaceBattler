@@ -18,6 +18,9 @@ export interface PhysicsAdapter {
   ) => RaycastAny;
   overlapSphere: (center: { x: number; y: number; z: number }, radius: number) => boolean;
   proximity: (origin: { x: number; y: number; z: number }, radius: number) => boolean;
+  // Optional: return mapped entity ids for colliders overlapping the given sphere.
+  // When unsupported, implementations should return null.
+  overlapSphereEntities?: (center: { x:number;y:number;z:number }, radius: number) => Array<string> | null;
 }
 
 export function createRapierAdapter(options: {
@@ -43,7 +46,55 @@ export function createRapierAdapter(options: {
     return callProximity(rapierWorld as RapierWorldLike | undefined, origin, radius);
   }
 
-  return { raycast, overlapSphere, proximity };
+  function overlapSphereEntities(center: { x:number;y:number;z:number }, radius: number) {
+    // Attempt to use queryPipeline/intersectionsWithSphere when available and
+    // map the payloads via mapHit. Return null when not supported.
+    const rw = rapierWorld as RapierWorldLike | undefined;
+    if (!rw) return null;
+    try {
+      if (rw.queryPipeline && typeof rw.queryPipeline.intersectionsWithSphere === 'function') {
+        const hits: string[] = [];
+        try {
+          const qp = rw.queryPipeline as { intersectionsWithSphere?: (...args: unknown[]) => unknown };
+          const bodies = rw.bodies;
+          const colliders = rw.colliders;
+          qp.intersectionsWithSphere!(bodies, colliders, { x: center.x, y: center.y, z: center.z }, radius, true, (hit: unknown) => {
+            const id = mapHit(hit);
+            if (id) hits.push(id);
+            return true;
+          });
+          return hits.length > 0 ? hits : [];
+        } catch {
+          return null;
+        }
+      }
+
+      // Some wrappers support intersectionWithShape which can act similarly.
+      if (typeof rw.intersectionWithShape === 'function') {
+        try {
+          const raw = rw.intersectionWithShape({ x: center.x, y: center.y, z: center.z }, radius);
+          if (!raw) return null;
+          if (Array.isArray(raw)) {
+            const out: string[] = [];
+            for (const item of raw) {
+              const id = mapHit(item);
+              if (id) out.push(id);
+            }
+            return out;
+          }
+          const id = mapHit(raw);
+          return id ? [id] : [];
+        } catch {
+          return null;
+        }
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
+  return { raycast, overlapSphere, overlapSphereEntities, proximity };
 }
 
 export function createDeterministicAdapter(_seed: number) {
@@ -209,6 +260,47 @@ export function callOverlapSphere(world: RapierWorldOrAdapter | undefined, cente
 
 export function callProximity(world: RapierWorldOrAdapter | undefined, origin: { x:number;y:number;z:number }, radius: number) {
   return callOverlapSphere(world, origin, radius);
+}
+
+export function callOverlapSphereEntities(
+  world: RapierWorldOrAdapter | undefined,
+  center: { x:number;y:number;z:number },
+  radius: number,
+  mapHit: (hit: unknown) => string | undefined = extractEntityIdFromRapierHit,
+) {
+  if (!world) return null;
+  const adapter = world as PhysicsAdapter;
+  if (adapter && typeof adapter.overlapSphereEntities === 'function') {
+    try { return adapter.overlapSphereEntities(center, radius); } catch { /* fall through */ }
+  }
+  const rw = world as RapierWorldLike | undefined;
+  if (!rw) return null;
+  try {
+    if (rw.queryPipeline && typeof rw.queryPipeline.intersectionsWithSphere === 'function') {
+      try {
+        const hits: string[] = [];
+        const qp = rw.queryPipeline as { intersectionsWithSphere?: (...args: unknown[]) => void };
+        const bodies = rw.bodies;
+        const colliders = rw.colliders;
+        qp.intersectionsWithSphere!(bodies, colliders, { x: center.x, y: center.y, z: center.z }, radius, true, (hit: unknown) => {
+          const id = mapHit(hit);
+          if (id) hits.push(id);
+          return true;
+        });
+        return hits.length > 0 ? hits : [];
+      } catch { /* ignore */ }
+    }
+    if (typeof rw.intersectionWithShape === 'function') {
+      try {
+        const out = rw.intersectionWithShape({ x: center.x, y: center.y, z: center.z }, radius);
+        if (!out) return null;
+        if (Array.isArray(out)) return out.map((h) => mapHit(h)).filter(Boolean) as string[];
+        const id = mapHit(out);
+        return id ? [id] : [];
+      } catch { /* ignore */ }
+    }
+  } catch { /* ignore */ }
+  return null;
 }
 
 // Retrieve multiple intersections along a ray when the engine provides an

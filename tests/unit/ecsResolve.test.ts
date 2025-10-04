@@ -7,6 +7,11 @@ describe('ecsResolve helpers', () => {
     resetWorld();
     const a = createRobotEntity({ gameplayId: 'robot-alpha', team: 'red' });
     const b = createRobotEntity({ gameplayId: 'robot-beta', team: 'blue' });
+    // DEBUG: print created entities to understand ID assignment
+    // eslint-disable-next-line no-console
+    console.log('DEBUG createRobotEntity a:', JSON.stringify(a));
+    // eslint-disable-next-line no-console
+    console.log('DEBUG createRobotEntity b:', JSON.stringify(b));
 
     // Resolve by gameplayId string
     const ra = resolveEntity(world, 'robot-alpha');

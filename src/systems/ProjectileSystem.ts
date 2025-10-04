@@ -5,7 +5,7 @@ import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
 import { type Entity, notifyEntityChanged } from "../ecs/miniplexStore";
 import type { DamageEvent, WeaponComponent } from "../ecs/weapons";
 import type { StepContext } from "../utils/fixedStepDriver";
-import { callOverlapSphere, callRaycast, type RapierWorldOrAdapter as RapierWorldOrAdapterType } from "../utils/physicsAdapter";
+import { callOverlapSphere, callOverlapSphereEntities, callRaycast, type RapierWorldOrAdapter as RapierWorldOrAdapterType } from "../utils/physicsAdapter";
 import type { Rng } from "../utils/seededRng";
 import type { WeaponFiredEvent } from "./WeaponSystem";
 
@@ -241,33 +241,52 @@ function checkProjectileCollision(
   // scanning the entire world when a physics engine is present.
   if (rapierWorld) {
     try {
-      const overlap = callOverlapSphere(rapierWorld, { x: position[0], y: position[1], z: position[2] }, 1);
-      if (overlap) {
-        // Compute a short ray from previous position to current position to
-        // try and get a mapped target id from physics.
-        const prevPos: [number, number, number] = [
-          position[0] - velocity[0] * dt,
-          position[1] - velocity[1] * dt,
-          position[2] - velocity[2] * dt,
-        ];
-        const dir = [
-          position[0] - prevPos[0],
-          position[1] - prevPos[1],
-          position[2] - prevPos[2],
-        ] as [number, number, number];
-        const len = Math.sqrt(dir[0]*dir[0] + dir[1]*dir[1] + dir[2]*dir[2]);
-        const normDir: [number, number, number] = len > 1e-9 ? [dir[0]/len, dir[1]/len, dir[2]/len] : [0,0,0];
-        const rayRes = callRaycast(rapierWorld, { x: prevPos[0], y: prevPos[1], z: prevPos[2] }, { x: normDir[0], y: normDir[1], z: normDir[2] }, len || 1);
-        if (rayRes && typeof rayRes === 'object') {
-          const id = (rayRes as Record<string, unknown>)['targetId'] ?? (rayRes as Record<string, unknown>)['id'];
-          if (id !== undefined) {
-            const idStr = String(id);
-            const target = resolveEntity(world, idStr);
-            if (target) {
-              if (!friendlyFire && (target as { team?: string }).team === projectileTeam) {
-                impactedAny = true;
-              } else {
-                return { targetId: idStr };
+      const ids = callOverlapSphereEntities(rapierWorld, { x: position[0], y: position[1], z: position[2] }, 1);
+      if (ids !== null) {
+        // Adapter provided an entity list (maybe empty). If entities are
+        // present, prefer the first mapped valid target that satisfies
+        // friendly-fire rules.
+        for (const idRaw of ids) {
+          const idStr = String(idRaw);
+          const target = resolveEntity(world, idStr);
+          if (!target) continue;
+          if (!friendlyFire && (target as { team?: string }).team === projectileTeam) {
+            impactedAny = true; // mark as impacted for AoE behaviour
+            continue;
+          }
+          return { targetId: idStr };
+        }
+        // If ids array empty or no valid target found, fall through to other
+        // strategies (short raycast or world scan below).
+      } else {
+        // Fallback for adapters that do not support entity-list queries: keep
+        // the previous conservative overlap+raycast mapping approach.
+        const overlap = callOverlapSphere(rapierWorld, { x: position[0], y: position[1], z: position[2] }, 1);
+        if (overlap) {
+          const prevPos: [number, number, number] = [
+            position[0] - velocity[0] * dt,
+            position[1] - velocity[1] * dt,
+            position[2] - velocity[2] * dt,
+          ];
+          const dir = [
+            position[0] - prevPos[0],
+            position[1] - prevPos[1],
+            position[2] - prevPos[2],
+          ] as [number, number, number];
+          const len = Math.sqrt(dir[0]*dir[0] + dir[1]*dir[1] + dir[2]*dir[2]);
+          const normDir: [number, number, number] = len > 1e-9 ? [dir[0]/len, dir[1]/len, dir[2]/len] : [0,0,0];
+          const rayRes = callRaycast(rapierWorld, { x: prevPos[0], y: prevPos[1], z: prevPos[2] }, { x: normDir[0], y: normDir[1], z: normDir[2] }, len || 1);
+          if (rayRes && typeof rayRes === 'object') {
+            const id = (rayRes as Record<string, unknown>)['targetId'] ?? (rayRes as Record<string, unknown>)['id'];
+            if (id !== undefined) {
+              const idStr = String(id);
+              const target = resolveEntity(world, idStr);
+              if (target) {
+                if (!friendlyFire && (target as { team?: string }).team === projectileTeam) {
+                  impactedAny = true;
+                } else {
+                  return { targetId: idStr };
+                }
               }
             }
           }

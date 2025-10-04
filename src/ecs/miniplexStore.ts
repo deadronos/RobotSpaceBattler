@@ -134,6 +134,11 @@ export function createRobotEntity(init: Partial<Entity> = {}): Entity {
   };
 
   const assignedId = entityLookup.ensureEntityId(entity);
+  // DEBUG: log id assignment for unit tests failing in CI to investigate why
+  // some created entities are observed without an 'id' property in tests.
+  // This logging is temporary and should be removed once the underlying
+  // issue is diagnosed.
+  console.log(`[createRobotEntity] assignedId=${assignedId} entity.id=${(entity as any).id}`);
 
   const gameplayId = ensureGameplayId(
     entity.gameplayId ?? init.robot?.id ?? assignedId ?? entity.id,

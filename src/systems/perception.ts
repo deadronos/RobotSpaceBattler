@@ -2,6 +2,7 @@ import type { World } from "miniplex";
 
 import type { Entity } from "../ecs/miniplexStore";
 import type { RapierWorldOrAdapter } from "../utils/physicsAdapter";
+import { callRaycast } from "../utils/physicsAdapter";
 
 /**
  * Lightweight perception utilities used by AI systems.
@@ -35,92 +36,31 @@ export function performLineOfSight(
     toTarget[2] / distance,
   ];
 
-  // If a Rapier physics world was provided, try to perform a physics raycast.
-  // We don't rely on exact typings here because react-three-rapier exposes
-  // several possible helpers; attempt common call shapes and interpret the
-  // returned "toi" (time of impact) to determine whether an occluder exists
-  // before the target. If anything fails, fall back to the heuristic below.
+  // If a Rapier physics world was provided, try to perform a physics raycast
+  // using the centralized adapter helper. This avoids duplicating wrapper
+  // heuristics across systems.
   if (rapierWorld) {
     try {
-      const ox = origin[0];
-      const oy = origin[1];
-      const oz = origin[2];
+      const originVec = { x: origin[0], y: origin[1], z: origin[2] };
       const dirVec = { x: dir[0], y: dir[1], z: dir[2] };
-      const originVec = { x: ox, y: oy, z: oz };
-
-      // Try a few common call patterns that different rapier wrappers expose.
-      const rw = rapierWorld as Record<string, unknown> | undefined;
-      let hit: unknown = undefined;
-
-      // Common wrapper: world.castRay(origin, dir, maxDistance)
-      if (typeof (rw as { castRay?: unknown }).castRay === "function") {
-        const fn = (rw as { castRay?: (...args: unknown[]) => unknown })
-          .castRay!;
-        hit = fn(originVec, dirVec, maxDistance);
-      }
-
-      // Some wrappers expose a queryPipeline/castRay API
-      if (
-        !hit &&
-        rw &&
-        rw.queryPipeline &&
-        typeof (rw.queryPipeline as { castRay?: unknown }).castRay ===
-          "function"
-      ) {
-        try {
-          const qp = rw.queryPipeline as {
-            castRay?: (...args: unknown[]) => unknown;
-          };
-          const bodies = (rw as Record<string, unknown>)["bodies"];
-          const colliders = (rw as Record<string, unknown>)["colliders"];
-          if (qp.castRay) {
-            hit = qp.castRay(bodies, colliders, originVec, dirVec, maxDistance);
-          }
-        } catch {
-          // ignore and continue to other attempts
+      const res = callRaycast(rapierWorld, originVec, dirVec, maxDistance);
+      if (res) {
+        if (typeof (res as Record<string, unknown>)['toi'] === 'number') {
+          const toi = (res as Record<string, unknown>)['toi'] as number;
+          if (toi + 1e-3 < distance) return false;
+          return true;
         }
-      }
-
-      // Some wasm bindings expose raw methods
-      if (
-        !hit &&
-        rw &&
-        rw.raw &&
-        typeof (rw.raw as { castRay?: unknown }).castRay === "function"
-      ) {
-        try {
-          const raw = rw.raw as { castRay?: (...args: unknown[]) => unknown };
-          if (raw.castRay) hit = raw.castRay(originVec, dirVec, maxDistance);
-        } catch {
-          // ignore
+        if ((res as Record<string, unknown>)['position']) {
+          const pos = (res as Record<string, unknown>)['position'] as [number, number, number];
+          const hitDist = Math.sqrt(
+            (pos[0] - ox) ** 2 + (pos[1] - oy) ** 2 + (pos[2] - oz) ** 2,
+          );
+          if (hitDist + 1e-3 < distance) return false;
+          return true;
         }
-      }
-
-      // Heuristically extract a time-of-impact (toi) number from the hit
-      // result using safe unknown checks.
-      let toi: number | undefined;
-      if (hit && typeof hit === "object") {
-        const h = hit as Record<string, unknown>;
-        const cand = h["toi"] ?? h["toiSeconds"] ?? h["time"];
-        if (typeof cand === "number") {
-          toi = cand;
-        }
-      }
-      if (toi === undefined && Array.isArray(hit) && hit.length > 0) {
-        const first = hit[0] as unknown;
-        if (first && typeof first === "object") {
-          const f = first as Record<string, unknown>;
-          const cand2 = f["toi"];
-          if (typeof cand2 === "number") toi = cand2;
-        }
-      }
-
-      if (typeof toi === "number") {
-        if (toi + 1e-3 < distance) return false;
-        return true;
       }
     } catch {
-      // If rapier raycast attempts fail, silently continue to heuristic path
+      // fall back to heuristic
     }
   }
 
