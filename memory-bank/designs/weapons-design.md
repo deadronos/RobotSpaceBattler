@@ -6,6 +6,7 @@
 ## Overview
 
 The weapons subsystem coordinates weapon firing, hit resolution, and damage propagation across three weapon types:
+
 - **Gun** (hitscan): instant raycast-based hits
 - **Laser** (beam): continuous damage-over-time beams
 - **Rocket** (projectile): physics-based projectiles with optional AoE and homing
@@ -35,6 +36,7 @@ flowchart TD
 ## Component Interfaces
 
 ### WeaponComponent
+
 Defines weapon capabilities and current state.
 
 ```typescript
@@ -64,6 +66,7 @@ interface WeaponComponent {
 ```
 
 ### WeaponStateComponent
+
 Runtime firing state managed by systems.
 
 ```typescript
@@ -76,6 +79,7 @@ interface WeaponStateComponent {
 ```
 
 ### WeaponFiredEvent
+
 Event emitted by WeaponSystem when a weapon fires.
 
 ```typescript
@@ -94,11 +98,11 @@ interface WeaponFiredEvent {
 
 Current weapon configurations (from `src/robots/weaponProfiles.ts`):
 
-| Weapon | Range | Cooldown | Power | Accuracy | Special |
-|--------|-------|----------|-------|----------|---------|
-| Gun    | 15m   | 0.5s     | 15    | 0.8      | Hitscan, 10-round clip, spread 0.1 rad |
-| Laser  | 25m   | 1.5s     | 8/tick| 0.95     | Beam, 1s duration, 100ms tick interval |
-| Rocket | 20m   | 2.0s     | 25    | 0.7      | Projectile, AoE radius 3m |
+| Weapon | Range | Cooldown | Power  | Accuracy | Special                                |
+| ------ | ----- | -------- | ------ | -------- | -------------------------------------- |
+| Gun    | 15m   | 0.5s     | 15     | 0.8      | Hitscan, 10-round clip, spread 0.1 rad |
+| Laser  | 25m   | 1.5s     | 8/tick | 0.95     | Beam, 1s duration, 100ms tick interval |
+| Rocket | 20m   | 2.0s     | 25     | 0.7      | Projectile, AoE radius 3m              |
 
 ## System Execution Flow
 
@@ -115,6 +119,7 @@ Systems are invoked in fixed order each simulation step (from `Simulation.tsx`):
 ## Weapon Resolution Details
 
 ### Hitscan (Gun)
+
 - **Resolution:** Instant raycast from origin in direction
 - **Rapier integration:** Attempts `rapier.castRay()` or `queryPipeline.castRay()` when available
 - **Fallback:** Heuristic dot-product-based targeting when Rapier unavailable
@@ -123,6 +128,7 @@ Systems are invoked in fixed order each simulation step (from `Simulation.tsx`):
 - **Tests:** `hitscan-determinism.test.ts`, `weapon-targeting.test.ts`
 
 ### Beam (Laser)
+
 - **Resolution:** Creates beam entity with lifespan and tick-based damage
 - **Lifecycle:** Beam lives for `beamParams.duration` ms, applies damage every `tickInterval` ms
 - **Raycast:** Performs per-tick Rapier raycast to determine current hit point
@@ -131,6 +137,7 @@ Systems are invoked in fixed order each simulation step (from `Simulation.tsx`):
 - **Tests:** `beam-tick.test.ts`
 
 ### Projectile (Rocket)
+
 - **Resolution:** Spawns physics-enabled projectile entity
 - **Physics:** Optional Rapier RigidBody for collision; fallback to ECS position updates
 - **Collision:** Custom collision checks against robot entities within radius
@@ -139,7 +146,7 @@ Systems are invoked in fixed order each simulation step (from `Simulation.tsx`):
 - **Friendly-fire:** Respects `useUI().friendlyFire` toggle
 - **Lifespan:** Projectiles despawn after 5 seconds or on impact
 - **Output:** `DamageEvent` for direct hit or AoE damage
-- **Tests:** `projectile-aoe.test.ts`, `projectile-friendly-fire.test.ts`, 
+- **Tests:** `projectile-aoe.test.ts`, `projectile-friendly-fire.test.ts`,
   `weapon-projectile-behavior.test.ts`, `projectile-streak.test.ts`
 
 ## Friendly-Fire Handling
@@ -188,8 +195,8 @@ Critical for friendly-fire and scoring:
 4. On collision, projectile passes `projectile.ownerId` to `DamageEvent.sourceId`
 5. **DamageSystem** uses `sourceId` to look up killer team for scoring
 
-**Known risk:** If weapon ownership changes mid-flight (e.g., respawn), 
-sourceId may reference a stale entity. Current mitigation: projectiles 
+**Known risk:** If weapon ownership changes mid-flight (e.g., respawn),
+sourceId may reference a stale entity. Current mitigation: projectiles
 store ownerId at spawn time.
 
 ## Testing Strategy
@@ -209,7 +216,7 @@ store ownerId at spawn time.
 ## Files
 
 - **Coordinator:** `src/systems/WeaponSystem.ts`
-- **Resolvers:** `src/systems/HitscanSystem.ts`, `src/systems/BeamSystem.ts`, 
+- **Resolvers:** `src/systems/HitscanSystem.ts`, `src/systems/BeamSystem.ts`,
   `src/systems/ProjectileSystem.ts`
 - **Definitions:** `src/ecs/weapons.ts`
 - **Profiles:** `src/robots/weaponProfiles.ts`

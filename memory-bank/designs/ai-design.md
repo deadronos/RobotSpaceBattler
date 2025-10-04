@@ -6,6 +6,7 @@
 ## Overview
 
 The AI subsystem provides robot autonomous behavior through a lightweight state machine with four states:
+
 - **Idle:** Standing still, occasionally switches to patrol
 - **Patrol:** Wanders randomly at reduced speed
 - **Engage:** Moves toward and fires at detected enemies
@@ -36,6 +37,7 @@ stateDiagram-v2
 ## Component Interface
 
 ### AIComponent
+
 ```typescript
 interface AIComponent {
   state: "idle" | "patrol" | "engage" | "flee";
@@ -48,18 +50,20 @@ Attached to robots at spawn time (currently implicit; added on first AI tick if 
 ## System Execution
 
 ### AISystem Entry Point
+
 ```typescript
 function aiSystem(
   world: World<Entity>,
   rng: () => number,
   rapierWorld?: unknown,
-  simNowMs?: number
-): void
+  simNowMs?: number,
+): void;
 ```
 
 **Invoked:** First in the fixed-step simulation loop (before WeaponSystem).
 
 **Responsibilities:**
+
 1. Sync entity position from Rapier RigidBody
 2. Ensure AIComponent exists
 3. Query for nearest enemy
@@ -94,21 +98,27 @@ flowchart TD
 AI logic is split into testable modules:
 
 ### src/systems/AISystem.ts
+
 Orchestrator that integrates queries, perception, and decisions.
+
 - Iterates entities in world
 - Syncs physics positions
 - Calls decision functions
 - Applies outputs to entity components
 
 ### src/systems/ai/queries.ts
+
 **Exported functions:**
+
 - `queryEnemies(world, self)` — Returns sorted array of enemy candidates by distance
 - `findNearestEnemy(world, self)` — Returns nearest enemy or undefined
 
 **Rationale:** Avoids full world scans; pre-filters by team, alive status, position.
 
 ### src/systems/ai/perception.ts
+
 **Exported functions:**
+
 - `canSeeTarget(self, target, range, context)` — LOS check using Rapier raycast or heuristic
 - `isInRange(self, target, range)` — Distance check
 - `getDistanceSquared(self, target)` — Distance utility
@@ -116,9 +126,11 @@ Orchestrator that integrates queries, perception, and decisions.
 **Rationale:** Wraps low-level `performLineOfSight` with convenient AI-specific interface.
 
 ### src/systems/ai/decisions.ts
+
 Pure decision functions that take context and return AIDecision objects.
 
 **Key functions:**
+
 - `shouldFlee(hp, maxHp)` — Health threshold check (< 25%)
 - `shouldStopFleeing(hp, maxHp)` — Recovery check (> 50%)
 - `decideIdleAction(context, hasTarget, hasLOS, target, stateSince, rng)`
@@ -127,6 +139,7 @@ Pure decision functions that take context and return AIDecision objects.
 - `decideFleeAction(context, target, selfPos, rng)`
 
 **AIContext:**
+
 ```typescript
 interface AIContext {
   now: number;
@@ -138,6 +151,7 @@ interface AIContext {
 ```
 
 **AIDecision:**
+
 ```typescript
 interface AIDecision {
   nextState?: AIState;
@@ -151,6 +165,7 @@ interface AIDecision {
 ## State Behaviors
 
 ### Idle
+
 - **Entry:** Default spawn state or when target lost
 - **Actions:** Stationary, no firing
 - **Transitions:**
@@ -159,6 +174,7 @@ interface AIDecision {
   - → Flee if health critical
 
 ### Patrol
+
 - **Entry:** Random from idle, or timeout from engage
 - **Actions:** Random wandering at 50% speed
 - **Duration:** ~3 seconds
@@ -168,6 +184,7 @@ interface AIDecision {
   - → Flee if health critical
 
 ### Engage
+
 - **Entry:** Enemy detected with LOS
 - **Actions:**
   - Move toward target if beyond optimal range
@@ -178,6 +195,7 @@ interface AIDecision {
   - → Flee if health critical (< 25%)
 
 ### Flee
+
 - **Entry:** Health below 25% threshold
 - **Actions:**
   - Move away from nearest enemy
@@ -200,15 +218,19 @@ Position sync from physics happens before AI decisions to ensure current locatio
 ## Perception Details
 
 ### Line-of-Sight
+
 Uses `performLineOfSight()` from `src/systems/perception.ts`:
+
 1. Attempts Rapier raycast if rapierWorld available
 2. Falls back to heuristic dot-product check
 3. Returns true if target visible within range
 
 ### Range Check
+
 Simple 2D Euclidean distance (ignoring Y) compared to weapon range.
 
 ### Target Selection
+
 Always selects nearest enemy (from `queryEnemies`). No sophisticated threat assessment yet.
 
 ## Determinism
@@ -220,6 +242,7 @@ Always selects nearest enemy (from `queryEnemies`). No sophisticated threat asse
 ## Testing Strategy
 
 **Pure unit tests** for decision functions (no Three.js or Rapier):
+
 - `tests/ai-decisions.test.ts` — State transitions, velocity calculations, threshold checks
 - `tests/ai-queries.test.ts` — Enemy filtering and sorting
 - `tests/ai-perception.test.ts` — LOS and range checks with mock entities
@@ -227,6 +250,7 @@ Always selects nearest enemy (from `queryEnemies`). No sophisticated threat asse
 **Integration tests** verify AISystem orchestration in full simulation context.
 
 ### Example Test Pattern
+
 ```typescript
 // Pure decision test
 const context: AIContext = {
@@ -237,7 +261,7 @@ const context: AIContext = {
   speed: 3,
 };
 const decision = decideFleeAction(context, mockTarget, selfPos, mockRng);
-expect(decision.nextState).toBe('flee');
+expect(decision.nextState).toBe("flee");
 expect(decision.shouldFire).toBe(false);
 ```
 
