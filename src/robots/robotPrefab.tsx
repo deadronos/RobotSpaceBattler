@@ -7,52 +7,67 @@ export function Robot({ entity }: { entity: Entity }) {
   const rbRef = useRef<unknown>(null);
   const colliderRef = useRef<unknown>(null);
 
-  useEffect(() => {
-    // Attach rigid body api to entity for systems to use
-    entity.rigid = rbRef.current;
-    // Also attach entity id to the rigid and collider wrappers where possible so
-    // Rapier raycast hits can be mapped back to entity ids via collider.userData or entityId.
-    try {
-      if (rbRef.current && typeof rbRef.current === "object") {
+  // Set entity.rigid immediately when ref is assigned
+  const setRbRef = useCallback((r: unknown) => {
+    rbRef.current = r;
+    if (r) {
+      entity.rigid = r;
+      
+      // Set initial position from entity ONLY on first mount
+      if (entity.position) {
         try {
-          (rbRef.current as Record<string, unknown>)["__entityId"] = entity.id;
+          const rb = r as { translation: () => { x: number; y: number; z: number }; setTranslation: (pos: { x: number; y: number; z: number }, wake: boolean) => void };
+          const translation = rb.translation();
+          // Only set if the rigid body is at origin (hasn't been positioned yet)
+          if (translation.x === 0 && translation.y === 0 && translation.z === 0) {
+            rb.setTranslation(
+              { x: entity.position[0], y: entity.position[1], z: entity.position[2] },
+              true
+            );
+          }
         } catch {
-          // ignore
+          // ignore if API not available
         }
       }
-      if (colliderRef.current && typeof colliderRef.current === "object") {
-        try {
-          // Some Rapier wrapper hit results include collider.userData; set it here.
-          (colliderRef.current as Record<string, unknown>)["userData"] = {
-            id: entity.id,
-          };
-          // Also set entityId directly if wrapper exposes it
-          (colliderRef.current as Record<string, unknown>)["entityId"] =
-            entity.id;
-        } catch {
-          // ignore any non-writable shapes
+      
+      // Set entity id tracking
+      try {
+        if (typeof r === "object") {
+          (r as Record<string, unknown>)["__entityId"] = entity.id;
         }
+      } catch {
+        // ignore
       }
-    } catch {
-      // defensive
+    } else if (entity.rigid === rbRef.current) {
+      entity.rigid = null;
     }
+  }, [entity]);
+
+  const setColliderRef = useCallback((c: unknown) => {
+    colliderRef.current = c;
+    if (c && typeof c === "object") {
+      try {
+        (c as Record<string, unknown>)["userData"] = { id: entity.id };
+        (c as Record<string, unknown>)["entityId"] = entity.id;
+      } catch {
+        // ignore
+      }
+    }
+  }, [entity.id]);
+
+  useEffect(() => {
     return () => {
-      if (entity) {
+      if (entity.rigid === rbRef.current) {
         entity.rigid = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [entity]);
 
   // dev-only mount counter removed
 
   return (
     <RigidBody
-      ref={(r) => {
-        // store in ref and on entity
-        rbRef.current = r;
-      }}
-      position={entity.position as [number, number, number]}
+      ref={setRbRef}
       colliders={false}
       canSleep={false}
     >
@@ -63,9 +78,7 @@ export function Robot({ entity }: { entity: Entity }) {
         />
       </mesh>
       <CuboidCollider
-        ref={(c) => {
-          colliderRef.current = c;
-        }}
+        ref={setColliderRef}
         args={[0.4, 0.6, 0.4]}
       />
     </RigidBody>
