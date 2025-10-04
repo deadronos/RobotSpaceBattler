@@ -27,49 +27,8 @@ export function createRapierAdapter(options: {
   mapHitToEntityId?: (hit: unknown) => string | undefined;
 }): PhysicsAdapter {
   const rapierWorld = options.world;
-  const mapHit = options.mapHitToEntityId ?? extractEntityIdFromRapierHit;
-
-  // Narrow Rapier-like world shape for safe runtime access
-  type RapierWorldLike = {
-    raycast?: (origin: unknown, dir: unknown, maxToi?: number) => unknown;
-    castRay?: (opts: unknown, maxToi?: number) => unknown;
-    queryPipeline?: Record<string, unknown> & {
-      castRay?: (...args: unknown[]) => unknown;
-      intersectionsWithRay?: (...args: unknown[]) => void;
-      intersectionsWithSphere?: (...args: unknown[]) => unknown;
-    };
-    raw?: { castRay?: (...args: unknown[]) => unknown };
-    intersectionWithShape?: (...args: unknown[]) => unknown;
-    numColliders?: number;
-    bodies?: unknown;
-    colliders?: unknown;
-  } | undefined;
-
   const rw = rapierWorld as RapierWorldLike | undefined;
-
-  function extractPointFromHit(hit: unknown): { pos?: [number, number, number]; normal?: [number, number, number] } {
-    if (!hit || typeof hit !== 'object') return {};
-    const h = hit as Record<string, unknown>;
-    const point = (h['point'] ?? h['hitPoint'] ?? h['position']);
-    let px: number | undefined = undefined;
-    let py: number | undefined = undefined;
-    let pz: number | undefined = undefined;
-    if (point && typeof point === "object") {
-      // common shapes: { x,y,z } or array-like [x,y,z]
-      const po = point as Record<string, unknown>;
-      const arr = Array.isArray(point) ? (point as unknown[]) : undefined;
-      const vx = typeof po["x"] === "number" ? (po["x"] as number) : undefined;
-      const vy = typeof po["y"] === "number" ? (po["y"] as number) : undefined;
-      const vz = typeof po["z"] === "number" ? (po["z"] as number) : undefined;
-      px = vx ?? (arr && typeof arr[0] === "number" ? (arr[0] as number) : undefined);
-      py = vy ?? (arr && typeof arr[1] === "number" ? (arr[1] as number) : undefined);
-      pz = vz ?? (arr && typeof arr[2] === "number" ? (arr[2] as number) : undefined);
-    }
-    if (px !== undefined && py !== undefined && pz !== undefined) {
-      return { pos: [px, py, pz] };
-    }
-    return {};
-  }
+  const mapHit = options.mapHitToEntityId ?? extractEntityIdFromRapierHit;
 
   function raycast(origin: { x:number;y:number;z:number }, dir: { x:number;y:number;z:number }, maxToi: number) {
     // Try common Rapier / rapier-like query entry points and normalize output
@@ -89,9 +48,8 @@ export function createRapierAdapter(options: {
         void __;
       }
       const mappedId = mapHit(hit);
-      const extracted = extractPointFromHit(hit);
-      if (extracted.pos) {
-        const pos = extracted.pos;
+      const pos = extractPoint(hit);
+      if (pos) {
         const normal: [number, number, number] = [-(dir.x), -(dir.y), -(dir.z)];
         return { targetId: mappedId, position: pos, normal };
       }
@@ -210,4 +168,151 @@ export function createDeterministicAdapter(_seed: number) {
       return true;
     },
   };
+}
+
+// Expose a loose Rapier-world shape that covers commonly-used entry points from
+// rapier and wrapper libraries. This lets systems accept either a raw Rapier
+// world or our PhysicsAdapter wrapper with a consistent type.
+export type RapierWorldLike = {
+  raycast?: (origin: unknown, dir: unknown, maxToi?: number) => unknown;
+  castRay?: (opts: unknown, maxToi?: number) => unknown;
+  queryPipeline?: Record<string, unknown> & {
+    castRay?: (...args: unknown[]) => unknown;
+    intersectionsWithRay?: (...args: unknown[]) => void;
+    intersectionsWithSphere?: (...args: unknown[]) => unknown;
+  };
+  raw?: { castRay?: (...args: unknown[]) => unknown };
+  intersectionWithShape?: (...args: unknown[]) => unknown;
+  numColliders?: number;
+  bodies?: unknown;
+  colliders?: unknown;
+};
+
+export type RapierWorldOrAdapter = RapierWorldLike | PhysicsAdapter;
+
+// Extract a 3D point from a hit payload if possible. Handles {x,y,z} and [x,y,z].
+function extractPoint(hit: unknown): [number, number, number] | undefined {
+  if (!hit || typeof hit !== 'object') return undefined;
+  const h = hit as Record<string, unknown>;
+  const point = h['point'] ?? h['hitPoint'] ?? h['position'];
+  if (!point || typeof point !== 'object') return undefined;
+  const po = point as Record<string, unknown>;
+  const arr = Array.isArray(point) ? (point as unknown[]) : undefined;
+  const vx = typeof po['x'] === 'number' ? (po['x'] as number) : undefined;
+  const vy = typeof po['y'] === 'number' ? (po['y'] as number) : undefined;
+  const vz = typeof po['z'] === 'number' ? (po['z'] as number) : undefined;
+  const px = vx ?? (arr && typeof arr[0] === 'number' ? (arr[0] as number) : undefined);
+  const py = vy ?? (arr && typeof arr[1] === 'number' ? (arr[1] as number) : undefined);
+  const pz = vz ?? (arr && typeof arr[2] === 'number' ? (arr[2] as number) : undefined);
+  if (px !== undefined && py !== undefined && pz !== undefined) return [px, py, pz];
+  return undefined;
+}
+
+// Centralized raycast helper that accepts either a Rapier-like world or our
+// PhysicsAdapter abstraction and returns a normalized RaycastAny.
+export function callRaycast(
+  world: RapierWorldOrAdapter | undefined,
+  origin: { x: number; y: number; z: number },
+  dir: { x: number; y: number; z: number },
+  maxToi: number,
+  mapHit: (hit: unknown) => string | undefined = extractEntityIdFromRapierHit,
+): RaycastAny {
+  if (!world) return null;
+
+  // If caller passed a PhysicsAdapter, prefer its API (tests may inject this).
+  const adapter = world as PhysicsAdapter;
+  if (adapter && typeof adapter.raycast === 'function') {
+    try {
+      return adapter.raycast(origin, dir, maxToi);
+    } catch {
+      // fall through to other heuristics
+    }
+  }
+
+  // Otherwise treat as RapierWorldLike and attempt common Rapier APIs.
+  const rw = world as RapierWorldLike | undefined;
+  try {
+    // world.raycast
+    if (rw && typeof rw.raycast === 'function') {
+      const hit = rw.raycast(origin, dir, maxToi);
+      // Normalize
+      if (!hit) return null;
+      const h = hit as Record<string, unknown>;
+      if (typeof h['toi'] === 'number' || typeof h['timeOfImpact'] === 'number') return h;
+      const id = mapHit(hit);
+      const pos = extractPoint(hit);
+      if (pos) return { targetId: id, position: pos, normal: [-(dir.x), -(dir.y), -(dir.z)] };
+    }
+
+    // world.castRay
+    if (rw && typeof rw.castRay === 'function') {
+      const hit = rw.castRay({ origin, dir }, maxToi);
+      if (!hit) return null;
+      const h = hit as Record<string, unknown>;
+      if (typeof h['toi'] === 'number' || typeof h['timeOfImpact'] === 'number') return h;
+      const id = mapHit(hit);
+      const pos = extractPoint(hit);
+      if (pos) return { targetId: id, position: pos, normal: [-(dir.x), -(dir.y), -(dir.z)] };
+    }
+
+    // queryPipeline.castRay
+    if (rw && rw.queryPipeline && typeof rw.queryPipeline.castRay === 'function') {
+      try {
+        const bodies = rw.bodies;
+        const colliders = rw.colliders;
+        const hit = rw.queryPipeline.castRay!(bodies, colliders, { origin, dir }, maxToi);
+        if (!hit) return null;
+        const h = hit as Record<string, unknown>;
+        if (typeof h['toi'] === 'number' || typeof h['timeOfImpact'] === 'number') return h;
+        const id = mapHit(hit);
+        const pos = extractPoint(hit);
+        if (pos) return { targetId: id, position: pos, normal: [-(dir.x), -(dir.y), -(dir.z)] };
+      } catch {
+        // ignore and continue
+      }
+    }
+
+    // raw.castRay
+    if (rw && rw.raw && typeof rw.raw.castRay === 'function') {
+      const hit = rw.raw.castRay(origin, dir, maxToi);
+      if (!hit) return null;
+      const h = hit as Record<string, unknown>;
+      if (typeof h['toi'] === 'number' || typeof h['timeOfImpact'] === 'number') return h;
+      const id = mapHit(hit);
+      const pos = extractPoint(hit);
+      if (pos) return { targetId: id, position: pos, normal: [-(dir.x), -(dir.y), -(dir.z)] };
+    }
+  } catch {
+    /* swallow */
+  }
+
+  return null;
+}
+
+// Centralized overlap/proximity helpers
+export function callOverlapSphere(world: RapierWorldOrAdapter | undefined, center: { x:number;y:number;z:number }, radius: number) {
+  if (!world) return false;
+  const adapter = world as PhysicsAdapter;
+  if (adapter && typeof adapter.overlapSphere === 'function') {
+    try { return adapter.overlapSphere(center, radius); } catch { /* fall through */ }
+  }
+  const rw = world as RapierWorldLike | undefined;
+  try {
+    if (rw && rw.queryPipeline && typeof rw.queryPipeline.intersectionsWithSphere === 'function') {
+      try { return rw.queryPipeline.intersectionsWithSphere({ x: center.x, y: center.y, z: center.z }, radius) as boolean; } catch { /* ignore and continue */ }
+    }
+    if (rw && typeof rw.intersectionWithShape === 'function') {
+      try { return rw.intersectionWithShape({ x: center.x, y: center.y, z: center.z }, radius) as boolean; } catch { /* ignore and continue */ }
+    }
+  } catch { /* ignore and continue */ }
+  try {
+    const rwRec = world as Record<string, unknown> | undefined;
+    const nc = rwRec ? (rwRec['numColliders'] as number | undefined) : undefined;
+    if (nc !== undefined) return nc > 0;
+  } catch { /* ignore and continue */ }
+  return false;
+}
+
+export function callProximity(world: RapierWorldOrAdapter | undefined, origin: { x:number;y:number;z:number }, radius: number) {
+  return callOverlapSphere(world, origin, radius);
 }

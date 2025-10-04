@@ -5,6 +5,7 @@ import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
 import { type Entity, notifyEntityChanged } from "../ecs/miniplexStore";
 import type { DamageEvent, WeaponComponent } from "../ecs/weapons";
 import type { StepContext } from "../utils/fixedStepDriver";
+import type { RapierWorldOrAdapter } from "../utils/physicsAdapter";
 import type { Rng } from "../utils/seededRng";
 import type { WeaponFiredEvent } from "./WeaponSystem";
 
@@ -25,7 +26,7 @@ export function projectileSystem(
   stepContext: StepContext | (() => number) | undefined,
   weaponFiredEvents: WeaponFiredEvent[],
   events: { damage: DamageEvent[] },
-  _rapierWorld?: unknown,
+  _rapierWorld?: RapierWorldOrAdapter | number | undefined,
 ) {
   // Support legacy positional API: (world, dt, rng, weaponFiredEvents, events, simNowMs)
   let ctx: StepContext | undefined;

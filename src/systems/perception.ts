@@ -1,6 +1,7 @@
 import type { World } from "miniplex";
 
 import type { Entity } from "../ecs/miniplexStore";
+import type { RapierWorldOrAdapter } from "../utils/physicsAdapter";
 
 /**
  * Lightweight perception utilities used by AI systems.
@@ -13,7 +14,7 @@ export function performLineOfSight(
   world: World<Entity>,
   maxDistance = 100,
   // optional Rapier world object from @react-three/rapier (useRapier().world)
-  rapierWorld?: unknown,
+  rapierWorld?: RapierWorldOrAdapter,
 ): boolean {
   if (!target.position) return false;
 

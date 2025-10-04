@@ -3,6 +3,7 @@ import type { World } from "miniplex";
 import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
 import { type Entity } from "../ecs/miniplexStore";
 import type { DamageEvent, WeaponComponent } from "../ecs/weapons";
+import type { PhysicsAdapter, RapierWorldLike, RapierWorldOrAdapter } from "../utils/physicsAdapter";
 import type { Rng } from "../utils/seededRng";
 import { extractEntityIdFromRapierHit } from "./rapierHelpers";
 import type { WeaponFiredEvent } from "./WeaponSystem";
@@ -24,7 +25,7 @@ export function hitscanSystem(...args: unknown[]) {
   let rng: Rng;
   let weaponFiredEvents: WeaponFiredEvent[] = [];
   let events: { damage: DamageEvent[]; impact: ImpactEvent[] } = { damage: [], impact: [] };
-  let rapierWorld: unknown | undefined = undefined;
+  let rapierWorld: RapierWorldOrAdapter | undefined = undefined;
 
   if (
     args.length === 1 &&
@@ -37,8 +38,8 @@ export function hitscanSystem(...args: unknown[]) {
       stepContext?: { rng?: Rng };
       weaponFiredEvents?: WeaponFiredEvent[];
       events?: { damage: DamageEvent[]; impact: ImpactEvent[] };
-      physicsAdapter?: unknown;
-      rapierWorld?: unknown;
+      physicsAdapter?: PhysicsAdapter;
+      rapierWorld?: RapierWorldLike;
     };
     world = p.world;
     if (!p.stepContext) {
@@ -59,7 +60,7 @@ export function hitscanSystem(...args: unknown[]) {
     }
     weaponFiredEvents = (args[2] as WeaponFiredEvent[] | undefined) ?? weaponFiredEvents;
     events = (args[3] as { damage: DamageEvent[]; impact: ImpactEvent[] } | undefined) ?? events;
-    rapierWorld = args[4];
+    rapierWorld = args[4] as RapierWorldOrAdapter | undefined;
   }
 
   for (const fireEvent of weaponFiredEvents) {
