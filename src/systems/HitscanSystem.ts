@@ -3,15 +3,10 @@ import type { World } from "miniplex";
 import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
 import { type Entity } from "../ecs/miniplexStore";
 import type { DamageEvent, WeaponComponent } from "../ecs/weapons";
-import type { PhysicsAdapter, RapierWorldLike, RapierWorldOrAdapter } from "../utils/physicsAdapter";
+import { callRaycast, type PhysicsAdapter, type RapierWorldLike, type RapierWorldOrAdapter, type RaycastAny, type RaycastResult } from "../utils/physicsAdapter";
 import type { Rng } from "../utils/seededRng";
 import { extractEntityIdFromRapierHit } from "./rapierHelpers";
 import type { WeaponFiredEvent } from "./WeaponSystem";
-
-interface RigidBodyLike {
-  translation?: () => { x: number; y: number; z: number };
-  setLinvel?: (v: { x: number; y: number; z: number }, wake: boolean) => void;
-}
 
 export interface ImpactEvent {
   position: [number, number, number];
@@ -175,193 +170,31 @@ function performRaycast(
   const [ox, oy, oz] = origin;
   const [dx, dy, dz] = direction;
 
-  // If a Rapier-like physics adapter is provided that exposes a simple raycast
-  // function (for tests), use it directly and map the result into a hit.
+  // If a Rapier adapter or raw rapier world is available, try the centralized raycast helper
   if (rapierWorld) {
     try {
-      const adapter = rapierWorld as { raycast?: (opts: unknown, maxDistance?: number) => unknown };
-      if (typeof adapter.raycast === 'function') {
-        const hit = adapter.raycast({ origin: { x: ox, y: oy, z: oz }, dir: { x: dx, y: dy, z: dz } }, maxDistance);
-        if (hit && typeof hit === 'object') {
-          const h = hit as Record<string, unknown>;
-          const targetId = h['targetId'] as number | undefined;
-          const position = h['position'] as [number, number, number] | undefined;
-          const normal = h['normal'] as [number, number, number] | undefined;
-          if (position && normal) {
-            return { position, normal, targetId };
+      const rayRes: RaycastAny = callRaycast(rapierWorld as RapierWorldOrAdapter | undefined, { x: ox, y: oy, z: oz }, { x: dx, y: dy, z: dz }, maxDistance, extractEntityIdFromRapierHit);
+      if (rayRes) {
+        // If the adapter returned a numeric 'toi' style result, synthesize a position from the TOI
+        const raw = rayRes as Record<string, unknown>;
+        const cand = raw['toi'] ?? raw['timeOfImpact'] ?? raw['time'];
+        if (typeof cand === 'number') {
+          const toi = cand as number;
+          const pos: [number, number, number] = [ox + dx * toi, oy + dy * toi, oz + dz * toi];
+          const mapped = extractEntityIdFromRapierHit(raw);
+          const normal: [number, number, number] = [-dx, -dy, -dz];
+          return { position: pos, normal, targetId: mapped };
+        }
+
+        // If we have a normalized position: map to entity if targetId present or fall back to nearest entity
+        const isResult = (r: RaycastAny): r is RaycastResult => !!r && typeof r === 'object' && 'position' in (r as Record<string, unknown>);
+        if (isResult(rayRes)) {
+          const pos = rayRes.position;
+          const mappedId = rayRes.targetId;
+          if (mappedId) {
+            const normal: [number, number, number] = [-dx, -dy, -dz];
+            return { position: pos, normal, targetId: mappedId };
           }
-        }
-      }
-    } catch {
-      // fall through and use other methods
-    }
-  }
-
-  if (rapierWorld) {
-    try {
-      const rw = rapierWorld as Record<string, unknown> | undefined;
-      let hit: unknown = undefined;
-
-      if (rw && typeof (rw as { castRay?: unknown }).castRay === "function") {
-        const fn = (rw as { castRay?: (...args: unknown[]) => unknown })
-          .castRay!;
-        hit = fn(
-          { origin: { x: ox, y: oy, z: oz }, dir: { x: dx, y: dy, z: dz } },
-          maxDistance,
-        );
-      }
-
-      if (
-        !hit &&
-        rw &&
-        rw.queryPipeline &&
-        typeof (rw.queryPipeline as { castRay?: unknown }).castRay ===
-          "function"
-      ) {
-        try {
-          const qp = rw.queryPipeline as {
-            castRay?: (...args: unknown[]) => unknown;
-          };
-          const bodies = (rw as Record<string, unknown>)["bodies"];
-          const colliders = (rw as Record<string, unknown>)["colliders"];
-          if (qp.castRay) {
-            hit = qp.castRay(
-              bodies,
-              colliders,
-              { origin: { x: ox, y: oy, z: oz }, dir: { x: dx, y: dy, z: dz } },
-              maxDistance,
-            );
-          }
-        } catch {
-          /* swallow errors and fall back to heuristic */
-        }
-      }
-
-      if (
-        !hit &&
-        rw &&
-        rw.raw &&
-        typeof (rw.raw as { castRay?: unknown }).castRay === "function"
-      ) {
-        try {
-          const raw = rw.raw as { castRay?: (...args: unknown[]) => unknown };
-          if (raw.castRay)
-            hit = raw.castRay(
-              { origin: { x: ox, y: oy, z: oz }, dir: { x: dx, y: dy, z: dz } },
-              maxDistance,
-            );
-        } catch {
-          /* ignore and fall back */
-        }
-      }
-
-      // Try to extract a point from the hit result
-      let px: number | undefined;
-      let py: number | undefined;
-      let pz: number | undefined;
-
-      if (hit && typeof hit === "object") {
-        const h = hit as Record<string, unknown>;
-        const point = h["point"] ?? h["hitPoint"] ?? h["position"];
-        if (point && typeof point === "object") {
-          // common shapes: { x,y,z } or array-like [x,y,z]
-          const po = point as Record<string, unknown>;
-          const arr = Array.isArray(point) ? (point as unknown[]) : undefined;
-          const vx =
-            typeof po["x"] === "number" ? (po["x"] as number) : undefined;
-          const vy =
-            typeof po["y"] === "number" ? (po["y"] as number) : undefined;
-          const vz =
-            typeof po["z"] === "number" ? (po["z"] as number) : undefined;
-          px =
-            vx ??
-            (Array.isArray(arr) && typeof arr[0] === "number"
-              ? (arr[0] as number)
-              : undefined);
-          py =
-            vy ??
-            (Array.isArray(arr) && typeof arr[1] === "number"
-              ? (arr[1] as number)
-              : undefined);
-          pz =
-            vz ??
-            (Array.isArray(arr) && typeof arr[2] === "number"
-              ? (arr[2] as number)
-              : undefined);
-        }
-      }
-
-      if (px !== undefined && py !== undefined && pz !== undefined) {
-        // Find nearest entity to hit point
-        // First try to map rapier hit to entity id directly
-        const hitEntityId = extractEntityIdFromRapierHit(hit);
-        if (typeof hitEntityId === "string") {
-          return {
-            position: [px, py, pz],
-            normal: [-dx, -dy, -dz],
-            targetId: hitEntityId,
-          };
-        }
-
-        let best: { e: Entity; d2: number } | undefined;
-        for (const candidate of world.entities) {
-          const c = candidate as Entity & {
-            position?: [number, number, number];
-            rigid?: unknown;
-            team?: string;
-            weapon?: WeaponComponent;
-          };
-          if (!c.position) continue;
-          // Skip the weapon owner itself
-          if (String(c.id) === ownerId) {
-            continue;
-          }
-          if (
-            typeof c.weapon?.ownerId === "string" &&
-            c.weapon.ownerId === ownerId
-          ) {
-            continue;
-          }
-          // Do not skip entities just because they have a `weapon` component —
-          // robots are valid targets even though they own weapons. Previously
-          // filtering by `weapon` prevented hits from resolving against robots.
-          if (ownerTeam && c.team === ownerTeam) continue;
-
-          // prefer rigid translation when available
-          let cx = c.position[0];
-          let cy = c.position[1];
-          let cz = c.position[2];
-          if (
-            c.rigid &&
-            typeof (c.rigid as Record<string, unknown>)["translation"] ===
-              "function"
-          ) {
-            try {
-              const t = (c.rigid as RigidBodyLike | null)?.translation;
-              if (t) {
-                const tv = t();
-                cx = tv.x;
-                cy = tv.y;
-                cz = tv.z;
-              }
-            } catch {
-              // ignore and use position
-            }
-          }
-
-          const dxp = cx - px;
-          const dyp = cy - py;
-          const dzp = cz - pz;
-          const d2 = dxp * dxp + dyp * dyp + dzp * dzp;
-          if (!best || d2 < best.d2) best = { e: c, d2 };
-        }
-
-        if (best && best.d2 < 1.5 * 1.5) {
-          return {
-            position: [px, py, pz],
-            normal: [-dx, -dy, -dz],
-            targetId: String(best.e.id),
-          };
         }
       }
     } catch {
@@ -398,44 +231,49 @@ function performRaycast(
 
     if (distance > maxDistance) return null;
 
-    const dot =
-      (toTarget[0] * dx + toTarget[1] * dy + toTarget[2] * dz) / distance;
-    if (dot > 0.99) {
-      return {
-        position: candidate.position as [number, number, number],
-        normal: [-dx, -dy, -dz] as [number, number, number],
-        targetId: String(candidate.id),
-      };
-    }
+    const dot = (toTarget[0] * dx + toTarget[1] * dy + toTarget[2] * dz) / distance;
+    // If the candidate is not roughly in front of the shooter, skip it
+    if (dot <= 0) return null;
 
-    return null;
-  };
+    // Distance along the ray to closest approach
+    const proj = toTarget[0] * dx + toTarget[1] * dy + toTarget[2] * dz;
+    if (proj < 0 || proj > maxDistance) return null;
 
+    // Compute squared perpendicular distance from the ray to the target
+    const perp2 =
+      distance * distance - (proj * proj) / (dx * dx + dy * dy + dz * dz);
+    // Accept hits if within ~1.5 units of the ray
+    if (perp2 > 1.5 * 1.5) return null;
+
+    // Compute impact point on ray
+    const t = proj / (dx * dx + dy * dy + dz * dz);
+    const hitPos: [number, number, number] = [ox + dx * t, oy + dy * t, oz + dz * t];
+    const normal: [number, number, number] = [-dx, -dy, -dz];
+    return { position: hitPos, normal, targetId: String(candidate.id) };
+  }
+
+  // If a preferred target is provided, check it first
   if (preferredTarget) {
-    const preferredHit = attemptHit(
-      preferredTarget as Entity & {
-        position?: [number, number, number];
-        team?: string;
-        weapon?: WeaponComponent;
-      },
-    );
-    if (preferredHit) {
-      return preferredHit;
+    const maybeHit = attemptHit(preferredTarget as Entity & { position?: [number, number, number] });
+    if (maybeHit) return maybeHit;
+  }
+
+  // Otherwise, find the best candidate among all entities
+  let best: { hit: { position: [number, number, number]; normal: [number, number, number]; targetId?: string | number }; d2: number } | undefined;
+  for (const candidate of world.entities) {
+    const c = candidate as Entity & { position?: [number, number, number]; team?: string; weapon?: WeaponComponent };
+    if (!c.position) continue;
+    const maybe = attemptHit(c);
+    if (maybe) {
+      const dxp = maybe.position[0] - origin[0];
+      const dyp = maybe.position[1] - origin[1];
+      const dzp = maybe.position[2] - origin[2];
+      const d2 = dxp * dxp + dyp * dyp + dzp * dzp;
+      if (!best || d2 < best.d2) best = { hit: maybe, d2 };
     }
   }
 
-  for (const entity of world.entities) {
-    const candidate = entity as Entity & {
-      position?: [number, number, number];
-      team?: string;
-      weapon?: WeaponComponent;
-    };
-
-    const hit = attemptHit(candidate);
-    if (hit) {
-      return hit;
-    }
-  }
+  if (best) return best.hit as { position: [number, number, number]; normal: [number, number, number]; targetId?: number | string };
 
   return null;
-}
+ }

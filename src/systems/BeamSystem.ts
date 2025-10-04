@@ -3,6 +3,7 @@ import type { Query,World } from "miniplex";
 import { resolveEntity, resolveOwner } from "../ecs/ecsResolve";
 import { type Entity, notifyEntityChanged } from "../ecs/miniplexStore";
 import type { BeamComponent, DamageEvent, WeaponComponent } from "../ecs/weapons";
+import { callIntersectionsWithRay, type RapierWorldOrAdapter } from "../utils/physicsAdapter";
 import type { Rng } from "../utils/seededRng";
 import { extractEntityIdFromRapierHit } from "./rapierHelpers";
 import type { WeaponFiredEvent } from "./WeaponSystem";
@@ -332,107 +333,29 @@ function tryRapierBeamRaycast(
 ): BeamHitCandidate[] | null {
   if (!rapierWorld) return null;
 
+  const rawHits = callIntersectionsWithRay(rapierWorld as RapierWorldOrAdapter | undefined, { x: origin[0], y: origin[1], z: origin[2] }, { x: direction[0], y: direction[1], z: direction[2] }, length);
+  if (!rawHits) return null;
+
   const hits: BeamHitCandidate[] = [];
-
-  const processHit = (raw: unknown) => {
-    if (!raw) return;
+  for (const raw of rawHits) {
+    if (!raw) continue;
     if (Array.isArray(raw)) {
-      for (const nested of raw) processHit(nested);
-      return;
-    }
-
-    const hit = raw as Record<string, unknown>;
-    const targetId = extractEntityIdFromRapierHit(hit);
-    if (typeof targetId !== "string") {
-      return;
-    }
-
-    const point = extractPointFromRapierHit(hit, origin, direction, length);
-    if (!point) {
-      return;
-    }
-
-    const distance = distanceAlongRay(
-      origin,
-      point as [number, number, number],
-      direction,
-    );
-    hits.push({
-      targetId,
-      position: point as [number, number, number],
-      distance,
-    });
-  };
-
-  try {
-    const rw = rapierWorld as Record<string, unknown>;
-    let attempted = false;
-
-    const ray = {
-      origin: { x: origin[0], y: origin[1], z: origin[2] },
-      dir: { x: direction[0], y: direction[1], z: direction[2] },
-    };
-
-    if (
-      rw.queryPipeline &&
-      typeof (rw.queryPipeline as { intersectionsWithRay?: unknown })
-        .intersectionsWithRay === "function"
-    ) {
-      attempted = true;
-      try {
-        const qp = rw.queryPipeline as {
-          intersectionsWithRay?: (
-            bodies: unknown,
-            colliders: unknown,
-            ray: unknown,
-            maxToi: number,
-            solid?: boolean,
-            callback?: (hit: unknown) => boolean,
-          ) => void;
-        };
-        const bodies = (rw as Record<string, unknown>)["bodies"];
-        const colliders = (rw as Record<string, unknown>)["colliders"];
-        qp.intersectionsWithRay?.(
-          bodies,
-          colliders,
-          ray,
-          length,
-          true,
-          (hit) => {
-            processHit(hit);
-            return true;
-          },
-        );
-      } catch {
-        /* fall back to other strategies */
+      for (const nested of raw) {
+        const id = extractEntityIdFromRapierHit(nested);
+        if (typeof id !== 'string') continue;
+        const point = extractPointFromRapierHit(nested, origin, direction, length);
+        if (!point) continue;
+        const distance = distanceAlongRay(origin, point as [number, number, number], direction);
+        hits.push({ targetId: id, position: point as [number, number, number], distance });
       }
+      continue;
     }
-
-    if (typeof (rw as { castRay?: unknown }).castRay === "function") {
-      attempted = true;
-      processHit(
-        (rw as { castRay: (...args: unknown[]) => unknown }).castRay(
-          ray,
-          length,
-          true,
-        ),
-      );
-    }
-
-    if (
-      rw.raw &&
-      typeof (rw.raw as { castRay?: unknown }).castRay === "function"
-    ) {
-      attempted = true;
-      const raw = rw.raw as { castRay: (...args: unknown[]) => unknown };
-      processHit(raw.castRay(ray, length, true));
-    }
-
-    if (!attempted) {
-      return null;
-    }
-  } catch {
-    return null;
+    const id = extractEntityIdFromRapierHit(raw);
+    if (typeof id !== 'string') continue;
+    const point = extractPointFromRapierHit(raw, origin, direction, length);
+    if (!point) continue;
+    const distance = distanceAlongRay(origin, point as [number, number, number], direction);
+    hits.push({ targetId: id, position: point as [number, number, number], distance });
   }
 
   return hits.length > 0 ? hits : null;

@@ -27,123 +27,20 @@ export function createRapierAdapter(options: {
   mapHitToEntityId?: (hit: unknown) => string | undefined;
 }): PhysicsAdapter {
   const rapierWorld = options.world;
-  const rw = rapierWorld as RapierWorldLike | undefined;
   const mapHit = options.mapHitToEntityId ?? extractEntityIdFromRapierHit;
 
   function raycast(origin: { x:number;y:number;z:number }, dir: { x:number;y:number;z:number }, maxToi: number) {
-    // Try common Rapier / rapier-like query entry points and normalize output
-    if (!rapierWorld) return null;
-
-    // A helper to normalize hit -> RaycastResult
-    const normalize = (hit: unknown): RaycastAny => {
-      if (!hit) return null;
-      // Preserve raw 'toi' style results when present
-      try {
-        const h = hit as Record<string, unknown>;
-        if (typeof h['toi'] === 'number' || typeof h['timeOfImpact'] === 'number') {
-          return h;
-        }
-      } catch (__) {
-        // swallow
-        void __;
-      }
-      const mappedId = mapHit(hit);
-      const pos = extractPoint(hit);
-      if (pos) {
-        const normal: [number, number, number] = [-(dir.x), -(dir.y), -(dir.z)];
-        return { targetId: mappedId, position: pos, normal };
-      }
-      return null;
-    };
-
-    try {
-      // Try common APIs in prioritized order
-      // 1. world.raycast(origin, dir, maxToi)
-      const raycastFn = rw?.raycast;
-      if (typeof raycastFn === 'function') {
-        const hit = raycastFn(origin, dir, maxToi);
-        const res = normalize(hit);
-        if (res) return res;
-      }
-
-      // 2. world.castRay(bodies, colliders, { origin, dir }, maxToi)
-      const castRayFn = rw?.castRay;
-      if (typeof castRayFn === 'function') {
-        const hit = castRayFn({ origin, dir }, maxToi);
-        const res = normalize(hit);
-        if (res) return res;
-      }
-
-      // 3. queryPipeline.castRay(bodies, colliders, ray, maxToi)
-      const qp = rw?.queryPipeline;
-      if (qp && typeof qp.castRay === 'function') {
-        try {
-          const bodies = rw?.bodies;
-          const colliders = rw?.colliders;
-          const hit = qp.castRay!(bodies, colliders, { origin, dir }, maxToi);
-          const res = normalize(hit);
-          if (res) return res;
-        } catch (__) {
-          void __;
-        }
-      }
-
-      // 4. raw.castRay
-      const raw = rw?.raw;
-      if (raw && typeof raw.castRay === 'function') {
-        const hit = raw.castRay(origin, dir, maxToi);
-        const res = normalize(hit);
-        if (res) return res;
-      }
-    } catch (__) {
-      // swallow and return null
-      void __;
-    }
-
-    return null;
+    // Delegate to centralized raycast helper which accepts either a raw Rapier
+    // world or a PhysicsAdapter and returns a normalized hit result.
+    return callRaycast(rapierWorld as RapierWorldLike | undefined, origin, dir, maxToi, mapHit);
   }
 
   function overlapSphere(center: { x:number;y:number;z:number }, radius: number) {
-    if (!rapierWorld) return false;
-    try {
-      const rp = rapierWorld as RapierWorldLike | undefined;
-      // Rapier may expose a queryPipeline with intersection tests
-      if (rp?.queryPipeline && typeof rp.queryPipeline.intersectionsWithSphere === 'function') {
-        try {
-          return rp.queryPipeline.intersectionsWithSphere({ x: center.x, y: center.y, z: center.z }, radius) as boolean;
-        } catch {
-          // fall through to other strategies
-        }
-      }
-
-      // Some wrappers provide intersectionWithShape
-      if (rp && typeof rp.intersectionWithShape === 'function') {
-        try {
-          return rp.intersectionWithShape({ x: center.x, y: center.y, z: center.z }, radius) as boolean;
-        } catch {
-          // ignore and fall back
-        }
-      }
-    } catch (__) {
-      void __;
-    }
-
-    // Fallback conservative answer: true if world exposes any contacts (best-effort)
-    try {
-      const rwRec = rapierWorld as Record<string, unknown> | undefined;
-      const nc = rwRec ? (rwRec['numColliders'] as number | undefined) : undefined;
-      if (nc !== undefined) return nc > 0;
-    } catch (__) {
-      // ignore
-      void __;
-    }
-
-    return false;
+    return callOverlapSphere(rapierWorld as RapierWorldLike | undefined, center, radius);
   }
 
   function proximity(origin: { x:number;y:number;z:number }, radius: number) {
-    // For Rapier, approximate with overlapSphere for now
-    return overlapSphere(origin, radius);
+    return callProximity(rapierWorld as RapierWorldLike | undefined, origin, radius);
   }
 
   return { raycast, overlapSphere, proximity };
@@ -175,7 +72,7 @@ export function createDeterministicAdapter(_seed: number) {
 // world or our PhysicsAdapter wrapper with a consistent type.
 export type RapierWorldLike = {
   raycast?: (origin: unknown, dir: unknown, maxToi?: number) => unknown;
-  castRay?: (opts: unknown, maxToi?: number) => unknown;
+  castRay?: (...args: unknown[]) => unknown;
   queryPipeline?: Record<string, unknown> & {
     castRay?: (...args: unknown[]) => unknown;
     intersectionsWithRay?: (...args: unknown[]) => void;
@@ -231,59 +128,56 @@ export function callRaycast(
 
   // Otherwise treat as RapierWorldLike and attempt common Rapier APIs.
   const rw = world as RapierWorldLike | undefined;
-  try {
-    // world.raycast
-    if (rw && typeof rw.raycast === 'function') {
-      const hit = rw.raycast(origin, dir, maxToi);
-      // Normalize
+
+  // world.raycast
+  if (rw && typeof rw.raycast === 'function') {
+    const hit = rw.raycast(origin, dir, maxToi);
+    // Normalize
+    if (!hit) return null;
+    const h = hit as Record<string, unknown>;
+    if (typeof h['toi'] === 'number' || typeof h['timeOfImpact'] === 'number') return h;
+    const id = mapHit(hit);
+    const pos = extractPoint(hit);
+    if (pos) return { targetId: id, position: pos, normal: [-(dir.x), -(dir.y), -(dir.z)] };
+  }
+
+  // world.castRay
+  if (rw && typeof rw.castRay === 'function') {
+    const hit = rw.castRay({ origin, dir }, maxToi);
+    if (!hit) return null;
+    const h = hit as Record<string, unknown>;
+    if (typeof h['toi'] === 'number' || typeof h['timeOfImpact'] === 'number') return h;
+    const id = mapHit(hit);
+    const pos = extractPoint(hit);
+    if (pos) return { targetId: id, position: pos, normal: [-(dir.x), -(dir.y), -(dir.z)] };
+  }
+
+  // queryPipeline.castRay
+  if (rw && rw.queryPipeline && typeof rw.queryPipeline.castRay === 'function') {
+    try {
+      const bodies = rw.bodies;
+      const colliders = rw.colliders;
+      const hit = rw.queryPipeline.castRay!(bodies, colliders, { origin, dir }, maxToi);
       if (!hit) return null;
       const h = hit as Record<string, unknown>;
       if (typeof h['toi'] === 'number' || typeof h['timeOfImpact'] === 'number') return h;
       const id = mapHit(hit);
       const pos = extractPoint(hit);
       if (pos) return { targetId: id, position: pos, normal: [-(dir.x), -(dir.y), -(dir.z)] };
+    } catch {
+      // ignore and continue
     }
+  }
 
-    // world.castRay
-    if (rw && typeof rw.castRay === 'function') {
-      const hit = rw.castRay({ origin, dir }, maxToi);
-      if (!hit) return null;
-      const h = hit as Record<string, unknown>;
-      if (typeof h['toi'] === 'number' || typeof h['timeOfImpact'] === 'number') return h;
-      const id = mapHit(hit);
-      const pos = extractPoint(hit);
-      if (pos) return { targetId: id, position: pos, normal: [-(dir.x), -(dir.y), -(dir.z)] };
-    }
-
-    // queryPipeline.castRay
-    if (rw && rw.queryPipeline && typeof rw.queryPipeline.castRay === 'function') {
-      try {
-        const bodies = rw.bodies;
-        const colliders = rw.colliders;
-        const hit = rw.queryPipeline.castRay!(bodies, colliders, { origin, dir }, maxToi);
-        if (!hit) return null;
-        const h = hit as Record<string, unknown>;
-        if (typeof h['toi'] === 'number' || typeof h['timeOfImpact'] === 'number') return h;
-        const id = mapHit(hit);
-        const pos = extractPoint(hit);
-        if (pos) return { targetId: id, position: pos, normal: [-(dir.x), -(dir.y), -(dir.z)] };
-      } catch {
-        // ignore and continue
-      }
-    }
-
-    // raw.castRay
-    if (rw && rw.raw && typeof rw.raw.castRay === 'function') {
-      const hit = rw.raw.castRay(origin, dir, maxToi);
-      if (!hit) return null;
-      const h = hit as Record<string, unknown>;
-      if (typeof h['toi'] === 'number' || typeof h['timeOfImpact'] === 'number') return h;
-      const id = mapHit(hit);
-      const pos = extractPoint(hit);
-      if (pos) return { targetId: id, position: pos, normal: [-(dir.x), -(dir.y), -(dir.z)] };
-    }
-  } catch {
-    /* swallow */
+  // raw.castRay
+  if (rw && rw.raw && typeof rw.raw.castRay === 'function') {
+    const hit = rw.raw.castRay(origin, dir, maxToi);
+    if (!hit) return null;
+    const h = hit as Record<string, unknown>;
+    if (typeof h['toi'] === 'number' || typeof h['timeOfImpact'] === 'number') return h;
+    const id = mapHit(hit);
+    const pos = extractPoint(hit);
+    if (pos) return { targetId: id, position: pos, normal: [-(dir.x), -(dir.y), -(dir.z)] };
   }
 
   return null;
@@ -315,4 +209,75 @@ export function callOverlapSphere(world: RapierWorldOrAdapter | undefined, cente
 
 export function callProximity(world: RapierWorldOrAdapter | undefined, origin: { x:number;y:number;z:number }, radius: number) {
   return callOverlapSphere(world, origin, radius);
+}
+
+// Retrieve multiple intersections along a ray when the engine provides an
+// intersectionsWithRay-like API. Returns an array of raw hit payloads, or null
+// when the API is not available.
+export function callIntersectionsWithRay(
+  world: RapierWorldOrAdapter | undefined,
+  origin: { x:number;y:number;z:number },
+  dir: { x:number;y:number;z:number },
+  maxToi: number,
+): Array<unknown> | null {
+  if (!world) return null;
+  const adapter = world as PhysicsAdapter;
+  // If caller passed an adapter that only exposes a single-hit raycast we can
+  // wrap it into a single-element array to preserve caller expectations.
+  if (adapter && typeof adapter.raycast === 'function') {
+    try {
+      const r = adapter.raycast(origin, dir, maxToi);
+      if (!r) return null;
+      // If adapter returned a raw TOI object or normalized object, return as array
+      return [r];
+    } catch {
+      // fall through
+    }
+  }
+
+  const rw = world as RapierWorldLike | undefined;
+  if (!rw) return null;
+
+  // queryPipeline.intersectionsWithRay collects many hits via a callback
+  if (rw.queryPipeline && typeof rw.queryPipeline.intersectionsWithRay === 'function') {
+    try {
+      const hits: Array<unknown> = [];
+      const qp = rw.queryPipeline as { intersectionsWithRay?: (...args: unknown[]) => void };
+      const bodies = rw.bodies;
+      const colliders = rw.colliders;
+      qp.intersectionsWithRay!(bodies, colliders, { origin, dir }, maxToi, true, (hit: unknown) => {
+        hits.push(hit);
+        return true;
+      });
+      return hits.length > 0 ? hits : null;
+    } catch {
+      // ignore and continue
+    }
+  }
+
+  // castRay might return a single hit or an array of hits depending on wrapper
+  if (typeof rw.castRay === 'function') {
+    try {
+      const out = rw.castRay({ origin, dir }, maxToi, true);
+      if (!out) return null;
+      if (Array.isArray(out)) return out as Array<unknown>;
+      return [out];
+    } catch {
+      // ignore
+    }
+  }
+
+  // raw.castRay may provide a similar interface
+  if (rw.raw && typeof rw.raw.castRay === 'function') {
+    try {
+      const out = rw.raw.castRay(origin, dir, maxToi, true);
+      if (!out) return null;
+      if (Array.isArray(out)) return out as Array<unknown>;
+      return [out];
+    } catch {
+      // ignore
+    }
+  }
+
+  return null;
 }
