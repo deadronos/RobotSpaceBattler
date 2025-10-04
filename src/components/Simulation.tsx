@@ -105,9 +105,38 @@ export default function Simulation({
   const rapier = useRapier();
   const { invalidate } = useThree();
   
-  // Wrap invalidate for test instrumentation (keeps reference stable)
-  const invalidateRef = useRef(invalidate);
-  invalidateRef.current = invalidate;
+  // Wrap invalidate to protect the main thread from notification storms.
+  // This wrapper caps invalidate calls to at most one per MIN_INVALIDATE_MS
+  // and coalesces multiple calls into a single scheduled call.
+  const MIN_INVALIDATE_MS = 16; // allow up to ~60Hz by default
+  const lastInvalidateTsRef = useRef<number>(0);
+  const invalidateScheduledRef = useRef<boolean>(false);
+
+  const guardedInvalidate = () => {
+    const now = performance.now();
+    const since = now - lastInvalidateTsRef.current;
+    if (!invalidateScheduledRef.current && since >= MIN_INVALIDATE_MS) {
+      lastInvalidateTsRef.current = now;
+      invalidate();
+      return;
+    }
+    if (invalidateScheduledRef.current) return;
+    invalidateScheduledRef.current = true;
+    const wait = Math.max(0, MIN_INVALIDATE_MS - since);
+    window.setTimeout(() => {
+      invalidateScheduledRef.current = false;
+      lastInvalidateTsRef.current = performance.now();
+      try {
+        invalidate();
+      } catch {
+        // ignore errors from renderer
+      }
+    }, wait);
+  };
+
+  // Wrap invalidate reference used throughout Simulation so callers use the guarded version
+  const invalidateRef = useRef(guardedInvalidate);
+  invalidateRef.current = guardedInvalidate;
   // internal step/frame counters are held by the FixedStepDriver
   const projectileQuery = useMemo(
     () => world.with("projectile", "position") as Query<ProjectileEntity>,
