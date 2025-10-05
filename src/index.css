@@ -93,3 +93,15 @@ button:hover { background: #273244; }
   font-size: 0.65rem;
 }
 
+.error-boundary {
+  padding: 16px;
+  color: white;
+  background: #541414;
+}
+
+.error-boundary__stack {
+  white-space: pre-wrap;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+

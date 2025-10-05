@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
+import path from 'path'
 
 // plugins we'll add
 import svgr from 'vite-plugin-svgr'
@@ -28,6 +29,14 @@ export default defineConfig({
     // dynamic imports resolve to the same instance (avoids duplicate module
     // closures where `init` runs in one and `EventQueue` is created in another).
     include: ['@dimforge/rapier3d-compat', '@react-three/rapier']
+  },
+  // Force all imports of the rapier compat package to resolve to the top-level
+  // node_modules path. This avoids multiple different package copies being
+  // bundled or prebundled which would create duplicate WASM runtimes.
+  resolve: {
+    alias: {
+      '@dimforge/rapier3d-compat': path.resolve(__dirname, 'node_modules', '@dimforge', 'rapier3d-compat')
+    }
   },
   server: {
     port: 5173

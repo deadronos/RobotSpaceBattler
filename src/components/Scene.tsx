@@ -1,8 +1,9 @@
+import React, { Suspense, useEffect, useRef } from "react";
 import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Physics } from "@react-three/rapier";
-import React, { Suspense, useEffect, useRef } from "react";
 
+import { ErrorBoundary } from "./ErrorBoundary";
 import { useUI } from "../store/uiStore";
 import { updateFixedStepMetrics } from "../utils/sceneMetrics";
 import EnvironmentLayout from "./environment/EnvironmentLayout";
@@ -58,6 +59,7 @@ export default function Scene() {
   }, []);
 
   return (
+    <ErrorBoundary>
     <Canvas
       shadows
       camera={{ position: [16, 12, 16], fov: 50 }}
@@ -96,9 +98,10 @@ export default function Scene() {
         ) : null}
         {/*<DiagnosticsOverlay updateHz={8} />*/}
       </Suspense>
-      <OrbitControls makeDefault />
-      <Stats />
+      {rapierReady ? <OrbitControls makeDefault /> : null}
+      {rapierReady ? <Stats /> : null}
     </Canvas>
+    </ErrorBoundary>
   );
 }
 
@@ -115,24 +118,29 @@ function TickDriver({ active, hz = 60 }: { active: boolean; hz?: number }) {
     let accumulated = 0;
     
     const tick = (now: number) => {
-      const delta = now - lastTime;
-      lastTime = now;
-      accumulated += delta;
-      
-      // Invalidate when enough time has accumulated
-      // This batches invalidations to match the target hz
-      if (accumulated >= frameInterval) {
-        invalidate();
-        accumulated = accumulated % frameInterval;
-        invalidationCountRef.current += 1;
-        
-        // Update rAF metrics for diagnostics
-        updateFixedStepMetrics({
-          lastRafTimestamp: now,
-          invalidationsPerRaf: invalidationCountRef.current,
-        });
+      try {
+        const delta = now - lastTime;
+        lastTime = now;
+        accumulated += delta;
+  
+        // Invalidate when enough time has accumulated
+        // This batches invalidations to match the target hz
+        if (accumulated >= frameInterval) {
+          invalidate();
+          accumulated = accumulated % frameInterval;
+          invalidationCountRef.current += 1;
+  
+          // Update rAF metrics for diagnostics
+          updateFixedStepMetrics({
+            lastRafTimestamp: now,
+            invalidationsPerRaf: invalidationCountRef.current,
+          });
+        }
+      } catch (err) {
+        // Guard the tick loop from throwing to React's render pipeline.
+        // Log the error for diagnostics and swallow it so the canvas remains mounted.
+        console.error('[TickDriver] error in tick:', err);
       }
-      
       frameId = requestAnimationFrame(tick);
     };
     
