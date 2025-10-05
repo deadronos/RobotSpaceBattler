@@ -2,9 +2,7 @@
 
 > A quick, actionable contributor guide for RobotSpaceBattler.
 
-**Important:** This project follows the constitution defined in `.specify/memory/constitution.md`. All contributors
-and AI agents MUST adhere to the 6 core principles (Physics-First Authority, Deterministic Simulation,
-Test-Driven Development, Small Composable Systems, ECS-Driven Architecture, On-Demand Rendering).
+**Important:** This project follows the constitution defined in `.specify/memory/constitution.md`. 
 
 ## Instructions/Prompts are in:  `.github/prompts`
 
@@ -70,10 +68,6 @@ Project documentation and workflow artifacts are managed in `specs/` (numbered f
 
 - **Constitution compliance required**: See `.specify/memory/constitution.md` for the
   6 core architectural principles.
-- Rapier RigidBody is authoritative for transforms. Prefer
-  `RigidBody.setLinvel({ x, y, z })` over mutating mesh positions to avoid desync.
-- Use deterministic fixed-step loop (`useFixedStepLoop`) with seeded RNG for all
-  simulation logic.
 - Keep systems small (<300 lines), export pure testable functions, emit events rather
   than side effects.
 - Also see `.github/copilot-instructions.md` for a concise agent orientation and keep it

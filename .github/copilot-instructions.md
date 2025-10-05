@@ -5,11 +5,6 @@ This file tells an AI coding agent how the project is structured, where to find 
 
 **REQUIRED READING**: `.specify/memory/constitution.md` 
 
-Quick orientation
-- Tech: React + TypeScript + Vite + react-three-fiber (three.js) + @react-three/rapier (physics).
-- ECS: miniplex 
-- UI state: zustand
-
 - Specs & tasks: `.specify` folder contains specs, plans, and task templates for the Spec Kit workflow.
 
 Feature specs location: The repository also stores active feature specifications under a
