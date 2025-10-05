@@ -9,10 +9,53 @@ import EnvironmentLayout from "./environment/EnvironmentLayout";
 import EnvironmentLighting from "./environment/EnvironmentLighting";
 import Simulation from "./Simulation";
 
+// Note: You may see a deprecation warning from Rapier's wasm initializer
+// like "using deprecated parameters for the initialization function; pass a single object instead".
+// That warning originates from Rapier's internal wasm init. To silence it you can:
+//  - Upgrade @react-three/rapier and @dimforge/rapier3d-compat to versions that support passing
+//    an options object to the wasm initializer, or
+//  - If the library exports an `importRapier` helper (newer releases), call it with a loader
+//    function to control WASM initialization. Example (only available when the library exports it):
+//      importRapier(() => import('@dimforge/rapier3d-compat'))
+// If the warning is harmless you can also ignore it; it does not break simulation.
+
 const ENABLE_ENVIRONMENT = true;
 
 export default function Scene() {
   const paused = useUI((s) => s.paused);
+  const [rapierReady, setRapierReady] = React.useState(false);
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const mod = (await import("@react-three/rapier")) as unknown as {
+          importRapier?: (loader: () => Promise<unknown>) => void | Promise<void>;
+        };
+        if (typeof mod.importRapier === "function") {
+          // If the loader returns a promise, await it to ensure WASM is fully
+          // initialized before we mount Physics. If it is synchronous we
+          // continue immediately.
+          const result = mod.importRapier(() => import("@dimforge/rapier3d-compat"));
+          if (result instanceof Promise) await result;
+        } else {
+          // Some versions of react-three-rapier don't expose importRapier.
+          // In that case import the compat package directly to ensure the
+          // Rapier wasm module is initialized before we create Rapier objects.
+          await import("@dimforge/rapier3d-compat");
+        }
+      } catch (err) {
+        // If loading fails we'll fallback to the library's default behavior
+        // but log a helpful message to aid debugging.
+        console.warn("Rapier WASM loader failed or is unavailable:", err);
+      } finally {
+        if (mounted) setRapierReady(true);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <Canvas
@@ -41,14 +84,16 @@ export default function Scene() {
          * when rendering is slower. The Simulation's fixed-step loop remains
          * authoritative for game logic and determinism.
          */}
-        <Physics
-          gravity={[0, -9.81, 0]}
-          paused={paused}
-          updateLoop="independent"
-          timeStep={1/60}
-        >
-          <Simulation renderFloor={!ENABLE_ENVIRONMENT} />
-        </Physics>
+        {rapierReady ? (
+          <Physics
+            gravity={[0, -9.81, 0]}
+            paused={paused}
+            updateLoop="independent"
+            timeStep={1/60}
+          >
+            <Simulation renderFloor={!ENABLE_ENVIRONMENT} />
+          </Physics>
+        ) : null}
         {/*<DiagnosticsOverlay updateHz={8} />*/}
       </Suspense>
       <OrbitControls makeDefault />
@@ -102,4 +147,8 @@ function TickDriver({ active, hz = 60 }: { active: boolean; hz?: number }) {
   
   return null;
 }
+
+// Wasm loader is now triggered from inside the Scene component before
+// mounting <Physics> to avoid race conditions where the wasm module isn't
+// ready when react-three-rapier creates Rapier objects.
 

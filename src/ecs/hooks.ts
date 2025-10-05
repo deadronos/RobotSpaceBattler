@@ -18,27 +18,49 @@ export function useEcsQuery<T extends Entity>(query: Query<T>) {
     }
   }
 
+  // Cache a snapshot reference so getSnapshot returns the same object
+  // identity between calls unless the underlying query.entities actually
+  // changes. React warns and can enter an infinite update loop if the
+  // snapshot returns a fresh array on every call.
+  const snapshotRef = useRef<T[] | null>(null);
+  if (snapshotRef.current === null) {
+    // Initialize once, keep the same reference until we update it
+    snapshotRef.current = [...query.entities as T[]];
+  }
+
   return useSyncExternalStore(
     (onStoreChange) => {
+      // Helper to refresh the cached snapshot before notifying React
+      const refreshSnapshot = () => {
+        snapshotRef.current = [...query.entities as T[]];
+      };
+
       // Wire up listeners to forward miniplex query events into React.
-      const unsubscribeAdded = query.onEntityAdded.subscribe(() =>
-        onStoreChange(),
-      );
-      const unsubscribeRemoved = query.onEntityRemoved.subscribe(() =>
-        onStoreChange(),
-      );
+      const unsubscribeAdded = query.onEntityAdded.subscribe(() => {
+        refreshSnapshot();
+        onStoreChange();
+      });
+      const unsubscribeRemoved = query.onEntityRemoved.subscribe(() => {
+        refreshSnapshot();
+        onStoreChange();
+      });
       const unsubscribeChanged = subscribeEntityChanges((entity) => {
-        if (!entity || query.has(entity as T)) onStoreChange();
+        if (!entity || query.has(entity as T)) {
+          refreshSnapshot();
+          onStoreChange();
+        }
       });
 
-      // Immediately notify once to ensure first paint reflects the current
-      // world state. This avoids a lost initial update if entities were
-      // added before the component subscribed.
+      // Immediately refresh snapshot and notify once to ensure first
+      // paint reflects the current world state. This avoids a lost initial
+      // update if entities were added before the component subscribed.
       try {
+        refreshSnapshot();
         onStoreChange();
       } catch {
         // defensive - ignore errors from React internals
       }
+
       return () => {
         unsubscribeAdded();
         unsubscribeRemoved();
@@ -49,9 +71,10 @@ export function useEcsQuery<T extends Entity>(query: Query<T>) {
           // ignore errors during cleanup
         }
         connRef.current = null;
+        snapshotRef.current = null;
       };
     },
-    () => [...query.entities as T[]],
-    () => [...query.entities as T[]],
+    () => snapshotRef.current as T[],
+    () => snapshotRef.current as T[],
   );
 }

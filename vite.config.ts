@@ -27,7 +27,7 @@ export default defineConfig({
     // Ensure Vite prebundles the Rapier compat module once so static and
     // dynamic imports resolve to the same instance (avoids duplicate module
     // closures where `init` runs in one and `EventQueue` is created in another).
-    include: ['@dimforge/rapier3d-compat']
+    include: ['@dimforge/rapier3d-compat', '@react-three/rapier']
   },
   server: {
     port: 5173
