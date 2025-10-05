@@ -46,6 +46,11 @@
 - [ ] T001 Create project structure per implementation plan
 - [ ] T002 Initialize [language] project with [framework] dependencies
 - [ ] T003 [P] Configure linting and formatting tools
+- [ ] T004 [P] Add Constitution Compliance checklist to CI (validate PR `CONSTITUTION-CHECK`)
+- [ ] T005 [P] Add automated source-size check: fail CI if a new or modified source file
+  exceeds 300 LOC without an approved exception and decomposition plan.
+- [ ] T006 [P] Create code-health task to detect duplicate or deprecated modules and
+  propose a removal plan (see Depracation policy in constitution)
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
@@ -75,6 +80,8 @@
 - [ ] T021 [P] Update docs/api.md
 - [ ] T022 Remove duplication
 - [ ] T023 Run manual-testing.md
+- [ ] T024 [P] Deprecation sweep: Remove modules that have completed the deprecation
+  window and validated migration tests.
 
 ## Dependencies
 - Tests (T004-T007) before implementation (T008-T014)

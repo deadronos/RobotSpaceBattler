@@ -1,213 +1,195 @@
 <!--
-Sync Impact Report:
-Version change: TEMPLATE → 1.1.0 (Initial constitution created, updated for Spec Kit workflow)
-Modified principles: N/A (Initial creation)
-Added sections:
-  - I. Physics-First Authority
-  - II. Deterministic Simulation
-  - III. Test-Driven Development
-  - IV. Small, Composable Systems
-  - V. ECS-Driven Architecture
-  - VI. On-Demand Rendering
-  - Integration Testing Focus Areas
-  - Development Workflow
-Removed sections:
-  - Memory Bank Synchronization (replaced by Spec Kit workflow in .specify/)
-Templates requiring updates:
-  ✅ Constitution created (this file)
-  ✅ Aligned with Spec Kit workflow using .specify/ folder structure
-  ⚠ Pending: Ensure `AGENTS.md` and `.github/copilot-instructions.md` reference constitution principles
-Follow-up TODOs: None
+SYNC IMPACT REPORT
+- Version change: TEMPLATE → 1.0.0
+- Modified principles:
+  - TEMPLATE placeholders → six concrete principles
+    (Component/Library-First; Test-First; Size & Separation;
+     React & r3f Best Practices; Observability & Performance;
+     Deprecation & Dependency Hygiene)
+- Added sections: Agentic AI Usage Guidance (when to update constitution)
+- Removed sections: none (template placeholders replaced with concrete text)
+- Templates requiring updates:
+  - .specify/templates/plan-template.md ✅ updated
+  - .specify/templates/spec-template.md ✅ updated
+  - .specify/templates/tasks-template.md ✅ updated
+  - .specify/templates/agent-file-template.md ✅ updated
+- Follow-up TODOs:
+  - Verify README.md and AGENTS.md references to constitution rules (⚠ pending)
+  - Run repository-wide lint/test and update any infra that assumes older
+    constitution text (⚠ pending)
 -->
 
 # RobotSpaceBattler Constitution
 
 ## Core Principles
 
-### I. Physics-First Authority (NON-NEGOTIABLE)
+### I. Component & Library-First
+Every new feature or game subsystem MUST be organized as a small, well-scoped component
+or library. Components/libraries MUST be self-contained, expose a clear API, and include
+unit and integration tests. Reuse is preferred over duplication; prefer composition over
+inheritance. Libraries intended for sharing across features MUST include a short CLI or
+scriptable interface for automation and testing where appropriate.
 
-Rapier `RigidBody` is the authoritative source of truth for all transforms of physics-driven entities.
+Rationale: Small, testable units improve reviewability, make incremental refactors safe,
+and enable feature-level reuse across the project and pipelines.
 
-**Rules:**
+### II. Test-First (TDD) — NON-NEGOTIABLE
+All production-facing behavior MUST be driven by tests. The red-green-refactor cycle is
+MANDATORY: write failing tests to lock expected behavior, implement to make tests pass,
+then refactor. Tests MUST include unit tests for pure logic, component tests for UI, and
+contract/integration tests for cross-system guarantees.
 
-- MUST NOT mutate mesh transforms (position, rotation) directly when a `RigidBody` component exists on an entity.
-- MUST use Rapier APIs (`setLinvel`, `setAngvel`, `applyImpulse`) to adjust motion.
-- MUST synchronize ECS position/rotation components from Rapier state via `physicsSyncSystem` each frame.
-- Systems that need transform values MUST read from `RigidBody` translation/rotation APIs during physics sync.
+Rationale: TDD enforces clear requirements, prevents regressions, and keeps the codebase
+maintainable as the project scales.
 
-**Rationale:** Direct mesh manipulation while physics bodies exist causes desynchronization between
-visual state and physical state, leading to unpredictable behavior, collision detection failures, and
-non-reproducible bugs. Physics-first authority ensures consistent, testable simulation behavior.
+### III. Size & Separation Limits
+Source files MUST be easy to review. Individual source files SHOULD be kept under or equal
+to 300 lines of code (LOC). If a file grows beyond 300 LOC, refactor by extracting logic
+into dedicated modules (hooks, utilities, services, systems). Each module MUST have a
+single responsibility and be independently testable.
 
-### II. Deterministic Simulation
+Rationale: Limiting file size reduces cognitive load during code review, improves
+reusability, and encourages small, focused changes.
 
-The simulation MUST be deterministic and reproducible using a fixed-step loop with seeded random number generation.
+### IV. React & react-three-fiber (r3f) Best Practices
+Front-end React code MUST follow modern React and r3f best practices:
 
-**Rules:**
+- Use functional components and hooks; TypeScript is STRONGLY RECOMMENDED for all
+  new modules.
 
-- MUST use `useFixedStepLoop` with a fixed timestep (default 1/60s = 16.67ms) for all game logic systems.
-- MUST use the provided seeded RNG (from `StepContext.rng`) for all random decisions in systems (AI, weapons, spawn variations).
-- MUST NOT use `Math.random()`, `Date.now()`, or other non-deterministic APIs inside simulation systems.
-- Systems MUST receive `StepContext` containing `{ frameCount, simNowMs, rng, step }` and use these values exclusively.
-- Unit tests that verify behavior MUST use the fixed-step driver or test helpers to reproduce identical execution traces.
+- Separate rendering from simulation/physics: rendering components (r3f) SHOULD be pure
+  renderers that consume state provided by hooks or systems; physics and authoritative
+  state updates SHOULD live in dedicated systems or hooks and be tested separately.
 
-**Rationale:** Deterministic simulation enables reproducible unit tests, debugging by replay, and
-verification of behavioral correctness. Non-deterministic sources break test reliability and make bugs
-impossible to reproduce consistently.
+- Keep the r3f render loop light: avoid heavy computations inside useFrame; prefer
+  batched updates, instancing, or worker-based offloading for expensive tasks.
 
-### III. Test-Driven Development (NON-NEGOTIABLE)
+- Use memoization (React.memo, useMemo, useCallback) judiciously and document why a
+  memoization prevents a performance regression.
 
-All systems and core logic MUST be test-covered with automated unit tests (Vitest) and integration
-validation (Playwright E2E).
+- Prefer Drei utilities and stable, well-maintained helpers for common 3D patterns.
 
-**Rules:**
+- Use Suspense and a loader abstraction for asset loading; ensure loader fallbacks are
+  accessible and tested.
 
-- Systems MUST export pure, testable functions that can be unit tested without Three.js or Rapier initialization.
-- MUST write unit tests for new systems, components, and logic before or during implementation.
-- MUST run `npm run lint && npm run format && npm run test` before submitting pull requests.
-- Critical flows (weapon → projectile → damage, AI decision logic, physics sync) MUST have explicit unit test coverage.
-- Playwright smoke tests MUST validate core rendering, spawning, and UI interactions (pause, friendly-fire toggle).
-- Test files live in `tests/` directory and follow naming convention `*.test.ts` or `*.test.tsx`.
+- For scenes with many repeated objects prefer GPU instancing and geometry/texture
+  atlasing where appropriate.
 
-**Rationale:** Test-driven development catches regressions early, documents intended behavior, enables
-confident refactoring, and ensures that changes don't silently break existing functionality. Testability
-forces better system design.
+Rationale: r3f allows powerful 3D rendering inside React; following these rules keeps
+render performance predictable, tests isolated, and the codebase maintainable.
 
-### IV. Small, Composable Systems
+### V. Observability, Performance & Target Platforms
 
-Systems MUST be small, focused, and composed of reusable helper functions to maintain clarity and testability.
+- Performance: Define and measure performance goals for interactive parts of the app
+  (target 60 fps for critical gameplay paths where applicable). Use profiling tools to
+  track regressions.
 
-**Rules:**
+- Observability: Instrument critical systems with structured logs and expose metrics or
+  traces for long-running simulations. Logging in hot loops MUST be rate-limited or
+  guarded behind debug flags.
 
-- Systems MUST have a single, well-defined responsibility (e.g., `aiSystem` handles AI decisions;
-  `weaponSystem` manages cooldowns and firing events).
-- Large system files (>300 lines) SHOULD be refactored into smaller modules with exported helpers.
-- Systems MUST emit events (via event arrays) rather than performing large imperative side-effects inline.
-- Helper functions SHOULD be extracted into separate modules (e.g., `src/systems/ai/queries.ts`,
-  `src/systems/ai/perception.ts`) for reuse and testing.
-- Avoid deep nesting and god-classes; prefer flat, composable functions.
+- Target Platforms: Front-end code MUST target modern Chromium-based browsers (Chrome
+  and Edge) current stable releases at the time of ratification. Recommended baseline:
+  Chrome 120+ / Edge 120+ (update this baseline annually or when platform features used
+  require newer releases). Polyfills or transpilation for legacy browsers MUST be
+  justified in a spec and added as explicit build steps.
 
-**Rationale:** Small systems are easier to understand, test, debug, and refactor. Composability reduces
-duplication and makes it easier to reason about data flows. Event-driven architecture decouples producers
-from consumers.
+Rationale: Defining target platforms reduces accidental compatibility work and allows
+use of modern JS/DOM/WebGL features safely.
 
-### V. ECS-Driven Architecture
+### VI. Deprecation, Redundancy & Dependency Hygiene
 
-The Entity-Component-System (ECS) pattern using `miniplex` is the authoritative data model for simulation state.
+- Deprecation policy: Mark deprecated files or APIs with a clear `DEPRECATED:` header in
+  the file and add a matching issue/PR that documents the migration path. Deprecated
+  items SHOULD be removed after one release cycle or a documented timeframe agreed by
+  maintainers.
 
-**Rules:**
+- Redundancy removal: Propose removal of outdated or duplicate code via a small PR that
+  includes tests demonstrating equivalence or a migration guide for removed behavior.
 
-- Entities MUST be managed through the `miniplex` world (via `miniplexStore.world`).
-- Components MUST be plain data objects (no methods); behavior lives in systems, not components.
-- Systems MUST iterate over entity queries and perform logic based on component data.
-- Entity lifecycle (creation, destruction) MUST notify `entityLookup` subscribers so React rendering can invalidate.
-- Render components (React/Three.js) MUST read from ECS state, not maintain separate state.
-- Use `createRobotEntity`, `createProjectileEntity`, and similar factory functions for consistent entity initialization.
+- Dependency hygiene: Do not introduce transitive dependencies without review. Run
+  dependency audits (`npm audit`, `pnpm audit`, or similar) regularly and patch or
+  upgrade vulnerable packages promptly.
 
-**Rationale:** ECS provides a clear separation between data (components) and logic (systems), enabling
-testability, modularity, and performance optimization. Centralizing state in the ECS prevents
-desynchronization bugs between simulation and rendering.
+Rationale: A clear deprecation/removal workflow keeps the codebase healthy as features
+and patterns evolve.
 
-### VI. On-Demand Rendering
+## Implementation Constraints & Standards
 
-Rendering MUST use an on-demand frameloop (`frameloop="demand"`) driven explicitly by simulation state
-changes to minimize unnecessary GPU work and ensure deterministic pause behavior.
+- Source files MUST be split into dedicated domains: `components/`, `hooks/`, `systems/`,
+  `utils/`, `assets/`, and `scenes/` for 3D content. Keep rendering components small and
+  delegate business logic, physics, and I/O to services or systems.
 
-**Rules:**
+- UI and simulation MUST be tested under the same assumptions they run in production
+  (e.g., WebGL contexts mocked or run headless in CI where feasible).
 
-- The `Canvas` MUST use `frameloop="demand"` (configured in `src/components/Scene.tsx`).
-- MUST use `TickDriver` component to schedule render frames at a target Hz (default 60Hz) when simulation is running.
-- Components that mutate ECS state MUST call `invalidate()` to trigger a render frame.
-- `entityLookup.notify()` and subscription callbacks MUST call `invalidate()` when entities are added/removed/modified.
-- Pause/unpause behavior MUST be deterministic: pausing stops the fixed-step driver; unpausing resumes
-  with captured velocities restored.
+- All code that performs network I/O or file system operations MUST read secrets from
+  environment variables or a secret store — never commit secrets to the repo.
 
-**Rationale:** On-demand rendering reduces CPU/GPU usage when the simulation is paused or idle, improves
-battery life on mobile/laptops, and makes pause behavior predictable and testable. Explicit invalidation
-clarifies when and why frames are rendered.
+## Development Workflow & Review Gates
 
-## Integration Testing Focus Areas
+- Every PR MUST include:
 
-The following areas MUST have integration test coverage due to their cross-system dependencies:
+  - Tests that demonstrate the change (unit/integration/contract as appropriate).
 
-1. **Physics-ECS Synchronization**
-   - Verify `physicsSyncSystem` correctly copies Rapier transforms to ECS components.
-   - Tests: `r3f-ecs-sync.test.tsx`, `useEntityPhysicsSync.test.tsx`
+  - A short changelog entry in the PR description when the change is user visible.
 
-2. **Weapon Resolution Flows**
-   - Verify weapon → projectile/hitscan/beam → damage → death flows with correct `sourceId` propagation.
-   - Verify friendly-fire toggle behavior.
-   - Tests: `weapon-projectile-behavior.test.ts`, `projectile-friendly-fire.test.ts`, `weapon-fire-smoke.test.ts`, `hitscan-determinism.test.ts`
+  - A `CONSTITUTION-CHECK` section listing how the change complies with the
+    constitution principles (e.g., file size, TDD evidence, r3f rules followed).
 
-3. **AI Behavior**
-   - Verify AI target selection, steering decisions, and weapon firing using deterministic RNG.
-   - Tests: `ai-decisions.test.ts`, `ai-perception.test.ts`, `ai-queries.test.ts`
+- Code reviewers MUST verify `CONSTITUTION-CHECK` items and may request refactors to
+  align with principles.
 
-4. **Pause/Resume State Management**
-   - Verify pause captures velocities and resume restores them correctly.
-   - Tests: `pauseVelocity.test.ts`, `pauseManager.test.ts`
+- Major architectural changes that relax or reinterpret a principle MUST be submitted
+  as a constitution amendment (see Governance) rather than silently accepted.
 
-5. **Simulation Bootstrap & Rendering**
-   - Verify entity spawning, query initialization, and React rendering integration.
-   - Tests: `initial-ecs-hydration.test.ts`, `SimulationIntegration.test.tsx`, `r3f-simulation-render.test.tsx`
-   - E2E: `playwright/tests/smoke.spec.ts`
+## Agentic AI Usage Guidance
 
-## Development Workflow
+- Whenever an agent is granted automation privileges that can modify repository code,
+  create PRs, or run deploys (for example: automated code-writing agents, CI bots with
+  merge permissions, or task-executing agents), the constitution MUST be reviewed and
+  amended if any gaps are found. Typical triggers that REQUIRE a constitution review:
 
-### Pre-Commit Quality Gates
+  1. Granting agents commit or merge permissions.
 
-Before committing changes, developers MUST:
+  2. Agents beginning to create or approve PRs without human-in-the-loop by default.
 
-1. Run linter: `npm run lint`
-2. Run formatter: `npm run format`
-3. Run unit tests: `npm run test` (or `npm run test:watch` during development)
-4. Fix all errors and warnings before proceeding.
+  3. Agents having access to deploy or modify infrastructure.
 
-### Pull Request Requirements
+  4. Integrating new agent platforms or tools that change the scope of automation.
 
-Pull requests MUST:
+- Review cadence: perform a governance review every 6 months, and immediately after
+  any of the triggers above. The review should evaluate safety, authorization, auditing,
+  and rollback controls for agentic operations.
 
-1. Include unit test coverage for new systems or logic changes.
-2. Include Playwright E2E validation if the change affects rendering, spawning, or UI interactions.
-3. Update `.specify/` documentation (specs, plans, tasks) if architectural patterns or system responsibilities change.
-4. Update `SPEC.md` if the change alters system boundaries, physics authority model, or core simulation behavior.
-5. Pass all CI checks (lint, format, unit tests, E2E tests).
-6. Include a clear description linking to relevant tasks or specs.
-
-### Performance Standards
-
-- Fixed-step simulation MUST maintain 60Hz (16.67ms per step) under normal load (20 entities, 3 systems active).
-- Frame rendering SHOULD maintain 60fps when on-demand rendering is active.
-- Avoid allocations inside tight loops (use object pooling for projectiles when necessary).
-- Use `collectSceneMetrics` utility to validate draw calls, triangle counts, and texture memory usage.
+Rationale: Agentic capabilities change risk and trust models — they must be explicitly
+approved and governed.
 
 ## Governance
 
-This constitution supersedes all other project practices and conventions. All contributors, maintainers,
-and AI agents MUST adhere to these principles.
+- Constitution supersedes other informal conventions. Amendments require a PR that:
 
-### Amendment Procedure
+  1. Describes the proposed textual change and rationale.
 
-1. Amendments MUST be proposed via pull request with clear rationale.
-2. Breaking changes (MAJOR version bump) require:
-   - Documentation of affected systems and migration path.
-   - Approval from project maintainer.
-   - Update to all dependent templates and guidance files.
-3. Minor changes (new principles, expanded guidance) increment MINOR version.
-4. Clarifications and typo fixes increment PATCH version.
+  2. Lists all impacted contracts/templates and a migration plan.
 
-### Compliance Review
+  3. Includes tests or validation scripts where applicable.
 
-- All pull requests MUST be reviewed for compliance with constitution principles.
-- Violations MUST be justified explicitly or corrected before merge.
-- Use `.github/copilot-instructions.md` and `AGENTS.md` for runtime development guidance; these files
-  SHOULD reference this constitution.
+  4. Receives approval from at least two maintainers (or the maintainer group defined
+     in `MAINTAINERS.md`).
 
-### Versioning Policy
+- Versioning policy (semantic):
 
-- Version format: `MAJOR.MINOR.PATCH`
-- MAJOR: Backward-incompatible governance changes, principle removals/redefinitions.
-- MINOR: New principles, materially expanded guidance, new sections.
-- PATCH: Clarifications, wording improvements, non-semantic refinements.
+  - MAJOR: Backward-incompatible governance changes (removing or substantially
+    redefining a principle). Requires migration plan and broader team approval.
 
-**Version**: 1.1.0 | **Ratified**: 2025-10-03 | **Last Amended**: 2025-10-03
+  - MINOR: Addition of a principle or material expansion of guidance (e.g., new
+    mandatory check). Requires at least two maintainer approvals.
+
+  - PATCH: Wording clarifications, typos, or non-behavioral clarifications.
+
+- Compliance: The `Constitution Check` in plan/spec/tasks templates MUST be updated to
+  reflect changes in this document. CI or pre-merge checks SHOULD include a linter
+  that validates new PRs for the `CONSTITUTION-CHECK` section and fails if absent.
+
+**Version**: 1.0.0 | **Ratified**: 2025-10-06 | **Last Amended**: 2025-10-06

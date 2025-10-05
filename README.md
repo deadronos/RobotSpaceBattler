@@ -9,16 +9,6 @@ This repository is a starter/skeleton for a 3D team-vs-team auto-battler:
 - miniplex ECS, zustand for UI/game state
 - Vite, Vitest, Playwright, ESLint, Prettier
 
-Quick start:
-
-1. Install
-   - npm install
-2. Development
-   - npm run dev
-3. Unit tests
-   - npm run test
-4. E2E Playwright smoke test
-   - npx playwright test
 
 What this skeleton includes:
 
@@ -27,42 +17,6 @@ What this skeleton includes:
 - Simple steer-to-target AI, per-frame updates
 - Basic ECS pattern with miniplex
 - Test scaffolding (Vitest + Playwright)
-
-Notes:
-
-- Replace procedural robots with gltfjsx-generated components from Blender exports for richer visuals.
-- See SPEC.md for architecture, systems, pitfalls, and recommendations.
-
-## Maintenance
-
-Update dependency documentation (docs/DEPENDENCIES.md):
-
-```powershell
-npm run docs:deps
-```
-
-This regenerates the dependency catalog from package.json and installed package metadata.
-
-### Assets & art pipeline (local dev)
-
-This project includes a small assets pipeline to validate and optimize glTF assets used during development.
-
-- Validate example assets:
-
-```powershell
-npm ci
-npm run assets:validate
-```
-
-- Optimize example assets (writes to `public/assets/optimized/`):
-
-```powershell
-npm run assets:optimize
-# Optional (Draco compression via gltf-transform if installed):
-npm run assets:compress
-```
-
-See `docs/assets.md` for authoring guidelines and naming conventions.
 
 ## Spec Kit (AI-assisted spec & implementation)
 
@@ -126,4 +80,28 @@ When the plan is validated, run `/implement` to execute tasks. The agent will fo
 and provide progress updates and artifacts under `.specify/`.
 
 For a guided walkthrough of the full Spec Kit workflow, follow the link above.
+
+## Pull Request Templates & Contributing guidance
+
+To keep changes aligned with the project's constitution and review expectations, we maintain
+multiple PR templates under `.github/PULL_REQUEST_TEMPLATE/`. When opening a PR, pick the
+template that best matches the change:
+
+- `feature.md` — new features, user-visible changes, and behavior additions.
+- `bugfix.md` — fixes for defects and regressions.
+- `chore.md` — maintenance, dependency updates, infrastructure, and cleanup work.
+
+Each template contains a required `CONSTITUTION-CHECK` section. Complete this section with
+concrete evidence of compliance (file paths, LOC decomposition plan if any file exceeds
+300 LOC, TDD/test evidence, r3f/rendering notes, and any agentic-AI approvals). The CI
+workflow will validate that a `CONSTITUTION-CHECK` section is present and will post an
+auto-generated draft comment listing changed files and suggested decomposition steps.
+
+If the auto-generated draft appears as a comment on your PR, copy or refine its contents
+into the PR body `CONSTITUTION-CHECK` section and edit details to describe your plan and
+TDD evidence. The CI will fail if the `CONSTITUTION-CHECK` section is missing.
+
+For maintainers: consider adding a short note in PR reviews when the `CONSTITUTION-CHECK`
+section is incomplete or requires follow-up (e.g., create a follow-up task for file
+refactoring or a deprecation plan).
 

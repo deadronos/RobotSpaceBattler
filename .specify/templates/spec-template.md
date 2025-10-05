@@ -32,6 +32,15 @@
 - ❌ Avoid HOW to implement (no tech stack, APIs, code structure)
 - 👥 Written for business stakeholders, not developers
 
+When a spec affects front-end, rendering, or platform constraints, the spec MUST
+explicitly include an "Implementation Constraints" subsection that documents:
+
+- The target browser baseline (e.g., Chrome 120+, Edge 120+) or a justification for
+  broader support.
+- Any required polyfills or build steps for compatibility.
+- Expected file/module sizing expectations (source files SHOULD stay ≤ 300 LOC) and
+  planned module decomposition for larger features.
+
 ### Section Requirements
 - **Mandatory sections**: Must be completed for every feature
 - **Optional sections**: Include only when relevant to the feature
