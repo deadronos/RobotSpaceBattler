@@ -1,47 +1,39 @@
-
 # Progress - RobotSpaceBattler
 
-## What works (completed/available)
+**Last updated:** 2025-10-05
 
-- Core simulation loop and renderer (Three.js + react-three-fiber)
-- Procedural robot generation and basic AI
-- Rapier physics integration with transform sync utilities
-- Weapons systems: Hitscan, Projectile and Beam systems are implemented and wired to spawn physics-backed entities
-- DamageSystem implemented and emits death events
-- FX system implemented (event-driven). `FxSystem` spawns transient FX entities; `FXLayer` renders them; `showFx` UI flag toggles visuals.
-- Seeded RNG utility and deterministic unit tests
-- Unit tests for core systems (Vitest) including projectile lifecycle and physics sync
-- Playwright E2E smoke test added and verified locally (`playwright/tests/smoke.spec.ts`) asserting `#status` and `canvas` presence
-- Dev diagnostics and spawn/reset controls for robot teams exposed in the UI
-- Respawn and scoring loop implemented (systems + UI + tests).
+## What works (completed / available)
 
-## What's left to build / improve
+- Core simulation and renderer (react-three-fiber) with on-demand rendering.
+- Procedural robot generation and basic AI; bots are spawned by `resetAndSpawnDefaultTeams()` before React mounts so the first render sees entities.
+- Rapier physics with transform-sync utilities (`physicsSyncSystem`).
+- Weapons subsystems (Hitscan, Projectile, Beam) fully integrated into the fixed-step Simulation loop and covered by unit tests.
+- Damage, Respawn, and Scoring systems with UI and tests.
+- Event-driven FX system and `FXLayer` rendering; FX is toggleable via `useUI().showFx`.
+- Deterministic fixed-step loop (`useFixedStepLoop`) provides a seeded RNG per
+  tick and consistent timestep (default 1/60). Tests use the driver to reproduce
+  deterministic behavior. The driver also accepts runtime flags (for example
+  `friendlyFire`) and exposes metrics and test-only instrumentation when
+  `testMode` is enabled.
+- Simulation now creates a runtime event log (`createRuntimeEventLog`) exposed
+  via `setRuntimeEventLog` for diagnostics and scoring audit traces.
+- Simulation bootstrap logic extracted into `useSimulationBootstrap` and spawn
+  controls are centralized in `src/robots/spawnControls`.
 
-- Integrate unified weapons ECS fully into `Simulation` (final wiring and cleanup)
-- Harden friendly-fire rules and ensure `sourceId` is propagated from weapon -> projectile (see TASK007/TASK008)
-- Add GLTF asset loader and optional replacement of procedural prefabs
-- Increase unit test coverage for weapon cooldowns, AOE, and edge-case behaviors
-- Add more FX rendering polish and potential postprocessing once asset pipeline is ready
+## Remaining work
+
+- Harden friendly-fire rules and ensure `sourceId` is reliably propagated from
+  weapon → projectile → damage (regression tests required).
+- Add optional GLTF loader and model replacement path for robot prefabs; keep procedural prefabs as canonical defaults.
+- Expand unit tests around fixed-step edge cases, FX emission order, and instrumentation hook coverage.
 
 ## Current status
 
-- Weapons ECS: Nearing completion — core subsystems implemented, final integration pending (see TASK006)
-- Playwright smoke: Present and verified locally using repository Playwright config (CI will run this via its configured webServer that starts the dev server on port 5174)
-- Task list expansion: Ongoing (see TASK005)
+- Weapons ECS: integrated and running in Simulation's fixed-step loop.
+- Tests: unit tests present and CI smoke test configured; expand coverage on edge cases and timing-sensitive behaviors.
+- CI: Playwright smoke configured to use `webServer` (port 5174) for CI runs.
 
 ## Known issues / notes
 
-- Playwright's config starts a dev server on port 5174 for CI; Vite's dev server default remains 5173 for local dev. This is documented in `memory-bank/techContext.md` and the handover recommends ensuring CI/Playwright runs use the configured webServer behavior.
-- Some systems still require expanded unit tests before closing out their tasks.
-
-## Recent fixes
-
-- Fixed a TypeScript build error where `Simulation` passed the Rapier world to `projectileSystem` — updated `projectileSystem` to accept an optional `rapierWorld` parameter so the production build succeeds. Tests and build verified locally.
-
-## Milestone 10 - Docs updates
-
-- Updated `SPEC.md` to include concrete component shapes and implementation notes for Robots, Weapons, AI, and Physics/Environment as part of Milestone 10. See `docs/milestone-10-docs-spec.md` for the milestone plan. These changes clarify Rapier authority and preferred APIs (use `RigidBody` methods rather than manipulating mesh transforms).
-
-
-
-
+- Friendly-fire/sourceId propagation needs regression tests to avoid accidental friendly-fire.
+- Ensure deterministic tests use the fixed-step driver so RNG and timing are reproducible.

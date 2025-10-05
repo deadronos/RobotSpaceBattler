@@ -21,11 +21,11 @@ Catch regressions early with a tiny measurement utility and checklist. Focus on 
 
 ## Subtasks
 
-| ID | Description | Status | Updated | Notes |
-|----|-------------|--------|---------|-------|
-| 5.1 | Implement `sceneMetrics.ts` with basic counters | Completed | 2025-09-17 | Counts meshes/materials/textures/geometries |
-| 5.2 | Add unit test or script to print metrics | Completed | 2025-09-17 | `tests/sceneMetrics.test.ts` exercises utility |
-| 5.3 | Write checklist in docs with targets | Completed | 2025-09-17 | Added section to milestone doc |
+| ID  | Description                                     | Status    | Updated    | Notes                                          |
+| --- | ----------------------------------------------- | --------- | ---------- | ---------------------------------------------- |
+| 5.1 | Implement `sceneMetrics.ts` with basic counters | Completed | 2025-09-17 | Counts meshes/materials/textures/geometries    |
+| 5.2 | Add unit test or script to print metrics        | Completed | 2025-09-17 | `tests/sceneMetrics.test.ts` exercises utility |
+| 5.3 | Write checklist in docs with targets            | Completed | 2025-09-17 | Added section to milestone doc                 |
 
 ## Acceptance Criteria
 

@@ -79,6 +79,8 @@ module.exports = [
       'unused-imports': require('eslint-plugin-unused-imports')
     },
     rules: Object.assign({}, (tsRecommended && tsRecommended.rules) ? tsRecommended.rules : {}, {
+      // Typescript handles undefined vars at type level; disable core no-undef for TS to avoid false positives
+      'no-undef': 'off',
       // react hooks plugin rules
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
@@ -116,6 +118,24 @@ module.exports = [
     files: ['src/robots/**'],
     rules: {
       'react/no-unknown-property': 'off'
+    }
+  },
+
+  // forbid Date.now() and Math.random() in simulation systems to prevent non-deterministic fallbacks
+  {
+    files: ['src/systems/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "MemberExpression[object.name='Date'][property.name='now']",
+          message: 'Use StepContext.simNowMs or a time provider instead of Date.now() in simulation systems.'
+        },
+        {
+          selector: "MemberExpression[object.name='Math'][property.name='random']",
+          message: 'Use StepContext.rng or a seeded RNG provider instead of Math.random() in simulation systems.'
+        }
+      ],
     }
   },
 

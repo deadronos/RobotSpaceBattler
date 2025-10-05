@@ -26,12 +26,12 @@ Centralizing material creation ensures consistent look and lowers draw calls via
 
 ## Subtasks
 
-| ID | Description | Status | Updated | Notes |
-|----|-------------|--------|---------|-------|
-| 1.1 | Create `src/utils/materials.ts` with defaults and factories | Completed | 2025-09-17 | Added JSDoc and emissive helpers |
-| 1.2 | Add placeholder tiling textures and loader util | Completed | 2025-09-17 | Procedural textures via `DataTexture` |
-| 1.3 | Document usage in JSDoc and `docs/` | Completed | 2025-09-17 | Notes added to milestone doc |
-| 1.4 | Add unit tests for defaults and factory options | Completed | 2025-09-17 | `tests/materials.test.ts` |
+| ID  | Description                                                 | Status    | Updated    | Notes                                 |
+| --- | ----------------------------------------------------------- | --------- | ---------- | ------------------------------------- |
+| 1.1 | Create `src/utils/materials.ts` with defaults and factories | Completed | 2025-09-17 | Added JSDoc and emissive helpers      |
+| 1.2 | Add placeholder tiling textures and loader util             | Completed | 2025-09-17 | Procedural textures via `DataTexture` |
+| 1.3 | Document usage in JSDoc and `docs/`                         | Completed | 2025-09-17 | Notes added to milestone doc          |
+| 1.4 | Add unit tests for defaults and factory options             | Completed | 2025-09-17 | `tests/materials.test.ts`             |
 
 ## Acceptance Criteria
 

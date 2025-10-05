@@ -1,17 +1,32 @@
 # Product Context — RobotSpaceBattler
 
+**Last updated:** 2025-10-05
+
 ## Why this exists
 
-RobotSpaceBattler exists to provide a compact, educational platform for experimenting with physics-driven gameplay, procedural content, and modular systems engineering in a React/Three.js environment.
+RobotSpaceBattler provides a hands-on sandbox for experimenting with physics-integrated gameplay, procedural asset generation, and modular systems design using modern web tooling. It is targeted at contributors who want a compact, testable environment for trying AI, weapons, and physics-driven interactions without a heavy asset pipeline.
 
-## Problems it solves
+## Problems it addresses
 
-- Demonstrates integrating Rapier physics with react-three-fiber and an ECS (miniplex).
-- Serves as a sandbox for AI/behavior experiments with simple robots.
-- Provides a testbed for fast iteration with Vite, Vitest and Playwright.
+- Teaching and prototyping how to integrate Rapier physics with a React/Three.js renderer while keeping physics authoritative.
+- Providing an accessible environment for experimenting with AI and weapon systems with deterministic test modes enabled by the fixed-step driver.
+- Enabling reproducible tests and CI workflows for interactive simulation logic so system behavior can be validated in unit and E2E tests.
 
-## User experience goals
+## UX goals
 
-- Fast load and immediate feedback in the browser.
-- Simple controls for spawning robots and toggling simulation features.
-- Clear visibility into simulation state for debugging and teaching.
+- Fast startup and immediate visual feedback in the browser; default teams are
+  spawned on boot (see `src/main.tsx` which calls
+  `resetAndSpawnDefaultTeams()` before mounting React).
+- Minimal developer controls for spawning, pausing, toggling FX and
+  friendly-fire, and inspecting internals (PauseControl, FriendlyFireToggle,
+  PrefabsInspector, DevDiagnostics). These toggles are exposed via the small
+  `useUI` Zustand store (`showFx`, `friendlyFire`, `paused` among others) so
+  tests and the UI can control behavior deterministically.
+- On-demand rendering plus an explicit TickDriver keeps UI updates intentional
+  and deterministic for testing. The `TickDriver` batches invalidations to a
+  target hz (default 60) and cooperates with `useFixedStepLoop`.
+- Test-mode providers: in `testMode`, `Simulation` wraps the scene with
+  `TimeProviderComponent` and `RngProvider` so tests get stable provider
+  identities and deterministic RNG.
+- Developer-facing visibility: diagnostics overlay, test hooks, and an
+  exposed ECS world for debug during development.

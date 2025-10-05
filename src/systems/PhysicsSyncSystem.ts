@@ -1,15 +1,15 @@
-import type { World } from 'miniplex';
+import type { World } from "miniplex";
 
-import type { Entity } from '../ecs/miniplexStore';
-import { notifyEntityChanged } from '../ecs/miniplexStore';
+import type { Entity } from "../ecs/miniplexStore";
+import { notifyEntityChanged } from "../ecs/miniplexStore";
 
 /**
  * Physics Sync System - Synchronizes entity positions from Rapier physics bodies back to ECS components.
- * 
+ *
  * This system ensures that visual rendering stays in sync with physics simulation by copying
  * the authoritative physics positions back to the entity.position components that React
  * components use for rendering.
- * 
+ *
  * Should run every frame after physics simulation but before rendering.
  */
 export function physicsSyncSystem(world: World<Entity>) {
@@ -23,11 +23,9 @@ export function physicsSyncSystem(world: World<Entity>) {
     if (!e.rigid || !e.position) continue;
 
     // Attempt to read physics position from rigid body
-    const rigid = e.rigid as unknown as {
-      translation?: () => { x: number; y: number; z: number };
-    };
+    const rigid = e.rigid as RigidBodyLike | undefined;
 
-    if (rigid && typeof rigid.translation === 'function') {
+    if (rigid && typeof rigid.translation === "function") {
       try {
         const translation = rigid.translation();
         const newX = translation.x;
@@ -36,13 +34,13 @@ export function physicsSyncSystem(world: World<Entity>) {
 
         // Check if position has actually changed to avoid unnecessary notifications
         const threshold = 0.0001;
-        const positionChanged = 
+        const positionChanged =
           Math.abs(e.position[0] - newX) > threshold ||
           Math.abs(e.position[1] - newY) > threshold ||
           Math.abs(e.position[2] - newZ) > threshold;
 
         if (positionChanged) {
-          // Update ECS position from physics
+          // Update existing position vector in-place to preserve the reference
           e.position[0] = newX;
           e.position[1] = newY;
           e.position[2] = newZ;
@@ -56,4 +54,8 @@ export function physicsSyncSystem(world: World<Entity>) {
       }
     }
   }
+}
+
+interface RigidBodyLike {
+  translation?: () => { x: number; y: number; z: number };
 }

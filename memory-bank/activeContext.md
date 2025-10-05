@@ -1,40 +1,52 @@
-
 # Active Context - RobotSpaceBattler
+
+**Last updated:** 2025-10-05
 
 ## Current focus
 
-- Stabilize core simulation (physics-first authority, deterministic test mode).
-- Finish unified weapons ECS integration and increase unit test coverage for weapons and projectiles.
-- New: Event-driven FX system added (non-authoritative visuals) wired into Simulation.
+- Maintain and validate the deterministic fixed-step simulation (`useFixedStepLoop`) and ensure tests reflect real-world timing and RNG behavior.
+- Continue hardening weapon behaviors around friendly-fire and reliable `sourceId` propagation between weapon → projectile → damage flows.
+- Small refactors to keep per-frame systems compact and testable (AI, weapons, physics-sync, FX).
+- Maintain test instrumentation surfaces: `useFixedStepLoop` offers `testMode` and an
+  instrumentation hook. `Simulation` exposes test-only helpers
+  (`__testSetSimulationInstrumentationHook`, `__testGetFixedStepHandle`) and uses
+  `RngProvider`/`TimeProviderComponent` when running in `testMode` so unit tests
+  can inject deterministic providers.
 
 ## Recent changes (implemented)
 
-- Seeded RNG utility added and used by deterministic unit tests.
-- Rapier physics integrated; RigidBody is authoritative and transform sync utilities are in place.
-- Procedural robot prefabs and spawn controls implemented (dev-only UI exposed).
-- Weapons systems implemented: Hitscan, Projectile and Beam subsystems with events; projectile/beam entities spawn with Rapier bodies.
-- FX system implemented (`src/systems/FxSystem.ts`) with `FXLayer` renderer and `showFx` UI flag.
-- DamageSystem added and emits death events consumed by higher-level systems.
-- Unit tests expanded: weapons, projectile lifecycle, and physics sync tests (Vitest).
-- Playwright E2E smoke test added (`playwright/tests/smoke.spec.ts`) and verified locally to assert `#status` and `canvas` are present.
-
-- Respawn and Scoring systems implemented with queue-based respawns, score tracking UI, and Vitest coverage (`src/systems/RespawnSystem.ts`, `src/systems/ScoringSystem.ts`, `src/components/ui/ScoreBoard.tsx`).
+- Deterministic fixed-step loop added and used by `Simulation` via
+  `useFixedStepLoop`; the driver supplies a seeded RNG per tick and the fixed
+  timestep used everywhere (default 60Hz). The driver also accepts runtime
+  flags (for example `friendlyFire`) and exposes test helpers such as
+  `getMetrics()` in test mode.
+- Weapons stack integrated into the Simulation loop: `weaponSystem`,
+  `hitscanSystem`, `beamSystem`, and `projectileSystem` are invoked each fixed
+  step. The WeaponSystem uses an object-param API that accepts the current
+  StepContext to ensure deterministic resolution.
+- AI decisions centralized in `aiSystem` (moved out of render helpers) and receive RNG, Rapier context, and simulation time.
+- Rapier physics integrated; `RigidBody` is treated as authoritative; `physicsSyncSystem` reconciles ECS state with physics.
+- FX system implemented (`fxSystem` + `FXLayer`) and toggled via `useUI().showFx`.
+- Initial world population: `main.tsx` calls `resetAndSpawnDefaultTeams()` before React mounts so the first render sees entities.
+- Simulation bootstrap and spawn logic extracted to `useSimulationBootstrap` to
+  centralize initial population and provide test-friendly hooks.
+- A runtime event log is created inside `Simulation` (`createRuntimeEventLog`) and
+  exposed to the runtime (`setRuntimeEventLog`) for diagnostics and scoring audit
+  entries.
+- Pause/resume velocity capture and restore utilities (`capturePauseVel` /
+  `restorePauseVel`) are used by `Simulation` to preserve motion across pauses.
 
 ## Next steps
 
-- Integrate the unified weapons ECS into the main `Simulation` wiring and ensure all systems read authority from Rapier bodies.
-- Harden friendly-fire rules, ensure projectiles carry correct `sourceId`, and expand unit tests for cooldowns and AOE edge-cases.
-- Add GLTF asset loader and optional model replacement for procedural prefabs.
+- Harden friendly-fire and `sourceId` propagation across weapon → projectile flows and add regression tests to prevent regressions.
+- Add an optional GLTF loader/model replacement path for robot prefabs; keep procedural prefabs as canonical defaults.
+- Audit and expand unit tests to cover fixed-step timing edge cases, FX emission order, and instrumentation hooks.
 
-## Decisions / Conventions
+## Decisions & conventions
 
-- Rapier's `RigidBody` remains authoritative for transforms; avoid mutating mesh transforms directly when a `RigidBody` is present.
-- New developer UI/tools should live under `src/components/ui/` and be guarded by dev flags.
-
-## Notes / Recent verification
-
-- Playwright smoke test uses the repo Playwright config which starts the dev server on port 5174 for CI; note the Vite default dev port is 5173 (see `memory-bank/techContext.md` for port docs).
-- Several unit tests rely on deterministic RNG; maintain `utils/seededRng.ts` as the canonical seeded RNG helper.
-
-
-
+- Rapier `RigidBody` remains authoritative for transforms; systems must not
+  mutate mesh transforms directly when physics bodies are present.
+- Deterministic simulation is provided by `useFixedStepLoop`; tests that depend
+  on RNG or timing should use the driver or its test helpers to reproduce
+  behavior.
+- Keep systems small and export pure functions where possible to enable unit testing without Three.js or Rapier.
