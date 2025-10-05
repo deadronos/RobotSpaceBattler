@@ -5,6 +5,7 @@
 **Updated:** 2025-10-02
 
 ## Original Request
+
 Refactor `src/components/Simulation.tsx` to extract the deterministic tick loop, spawn/bootstrap, and pause handling.
 Move those responsibilities into small, testable hooks so the component is primarily wiring and rendering.
 
@@ -17,11 +18,11 @@ Move those responsibilities into small, testable hooks so the component is prima
 ## Implementation Plan
 
 - Create `useFixedStepLoop` hook that accepts deterministic config (seed, timestep).
-
   - Unit-test the hook in isolation.
-- Create `useSimulationBootstrap` hook to perform query.connect, defer spawn, and teardown.
 
+- Create `useSimulationBootstrap` hook to perform query.connect, defer spawn, and teardown.
   - Preserve mount/unmount semantics and add safe cleanup.
+
 - Move pause velocity capture/restore into a small `pauseManager` utility with API: `capturePauseVel(world)` and `restorePauseVel(world)`.
 - Replace `Simulation` internals to call these hooks and keep the JSX mapping of entities to render prefabs.
 - Add unit tests that assert bootstrap runs once, unmount cleans up, and the fixed-step loop invokes systems deterministically.
@@ -32,15 +33,16 @@ Move those responsibilities into small, testable hooks so the component is prima
 
 ### Subtasks
 
-| ID | Description | Status | Updated | Notes |
-|----|-------------|--------|---------|-------|
-| 1.1 | Implement `useFixedStepLoop` hook | Completed | 2025-10-02 | Hook + FixedStepDriver added; unit tests added |
-| 1.2 | Implement `useSimulationBootstrap` hook | Completed | 2025-10-02 | Hook added; basic unit test added |
-| 1.3 | Implement `pauseManager` utility | Completed | 2025-10-02 | pauseManager added; unit tests added |
-| 1.4 | Wire `Simulation` to new hooks & remove extracted code | Completed | 2025-10-02 | Simulation uses hooks. |
-| 1.5 | Add/adjust unit tests & run Playwright smoke test | Completed | 2025-10-02 | Unit tests added. |
+| ID  | Description                                            | Status    | Updated    | Notes                                          |
+| --- | ------------------------------------------------------ | --------- | ---------- | ---------------------------------------------- |
+| 1.1 | Implement `useFixedStepLoop` hook                      | Completed | 2025-10-02 | Hook + FixedStepDriver added; unit tests added |
+| 1.2 | Implement `useSimulationBootstrap` hook                | Completed | 2025-10-02 | Hook added; basic unit test added              |
+| 1.3 | Implement `pauseManager` utility                       | Completed | 2025-10-02 | pauseManager added; unit tests added           |
+| 1.4 | Wire `Simulation` to new hooks & remove extracted code | Completed | 2025-10-02 | Simulation uses hooks.                         |
+| 1.5 | Add/adjust unit tests & run Playwright smoke test      | Completed | 2025-10-02 | Unit tests added.                              |
 
 ## Progress Log
+
 ### 2025-10-02
 
 - Task created and initial plan drafted.

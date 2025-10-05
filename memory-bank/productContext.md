@@ -1,6 +1,6 @@
 # Product Context — RobotSpaceBattler
 
-**Last updated:** 2025-10-03
+**Last updated:** 2025-10-05
 
 ## Why this exists
 
@@ -14,7 +14,19 @@ RobotSpaceBattler provides a hands-on sandbox for experimenting with physics-int
 
 ## UX goals
 
-- Fast startup and immediate visual feedback in the browser; default teams are spawned on boot (see `src/main.tsx`).
-- Minimal developer controls for spawning, pausing, toggling FX and friendly-fire, and inspecting internals (PauseControl, FriendlyFireToggle, PrefabsInspector, DevDiagnostics).
-- On-demand rendering plus an explicit TickDriver keeps UI updates intentional and deterministic for testing.
-- Developer-facing visibility: diagnostics overlay, test hooks, and an exposed ECS world for debug during development.
+- Fast startup and immediate visual feedback in the browser; default teams are
+  spawned on boot (see `src/main.tsx` which calls
+  `resetAndSpawnDefaultTeams()` before mounting React).
+- Minimal developer controls for spawning, pausing, toggling FX and
+  friendly-fire, and inspecting internals (PauseControl, FriendlyFireToggle,
+  PrefabsInspector, DevDiagnostics). These toggles are exposed via the small
+  `useUI` Zustand store (`showFx`, `friendlyFire`, `paused` among others) so
+  tests and the UI can control behavior deterministically.
+- On-demand rendering plus an explicit TickDriver keeps UI updates intentional
+  and deterministic for testing. The `TickDriver` batches invalidations to a
+  target hz (default 60) and cooperates with `useFixedStepLoop`.
+- Test-mode providers: in `testMode`, `Simulation` wraps the scene with
+  `TimeProviderComponent` and `RngProvider` so tests get stable provider
+  identities and deterministic RNG.
+- Developer-facing visibility: diagnostics overlay, test hooks, and an
+  exposed ECS world for debug during development.

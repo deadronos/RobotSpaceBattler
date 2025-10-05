@@ -268,6 +268,16 @@ export default function Simulation({
       if (process.env.NODE_ENV === 'test' && __testSimulationInstrumentationHook) {
         __testSimulationInstrumentationHook('afterSystems', { frameCount });
       }
+
+      // Ensure the Canvas is invalidated after each simulation step so
+      // frameloop="demand" renders visual updates (important for tests and
+      // when TickDriver isn't driving every frame). This keeps visuals in
+      // sync with authoritative simulation updates.
+      try {
+        invalidateRef.current();
+      } catch {
+        // ignore - defensive for non-runtime tests or missing invalidate
+      }
     },
   );
 
