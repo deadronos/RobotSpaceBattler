@@ -55,6 +55,10 @@ export function useFixedStepLoop(
   // Test-only instrumentation hook (guarded by NODE_ENV)
   const instrumentationHookRef = useRef<TestInstrumentationHook | null>(null);
 
+  // Flag indicating the RAF-driven autonomous stepping is active. When true
+  // we avoid useFrame-driven stepping to prevent double-stepping.
+  const autonomousActiveRef = useRef(false);
+
   onStepRef.current = onStep;
   optionsRef.current.enabled = options.enabled;
   optionsRef.current.seed = options.seed;
@@ -96,7 +100,79 @@ export function useFixedStepLoop(
     return context;
   }, []);
 
+  // Autonomous RAF loop: steps the simulation even when three.js Canvas is
+  // using frameloop="demand". Disabled for tests (testMode) so unit tests
+  // can retain deterministic manual stepping.
+  useEffect(() => {
+    if (typeof window === 'undefined') return; // SSR guard
+    if (process.env.NODE_ENV === 'test') return; // do not start RAF in tests
+
+    let rafId: number | null = null;
+    let lastTime = performance.now();
+
+    autonomousActiveRef.current = true;
+
+    const loop = (now: number) => {
+      const { enabled, step, maxStepsPerFrame, maxAccumulatedSteps, testMode } =
+        optionsRef.current;
+
+      // Always schedule next RAF so loop remains active; only perform stepping
+      // when enabled and not in test mode.
+      try {
+        // Schedule next frame first to ensure consistent cadence even if stepping throws
+        rafId = requestAnimationFrame(loop);
+
+        if (!enabled || testMode) {
+          lastTime = now;
+          // still update metrics to show zero steps and current backlog
+          metricsRef.current = { stepsLastFrame: 0, backlog: Math.floor(accumulatorRef.current / (step || 1)) };
+          return;
+        }
+
+        const stepSeconds = step;
+        const stepsPerFrame = Math.max(1, maxStepsPerFrame ?? DEFAULT_MAX_STEPS_PER_FRAME);
+        const maxAccumSteps = Math.max(
+          stepsPerFrame,
+          maxAccumulatedSteps ?? stepsPerFrame * DEFAULT_BACKLOG_MULTIPLIER,
+        );
+
+        // accumulate delta time in seconds
+        const deltaSeconds = Math.min((now - lastTime) / 1000, stepSeconds * maxAccumSteps);
+        accumulatorRef.current = Math.min(accumulatorRef.current + deltaSeconds, stepSeconds * maxAccumSteps);
+        lastTime = now;
+
+        let stepsThisFrame = 0;
+        while (accumulatorRef.current >= stepSeconds && stepsThisFrame < stepsPerFrame) {
+          runStep();
+          accumulatorRef.current -= stepSeconds;
+          stepsThisFrame++;
+        }
+
+        metricsRef.current = {
+          stepsLastFrame: stepsThisFrame,
+          backlog: Math.floor(accumulatorRef.current / stepSeconds),
+        };
+      } catch {
+        // swallow errors in RAF loop to keep simulation resilient; continue scheduling
+        lastTime = now;
+      }
+    };
+
+    rafId = requestAnimationFrame(loop);
+
+    return () => {
+      autonomousActiveRef.current = false;
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
+    // Intentionally no dependencies - reads latest options via optionsRef
+  }, [runStep]);
+
+  // useFrame stepping is retained as a fallback when RAF autonomous stepping
+  // is not active (for example in test environments). Guard against
+  // double-stepping by returning early if the RAF driver is active.
   useFrame((_, delta) => {
+    if (autonomousActiveRef.current) return;
+
     const { enabled, step, maxStepsPerFrame, maxAccumulatedSteps, testMode } =
       optionsRef.current;
 
