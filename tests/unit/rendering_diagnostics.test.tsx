@@ -1,4 +1,4 @@
-import { act } from "@react-three/fiber";
+import { act } from 'react-dom/test-utils';
 import { Physics } from "@react-three/rapier";
 import { create } from "@react-three/test-renderer";
 import React, { useEffect } from "react";

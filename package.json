@@ -32,13 +32,13 @@
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "latest",
-    "@react-three/drei": "latest",
-    "@react-three/fiber": "latest",
+    "@react-three/drei": "10.7.6",
+    "@react-three/fiber": "^9.3.0",
     "@react-three/postprocessing": "latest",
     "@react-three/rapier": "latest",
     "miniplex": "latest",
-    "react": "latest",
-    "react-dom": "latest",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
     "three": "latest",
     "zustand": "latest"
   },

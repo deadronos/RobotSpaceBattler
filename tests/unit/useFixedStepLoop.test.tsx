@@ -1,4 +1,4 @@
-import { act } from "@react-three/fiber";
+import { act } from 'react-dom/test-utils';
 import { create } from "@react-three/test-renderer";
 import { useEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
