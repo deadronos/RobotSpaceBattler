@@ -23,11 +23,13 @@ flowchart LR
 ## Core Principle: Physics Authority
 
 **Rule:** When a `RigidBody` is present on an entity, **never mutate `entity.position` or mesh transforms directly**. Instead:
+
 1. Use `rigid.setLinvel()`, `rigid.setAngvel()`, or `rigid.setTranslation()` to control motion
 2. Let `physicsSyncSystem` copy authoritative physics transforms back to `entity.position`
 3. React components read `entity.position` for rendering
 
 **Why:**
+
 - Prevents desync between physics simulation and visual state
 - Ensures collision responses and velocity integrations remain consistent
 - Allows physics to handle complex interactions (collisions, forces, constraints)
@@ -35,6 +37,7 @@ flowchart LR
 ## Component Interfaces
 
 ### RigidBodyRef
+
 ```typescript
 interface RigidBodyRef {
   rigid?: unknown | null;
@@ -44,6 +47,7 @@ interface RigidBodyRef {
 Attached to entities by prefabs (e.g., `Robot`, `Projectile`) when mounting RigidBody components.
 
 ### RigidBody API (from @react-three/rapier)
+
 ```typescript
 interface RigidBody {
   translation(): { x: number; y: number; z: number };
@@ -64,11 +68,13 @@ interface RigidBody {
 **Invoked:** Near end of fixed-step loop (after damage/respawn, before FX)
 
 **Signature:**
+
 ```typescript
-function physicsSyncSystem(world: World<Entity>): void
+function physicsSyncSystem(world: World<Entity>): void;
 ```
 
 **Responsibilities:**
+
 1. Iterate all entities in world
 2. Skip entities without `rigid` or `position` components
 3. Read `rigid.translation()` to get authoritative physics position
@@ -77,11 +83,13 @@ function physicsSyncSystem(world: World<Entity>): void
 6. Notify subscribers via `notifyEntityChanged(entity)`
 
 **Rationale:**
+
 - Fresh vector references prevent stale object mutations
 - Epsilon comparison avoids unnecessary notifications for sub-millimeter jitter
 - Notifications trigger React invalidations for on-demand rendering
 
 ### Code Excerpt
+
 ```typescript
 export function physicsSyncSystem(world: World<Entity>) {
   for (const entity of world.entities) {
@@ -106,7 +114,9 @@ export function physicsSyncSystem(world: World<Entity>) {
           e.position = [newX, newY, newZ];
           notifyEntityChanged(e as Entity);
         }
-      } catch { /* defensive */ }
+      } catch {
+        /* defensive */
+      }
     }
   }
 }
@@ -119,6 +129,7 @@ export function physicsSyncSystem(world: World<Entity>) {
 **Solution:** Capture and restore velocity state using `pauseVelocity` utilities.
 
 ### Pause Flow
+
 ```mermaid
 sequenceDiagram
   participant UI as UI (Pause Button)
@@ -135,6 +146,7 @@ sequenceDiagram
 ```
 
 ### Resume Flow
+
 ```mermaid
 sequenceDiagram
   participant UI as UI (Unpause Button)
@@ -154,17 +166,20 @@ sequenceDiagram
 **File:** `src/ecs/pauseManager.ts`
 
 **Exported functions:**
+
 ```typescript
 function capturePauseVel(world: World<Entity>): void;
 function restorePauseVel(world: World<Entity>): void;
 ```
 
 **Storage:** Uses `entity.pauseVel` field (part of Entity type):
+
 ```typescript
 pauseVel?: { lin?: Vec3; ang?: Vec3 };
 ```
 
 **Implementation details:**
+
 - Iterates all entities with `rigid` component
 - Captures `linvel()` and `angvel()` via Rapier API
 - Stores as Vec3 tuples in `pauseVel` field
@@ -172,6 +187,7 @@ pauseVel?: { lin?: Vec3; ang?: Vec3 };
 - Restores from storage and clears field when resuming
 
 ### Integration with Simulation
+
 ```typescript
 // In Simulation.tsx
 useEffect(() => {
@@ -200,6 +216,7 @@ useEffect(() => {
 ```
 
 **Key settings:**
+
 - `updateLoop="independent"` — Physics steps independently from render loop
 - `timeStep={1 / 60}` — Fixed 60 FPS physics step for determinism
 - `paused={paused}` — Tied to UI state; stops physics when true
@@ -208,6 +225,7 @@ useEffect(() => {
 ## Entity Lifecycle
 
 ### Robot Spawn
+
 1. `spawnRobot()` creates entity with initial `position` component
 2. `createRobotEntity()` adds entity to world and assigns numeric id
 3. React renders `<Robot>` prefab
@@ -216,6 +234,7 @@ useEffect(() => {
 6. Entity id attached to rigid and collider via `__entityId` and `userData` fields
 
 ### Per-Frame Sync
+
 1. AI/Weapon systems call `rigid.setLinvel()` to apply forces/velocities
 2. Rapier physics integrates velocities and resolves collisions
 3. `physicsSyncSystem` reads `rigid.translation()` and updates `entity.position`
@@ -223,6 +242,7 @@ useEffect(() => {
 5. `<Robot>` prefab reads updated `entity.position` (indirectly via rigid body)
 
 ### Death/Despawn
+
 1. DamageSystem calls `rigid.setLinvel(0,0,0)` to stop movement
 2. RespawnSystem queues respawn or removes entity
 3. React unmounts `<Robot>` prefab
@@ -232,13 +252,15 @@ useEffect(() => {
 ## Common Patterns
 
 ### Setting Velocity (AI, Projectiles)
+
 ```typescript
-if (entity.rigid && typeof entity.rigid.setLinvel === 'function') {
+if (entity.rigid && typeof entity.rigid.setLinvel === "function") {
   entity.rigid.setLinvel({ x: vx, y: vy, z: vz }, true);
 }
 ```
 
 ### Reading Position (Collision Checks)
+
 ```typescript
 function getEntityPosition(entity: Entity): Vec3 | undefined {
   const rigid = entity.rigid as RigidBody | null;
@@ -251,6 +273,7 @@ function getEntityPosition(entity: Entity): Vec3 | undefined {
 ```
 
 ### Attaching RigidBody (Prefabs)
+
 ```typescript
 // In Robot.tsx
 const rbRef = useRef<unknown>(null);
@@ -273,15 +296,18 @@ return (
 ## Testing
 
 **Unit tests:**
+
 - `tests/pauseVelocity.test.ts` — Pause/resume velocity capture/restore
 - `tests/pauseManager.test.ts` — Integration with world iteration
 - `tests/r3f-ecs-sync.test.tsx` — Physics sync behavior
 - `tests/useEntityPhysicsSync.test.tsx` — Hook-level sync logic
 
 **Integration tests:**
+
 - `SimulationIntegration.test.tsx` — Full physics + ECS + systems flow
 
 **Test patterns:**
+
 ```typescript
 // Mock rigid body
 const mockRigid = {
@@ -302,18 +328,22 @@ expect(mockRigid.translation).toHaveBeenCalled();
 ## Known Issues & Risks
 
 **Rapier API variance:**
+
 - Test environments may not have full Rapier API (defensive try/catch used)
 - Direct `rapier.world` access vs `useRapier()` hook can differ in method availability
 
 **Position epsilon:**
+
 - 0.0001 threshold may cause jitter if physics updates are extremely small
 - Could be tuned or made configurable
 
 **Pause edge cases:**
+
 - If entity is added/removed during pause, velocity state may be lost
 - Currently acceptable; respawn resets state anyway
 
 **Projectile cleanup:**
+
 - Projectiles without rigid bodies fall back to manual position updates
 - Must ensure `physicsSyncSystem` doesn't override manual projectile movement
 
@@ -331,5 +361,5 @@ expect(mockRigid.translation).toHaveBeenCalled();
 - **Velocity storage:** `src/ecs/pauseVelocity.ts`
 - **Robot prefab:** `src/robots/robotPrefab.tsx`
 - **Scene config:** `src/components/Scene.tsx`
-- **Tests:** `tests/pauseVelocity.test.ts`, `tests/pauseManager.test.ts`, 
+- **Tests:** `tests/pauseVelocity.test.ts`, `tests/pauseManager.test.ts`,
   `tests/r3f-ecs-sync.test.tsx`, `tests/useEntityPhysicsSync.test.tsx`

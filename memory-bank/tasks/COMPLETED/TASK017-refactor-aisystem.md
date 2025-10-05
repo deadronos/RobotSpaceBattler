@@ -5,6 +5,7 @@
 **Updated:** 2025-01-16
 
 ## Original Request
+
 Refactor `src/systems/AISystem.ts` to reduce full-world scans and to separate perception from state-transition logic.
 Extract pure helper functions so the system becomes easier to unit test.
 
@@ -27,13 +28,13 @@ Extract pure helper functions so the system becomes easier to unit test.
 
 ### Subtasks
 
-| ID | Description | Status | Updated | Notes |
-|----|-------------|--------|---------|-------|
+| ID  | Description                                     | Status   | Updated    | Notes                                                                          |
+| --- | ----------------------------------------------- | -------- | ---------- | ------------------------------------------------------------------------------ |
 | 2.1 | Introduce miniplex queries for enemy candidates | Complete | 2025-01-16 | Created `src/systems/ai/queries.ts` with `queryEnemies` and `findNearestEnemy` |
-| 2.2 | Extract perception helpers and LOS wrapper | Complete | 2025-01-16 | Created `src/systems/ai/perception.ts` with `canSeeTarget`, `isInRange`, etc. |
-| 2.3 | Extract state-transition pure functions | Complete | 2025-01-16 | Created `src/systems/ai/decisions.ts` with all pure decision functions |
-| 2.4 | Update `aiSystem` to apply returned commands | Complete | 2025-01-16 | Refactored AISystem to be thin orchestrator with `applyDecision` |
-| 2.5 | Add unit tests and update coverage | Complete | 2025-01-16 | Added 58 new tests across 3 test files |
+| 2.2 | Extract perception helpers and LOS wrapper      | Complete | 2025-01-16 | Created `src/systems/ai/perception.ts` with `canSeeTarget`, `isInRange`, etc.  |
+| 2.3 | Extract state-transition pure functions         | Complete | 2025-01-16 | Created `src/systems/ai/decisions.ts` with all pure decision functions         |
+| 2.4 | Update `aiSystem` to apply returned commands    | Complete | 2025-01-16 | Refactored AISystem to be thin orchestrator with `applyDecision`               |
+| 2.5 | Add unit tests and update coverage              | Complete | 2025-01-16 | Added 58 new tests across 3 test files                                         |
 
 ## Progress Log
 
