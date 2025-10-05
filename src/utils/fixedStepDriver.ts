@@ -28,6 +28,12 @@ export class FixedStepDriver {
   private flags: { friendlyFire?: boolean } = {};
 
   constructor(seed: number, step: number) {
+    if (!step || step <= 0) {
+      // Defensive default to avoid zero/negative timestep causing unexpected
+      // behavior in stepping loops. Log to aid debugging.
+      console.warn('[FixedStepDriver] initialized with invalid step:', step, '— defaulting to 1/60');
+      step = 1 / 60;
+    }
     this.seed = seed;
     this.step = step;
   }
@@ -43,12 +49,13 @@ export class FixedStepDriver {
     }
 
     this.frameCount++;
-  this.simNowMs += this.step * 1000;
+    // Ensure simNowMs increments by a positive amount
+    this.simNowMs += this.step * 1000;
     const rngSeed = stepSeed(this.seed, this.frameCount);
     const rng = createSeededRng(rngSeed);
     const context: StepContext = {
-  frameCount: this.frameCount,
-  simNowMs: this.simNowMs,
+      frameCount: this.frameCount,
+      simNowMs: this.simNowMs,
       rng,
       step: this.step,
       idFactory: createStepIdFactory({
@@ -64,13 +71,13 @@ export class FixedStepDriver {
 
   pause(): PauseToken {
     this.paused = true;
-  return { frameCount: this.frameCount, simNowMs: this.simNowMs };
+    return { frameCount: this.frameCount, simNowMs: this.simNowMs };
   }
 
   resume(token?: PauseToken) {
     if (token) {
       this.frameCount = token.frameCount;
-  this.simNowMs = token.simNowMs;
+      this.simNowMs = token.simNowMs;
     }
     this.paused = false;
     this.lastContext = null;
@@ -78,9 +85,14 @@ export class FixedStepDriver {
 
   reset(seed: number, step: number) {
     this.seed = seed;
+    // Defensive guard for reset API too
+    if (!step || step <= 0) {
+      console.warn('[FixedStepDriver] reset called with invalid step:', step, '— defaulting to 1/60');
+      step = 1 / 60;
+    }
     this.step = step;
     this.frameCount = 0;
-  this.simNowMs = 0;
+    this.simNowMs = 0;
     this.paused = false;
     this.lastContext = null;
   }

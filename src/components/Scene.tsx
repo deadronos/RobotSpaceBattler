@@ -1,13 +1,14 @@
-import React, { Suspense, useEffect, useRef } from "react";
 import { OrbitControls, Stats } from "@react-three/drei";
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import { Physics } from "@react-three/rapier";
+import React, { Suspense } from "react";
 
-import { ErrorBoundary } from "./ErrorBoundary";
 import { useUI } from "../store/uiStore";
-import { updateFixedStepMetrics } from "../utils/sceneMetrics";
+import { loadRapierOnce } from "../utils/rapierLoader";
 import EnvironmentLayout from "./environment/EnvironmentLayout";
 import EnvironmentLighting from "./environment/EnvironmentLighting";
+import { ErrorBoundary } from "./ErrorBoundary";
+import LoopDriver from "./LoopDriver";
 import Simulation from "./Simulation";
 
 // Note: You may see a deprecation warning from Rapier's wasm initializer
@@ -22,6 +23,14 @@ import Simulation from "./Simulation";
 
 const ENABLE_ENVIRONMENT = true;
 
+// Debug toggles: flip these to help isolate stalls during development.
+const DEBUG = {
+  // If true, the TickDriver will be disabled and the Canvas won't be invalidated by the TickDriver.
+  disableTickDriver: false,
+  // If true, the FixedStepLoop will not start its autonomous RAF loop (simulation can still be stepped manually).
+  disableAutonomousRaf: false,
+};
+
 export default function Scene() {
   const paused = useUI((s) => s.paused);
   const [rapierReady, setRapierReady] = React.useState(false);
@@ -30,26 +39,13 @@ export default function Scene() {
     let mounted = true;
     (async () => {
       try {
-        const mod = (await import("@react-three/rapier")) as unknown as {
-          importRapier?: (loader: () => Promise<unknown>) => void | Promise<void>;
-        };
-        if (typeof mod.importRapier === "function") {
-          // If the loader returns a promise, await it to ensure WASM is fully
-          // initialized before we mount Physics. If it is synchronous we
-          // continue immediately.
-          const result = mod.importRapier(() => import("@dimforge/rapier3d-compat"));
-          if (result instanceof Promise) await result;
-        } else {
-          // Some versions of react-three-rapier don't expose importRapier.
-          // In that case import the compat package directly to ensure the
-          // Rapier wasm module is initialized before we create Rapier objects.
-          await import("@dimforge/rapier3d-compat");
-        }
+        console.info('[Scene] Rapier WASM loader (singleton): start');
+        await loadRapierOnce();
+        console.info('[Scene] Rapier WASM loader (singleton): completed');
       } catch (err) {
-        // If loading fails we'll fallback to the library's default behavior
-        // but log a helpful message to aid debugging.
-        console.warn("Rapier WASM loader failed or is unavailable:", err);
+        console.warn('Rapier WASM loader (singleton) failed or is unavailable:', err);
       } finally {
+        console.info('[Scene] Rapier WASM loader (singleton): finished (setting ready flag)');
         if (mounted) setRapierReady(true);
       }
     })();
@@ -73,29 +69,27 @@ export default function Scene() {
       ) : (
         <ambientLight intensity={0.3} />
       )}
-      {/* Heartbeat: ensure frames are enqueued across environments */}
-      <TickDriver active={!paused} hz={60} />
       <Suspense fallback={null}>
         {ENABLE_ENVIRONMENT ? <EnvironmentLayout /> : null}
-        {/**
-         * Tie Rapier's stepping to the render loop so visuals advance with frames,
-         * and use a fixed timestep for consistency across machines.
-         * 
-         * updateLoop="independent": Rapier runs its own physics loop independent
-         * of the render frame rate. This ensures smooth physics simulation even
-         * when rendering is slower. The Simulation's fixed-step loop remains
-         * authoritative for game logic and determinism.
-         */}
         {rapierReady ? (
           <Physics
             gravity={[0, -9.81, 0]}
-            paused={paused}
-            updateLoop="independent"
-            timeStep={1/60}
-          >
-            <Simulation renderFloor={!ENABLE_ENVIRONMENT} />
-          </Physics>
-        ) : null}
+            // When LoopDriver performs manual Rapier stepping we must prevent
+            // the Physics wrapper from auto-stepping. We force Physics paused
+            // when manual stepping is enabled so the LoopDriver is the single
+            // authority for advancing the Rapier world.
+            paused={true}
+             updateLoop="follow"
+             timeStep={1/60}
+           >
+             <Simulation renderFloor={!ENABLE_ENVIRONMENT} disableAutonomousRaf={DEBUG.disableAutonomousRaf} />
+             {/* Central LoopDriver: drives fixed-step simulation and invalidation.
+                 manualRapierStep=false by default. If you want Rapier to be stepped
+                 manually by the driver, set `manualRapierStep={true}` and ensure
+                 the Physics wrapper is configured accordingly. */}
+            <LoopDriver enabled={!paused && !DEBUG.disableTickDriver} hz={60} stepSeconds={1/60} manualRapierStep={true} />
+           </Physics>
+         ) : null}
         {/*<DiagnosticsOverlay updateHz={8} />*/}
       </Suspense>
       {rapierReady ? <OrbitControls makeDefault /> : null}
@@ -105,58 +99,9 @@ export default function Scene() {
   );
 }
 
-function TickDriver({ active, hz = 60 }: { active: boolean; hz?: number }) {
-  const { invalidate } = useThree();
-  const invalidationCountRef = useRef<number>(0);
-  
-  useEffect(() => {
-    if (!active) return;
-    
-    let frameId: number | null = null;
-    let lastTime = performance.now();
-    const frameInterval = 1000 / hz;
-    let accumulated = 0;
-    
-    const tick = (now: number) => {
-      try {
-        const delta = now - lastTime;
-        lastTime = now;
-        accumulated += delta;
-  
-        // Invalidate when enough time has accumulated
-        // This batches invalidations to match the target hz
-        if (accumulated >= frameInterval) {
-          invalidate();
-          accumulated = accumulated % frameInterval;
-          invalidationCountRef.current += 1;
-  
-          // Update rAF metrics for diagnostics
-          updateFixedStepMetrics({
-            lastRafTimestamp: now,
-            invalidationsPerRaf: invalidationCountRef.current,
-          });
-        }
-      } catch (err) {
-        // Guard the tick loop from throwing to React's render pipeline.
-        // Log the error for diagnostics and swallow it so the canvas remains mounted.
-        console.error('[TickDriver] error in tick:', err);
-      }
-      frameId = requestAnimationFrame(tick);
-    };
-    
-    frameId = requestAnimationFrame(tick);
-    
-    return () => {
-      if (frameId !== null) {
-        cancelAnimationFrame(frameId);
-      }
-    };
-  }, [active, hz, invalidate]);
-  
-  return null;
-}
-
-// Wasm loader is now triggered from inside the Scene component before
-// mounting <Physics> to avoid race conditions where the wasm module isn't
-// ready when react-three-rapier creates Rapier objects.
+// Removed the old TickDriver. The LoopDriver component now owns RAF and
+// invalidation cadence and delegates fixed-step stepping to registered
+// FixedStepLoopHandles (such as those created by Simulation via
+// useFixedStepLoop). The central driver enables a single source of truth
+// for stepping, easier deterministic testing, and simpler diagnostics.
 

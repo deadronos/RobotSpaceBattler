@@ -2,6 +2,7 @@ import { useFrame } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { FixedStepDriver } from "../utils/fixedStepDriver";
+import { RegisteredFixedStepHandle,registerFixedStepHandle, unregisterFixedStepHandle } from "../utils/loopDriverRegistry";
 
 type StepContext = ReturnType<FixedStepDriver["stepOnce"]>;
 type PauseToken = ReturnType<FixedStepDriver["pause"]>;
@@ -18,6 +19,7 @@ export type FixedStepLoopOptions = {
   maxAccumulatedSteps?: number;
   testMode?: boolean;
   friendlyFire?: boolean;
+  autonomous?: boolean; // whether the RAF-driven autonomous stepping is enabled (default: false)
 };
 
 // Test-only instrumentation for T074/T076
@@ -51,13 +53,11 @@ export function useFixedStepLoop(
     maxStepsPerFrame: options.maxStepsPerFrame,
     maxAccumulatedSteps: options.maxAccumulatedSteps,
     testMode: options.testMode,
+    autonomous: options.autonomous ?? false,
   });
   // Test-only instrumentation hook (guarded by NODE_ENV)
   const instrumentationHookRef = useRef<TestInstrumentationHook | null>(null);
-
-  // Flag indicating the RAF-driven autonomous stepping is active. When true
-  // we avoid useFrame-driven stepping to prevent double-stepping.
-  const autonomousActiveRef = useRef(false);
+  const lastLogRef = useRef<number>(0);
 
   onStepRef.current = onStep;
   optionsRef.current.enabled = options.enabled;
@@ -66,6 +66,7 @@ export function useFixedStepLoop(
   optionsRef.current.maxStepsPerFrame = options.maxStepsPerFrame;
   optionsRef.current.maxAccumulatedSteps = options.maxAccumulatedSteps;
   optionsRef.current.testMode = options.testMode;
+  optionsRef.current.autonomous = options.autonomous ?? false; // default to false
 
   useEffect(() => {
     driverRef.current = new FixedStepDriver(options.seed, options.step);
@@ -100,83 +101,27 @@ export function useFixedStepLoop(
     return context;
   }, []);
 
-  // Autonomous RAF loop: steps the simulation even when three.js Canvas is
-  // using frameloop="demand". Disabled for tests (testMode) so unit tests
-  // can retain deterministic manual stepping.
-  useEffect(() => {
-    if (typeof window === 'undefined') return; // SSR guard
-    if (process.env.NODE_ENV === 'test') return; // do not start RAF in tests
-
-    let rafId: number | null = null;
-    let lastTime = performance.now();
-
-    autonomousActiveRef.current = true;
-
-    const loop = (now: number) => {
-      const { enabled, step, maxStepsPerFrame, maxAccumulatedSteps, testMode } =
-        optionsRef.current;
-
-      // Always schedule next RAF so loop remains active; only perform stepping
-      // when enabled and not in test mode.
-      try {
-        // Schedule next frame first to ensure consistent cadence even if stepping throws
-        rafId = requestAnimationFrame(loop);
-
-        if (!enabled || testMode) {
-          lastTime = now;
-          // still update metrics to show zero steps and current backlog
-          metricsRef.current = { stepsLastFrame: 0, backlog: Math.floor(accumulatorRef.current / (step || 1)) };
-          return;
-        }
-
-        const stepSeconds = step;
-        const stepsPerFrame = Math.max(1, maxStepsPerFrame ?? DEFAULT_MAX_STEPS_PER_FRAME);
-        const maxAccumSteps = Math.max(
-          stepsPerFrame,
-          maxAccumulatedSteps ?? stepsPerFrame * DEFAULT_BACKLOG_MULTIPLIER,
-        );
-
-        // accumulate delta time in seconds
-        const deltaSeconds = Math.min((now - lastTime) / 1000, stepSeconds * maxAccumSteps);
-        accumulatorRef.current = Math.min(accumulatorRef.current + deltaSeconds, stepSeconds * maxAccumSteps);
-        lastTime = now;
-
-        let stepsThisFrame = 0;
-        while (accumulatorRef.current >= stepSeconds && stepsThisFrame < stepsPerFrame) {
-          runStep();
-          accumulatorRef.current -= stepSeconds;
-          stepsThisFrame++;
-        }
-
-        metricsRef.current = {
-          stepsLastFrame: stepsThisFrame,
-          backlog: Math.floor(accumulatorRef.current / stepSeconds),
-        };
-      } catch {
-        // swallow errors in RAF loop to keep simulation resilient; continue scheduling
-        lastTime = now;
-      }
-    };
-
-    rafId = requestAnimationFrame(loop);
-
-    return () => {
-      autonomousActiveRef.current = false;
-      if (rafId !== null) cancelAnimationFrame(rafId);
-    };
-    // Intentionally no dependencies - reads latest options via optionsRef
-  }, [runStep]);
-
-  // useFrame stepping is retained as a fallback when RAF autonomous stepping
-  // is not active (for example in test environments). Guard against
-  // double-stepping by returning early if the RAF driver is active.
+  // useFrame stepping is retained as a fallback when consumers opt into
+  // autonomous stepping via the `autonomous` option. This keeps compatibility
+  // for small demos and local experimentation while encouraging the central
+  // LoopDriver for production and tests.
   useFrame((_, delta) => {
-    if (autonomousActiveRef.current) return;
-
-    const { enabled, step, maxStepsPerFrame, maxAccumulatedSteps, testMode } =
+    const { enabled, step, maxStepsPerFrame, maxAccumulatedSteps, testMode, autonomous } =
       optionsRef.current;
 
+    if (!autonomous && !(process.env.NODE_ENV === 'test' || optionsRef.current.testMode)) {
+      // When not autonomous and not in test mode, do not step in useFrame
+      return;
+    }
+
     if (!enabled || testMode) {
+      return;
+    }
+
+    // Defensive guard: if step is invalid, skip stepping to avoid pathological loops
+    if (!step || step <= 0) {
+      console.error('[useFixedStepLoop] invalid step value in useFrame:', step);
+      metricsRef.current = { stepsLastFrame: 0, backlog: 0 };
       return;
     }
 
@@ -204,6 +149,17 @@ export function useFixedStepLoop(
       stepsLastFrame: stepsThisFrame,
       backlog: Math.floor(accumulatorRef.current / stepSeconds),
     };
+
+    // Throttled logging for useFrame path as well
+    try {
+      const nowMs = performance.now();
+      if (nowMs - lastLogRef.current >= 1000) {
+        lastLogRef.current = nowMs;
+        console.info('[FixedStepLoop][useFrame] stepSeconds=', stepSeconds, 'metrics=', metricsRef.current);
+      }
+    } catch {
+      // ignore
+    }
   });
 
   const pause = useCallback(() => {
@@ -246,18 +202,27 @@ export function useFixedStepLoop(
     }
   }, []);
 
-  return useMemo(
-    () => ({
-      step: stepManual,
-      pause,
-      resume,
-      reset,
-      getDriver,
-      getLastStepContext,
-      getMetrics,
-      // Only expose instrumentation hook in test mode
-      ...(process.env.NODE_ENV === 'test' ? { __testSetInstrumentationHook: setInstrumentationHook } : {}),
-    }),
-    [getDriver, getLastStepContext, getMetrics, pause, reset, resume, stepManual, setInstrumentationHook],
-  );
+  // Build the public handle object and register it with the central LoopDriver
+  // so an external LoopDriver component can find and step it.
+  const handle = useMemo(() => ({
+    step: stepManual,
+    pause,
+    resume,
+    reset,
+    getDriver,
+    getLastStepContext,
+    getMetrics,
+    // Only expose instrumentation hook in test mode
+    ...(process.env.NODE_ENV === 'test' ? { __testSetInstrumentationHook: setInstrumentationHook } : {}),
+  }), [getDriver, getLastStepContext, getMetrics, pause, reset, resume, stepManual, setInstrumentationHook]);
+
+  useEffect(() => {
+    // Register this handle so external drivers can step it. The registry only
+    // keeps a single handle for now because the repo currently supports a
+    // single authoritative simulation instance per Canvas.
+    registerFixedStepHandle(handle as RegisteredFixedStepHandle);
+    return () => unregisterFixedStepHandle(handle as RegisteredFixedStepHandle);
+  }, [handle]);
+
+  return handle;
 }

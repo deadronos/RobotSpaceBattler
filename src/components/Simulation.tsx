@@ -94,11 +94,17 @@ export function __testGetFixedStepHandle() {
 export default function Simulation({
   renderFloor = false,
   testMode = false,
+  disableAutonomousRaf: _disableAutonomousRaf = false,
 }: {
   renderFloor?: boolean;
   testMode?: boolean;
+  disableAutonomousRaf?: boolean;
 }) {
   const paused = useUI((s) => s.paused);
+  // Keep this reference as a no-op to retain the prop in the public API while
+  // intentionally disabling internal autonomous stepping. This avoids linter
+  // errors about unused assigned parameters.
+  void _disableAutonomousRaf;
   const showFx = useUI((s) => s.showFx);
   const friendlyFire = useUI((s) => s.friendlyFire);
   // rapier context (optional) for physics queries like raycasts
@@ -159,6 +165,8 @@ export default function Simulation({
       step: FIXED_TIMESTEP,
       testMode: testMode,
       friendlyFire,
+      // Autonomous RAF is disabled — the central LoopDriver will perform stepping.
+      autonomous: false,
     },
     (ctx) => {
   const { step, rng, simNowMs, frameCount } = ctx;
@@ -273,11 +281,6 @@ export default function Simulation({
       // frameloop="demand" renders visual updates (important for tests and
       // when TickDriver isn't driving every frame). This keeps visuals in
       // sync with authoritative simulation updates.
-      try {
-        invalidateRef.current();
-      } catch {
-        // ignore - defensive for non-runtime tests or missing invalidate
-      }
     },
   );
 
