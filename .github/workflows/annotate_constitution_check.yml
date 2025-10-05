@@ -1,0 +1,49 @@
+name: Annotate Constitution Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  annotate-pr:
+    name: Annotate PR with CONSTITUTION-CHECK draft
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch base
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1 || true
+
+      - name: Determine changed files
+        id: changed
+        run: |
+          CHANGED=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD || true)
+          echo "CHANGED_FILES<<EOF" >> $GITHUB_ENV
+          printf "%s\n" "$CHANGED" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          printf "%s\n" "$CHANGED" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Run annotator and post comment
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHANGED_FILES_LIST: ${{ steps.changed.outputs.files }}
+        run: |
+          node ./scripts/post_constitution_check.js

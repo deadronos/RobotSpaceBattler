@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
+    "target": "esnext",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "module": "ESNext",
-    "moduleResolution": "Node",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "strict": true,
     "esModuleInterop": true,
