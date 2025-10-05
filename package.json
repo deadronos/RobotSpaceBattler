@@ -16,7 +16,9 @@
     "test:coverage": "vitest run --coverage",
     "ci:test": "cross-env CI=true vitest run --coverage",
     "playwright:install": "playwright install",
-    "playwright:test": "playwright test"
+    "playwright:test": "playwright test",
+    "check:source-size": "node ./scripts/check_source_size.js",
+    "check:pr-constitution": "node ./scripts/check_pr_constitution_check.js"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx,js,jsx}": [

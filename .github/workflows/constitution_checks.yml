@@ -1,0 +1,66 @@
+name: Constitution checks
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+  push:
+    branches:
+      - '**'
+
+jobs:
+  source-size-check:
+    name: Source size check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Determine changed files (pull_request)
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "Fetching base branch..."
+          git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1 || true
+          CHANGED=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD || true)
+          echo "CHANGED_FILES<<EOF" >> $GITHUB_ENV
+          printf "%s\n" "$CHANGED" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Determine files (push)
+        if: github.event_name != 'pull_request'
+        run: |
+          CHANGED=$(git ls-files src scripts tests playwright || true)
+          echo "CHANGED_FILES<<EOF" >> $GITHUB_ENV
+          printf "%s\n" "$CHANGED" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Run source-size check
+        env:
+          CHANGED_FILES_LIST: ${{ env.CHANGED_FILES }}
+        run: |
+          node ./scripts/check_source_size.js
+
+  constitution-pr-check:
+    name: PR body constitution check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate PR contains CONSTITUTION-CHECK
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          node ./scripts/check_pr_constitution_check.js

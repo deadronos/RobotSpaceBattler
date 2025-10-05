@@ -1,4 +1,3 @@
-
 # Implementation Plan: [FEATURE]
 
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
@@ -46,6 +45,29 @@
 
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+
+- MUST verify Test-First (TDD) evidence exists for behavior changes: failing tests
+  created and tracked in the plan or contracts.
+
+- MUST verify file sizing and separation: No new source file introduced by the plan
+  should be expected to exceed 300 LOC; large modules must be split into `hooks/`,
+  `systems/` or `utils/` with individual tests.
+
+- MUST verify React/r3f-specific guidance for front-end changes:
+  - Rendering logic separated from simulation/physics.
+  - useFrame usage justified and documented; heavy work must be offloaded.
+  - Asset loading via Suspense/loader abstractions documented.
+
+- MUST state Target Platform baseline in the plan when UI or engine changes occur
+  (e.g., Chrome 120+, Edge 120+), and list required polyfills if older browsers are
+  to be supported.
+
+- MUST include a Deprecation & Redundancy plan for removing or consolidating
+  outdated code if the plan touches or replaces existing functionality.
+
+- MUST include an explicit check for Agentic AI triggers when the plan will add
+  or change automation that can merge or deploy code (see constitution Agentic AI
+  Guidance).
 
 [Gates determined based on constitution file]
 

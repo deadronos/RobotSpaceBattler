@@ -24,6 +24,10 @@ npm run test
 Pull requests run formatting, linting, and tests via GitHub Actions. If your change
 affects gameplay, physics, or core systems, add or update unit tests under `tests/`.
 
+Please choose the appropriate PR template (feature / bugfix / chore) and complete the
+required `CONSTITUTION-CHECK` section in your PR; CI will validate the presence of this
+section and may post an auto-generated draft to help you fill it in.
+
 ## Spec Kit onboarding
 
 This repository uses the GitHub Spec Kit workflow. Authoritative specifications and
