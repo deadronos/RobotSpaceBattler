@@ -11,13 +11,10 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\" --config eslint.config.cjs",
     "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --config eslint.config.cjs --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
-    "docs:deps": "node scripts/generate-dependency-docs.cjs",
     "test": "vitest run",
-    "assets:validate": "node ./scripts/validate-assets.cjs",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "ci:test": "cross-env CI=true vitest run --coverage",
-    "ci:test:perf": "cross-env CI=true PERFORMANCE_STRICT=true vitest run --reporter verbose",
     "playwright:install": "playwright install",
     "playwright:test": "playwright test"
   },

@@ -6,12 +6,12 @@ it should initially be setup for 10 vs 10 ai controlled robots in a space-statio
 using 
 typescript
 react-three-fiber
-rapier3d for physics
-@react-three/drei  helpers
+rapier3d for physics (authorative)
+@react-three/drei  helpers whenever convenient
 zustand 
 miniplex  for ecs entities
-@react-three/postprocessing  optional effects not handled otherwise
-@react-three/gltfjsx  (we can create proper meshes with blender later)  > start with procedurally generated meshes for robots/equipped 
+@react-three/postprocessing  (toggleable)
+@react-three/gltfjsx  (we can create proper meshes with blender later)  > start with procedurally generated meshes for robots/equipped weapons/projectiles
 
 vite (+recommended plugins?)
 vitest (+recommended plugins?)
