@@ -51,7 +51,7 @@ export function useEcsQuery<T extends Entity>(query: Query<T>) {
         connRef.current = null;
       };
     },
-    () => query.entities as T[],
-    () => query.entities as T[],
+    () => [...query.entities as T[]],
+    () => [...query.entities as T[]],
   );
 }
