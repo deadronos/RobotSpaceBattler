@@ -1,182 +1,279 @@
 # Tasks: 3D Team vs Team Autobattler Game Simulation
 
 **Input**: Design documents from `/specs/001-3d-team-vs/`
-**Prerequisites**: spec.md (completed), plan.md (pending)
+**Prerequisites**: plan.md (required), research.md, data-model.md, contracts/, quickstart.md
 
-## Task Status Legend
-- ✅ **Completed**: Implementation finished, tests passing
-- 🔄 **In Progress**: Currently being worked on
-- ⏸️ **Blocked**: Waiting on dependencies
-- ⬜ **Not Started**: Ready to begin when dependencies clear
+## Execution Flow
+```
+1. Load plan.md from feature directory → Extract tech stack, libraries, structure
+2. Load design documents:
+   → data-model.md: 6 entities (Robot, Weapon, Projectile, Team, Arena, SimulationState)
+   → contracts/: 2 contract files (spawn, weapon balance)
+   → research.md: 10 technical decisions
+   → quickstart.md: 6 test scenarios
+3. Generate tasks by category:
+   → Setup: project init, dependencies, linting, constitution checks
+   → Tests: 2 contract tests + 4 integration tests (TDD - must fail first)
+   → Core: 6 entity models + 8 systems + 3 hooks
+   → Rendering: 6 r3f components + 2 UI components
+   → Integration: physics sync, performance monitoring
+   → Polish: unit tests, performance optimization, documentation
+4. Task ordering:
+   → Setup before everything
+   → Tests before implementation (TDD)
+   → Entity models before systems
+   → Systems before rendering components
+   → Core before integration
+   → Everything before polish
+5. Total tasks: 37 numbered tasks (T001-T037)
+```
 
-## Phase 3.1: Setup & Infrastructure
+## Format: `[ID] [P?] Description`
+- **[P]**: Can run in parallel (different files, no dependencies)
+- Include exact file paths in descriptions
 
-- [x] **T001** ✅ Create project structure with src/, tests/, playwright/ directories
-  - Status: Completed
-  - Files: Project root structure
-  - Notes: Basic Vite + React + TypeScript setup already in place
+## Path Conventions
+Single-project structure (per plan.md):
+- Source: `src/` at repository root
+- Tests: `tests/` at repository root
+- E2E: `playwright/tests/`
 
-- [x] **T002** ✅ [P] Configure ESLint, Prettier, and TypeScript strict mode
-  - Status: Completed
-  - Files: `eslint.config.cjs`, `prettierrc.txt`, `tsconfig.json`
-  - Notes: Constitution-compliant linting rules active
+---
 
-- [ ] **T003** 🔄 [P] Add source-size CI check for 300 LOC constitution limit
-  - Status: In Progress
-  - Files: `.github/workflows/constitution_checks.yml`, `scripts/check_source_size.js`
-  - Notes: CI infrastructure exists, needs integration with feature branch workflow
+## Phase 3.1: Setup (7 tasks)
 
-- [ ] **T004** ⬜ [P] Install and configure @react-three/fiber, @react-three/drei dependencies
-  - Status: Not Started
-  - Files: `package.json`
-  - Dependencies: None
+- [ ] T001 Create project structure with directories: `src/ecs/entities/`, `src/ecs/systems/`, `src/components/`, `src/hooks/`, `src/utils/`, `tests/contracts/`, `tests/integration/`, `tests/unit/`
 
-- [ ] **T005** ⬜ [P] Install and configure @react-three/rapier physics engine
-  - Status: Not Started
-  - Files: `package.json`
-  - Dependencies: None
+- [ ] T002 Install TypeScript 5.x + React 19+ dependencies: `@react-three/fiber`, `@react-three/drei`, `@react-three/rapier`, `miniplex`, `zustand`, `@react-three/postprocessing`, `@react-three/gltfjsx`, configure `vite.config.ts` for r3f
+
+- [ ] T003 [P] Configure ESLint and Prettier with TypeScript + React rules, update `eslint.config.cjs` and `prettierrc.txt`
+
+- [ ] T004 [P] Add Constitution Compliance checklist validation to GitHub Actions workflow `.github/workflows/ci.yml` to verify PR contains `CONSTITUTION-CHECK` section
+
+- [ ] T005 [P] Add automated source-size check to CI: fail build if any new/modified source file in `src/` exceeds 300 LOC without approved exception
+
+- [ ] T006 [P] Create code-health task script in `scripts/check-code-health.ts` to detect duplicate modules and generate deprecation plan per constitution
+
+- [ ] T007 [P] Add global TypeScript types in `src/types/index.ts` for Vector3, Quaternion, Team, WeaponType, AIState, RobotStats
+
+---
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
 
-- [ ] **T006** ⬜ [P] Contract test: Robot spawning (10 red + 10 blue robots in designated zones)
-  - Status: Not Started
-  - Files: `tests/contracts/robot-spawning.test.ts`
-  - Acceptance: FR-001 validation
-  - Dependencies: None
+### Contract Tests (2 tasks)
 
-- [x] **T007** ✅ [P] Contract test: Weapon rock-paper-scissors balance system
-  - Status: Completed
-  - Files: `tests/contracts/weapon-balance.test.ts`
-  - Acceptance: FR-003 validation (Laser beats Gun, Gun beats Rocket, Rocket beats Laser)
-  - Notes: Test suite written, currently failing (expected)
+- [ ] T008 [P] Contract test for robot spawning (FR-001) in `tests/contracts/robot-spawning.test.ts`: verify exactly 10 red robots, 10 blue robots, one captain per team, designated spawn zones, no position overlaps, balanced weapon distribution, all robots start with 100 health
 
-- [ ] **T008** 🔄 [P] Integration test: Multi-layered AI behavior (individual + captain)
-  - Status: In Progress
-  - Files: `tests/integration/ai-behavior.test.ts`
-  - Acceptance: FR-002 validation (tactical cover-seeking, captain coordination)
-  - Dependencies: None
-  - Notes: Individual AI test cases written, captain system tests pending
+- [ ] T009 [P] Contract test for weapon balance (FR-003) in `tests/contracts/weapon-balance.test.ts`: verify all 9 matchup scenarios (Laser vs Gun = 1.5x, Gun vs Rocket = 1.5x, Rocket vs Laser = 1.5x, opposites = 0.67x, same = 1.0x), base damage values (Laser 15, Gun 20, Rocket 30), no zero/negative damage
 
-- [ ] **T009** ⬜ [P] Integration test: Victory flow with stats and auto-restart
-  - Status: Not Started
-  - Files: `tests/integration/victory-flow.test.ts`
-  - Acceptance: FR-006, FR-019 validation (5-sec countdown, stats button, team composition settings)
-  - Dependencies: None
+### Integration Tests (4 tasks)
 
-## Phase 3.3: Core ECS & Simulation (ONLY after tests are failing)
+- [ ] T010 [P] Integration test for AI behavior (FR-002) in `tests/integration/ai-behavior.test.ts`: verify autonomous target selection, movement toward enemies, weapon firing in range, cover-seeking when damaged, low-health retreat, captain coordination, formation maintenance, priority target calls, adaptive strategy switching
 
-- [ ] **T010** 🔄 Create Miniplex world and core entity archetypes
-  - Status: In Progress
-  - Files: `src/ecs/world.ts` (85 LOC)
-  - Entities: Robot, Weapon, Projectile, Team, SimulationState
-  - Dependencies: T007 (weapon balance tests must fail first)
-  - Notes: World initialization done, entity archetypes 60% complete
+- [ ] T011 [P] Integration test for victory flow (FR-006) in `tests/integration/victory-flow.test.ts`: verify team elimination detection, victory screen display with winner, 5-second countdown timer, pause/reset countdown controls, stats button opens post-battle metrics, settings button allows team composition changes, auto-restart after countdown
 
-- [x] **T011** ✅ [P] Robot entity with team affiliation, health, position, AI state, captain flag
-  - Status: Completed
-  - Files: `src/ecs/entities/Robot.ts` (120 LOC)
-  - Dependencies: T010
-  - Notes: Includes captain role, AI state machine, stats tracking
+- [ ] T012 [P] Integration test for physics sync (FR-012) in `tests/integration/physics-sync.test.ts`: verify ECS positions sync with Rapier physics every frame, projectile trajectories follow physics, collisions trigger damage events, eliminated robots removed from physics world, no rendering/physics desync
 
-- [ ] **T012** ⬜ Weapon system with rock-paper-scissors damage modifiers
-  - Status: Not Started
-  - Files: `src/ecs/systems/weaponSystem.ts` (estimated 180 LOC)
-  - Dependencies: T007 (tests), T011
-  - Blocks: T013
+- [ ] T013 [P] Integration test for performance (FR-010, FR-021-023) in `tests/integration/performance.test.ts`: verify 60 fps maintained with 20 robots + shadows, quality scaling activates below 30 fps, shadows disabled when quality scaling active, time scale reduces when FPS critically low, warning overlay displays, user can disable auto-scaling
 
-## Phase 3.4: Rendering & Camera
+---
 
-- [ ] **T013** ⏸️ Hybrid camera system (free controls + cinematic mode)
-  - Status: Blocked
-  - Files: `src/components/Camera.tsx` (estimated 240 LOC), `src/hooks/useCameraControls.ts` (estimated 150 LOC)
-  - Acceptance: FR-013, FR-018 (mouse/keyboard/touch controls, pinch-zoom)
-  - Dependencies: T004 (r3f setup)
-  - Notes: Will need decomposition into multiple sub-280 LOC modules per constitution
+## Phase 3.3: Core Implementation (ONLY after tests are failing)
 
-## Phase 3.5: Polish & Performance
+### Entity Models (6 tasks - can parallelize)
 
-- [ ] **T014** ⬜ [P] Performance management system (quality scaling, time scale, warning overlay)
-  - Status: Not Started
-  - Files: `src/systems/performanceManager.ts` (estimated 200 LOC), `src/components/PerformanceWarning.tsx` (estimated 80 LOC)
-  - Acceptance: FR-021, FR-022, FR-023 (toggleable quality scaling, simulation slowdown, non-intrusive warnings)
-  - Dependencies: T010, T012
+- [ ] T014 [P] Robot entity model in `src/ecs/entities/Robot.ts`: define Robot archetype with id, team, position, rotation, velocity, health, maxHealth, weaponType, isCaptain, aiState (behaviorMode, targetId, coverPosition, lastFireTime, formationOffset), stats (kills, damageDealt, damageTaken, timeAlive, shotsFired). Validate health bounds, team values, captain uniqueness. Export type and validation functions. (~120 LOC)
 
-- [ ] **T015** ⬜ [P] Post-battle stats tracking and display component
-  - Status: Not Started
-  - Files: `src/components/StatsScreen.tsx` (estimated 220 LOC), `src/hooks/useStatsTracking.ts` (estimated 90 LOC)
-  - Acceptance: FR-019 (per-robot kills, damage dealt/taken, time survived, team aggregates)
-  - Dependencies: T011
+- [ ] T015 [P] Weapon entity model in `src/ecs/entities/Weapon.ts`: define Weapon config with type, baseDamage, fireRate, projectileSpeed, effectiveRange, visualEffect. Include type-specific properties table and damage multiplier matrix (rock-paper-scissors). Export WeaponConfig type and getDamageMultiplier() function. (~80 LOC)
 
-## Dependencies Graph
+- [ ] T016 [P] Projectile entity model in `src/ecs/entities/Projectile.ts`: define Projectile archetype with id, ownerId, weaponType, position, velocity, damage, distanceTraveled, maxDistance, spawnTime, maxLifetime. Include despawn condition checks. Export type and shouldDespawn() function. (~90 LOC)
 
+- [ ] T017 [P] Team entity model in `src/ecs/entities/Team.ts`: define Team archetype with name, activeRobots, eliminatedRobots, captainId, spawnZone (center, radius, spawnPoints), aggregateStats (totalKills, totalDamageDealt, totalDamageTaken, averageHealthRemaining, weaponDistribution). Export type and victory condition check. (~110 LOC)
+
+- [ ] T018 [P] Arena entity model in `src/ecs/entities/Arena.ts`: define Arena config with id, dimensions, spawnZones (2 zones with 10 spawn points each), obstacles (position, dimensions, isCover), lightingConfig (ambient/directional colors, intensities, shadow settings), boundaries. Export ArenaConfig type and spawn zone definitions. (~100 LOC)
+
+- [ ] T019 [P] SimulationState entity model in `src/ecs/entities/SimulationState.ts`: define SimulationState with status (initializing|running|paused|victory|simultaneous-elimination), winner, frameTime, totalFrames, simulationTime, timeScale, victoryScreenStartTime, autoRestartCountdown, performanceStats (currentFPS, averageFPS, qualityScalingActive). Export type and state transition helpers. (~130 LOC)
+
+### ECS Systems (8 tasks - sequential dependencies)
+
+- [ ] T020 Initialize Miniplex ECS world in `src/ecs/world.ts`: create world instance, register entity archetypes, export world singleton and React context provider. Import entity types from T014-T019. (~100 LOC)
+
+- [ ] T021 Spawn system in `src/ecs/systems/spawnSystem.ts`: implement robot spawning logic per spawn-contract.md: allocate 10 spawn points per team, create 20 Robot entities with team assignment, balanced weapon distribution, captain election, initialize physics bodies. Use Team and Arena entities. Depends on T014, T017, T018, T020. (~180 LOC)
+
+- [ ] T022 [P] Weapon system in `src/ecs/systems/weaponSystem.ts`: implement fireWeapon() to create Projectile entities, check fireRate cooldown, calculate damage with multipliers from Weapon model, update Robot.stats.shotsFired. Query active robots, update lastFireTime. Depends on T014, T015, T016, T020. (~150 LOC)
+
+- [ ] T023 [P] Damage system in `src/ecs/systems/damageSystem.ts`: handle projectile-robot collisions, apply damage to Robot.health, update stats (kills, damageDealt, damageTaken), remove eliminated robots from physics, trigger captain re-election if captain dies. Query projectiles and robots. Depends on T014, T016, T020. (~190 LOC)
+
+- [ ] T024 AI system - Individual behavior in `src/ecs/systems/ai/individualAI.ts`: implement target selection (prioritize rock-paper-scissors advantage), movement toward enemies, cover-seeking when damaged (<30 health), peek-and-shoot, low-health retreat. Query enemy robots, update aiState.behaviorMode/targetId/coverPosition. Depends on T014, T015, T020. (~200 LOC)
+
+- [ ] T025 AI system - Captain coordination in `src/ecs/systems/ai/captainAI.ts`: implement formation maintenance (formationOffset for non-captains), priority target calling (aiState.targetId override), captain reassignment on death (elect highest health robot). Query captains and team members. Depends on T014, T017, T020, T024. (~180 LOC)
+
+- [ ] T026 AI system - Adaptive strategy in `src/ecs/systems/ai/adaptiveStrategy.ts`: implement behavior switching based on health (<50 = defensive, >70 = aggressive), team advantage (active robot count ratio), adjust formation spacing. Query team stats. Depends on T014, T017, T020, T024, T025. (~150 LOC)
+
+- [ ] T027 Victory system in `src/ecs/systems/victorySystem.ts`: detect team elimination (Team.activeRobots = 0), update SimulationState.status to "victory", set winner, start autoRestartCountdown at 5 seconds, handle simultaneous elimination (draw). Query teams and simulation state. Depends on T017, T019, T020. (~130 LOC)
+
+---
+
+## Phase 3.4: Rendering Components
+
+### r3f 3D Components (6 tasks - can parallelize after core)
+
+- [ ] T028 [P] Robot rendering component in `src/components/Robot.tsx`: render procedural robot mesh (THREE.BoxGeometry for MVP), apply team color material, display health bar (floating above robot), captain visual indicator (glow/outline), sync position/rotation from ECS. Use useFrame for interpolation only. Depends on T014, T020. (~150 LOC)
+
+- [ ] T029 [P] Projectile rendering component in `src/components/Projectile.tsx`: render projectile based on weaponType (beam for laser, tracer for gun, exhaust for rocket), apply visual effects, sync position from ECS. Use GPU instancing for multiple projectiles. Depends on T016, T020. (~120 LOC)
+
+- [ ] T030 [P] Arena rendering component in `src/components/Arena.tsx`: render space-station environment (procedural floor/walls), spawn zone markers, obstacles (cover boxes), setup directional + ambient lighting, configure shadows. Use Arena entity config. Depends on T018, T020. (~180 LOC)
+
+- [ ] T031 Camera system - Free camera hook in `src/hooks/useCameraControls.ts`: implement orbit controls (mouse drag), zoom (scroll wheel), pan (right-click drag), keyboard controls (arrow keys for rotate, W/S for zoom, A/D for strafe). Query arena for boundaries. Depends on T018, T020. (~150 LOC)
+
+- [ ] T032 Camera system - Touch controls hook in `src/hooks/useTouchControls.ts`: implement single finger drag (orbit), pinch-to-zoom, two-finger drag (pan). Integrate with useCameraControls for unified control state. Depends on T031. (~100 LOC)
+
+- [ ] T033 Camera system - Cinematic mode hook in `src/hooks/useCinematicMode.ts`: implement auto-follow combat hotspots (query robots with lowest health or highest damage), smooth camera transitions, toggleable mode (keyboard "C" or button). Query robots and calculate action centers. Depends on T014, T020, T031. (~120 LOC)
+
+### UI Components (2 tasks)
+
+- [ ] T034 Victory screen component in `src/components/ui/VictoryScreen.tsx`: display winner (red/blue/draw), 5-second countdown timer, "Stats" button to open post-battle metrics modal, pause/reset countdown controls, settings icon for team composition changes. Use Zustand for UI state. Depends on T019, T020. (~140 LOC)
+
+- [ ] T035 Performance overlay component in `src/components/ui/PerformanceOverlay.tsx`: display FPS counter, warning message when quality scaling active, toggleable auto-scaling checkbox. Read SimulationState.performanceStats. Use Zustand for visibility toggle. Depends on T019, T020. (~90 LOC)
+
+---
+
+## Phase 3.5: Integration & Polish
+
+### Integration (2 tasks)
+
+- [ ] T036 Physics sync integration in `src/systems/physicsSync.ts`: implement usePhysicsSync hook to read Rapier transform data and update ECS entity positions every frame, sync projectile trajectories, handle collision events (trigger damage system), remove physics bodies on entity despawn. Configure fixed timestep (60Hz). Depends on T014, T016, T020, T023. (~180 LOC)
+
+- [ ] T037 Performance management system in `src/systems/performanceManager.ts`: monitor FPS (rolling average), activate quality scaling below 30 fps (disable shadows, reduce particles, adjust draw distance), reduce timeScale when critically low FPS, update SimulationState.performanceStats, display warning overlay. Depends on T019, T020, T035. (~200 LOC)
+
+---
+
+## Dependencies
+
+**Critical Path**:
 ```
-Setup (T001-T005)
-  ↓
-Tests (T006-T009) ← GATE: Must fail before implementation
-  ↓
-T010 (ECS World)
-  ├→ T011 (Robot Entity) → T012 (Weapon System)
-  └→ T013 (Camera) [blocked on T004]
-     
-T014 (Performance) ← needs T010, T012
-T015 (Stats) ← needs T011
-
-All parallel [P] tasks can run simultaneously within their phase
+Setup (T001-T007) → Tests (T008-T013) → Entity Models (T014-T019) → ECS World (T020) →
+Core Systems (T021-T027) → Rendering (T028-T035) → Integration (T036-T037)
 ```
+
+**Parallel Execution Groups**:
+- **Group 1** (after T007): T008, T009, T010, T011, T012, T013 (all tests)
+- **Group 2** (after T013): T014, T015, T016, T017, T018, T019 (all entity models)
+- **Group 3** (after T020): T022, T024 (weapon + AI individual can run in parallel)
+- **Group 4** (after T027): T028, T029, T030, T031 (rendering components)
+
+**Blocking Dependencies**:
+- T020 (ECS world) blocks T021-T027 (all systems need world)
+- T021 (spawn) must complete before T022-T027 (other systems need spawned entities)
+- T024 (individual AI) blocks T025 (captain AI) blocks T026 (adaptive AI)
+- T031 (free camera) blocks T032 (touch controls) and T033 (cinematic mode)
+- T023 (damage system) blocks T036 (physics sync needs collision handling)
+- T035 (performance overlay) blocks T037 (performance manager needs UI)
+
+---
 
 ## Parallel Execution Examples
 
-### Phase 3.1 Setup (can run simultaneously)
+### Example 1: All Tests in Parallel (after T007)
 ```bash
-# T002, T003, T004, T005 are independent
-npm run setup:lint & npm run setup:ci & npm install @react-three/fiber @react-three/drei & npm install @react-three/rapier
+# Launch T008-T013 simultaneously (all different files):
+npx vitest tests/contracts/robot-spawning.test.ts &
+npx vitest tests/contracts/weapon-balance.test.ts &
+npx vitest tests/integration/ai-behavior.test.ts &
+npx vitest tests/integration/victory-flow.test.ts &
+npx vitest tests/integration/physics-sync.test.ts &
+npx vitest tests/integration/performance.test.ts &
+wait
 ```
 
-### Phase 3.2 Tests (can run simultaneously)
+### Example 2: All Entity Models in Parallel (after T013)
 ```bash
-# T006, T007, T008, T009 are independent contract/integration tests
-vitest tests/contracts/robot-spawning.test.ts &
-vitest tests/contracts/weapon-balance.test.ts &
-vitest tests/integration/ai-behavior.test.ts &
-vitest tests/integration/victory-flow.test.ts
+# Launch T014-T019 simultaneously (all different files):
+Task: "Robot entity model in src/ecs/entities/Robot.ts"
+Task: "Weapon entity model in src/ecs/entities/Weapon.ts"
+Task: "Projectile entity model in src/ecs/entities/Projectile.ts"
+Task: "Team entity model in src/ecs/entities/Team.ts"
+Task: "Arena entity model in src/ecs/entities/Arena.ts"
+Task: "SimulationState entity model in src/ecs/entities/SimulationState.ts"
 ```
 
-### Phase 3.5 Polish (can run simultaneously)
+### Example 3: Rendering Components in Parallel (after T027)
 ```bash
-# T014 and T015 are independent
-vitest src/systems/performanceManager.test.ts & vitest src/hooks/useStatsTracking.test.ts
+# Launch T028-T031 simultaneously (all different files):
+Task: "Robot rendering component in src/components/Robot.tsx"
+Task: "Projectile rendering component in src/components/Projectile.tsx"
+Task: "Arena rendering component in src/components/Arena.tsx"
+Task: "Camera system - Free camera hook in src/hooks/useCameraControls.ts"
 ```
 
-## Constitution Compliance Notes
+---
 
-### File Size Management
-- **T013 Camera System**: Estimated 390 LOC total → MUST decompose into:
-  - `src/components/Camera.tsx` (core component, <240 LOC)
-  - `src/hooks/useCameraControls.ts` (mouse/keyboard, <150 LOC)
-  - `src/hooks/useTouchControls.ts` (touch/pinch, <100 LOC)
-  - `src/hooks/useCinematicMode.ts` (auto-follow, <120 LOC)
+## Task Generation Rules
 
-- **T012 Weapon System**: Monitor closely, consider decomposition if exceeds 280 LOC:
-  - `src/ecs/systems/weaponSystem.ts` (core logic)
-  - `src/ecs/systems/weaponBalanceCalculator.ts` (rock-paper-scissors modifiers)
+**Applied during generation**:
 
-### TDD Gate Enforcement
-- ⚠️ **BLOCKER**: T010, T011, T012 CANNOT start until T006-T009 tests are written and failing
-- Current Status: T007 ✅ failing (good), T008 🔄 partially failing, T006 and T009 ⬜ not written yet
+1. **From Contracts** (spawn-contract.md, scoring-contract.md):
+   - spawn-contract.md → T008 (contract test)
+   - scoring-contract.md → T009 (contract test)
+   - Spawn logic → T021 (spawn system implementation)
+   - Weapon balance logic → T022 (weapon system with multipliers)
 
-### Agentic AI Triggers
-- T013: Complex camera system → candidate for AI-assisted decomposition planning
-- T014: Performance heuristics → candidate for AI-suggested optimization patterns
+2. **From Data Model** (6 entities):
+   - Robot → T014 (model) + T028 (renderer)
+   - Weapon → T015 (model) + used in T022 (system)
+   - Projectile → T016 (model) + T029 (renderer)
+   - Team → T017 (model) + T027 (victory system)
+   - Arena → T018 (model) + T030 (renderer)
+   - SimulationState → T019 (model) + T027, T037 (systems)
 
-## Notes
-- Total tasks: 15 (3.1: 5 tasks, 3.2: 4 tasks, 3.3: 3 tasks, 3.4: 1 task, 3.5: 2 tasks)
-- Completed: 4 tasks (27%)
-- In Progress: 3 tasks (20%)
-- Blocked: 1 task (7%)
-- Not Started: 7 tasks (47%)
-- [P] tasks = different files, no dependencies within phase
-- Verify tests fail before implementing (TDD gate)
-- Commit after each task completion
-- Run `npm run check:source-size` before marking any task complete
+3. **From Quickstart** (6 test scenarios):
+   - Test 1 (spawning) → T008 (contract test)
+   - Test 2 (weapon balance) → T009 (contract test)
+   - Test 3 (AI behavior) → T010 (integration test)
+   - Test 4 (victory flow) → T011 (integration test)
+   - Test 5 (physics sync) → T012 (integration test)
+   - Test 6 (performance) → T013 (integration test)
+
+4. **From Research** (10 technical decisions):
+   - Decision 1 (Rapier3D physics) → T036 (physics sync)
+   - Decision 2 (Miniplex ECS) → T020 (world initialization)
+   - Decision 3 (Zustand UI state) → T034, T035 (UI components)
+   - Decision 6 (Hybrid camera) → T031, T032, T033 (camera hooks)
+   - Decision 8 (Three-layer AI) → T024, T025, T026 (AI systems)
+   - Decision 7 (Performance) → T037 (performance manager)
+
+5. **Ordering**:
+   - Setup (T001-T007) before everything
+   - Tests (T008-T013) before implementation (TDD)
+   - Entity models (T014-T019) before systems (T021-T027)
+   - ECS world (T020) before all systems
+   - Core systems (T021-T027) before rendering (T028-T035)
+   - Integration (T036-T037) last
+
+---
+
+## Validation Checklist
+
+**GATE: Verify before considering tasks complete**
+
+- [x] All contracts have corresponding tests (spawn → T008, weapon balance → T009)
+- [x] All entities have model tasks (6 entities → T014-T019)
+- [x] All test scenarios have integration tests (6 scenarios → T008-T013)
+- [x] All tests come before implementation (T008-T013 before T014+)
+- [x] Parallel tasks are truly independent (different files, verified)
+- [x] Each task specifies exact file path
+- [x] No task modifies same file as another [P] task
+- [x] Constitution compliance tasks included (T004, T005, T006)
+- [x] File size constraints documented (LOC estimates per task)
+- [x] TDD workflow enforced (Phase 3.2 before Phase 3.3)
+- [x] All FR requirements mapped to tasks (FR-001 → T008/T021, FR-002 → T024-T026, FR-003 → T009/T022, etc.)
+
+---
+
+**Total Tasks**: 37
+**Estimated Completion**: 5-7 sprints (assuming 5-8 tasks per sprint)
+**Critical Tests**: 6 (must pass before feature considered complete)
+
+**Status**: ✅ Tasks ready for execution via `/tasks` workflow
