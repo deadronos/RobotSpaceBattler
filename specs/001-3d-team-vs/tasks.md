@@ -43,18 +43,32 @@ Single-project structure (per plan.md):
 ## Phase 3.1: Setup (7 tasks)
 
 - [x] T001 Create project structure with directories: `src/ecs/entities/`, `src/ecs/systems/`, `src/components/`, `src/hooks/`, `src/utils/`, `tests/contracts/`, `tests/integration/`, `tests/unit/`
+  
+   Supports: Constitution Principles II (Test-First), III (Size & Separation), IV (React & r3f Best Practices). This infra ensures project layout required for TDD and small-file separation.
 
 - [x] T002 Install TypeScript 5.x + React 19+ dependencies: `@react-three/fiber`, `@react-three/drei`, `@react-three/rapier`, `miniplex`, `zustand`, `@react-three/postprocessing`, `@react-three/gltfjsx`, configure `vite.config.ts` for r3f
+  
+   Supports: Constitution Principles IV (r3f best practices) and VI (Dependency Hygiene). Provides the runtime and library baseline required by the feature and tests.
 
 - [x] T003 [P] Configure ESLint and Prettier with TypeScript + React rules, update `eslint.config.cjs` and `prettierrc.txt`
 
+   Supports: Constitution Principles III (Size & Separation) and II (Test-First) indirectly by keeping code consistent and reviewable. Ensures code style gates for PRs.
+
 - [x] T004 [P] Add Constitution Compliance checklist validation to GitHub Actions workflow `.github/workflows/ci.yml` to verify PR contains `CONSTITUTION-CHECK` section
+
+   Supports: Constitution Governance (PR-level compliance). Directly enforces Constitution rule that every PR must include a `CONSTITUTION-CHECK` with TDD evidence and file-size assertions.
 
 - [x] T005 [P] Add automated source-size check to CI: fail build if any new/modified source file in `src/` exceeds 300 LOC without approved exception
 
+   Supports: Constitution Principle III (Size & Separation). Implements the file-size enforcement described by the constitution and prevents accidental large files.
+
 - [x] T006 [P] Create code-health task script in `scripts/check-code-health.ts` to detect duplicate modules and generate deprecation plan per constitution
 
+   Supports: Constitution Principle VI (Deprecation & Dependency Hygiene) and I (Component & Library-First) by automating redundancy detection and suggested deprecations.
+
 - [x] T007 [P] Add global TypeScript types in `src/types/index.ts` for Vector3, Quaternion, Team, WeaponType, AIState, RobotStats
+
+   Supports: Constitution Principles I (Component & Library-First) and IV (r3f Best Practices). Types reduce ambiguity across entities, tests, and systems and speed contract test authoring.
 
 ---
 
