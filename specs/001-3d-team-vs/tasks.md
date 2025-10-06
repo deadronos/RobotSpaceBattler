@@ -112,7 +112,7 @@ Single-project structure (per plan.md):
 
 ### ECS Systems (8 tasks - sequential dependencies)
 
-- [ ] T020 Initialize Miniplex ECS world in `src/ecs/world.ts`: create world instance, register entity archetypes, export world singleton and React context provider. Import entity types from T014-T019. (~100 LOC)
+- [x] T020 Initialize Miniplex ECS world in `src/ecs/world.ts`: create world instance, register entity archetypes, export world singleton and React context provider. Import entity types from T014-T019. (~100 LOC)
 
 - [ ] T021 Spawn system in `src/ecs/systems/spawnSystem.ts`: implement robot spawning logic per spawn-contract.md: allocate 10 spawn points per team, create 20 Robot entities with team assignment, balanced weapon distribution, captain election, initialize physics bodies. Use Team and Arena entities. Depends on T014, T017, T018, T020. (~180 LOC)
 

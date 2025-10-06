@@ -1,3 +1,6 @@
+import { createContext, createElement, useContext, useMemo, type ReactElement, type ReactNode } from 'react';
+import { World as MiniplexWorld } from 'miniplex';
+
 import { createInitialSimulationState, setPendingTeamConfig, tickSimulation, type SimulationState } from './entities/SimulationState';
 import { createDefaultArena, type ArenaEntity } from './entities/Arena';
 import { createInitialTeam, resetTeamForRestart, type TeamEntity } from './entities/Team';
@@ -10,15 +13,44 @@ import { refreshTeamStats } from './simulation/teamStats';
 import { evaluateVictory, openSettings, openStats, pauseAutoRestart as pauseCountdown, resetCountdown, resumeAutoRestart as resumeCountdown, tickVictoryCountdown, closeSettings, closeStats } from './simulation/victory';
 import { createPerformanceController, getOverlayState, recordFrameMetrics as recordFrameMetricsInternal, setAutoScalingEnabled as setAutoScalingEnabledInternal, type PerformanceController } from './simulation/performance';
 import { createProjectile, type Projectile } from './entities/Projectile';
+import type { Robot } from './entities/Robot';
 import { getWeaponData } from './systems/weaponSystem';
 import { cloneVector } from './utils/vector';
-import type { WorldView } from './simulation/worldTypes';
+import type { ECSCollections, WorldView } from './simulation/worldTypes';
 
 export interface SimulationWorld extends WorldView {
   performance: PerformanceController;
 }
 
 const TEAM_LIST: Team[] = ['red', 'blue'];
+
+const SimulationWorldContext = createContext<SimulationWorld | null>(null);
+
+function createECSCollections(): ECSCollections {
+  return {
+    robots: new MiniplexWorld<Robot>(),
+    projectiles: new MiniplexWorld<Projectile>(),
+    teams: new MiniplexWorld<TeamEntity>(),
+  };
+}
+
+type SimulationWorldProviderProps = {
+  value: SimulationWorld;
+  children: ReactNode;
+};
+
+export function SimulationWorldProvider({ value, children }: SimulationWorldProviderProps): ReactElement {
+  const memoizedWorld = useMemo(() => value, [value]);
+  return createElement(SimulationWorldContext.Provider, { value: memoizedWorld }, children);
+}
+
+export function useSimulationWorld(): SimulationWorld {
+  const world = useContext(SimulationWorldContext);
+  if (!world) {
+    throw new Error('useSimulationWorld must be used within a SimulationWorldProvider');
+  }
+  return world;
+}
 
 function createTeams(arena: ArenaEntity): Record<Team, TeamEntity> {
   return {
@@ -27,13 +59,23 @@ function createTeams(arena: ArenaEntity): Record<Team, TeamEntity> {
   };
 }
 
+function syncTeams(world: SimulationWorld): void {
+  world.ecs.teams.clear();
+  (Object.values(world.teams) as TeamEntity[]).forEach((team) => {
+    world.ecs.teams.add(team);
+  });
+}
+
 function resetBattle(world: SimulationWorld): void {
   world.entities = [];
   world.projectiles = [];
   world.physics = createPhysicsState();
+  world.ecs.robots.clear();
+  world.ecs.projectiles.clear();
   TEAM_LIST.forEach((team) => {
     world.teams[team] = resetTeamForRestart(world.teams[team]);
   });
+  syncTeams(world);
   spawnInitialTeams(world, TEAM_LIST);
   refreshTeamStats(world, TEAM_LIST);
 }
@@ -41,6 +83,10 @@ function resetBattle(world: SimulationWorld): void {
 export function initializeSimulation(): SimulationWorld {
   const arena = createDefaultArena();
   const teams = createTeams(arena);
+  const ecs = createECSCollections();
+  (Object.values(teams) as TeamEntity[]).forEach((team) => {
+    ecs.teams.add(team);
+  });
   const world: SimulationWorld = {
     arena,
     entities: [],
@@ -49,9 +95,11 @@ export function initializeSimulation(): SimulationWorld {
     simulation: createInitialSimulationState(),
     physics: createPhysicsState(),
     performance: createPerformanceController(),
+    ecs,
   };
   spawnInitialTeams(world, TEAM_LIST);
   refreshTeamStats(world, TEAM_LIST);
+  syncTeams(world);
   return world;
 }
 
@@ -78,6 +126,7 @@ function createPhysicsProjectile(world: SimulationWorld, config: {
     maxLifetime: 5,
   });
   world.projectiles.push(projectile);
+  world.ecs.projectiles.add(projectile);
   spawnProjectileBody(world.physics, projectile);
   return id;
 }
