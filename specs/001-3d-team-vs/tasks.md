@@ -140,9 +140,9 @@ Single-project structure (per plan.md):
 
 - [x] T030 [P] Arena rendering component in `src/components/Arena.tsx`: render space-station environment (procedural floor/walls), spawn zone markers, obstacles (cover boxes), setup directional + ambient lighting, configure shadows. Use Arena entity config. Depends on T018, T020. (~180 LOC)
 
-- [ ] T031 Camera system - Free camera hook in `src/hooks/useCameraControls.ts`: implement orbit controls (mouse drag), zoom (scroll wheel), pan (right-click drag), keyboard controls (arrow keys for rotate, W/S for zoom, A/D for strafe). Query arena for boundaries. Depends on T018, T020. (~150 LOC)
+- [x] T031 Camera system - Free camera hook in `src/hooks/useCameraControls.ts`: implement orbit controls (mouse drag), zoom (scroll wheel), pan (right-click drag), keyboard controls (arrow keys for rotate, W/S for zoom, A/D for strafe). Query arena for boundaries. Depends on T018, T020. (~150 LOC)
 
-- [ ] T032 Camera system - Touch controls hook in `src/hooks/useTouchControls.ts`: implement single finger drag (orbit), pinch-to-zoom, two-finger drag (pan). Integrate with useCameraControls for unified control state. Depends on T031. (~100 LOC)
+- [x] T032 Camera system - Touch controls hook in `src/hooks/useTouchControls.ts`: implement single finger drag (orbit), pinch-to-zoom, two-finger drag (pan). Integrate with useCameraControls for unified control state. Depends on T031. (~100 LOC)
 
 - [x] T033 Camera system - Cinematic mode hook in `src/hooks/useCinematicMode.ts`: implement auto-follow combat hotspots (query robots with lowest health or highest damage), smooth camera transitions, toggleable mode (keyboard "C" or button). Query robots and calculate action centers. Depends on T014, T020, T031. (~120 LOC)
 
@@ -158,9 +158,9 @@ Single-project structure (per plan.md):
 
 ### Integration (2 tasks)
 
-- [ ] T036 Physics sync integration in `src/systems/physicsSync.ts`: implement usePhysicsSync hook to read Rapier transform data and update ECS entity positions every frame, sync projectile trajectories, handle collision events (trigger damage system), remove physics bodies on entity despawn. Configure fixed timestep (60Hz). Depends on T014, T016, T020, T023. (~180 LOC)
+- [x] T036 Physics sync integration in `src/systems/physicsSync.ts`: implement usePhysicsSync hook to read Rapier transform data and update ECS entity positions every frame, sync projectile trajectories, handle collision events (trigger damage system), remove physics bodies on entity despawn. Configure fixed timestep (60Hz). Depends on T014, T016, T020, T023. (~180 LOC)
 
-- [ ] T037 Performance management system in `src/systems/performanceManager.ts`: monitor FPS (rolling average), activate quality scaling below 30 fps (disable shadows, reduce particles, adjust draw distance), reduce timeScale when critically low FPS, update SimulationState.performanceStats, display warning overlay. Depends on T019, T020, T035. (~200 LOC)
+- [x] T037 Performance management system in `src/systems/performanceManager.ts`: monitor FPS (rolling average), activate quality scaling below 30 fps (disable shadows, reduce particles, adjust draw distance), reduce timeScale when critically low FPS, update SimulationState.performanceStats, display warning overlay. Depends on T019, T020, T035. (~200 LOC)
 
 ---
 
