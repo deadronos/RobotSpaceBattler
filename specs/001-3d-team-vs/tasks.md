@@ -42,19 +42,19 @@ Single-project structure (per plan.md):
 
 ## Phase 3.1: Setup (7 tasks)
 
-- [ ] T001 Create project structure with directories: `src/ecs/entities/`, `src/ecs/systems/`, `src/components/`, `src/hooks/`, `src/utils/`, `tests/contracts/`, `tests/integration/`, `tests/unit/`
+- [x] T001 Create project structure with directories: `src/ecs/entities/`, `src/ecs/systems/`, `src/components/`, `src/hooks/`, `src/utils/`, `tests/contracts/`, `tests/integration/`, `tests/unit/`
 
-- [ ] T002 Install TypeScript 5.x + React 19+ dependencies: `@react-three/fiber`, `@react-three/drei`, `@react-three/rapier`, `miniplex`, `zustand`, `@react-three/postprocessing`, `@react-three/gltfjsx`, configure `vite.config.ts` for r3f
+- [x] T002 Install TypeScript 5.x + React 19+ dependencies: `@react-three/fiber`, `@react-three/drei`, `@react-three/rapier`, `miniplex`, `zustand`, `@react-three/postprocessing`, `@react-three/gltfjsx`, configure `vite.config.ts` for r3f
 
-- [ ] T003 [P] Configure ESLint and Prettier with TypeScript + React rules, update `eslint.config.cjs` and `prettierrc.txt`
+- [x] T003 [P] Configure ESLint and Prettier with TypeScript + React rules, update `eslint.config.cjs` and `prettierrc.txt`
 
-- [ ] T004 [P] Add Constitution Compliance checklist validation to GitHub Actions workflow `.github/workflows/ci.yml` to verify PR contains `CONSTITUTION-CHECK` section
+- [x] T004 [P] Add Constitution Compliance checklist validation to GitHub Actions workflow `.github/workflows/ci.yml` to verify PR contains `CONSTITUTION-CHECK` section
 
-- [ ] T005 [P] Add automated source-size check to CI: fail build if any new/modified source file in `src/` exceeds 300 LOC without approved exception
+- [x] T005 [P] Add automated source-size check to CI: fail build if any new/modified source file in `src/` exceeds 300 LOC without approved exception
 
-- [ ] T006 [P] Create code-health task script in `scripts/check-code-health.ts` to detect duplicate modules and generate deprecation plan per constitution
+- [x] T006 [P] Create code-health task script in `scripts/check-code-health.ts` to detect duplicate modules and generate deprecation plan per constitution
 
-- [ ] T007 [P] Add global TypeScript types in `src/types/index.ts` for Vector3, Quaternion, Team, WeaponType, AIState, RobotStats
+- [x] T007 [P] Add global TypeScript types in `src/types/index.ts` for Vector3, Quaternion, Team, WeaponType, AIState, RobotStats
 
 ---
 
@@ -64,9 +64,9 @@ Single-project structure (per plan.md):
 
 ### Contract Tests (2 tasks)
 
-- [ ] T008 [P] Contract test for robot spawning (FR-001) in `tests/contracts/robot-spawning.test.ts`: verify exactly 10 red robots, 10 blue robots, one captain per team, designated spawn zones, no position overlaps, balanced weapon distribution, all robots start with 100 health
+- [x] T008 [P] Contract test for robot spawning (FR-001) in `tests/contracts/robot-spawning.test.ts`: verify exactly 10 red robots, 10 blue robots, one captain per team, designated spawn zones, no position overlaps, balanced weapon distribution, all robots start with 100 health
 
-- [ ] T009 [P] Contract test for weapon balance (FR-003) in `tests/contracts/weapon-balance.test.ts`: verify all 9 matchup scenarios (Laser vs Gun = 1.5x, Gun vs Rocket = 1.5x, Rocket vs Laser = 1.5x, opposites = 0.67x, same = 1.0x), base damage values (Laser 15, Gun 20, Rocket 30), no zero/negative damage
+- [x] T009 [P] Contract test for weapon balance (FR-003) in `tests/contracts/weapon-balance.test.ts`: verify all 9 matchup scenarios (Laser vs Gun = 1.5x, Gun vs Rocket = 1.5x, Rocket vs Laser = 1.5x, opposites = 0.67x, same = 1.0x), base damage values (Laser 15, Gun 20, Rocket 30), no zero/negative damage
 
 ### Integration Tests (4 tasks)
 
