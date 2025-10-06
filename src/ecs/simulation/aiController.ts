@@ -164,6 +164,7 @@ export function fireWeapons(world: WorldView): void {
       maxLifetime: 5,
     });
     world.projectiles.push(projectile);
+    world.ecs?.projectiles.add(projectile);
     spawnProjectileBody(world.physics, projectile);
     robot.stats.shotsFired += 1;
     robot.aiState.lastFireTime = now;

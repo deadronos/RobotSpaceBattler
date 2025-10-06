@@ -47,6 +47,7 @@ export function spawnTeam(context: WorldView, team: Team): void {
     });
 
     context.entities.push(robot);
+    context.ecs?.robots.add(robot);
     setRobotBodyPosition(context.physics, robot, robot.position);
   });
 }

@@ -5,6 +5,13 @@ import type { SimulationState } from '../entities/SimulationState';
 import type { TeamEntity } from '../entities/Team';
 import type { PhysicsState } from './physics';
 import type { Team } from '../../types';
+import type { World as MiniplexWorld } from 'miniplex';
+
+export interface ECSCollections {
+  robots: MiniplexWorld<Robot>;
+  projectiles: MiniplexWorld<Projectile>;
+  teams: MiniplexWorld<TeamEntity>;
+}
 
 export interface WorldView {
   arena: ArenaEntity;
@@ -13,4 +20,5 @@ export interface WorldView {
   teams: Record<Team, TeamEntity>;
   simulation: SimulationState;
   physics: PhysicsState;
+  ecs?: ECSCollections;
 }
