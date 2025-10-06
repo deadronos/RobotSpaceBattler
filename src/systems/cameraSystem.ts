@@ -143,7 +143,9 @@ function sanitizeBounds(bounds: CameraBounds | undefined): CameraBounds {
   };
 }
 
-export function createCameraSystem(config: CameraSystemConfig = {}): CameraSystem {
+export function createCameraSystem(
+  config: CameraSystemConfig = {},
+): CameraSystem {
   const bounds = sanitizeBounds(config.bounds);
   const smoothing = sanitizeSmoothing(config.smoothing ?? DEFAULT_SMOOTHING);
   const cinematicOffset = cloneVector(config.cinematicOffset ?? DEFAULT_OFFSET);
@@ -240,7 +242,8 @@ export function createCameraSystem(config: CameraSystemConfig = {}): CameraSyste
         z: -(input.pan.y ?? 0) * touchPanSpeed,
       };
       const pinchScale = input.pinch?.scale ?? 1;
-      const normalizedScale = pinchScale === 0 ? 1 : clampValue(pinchScale, 0.5, 1.5);
+      const normalizedScale =
+        pinchScale === 0 ? 1 : clampValue(pinchScale, 0.5, 1.5);
       const zoomDelta = (normalizedScale - 1) * ZOOM_HEIGHT;
       const desired = {
         x: state.desiredPosition.x + panDelta.x,
@@ -264,7 +267,11 @@ export function createCameraSystem(config: CameraSystemConfig = {}): CameraSyste
       state.desiredPosition = targetPosition;
     }
 
-    const factor = clampValue(state.smoothing * clampValue(deltaTime * 60, 0, 3), 0, 1);
+    const factor = clampValue(
+      state.smoothing * clampValue(deltaTime * 60, 0, 3),
+      0,
+      1,
+    );
     state.position = clampVector(
       lerpVector(state.position, state.desiredPosition, factor),
       state.bounds,
