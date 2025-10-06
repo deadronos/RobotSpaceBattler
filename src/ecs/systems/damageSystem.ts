@@ -2,18 +2,9 @@ import type { PhysicsStepResult } from '../simulation/physics';
 import { removeProjectileBody, removeRobotBody } from '../simulation/physics';
 import type { WorldView } from '../simulation/worldTypes';
 import { shouldDespawn } from '../entities/Projectile';
-import { recordDamageDealt, recordDamageTaken, recordKill, updateTeamCaptain, type TeamEntity } from '../entities/Team';
-import type { Team } from '../../types';
-import { getAliveRobots } from '../simulation/aiController';
-
-function setTeam(world: WorldView, team: Team, nextTeam: TeamEntity): void {
-  const previous = world.teams[team];
-  world.teams[team] = nextTeam;
-  if (world.ecs?.teams) {
-    world.ecs.teams.remove(previous);
-    world.ecs.teams.add(nextTeam);
-  }
-}
+import { recordDamageDealt, recordDamageTaken, recordKill } from '../entities/Team';
+import { reassignCaptain } from './ai/captainAI';
+import { setTeamEntity } from './ai/common';
 
 export function applyDamage(world: WorldView, targetId: string, amount: number, attackerId?: string): void {
   const target = world.entities.find((robot) => robot.id === targetId);
@@ -22,16 +13,16 @@ export function applyDamage(world: WorldView, targetId: string, amount: number, 
   }
   target.health = Math.max(0, target.health - amount);
   target.stats.damageTaken += amount;
-  setTeam(world, target.team, recordDamageTaken(world.teams[target.team], amount));
+  setTeamEntity(world, target.team, recordDamageTaken(world.teams[target.team], amount));
 
   if (attackerId) {
     const attacker = world.entities.find((robot) => robot.id === attackerId);
     if (attacker) {
       attacker.stats.damageDealt += amount;
-      setTeam(world, attacker.team, recordDamageDealt(world.teams[attacker.team], amount));
+      setTeamEntity(world, attacker.team, recordDamageDealt(world.teams[attacker.team], amount));
       if (target.health === 0) {
         attacker.stats.kills += 1;
-        setTeam(world, attacker.team, recordKill(world.teams[attacker.team]));
+        setTeamEntity(world, attacker.team, recordKill(world.teams[attacker.team]));
       }
     }
   }
@@ -50,17 +41,8 @@ export function eliminateRobot(world: WorldView, robotId: string): void {
   world.ecs?.robots.remove(robot);
   removeRobotBody(world.physics, robotId);
   if (robot.isCaptain) {
-    assignCaptain(world, robot.team);
+    reassignCaptain(world, robot.team);
   }
-}
-
-export function assignCaptain(world: WorldView, team: Team): void {
-  const alive = getAliveRobots(world, team);
-  const newCaptain = alive.sort((a, b) => b.health - a.health)[0];
-  alive.forEach((robot) => {
-    robot.isCaptain = newCaptain ? robot.id === newCaptain.id : false;
-  });
-  setTeam(world, team, updateTeamCaptain(world.teams[team], newCaptain?.id ?? null));
 }
 
 export function handleProjectileHits(world: WorldView, hits: PhysicsStepResult['hits']): void {

@@ -120,13 +120,13 @@ Single-project structure (per plan.md):
 
 - [x] T023 [P] Damage system in `src/ecs/systems/damageSystem.ts`: handle projectile-robot collisions, apply damage to Robot.health, update stats (kills, damageDealt, damageTaken), remove eliminated robots from physics, trigger captain re-election if captain dies. Query projectiles and robots. Depends on T014, T016, T020. (~190 LOC)
 
-- [ ] T024 AI system - Individual behavior in `src/ecs/systems/ai/individualAI.ts`: implement target selection (prioritize rock-paper-scissors advantage), movement toward enemies, cover-seeking when damaged (<30 health), peek-and-shoot, low-health retreat. Query enemy robots, update aiState.behaviorMode/targetId/coverPosition. Depends on T014, T015, T020. (~200 LOC)
+- [x] T024 AI system - Individual behavior in `src/ecs/systems/ai/individualAI.ts`: implement target selection (prioritize rock-paper-scissors advantage), movement toward enemies, cover-seeking when damaged (<30 health), peek-and-shoot, low-health retreat. Query enemy robots, update aiState.behaviorMode/targetId/coverPosition. Depends on T014, T015, T020. (~200 LOC)
 
-- [ ] T025 AI system - Captain coordination in `src/ecs/systems/ai/captainAI.ts`: implement formation maintenance (formationOffset for non-captains), priority target calling (aiState.targetId override), captain reassignment on death (elect highest health robot). Query captains and team members. Depends on T014, T017, T020, T024. (~180 LOC)
+- [x] T025 AI system - Captain coordination in `src/ecs/systems/ai/captainAI.ts`: implement formation maintenance (formationOffset for non-captains), priority target calling (aiState.targetId override), captain reassignment on death (elect highest health robot). Query captains and team members. Depends on T014, T017, T020, T024. (~180 LOC)
 
-- [ ] T026 AI system - Adaptive strategy in `src/ecs/systems/ai/adaptiveStrategy.ts`: implement behavior switching based on health (<50 = defensive, >70 = aggressive), team advantage (active robot count ratio), adjust formation spacing. Query team stats. Depends on T014, T017, T020, T024, T025. (~150 LOC)
+- [x] T026 AI system - Adaptive strategy in `src/ecs/systems/ai/adaptiveStrategy.ts`: implement behavior switching based on health (<50 = defensive, >70 = aggressive), team advantage (active robot count ratio), adjust formation spacing. Query team stats. Depends on T014, T017, T020, T024, T025. (~150 LOC)
 
-- [ ] T027 Victory system in `src/ecs/systems/victorySystem.ts`: detect team elimination (Team.activeRobots = 0), update SimulationState.status to "victory", set winner, start autoRestartCountdown at 5 seconds, handle simultaneous elimination (draw). Query teams and simulation state. Depends on T017, T019, T020. (~130 LOC)
+- [x] T027 Victory system in `src/ecs/systems/victorySystem.ts`: detect team elimination (Team.activeRobots = 0), update SimulationState.status to "victory", set winner, start autoRestartCountdown at 5 seconds, handle simultaneous elimination (draw). Query teams and simulation state. Depends on T017, T019, T020. (~130 LOC)
 
 ---
 
