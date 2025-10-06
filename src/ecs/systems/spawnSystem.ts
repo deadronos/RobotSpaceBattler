@@ -1,21 +1,43 @@
 // eslint-disable-next-line simple-import-sort/imports
-import { createRobot, type Robot } from '../entities/Robot';
-import { updateTeamCaptain } from '../entities/Team';
-import { setRobotBodyPosition } from '../simulation/physics';
-import { refreshTeamStats } from '../simulation/teamStats';
-import { cloneVector, subtractVectors } from '../utils/vector';
-import { SPAWN_ZONES, INITIAL_HEALTH } from '../../contracts/loadSpawnContract';
-import type { WorldView } from '../simulation/worldTypes';
-import type { AIState, Team, Vector3, WeaponType } from '../../types';
+import { createRobot, type Robot } from "../entities/Robot";
+import { updateTeamCaptain } from "../entities/Team";
+import { setRobotBodyPosition } from "../simulation/physics";
+import { refreshTeamStats } from "../simulation/teamStats";
+import { cloneVector, subtractVectors } from "../utils/vector";
+import { SPAWN_ZONES, INITIAL_HEALTH } from "../../contracts/loadSpawnContract";
+import type { WorldView } from "../simulation/worldTypes";
+import type { AIState, Team, Vector3, WeaponType } from "../../types";
 
 export const WEAPON_DISTRIBUTION: Record<Team, WeaponType[]> = {
-  red: ['laser', 'laser', 'laser', 'laser', 'gun', 'gun', 'gun', 'rocket', 'rocket', 'rocket'],
-  blue: ['laser', 'laser', 'laser', 'gun', 'gun', 'gun', 'gun', 'rocket', 'rocket', 'rocket'],
+  red: [
+    "laser",
+    "laser",
+    "laser",
+    "laser",
+    "gun",
+    "gun",
+    "gun",
+    "rocket",
+    "rocket",
+    "rocket",
+  ],
+  blue: [
+    "laser",
+    "laser",
+    "laser",
+    "gun",
+    "gun",
+    "gun",
+    "gun",
+    "rocket",
+    "rocket",
+    "rocket",
+  ],
 };
 
 function createAIState(offset: Vector3): AIState {
   return {
-    behaviorMode: 'aggressive',
+    behaviorMode: "aggressive",
     targetId: null,
     coverPosition: null,
     lastFireTime: 0,
@@ -28,12 +50,17 @@ function assignCaptain(world: WorldView, team: Team, robots: Robot[]): void {
   robots.forEach((robot, index) => {
     robot.isCaptain = index === 0;
   });
-  world.teams[team] = updateTeamCaptain(world.teams[team], captain ? captain.id : null);
+  world.teams[team] = updateTeamCaptain(
+    world.teams[team],
+    captain ? captain.id : null,
+  );
 }
 
 export function spawnTeam(world: WorldView, team: Team): Robot[] {
   // Prefer arena-configured spawn zones; fall back to canonical contract zones when undefined
-  const spawnZone = (world.arena.spawnZones && world.arena.spawnZones[team]) || SPAWN_ZONES[team];
+  const spawnZone =
+    (world.arena.spawnZones && world.arena.spawnZones[team]) ||
+    SPAWN_ZONES[team];
   const weapons = WEAPON_DISTRIBUTION[team];
   const robots: Robot[] = [];
 
@@ -44,7 +71,7 @@ export function spawnTeam(world: WorldView, team: Team): Robot[] {
       id,
       team,
       position: cloneVector(point),
-      rotation: { x: 0, y: team === 'red' ? 0.2 : -0.2, z: 0, w: 1 },
+      rotation: { x: 0, y: team === "red" ? 0.2 : -0.2, z: 0, w: 1 },
       velocity: { x: 0, y: 0, z: 0 },
       health: INITIAL_HEALTH,
       maxHealth: INITIAL_HEALTH,

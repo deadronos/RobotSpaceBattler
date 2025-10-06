@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface UIState {
   statsOpen: boolean;
@@ -10,7 +10,10 @@ interface UIState {
   reset: () => void;
 }
 
-const initialState: Pick<UIState, 'statsOpen' | 'settingsOpen' | 'performanceOverlayVisible'> = {
+const initialState: Pick<
+  UIState,
+  "statsOpen" | "settingsOpen" | "performanceOverlayVisible"
+> = {
   statsOpen: false,
   settingsOpen: false,
   performanceOverlayVisible: true,
@@ -20,7 +23,8 @@ export const useUIStore = create<UIState>((set) => ({
   ...initialState,
   setStatsOpen: (open) => set({ statsOpen: open }),
   setSettingsOpen: (open) => set({ settingsOpen: open }),
-  setPerformanceOverlayVisible: (visible) => set({ performanceOverlayVisible: visible }),
+  setPerformanceOverlayVisible: (visible) =>
+    set({ performanceOverlayVisible: visible }),
   reset: () => set({ ...initialState }),
 }));
 

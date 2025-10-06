@@ -1,4 +1,4 @@
-import type { Vector3, WeaponType } from '../../types';
+import type { Vector3, WeaponType } from "../../types";
 
 export interface Projectile {
   id: string;
@@ -48,7 +48,10 @@ export function createProjectile(input: ProjectileInput): Projectile {
   return normalizeProjectile(input);
 }
 
-export function shouldDespawn(projectile: Projectile, currentTime: number): boolean {
+export function shouldDespawn(
+  projectile: Projectile,
+  currentTime: number,
+): boolean {
   if (projectile.distanceTraveled >= projectile.maxDistance) {
     return true;
   }

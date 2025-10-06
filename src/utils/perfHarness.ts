@@ -1,7 +1,7 @@
 // Lightweight performance test-harness registered on window.__perf
 // Implements startMeasurement/stopMeasurement/reset/getLastReport used by Playwright
 
-import type { PerfReport } from '../types';
+import type { PerfReport } from "../types";
 
 type RAFHandle = number | null;
 
@@ -26,7 +26,8 @@ const state: InternalState = {
 };
 
 function nowMs() {
-  return (typeof performance !== 'undefined' && typeof performance.now === 'function')
+  return typeof performance !== "undefined" &&
+    typeof performance.now === "function"
     ? performance.now()
     : Date.now();
 }
@@ -37,7 +38,10 @@ function rafLoop(ts: number) {
   state.rafHandle = window.requestAnimationFrame(rafLoop);
 }
 
-export function startMeasurement(opts?: { warmupSeconds?: number; targetFrameRate?: number }) {
+export function startMeasurement(opts?: {
+  warmupSeconds?: number;
+  targetFrameRate?: number;
+}) {
   // Reset existing state to ensure deterministic measurement
   reset();
 
@@ -46,7 +50,10 @@ export function startMeasurement(opts?: { warmupSeconds?: number; targetFrameRat
   state.running = true;
   state.startTime = nowMs();
   state.rafHandle = window.requestAnimationFrame(rafLoop);
-  console.debug('[__perf] measurement started', { warmupMs: state.warmupMs, targetFps: state.targetFps });
+  console.debug("[__perf] measurement started", {
+    warmupMs: state.warmupMs,
+    targetFps: state.targetFps,
+  });
 }
 
 function computeBuckets(frames: number[], startMs: number, endMs: number) {
@@ -67,7 +74,9 @@ function median(values: number[]) {
   if (!values.length) return 0;
   const sorted = values.slice().sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+  return sorted.length % 2 === 0
+    ? (sorted[mid - 1] + sorted[mid]) / 2
+    : sorted[mid];
 }
 
 function percentile(values: number[], p: number) {
@@ -88,7 +97,7 @@ const EMPTY_REPORT: PerfReport = {
 
 export async function stopMeasurement(): Promise<PerfReport> {
   if (!state.running) {
-    console.debug('[__perf] stopMeasurement called but not running');
+    console.debug("[__perf] stopMeasurement called but not running");
     return state.lastReport ?? EMPTY_REPORT;
   }
 
@@ -102,10 +111,15 @@ export async function stopMeasurement(): Promise<PerfReport> {
   const warmupEnd = (state.startTime ?? endTime) + state.warmupMs;
 
   // Only consider frames after warm-up
-  const framesPostWarmup = state.frames.filter((t) => t >= warmupEnd && t <= endTime);
+  const framesPostWarmup = state.frames.filter(
+    (t) => t >= warmupEnd && t <= endTime,
+  );
 
   const durationMs = framesPostWarmup.length
-    ? Math.max(0, framesPostWarmup[framesPostWarmup.length - 1] - framesPostWarmup[0])
+    ? Math.max(
+        0,
+        framesPostWarmup[framesPostWarmup.length - 1] - framesPostWarmup[0],
+      )
     : Math.max(0, endTime - warmupEnd);
 
   const totalFrames = framesPostWarmup.length;
@@ -129,7 +143,7 @@ export async function stopMeasurement(): Promise<PerfReport> {
   };
 
   state.lastReport = report;
-  console.debug('[__perf] measurement stopped', report);
+  console.debug("[__perf] measurement stopped", report);
   return report;
 }
 
@@ -146,7 +160,7 @@ export function getLastReport(): PerfReport | null {
 }
 
 // Register on window so Playwright/CI tests can call it
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   if (!window.__perf) {
     window.__perf = {
       startMeasurement,

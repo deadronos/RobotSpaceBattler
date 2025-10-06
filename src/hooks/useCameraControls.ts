@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from "react";
 
-import type { ArenaEntity } from '../ecs/entities/Arena';
-import type { Vector3 } from '../types';
+import type { ArenaEntity } from "../ecs/entities/Arena";
+import type { Vector3 } from "../types";
 
 interface SphericalCoordinates {
   azimuth: number;
@@ -10,16 +10,18 @@ interface SphericalCoordinates {
 }
 
 interface PointerHandlers {
-  onPointerDown: (event: Pick<PointerEvent, 'button' | 'clientX' | 'clientY'>) => void;
-  onPointerMove: (event: Pick<PointerEvent, 'clientX' | 'clientY'>) => void;
+  onPointerDown: (
+    event: Pick<PointerEvent, "button" | "clientX" | "clientY">,
+  ) => void;
+  onPointerMove: (event: Pick<PointerEvent, "clientX" | "clientY">) => void;
   onPointerUp: () => void;
   onPointerLeave: () => void;
-  onWheel: (event: Pick<WheelEvent, 'deltaY'>) => void;
+  onWheel: (event: Pick<WheelEvent, "deltaY">) => void;
 }
 
 interface KeyboardHandlers {
-  onKeyDown: (event: Pick<KeyboardEvent, 'code'>) => void;
-  onKeyUp: (event: Pick<KeyboardEvent, 'code'>) => void;
+  onKeyDown: (event: Pick<KeyboardEvent, "code">) => void;
+  onKeyUp: (event: Pick<KeyboardEvent, "code">) => void;
 }
 
 export interface UseCameraControlsOptions {
@@ -55,7 +57,8 @@ const KEY_STRAFE_SPEED = 30;
 const MIN_POLAR = 0.2;
 const MAX_POLAR = Math.PI / 2 - 0.1;
 
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
 
 const wrapAngle = (angle: number) => {
   let wrapped = angle % TWO_PI;
@@ -65,7 +68,12 @@ const wrapAngle = (angle: number) => {
   return wrapped;
 };
 
-const toCartesian = (target: Vector3, spherical: SphericalCoordinates, arena: ArenaEntity, minDistance: number) => {
+const toCartesian = (
+  target: Vector3,
+  spherical: SphericalCoordinates,
+  arena: ArenaEntity,
+  minDistance: number,
+) => {
   const sinPolar = Math.sin(spherical.polar);
   const cosPolar = Math.cos(spherical.polar);
   const sinAzimuth = Math.sin(spherical.azimuth);
@@ -113,16 +121,26 @@ export function useCameraControls({
       y: Math.max(0, candidate.y),
       z: clamp(candidate.z, arena.boundaries.min.z, arena.boundaries.max.z),
     }),
-    [arena.boundaries.max.x, arena.boundaries.max.z, arena.boundaries.min.x, arena.boundaries.min.z],
+    [
+      arena.boundaries.max.x,
+      arena.boundaries.max.z,
+      arena.boundaries.min.x,
+      arena.boundaries.min.z,
+    ],
   );
 
-  const [target, setTargetState] = useState<Vector3>(() => clampTarget(initialTarget));
+  const [target, setTargetState] = useState<Vector3>(() =>
+    clampTarget(initialTarget),
+  );
   const targetRef = useRef(target);
 
   const setTarget = useCallback(
     (updater: Vector3 | ((current: Vector3) => Vector3)) => {
       setTargetState((current) => {
-        const next = typeof updater === 'function' ? (updater as (current: Vector3) => Vector3)(current) : updater;
+        const next =
+          typeof updater === "function"
+            ? (updater as (current: Vector3) => Vector3)(current)
+            : updater;
         const clamped = clampTarget(next);
         targetRef.current = clamped;
         return clamped;
@@ -139,9 +157,20 @@ export function useCameraControls({
   const sphericalRef = useRef(spherical);
 
   const setSpherical = useCallback(
-    (updater: SphericalCoordinates | ((current: SphericalCoordinates) => SphericalCoordinates)) => {
+    (
+      updater:
+        | SphericalCoordinates
+        | ((current: SphericalCoordinates) => SphericalCoordinates),
+    ) => {
       setSphericalState((current) => {
-        const next = typeof updater === 'function' ? (updater as (current: SphericalCoordinates) => SphericalCoordinates)(current) : updater;
+        const next =
+          typeof updater === "function"
+            ? (
+                updater as (
+                  current: SphericalCoordinates,
+                ) => SphericalCoordinates
+              )(current)
+            : updater;
         const normalized: SphericalCoordinates = {
           azimuth: wrapAngle(next.azimuth),
           polar: clamp(next.polar, MIN_POLAR, MAX_POLAR),
@@ -154,7 +183,11 @@ export function useCameraControls({
     [maxDistance, minDistance],
   );
 
-  const pointerState = useRef<{ button: number; lastX: number; lastY: number } | null>(null);
+  const pointerState = useRef<{
+    button: number;
+    lastX: number;
+    lastY: number;
+  } | null>(null);
   const keysRef = useRef<Set<string>>(new Set());
 
   const applyPan = useCallback(
@@ -166,7 +199,11 @@ export function useCameraControls({
         x: right.x * deltaX * PAN_SPEED + forward.x * -deltaY * PAN_SPEED,
         z: right.z * deltaX * PAN_SPEED + forward.z * -deltaY * PAN_SPEED,
       };
-      setTarget((current) => ({ x: current.x + movement.x, y: current.y, z: current.z + movement.z }));
+      setTarget((current) => ({
+        x: current.x + movement.x,
+        y: current.y,
+        z: current.z + movement.z,
+      }));
     },
     [setTarget],
   );
@@ -204,7 +241,11 @@ export function useCameraControls({
 
   const pointer: PointerHandlers = {
     onPointerDown: (event) => {
-      pointerState.current = { button: event.button, lastX: event.clientX, lastY: event.clientY };
+      pointerState.current = {
+        button: event.button,
+        lastX: event.clientX,
+        lastY: event.clientY,
+      };
     },
     onPointerMove: (event) => {
       if (!pointerState.current) {
@@ -250,33 +291,42 @@ export function useCameraControls({
         return;
       }
       const keys = keysRef.current;
-      if (keys.has('ArrowLeft') || keys.has('ArrowRight') || keys.has('ArrowUp') || keys.has('ArrowDown')) {
+      if (
+        keys.has("ArrowLeft") ||
+        keys.has("ArrowRight") ||
+        keys.has("ArrowUp") ||
+        keys.has("ArrowDown")
+      ) {
         const azimuthDelta =
-          (keys.has('ArrowLeft') ? KEY_ROTATE_SPEED * deltaTime : 0) -
-          (keys.has('ArrowRight') ? KEY_ROTATE_SPEED * deltaTime : 0);
+          (keys.has("ArrowLeft") ? KEY_ROTATE_SPEED * deltaTime : 0) -
+          (keys.has("ArrowRight") ? KEY_ROTATE_SPEED * deltaTime : 0);
         const polarDelta =
-          (keys.has('ArrowDown') ? KEY_PITCH_SPEED * deltaTime : 0) -
-          (keys.has('ArrowUp') ? KEY_PITCH_SPEED * deltaTime : 0);
+          (keys.has("ArrowDown") ? KEY_PITCH_SPEED * deltaTime : 0) -
+          (keys.has("ArrowUp") ? KEY_PITCH_SPEED * deltaTime : 0);
         if (azimuthDelta !== 0 || polarDelta !== 0) {
           orbit(azimuthDelta, polarDelta);
         }
       }
 
-      if (keys.has('KeyW') || keys.has('KeyS')) {
+      if (keys.has("KeyW") || keys.has("KeyS")) {
         const zoomDelta =
-          (keys.has('KeyS') ? KEY_ZOOM_SPEED * deltaTime : 0) -
-          (keys.has('KeyW') ? KEY_ZOOM_SPEED * deltaTime : 0);
+          (keys.has("KeyS") ? KEY_ZOOM_SPEED * deltaTime : 0) -
+          (keys.has("KeyW") ? KEY_ZOOM_SPEED * deltaTime : 0);
         if (zoomDelta !== 0) {
           zoom(zoomDelta);
         }
       }
 
-      if (keys.has('KeyA') || keys.has('KeyD')) {
-        const strafe = (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0);
+      if (keys.has("KeyA") || keys.has("KeyD")) {
+        const strafe = (keys.has("KeyD") ? 1 : 0) - (keys.has("KeyA") ? 1 : 0);
         if (strafe !== 0) {
           const right = buildRightVector(sphericalRef.current.azimuth);
           const offset = KEY_STRAFE_SPEED * deltaTime * strafe;
-          setTarget((current) => ({ x: current.x + right.x * offset, y: current.y, z: current.z + right.z * offset }));
+          setTarget((current) => ({
+            x: current.x + right.x * offset,
+            y: current.y,
+            z: current.z + right.z * offset,
+          }));
         }
       }
     },

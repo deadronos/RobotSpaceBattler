@@ -1,6 +1,5 @@
-import type { Team } from '../../types';
-import type { Robot } from '../entities/Robot';
-import { isTeamEliminated, type TeamEntity } from '../entities/Team';
+import type { Team } from "../../types";
+import type { Robot } from "../entities/Robot";
 import {
   clearVictoryState,
   resetAutoRestartCountdown,
@@ -8,9 +7,10 @@ import {
   setSettingsOpen,
   setStatsOpen,
   setVictoryState,
-  tickAutoRestart,
   type SimulationState,
-} from '../entities/SimulationState';
+  tickAutoRestart,
+} from "../entities/SimulationState";
+import { isTeamEliminated, type TeamEntity } from "../entities/Team";
 
 export interface VictoryWorld {
   robots: Robot[];
@@ -19,18 +19,28 @@ export interface VictoryWorld {
 }
 
 function remainingTeams(teams: Record<Team, TeamEntity>): Team[] {
-  return (Object.keys(teams) as Team[]).filter((team) => !isTeamEliminated(teams[team]));
+  return (Object.keys(teams) as Team[]).filter(
+    (team) => !isTeamEliminated(teams[team]),
+  );
 }
 
 export function evaluateVictoryState(world: VictoryWorld): SimulationState {
   const aliveTeams = remainingTeams(world.teams);
 
   if (aliveTeams.length === 0 && world.robots.length === 0) {
-    return setVictoryState(world.simulation, 'draw', world.simulation.simulationTime);
+    return setVictoryState(
+      world.simulation,
+      "draw",
+      world.simulation.simulationTime,
+    );
   }
 
-  if (aliveTeams.length === 1 && world.simulation.status === 'running') {
-    return setVictoryState(world.simulation, aliveTeams[0], world.simulation.simulationTime);
+  if (aliveTeams.length === 1 && world.simulation.status === "running") {
+    return setVictoryState(
+      world.simulation,
+      aliveTeams[0],
+      world.simulation.simulationTime,
+    );
   }
 
   return world.simulation;
@@ -39,13 +49,17 @@ export function evaluateVictoryState(world: VictoryWorld): SimulationState {
 export function advanceVictoryCountdown(
   world: VictoryWorld,
   deltaTime: number,
-  onRestart: () => void
+  onRestart: () => void,
 ): SimulationState {
   const previousCountdown = world.simulation.autoRestartCountdown;
   let nextState = tickAutoRestart(world.simulation, deltaTime);
   const currentCountdown = nextState.autoRestartCountdown;
 
-  if (previousCountdown !== null && currentCountdown === 0 && !nextState.countdownPaused) {
+  if (
+    previousCountdown !== null &&
+    currentCountdown === 0 &&
+    !nextState.countdownPaused
+  ) {
     nextState = clearVictoryState(nextState);
     onRestart();
   }

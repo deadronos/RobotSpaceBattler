@@ -1,15 +1,15 @@
-import { useCallback, useEffect, useReducer, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame } from "@react-three/fiber";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 
-import type { PerformanceOverlayState } from '../ecs/simulation/performance';
-import type { SimulationWorld } from '../ecs/world';
+import type { PerformanceOverlayState } from "../ecs/simulation/performance";
+import type { SimulationWorld } from "../ecs/world";
 import {
   getPerformanceOverlayState,
   getSimulationState,
   recordFrameMetrics,
   setAutoScalingEnabled,
-} from '../ecs/world';
-import type { PerformanceStats } from '../types';
+} from "../ecs/world";
+import type { PerformanceStats } from "../types";
 
 export interface FrameSubscriber {
   (callback: (state: unknown, delta: number) => void): void | (() => void);
@@ -45,8 +45,12 @@ export function usePerformanceManager({
   minDelta = DEFAULT_MIN_DELTA,
   maxDelta = DEFAULT_MAX_DELTA,
 }: UsePerformanceManagerOptions): PerformanceManagerHandle {
-  const statsRef = useRef<PerformanceStats>(getSimulationState(world).performanceStats);
-  const overlayRef = useRef<PerformanceOverlayState>(getPerformanceOverlayState(world));
+  const statsRef = useRef<PerformanceStats>(
+    getSimulationState(world).performanceStats,
+  );
+  const overlayRef = useRef<PerformanceOverlayState>(
+    getPerformanceOverlayState(world),
+  );
 
   const [, forceUpdate] = useReducer((value) => value + 1, 0);
 
@@ -93,18 +97,15 @@ export function usePerformanceManager({
     }
     const unsubscribe = useFrameHook(handleFrame);
     return () => {
-      if (typeof unsubscribe === 'function') {
+      if (typeof unsubscribe === "function") {
         unsubscribe();
       }
     };
   }, [handleFrame, useFrameHook]);
 
-  const recordSample = useCallback(
-    (fps: number) => {
-      stepRef.current(fps);
-    },
-    [],
-  );
+  const recordSample = useCallback((fps: number) => {
+    stepRef.current(fps);
+  }, []);
 
   const setAutoScaling = useCallback(
     (enabled: boolean) => {

@@ -1,10 +1,10 @@
-import { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
-import type { Group } from 'three';
+import { useFrame } from "@react-three/fiber";
+import { useMemo, useRef } from "react";
+import type { Group } from "three";
 
-import type { Robot as RobotEntity } from '../ecs/entities/Robot';
-import type { Quaternion, Vector3 } from '../types';
-import { lerpVector } from '../utils/math';
+import type { Robot as RobotEntity } from "../ecs/entities/Robot";
+import type { Quaternion, Vector3 } from "../types";
+import { lerpVector } from "../utils/math";
 
 export interface RobotProps {
   robot: RobotEntity;
@@ -16,8 +16,8 @@ export interface RobotProps {
 }
 
 const TEAM_COLORS = {
-  red: '#ff5f57',
-  blue: '#4a90e2',
+  red: "#ff5f57",
+  blue: "#4a90e2",
 } as const;
 
 const MIN_HEALTH_SCALE = 0.01;
@@ -26,7 +26,11 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function lerpQuaternion(from: Quaternion, to: Quaternion, t: number): Quaternion {
+function lerpQuaternion(
+  from: Quaternion,
+  to: Quaternion,
+  t: number,
+): Quaternion {
   const lerped = {
     x: from.x + (to.x - from.x) * t,
     y: from.y + (to.y - from.y) * t,
@@ -46,14 +50,14 @@ function lerpQuaternion(from: Quaternion, to: Quaternion, t: number): Quaternion
 
 function getHealthColor(percentage: number): string {
   if (percentage > 0.6) {
-    return '#4ade80';
+    return "#4ade80";
   }
 
   if (percentage > 0.3) {
-    return '#facc15';
+    return "#facc15";
   }
 
-  return '#f87171';
+  return "#f87171";
 }
 
 export function Robot({ robot, interpolationAlpha = 0.2 }: RobotProps) {
@@ -73,7 +77,7 @@ export function Robot({ robot, interpolationAlpha = 0.2 }: RobotProps) {
 
   const healthColor = useMemo(
     () => getHealthColor(healthPercentage),
-    [healthPercentage]
+    [healthPercentage],
   );
 
   useFrame(() => {
@@ -82,13 +86,26 @@ export function Robot({ robot, interpolationAlpha = 0.2 }: RobotProps) {
       return;
     }
 
-    const nextPosition = lerpVector(previousPosition.current, robot.position, interpolationAlpha);
+    const nextPosition = lerpVector(
+      previousPosition.current,
+      robot.position,
+      interpolationAlpha,
+    );
     previousPosition.current = nextPosition;
     group.position.set(nextPosition.x, nextPosition.y, nextPosition.z);
 
-    const nextRotation = lerpQuaternion(previousRotation.current, robot.rotation, interpolationAlpha);
+    const nextRotation = lerpQuaternion(
+      previousRotation.current,
+      robot.rotation,
+      interpolationAlpha,
+    );
     previousRotation.current = nextRotation;
-    group.quaternion.set(nextRotation.x, nextRotation.y, nextRotation.z, nextRotation.w);
+    group.quaternion.set(
+      nextRotation.x,
+      nextRotation.y,
+      nextRotation.z,
+      nextRotation.w,
+    );
   });
 
   return (
@@ -96,13 +113,18 @@ export function Robot({ robot, interpolationAlpha = 0.2 }: RobotProps) {
       ref={groupRef}
       name={`robot-${robot.id}`}
       position={[robot.position.x, robot.position.y, robot.position.z]}
-      quaternion={[robot.rotation.x, robot.rotation.y, robot.rotation.z, robot.rotation.w]}
+      quaternion={[
+        robot.rotation.x,
+        robot.rotation.y,
+        robot.rotation.z,
+        robot.rotation.w,
+      ]}
     >
       <mesh name="robot-body" castShadow receiveShadow>
         <boxGeometry args={[1, 2, 1]} />
         <meshStandardMaterial
           color={teamColor}
-          emissive={robot.isCaptain ? '#ffd966' : '#000000'}
+          emissive={robot.isCaptain ? "#ffd966" : "#000000"}
           emissiveIntensity={robot.isCaptain ? 0.6 : 0}
         />
       </mesh>

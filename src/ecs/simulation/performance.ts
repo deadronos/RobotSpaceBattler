@@ -1,9 +1,9 @@
-import type { ArenaEntity } from '../entities/Arena';
+import type { ArenaEntity } from "../entities/Arena";
 import {
   setTimeScale,
-  updatePerformanceStats,
   type SimulationState,
-} from '../entities/SimulationState';
+  updatePerformanceStats,
+} from "../entities/SimulationState";
 
 export interface PerformanceOverlayState {
   visible: boolean;
@@ -40,7 +40,7 @@ function applyQualityScaling(
   controller: PerformanceController,
   state: SimulationState,
   arena: ArenaEntity,
-  fps: number
+  fps: number,
 ): SimulationState {
   const autoScalingEnabled = controller.overlay.autoScalingEnabled;
   let nextState = state;
@@ -80,7 +80,7 @@ export function recordFrameMetrics(
   controller: PerformanceController,
   state: SimulationState,
   arena: ArenaEntity,
-  fps: number
+  fps: number,
 ): SimulationState {
   controller.samples.push(fps);
   if (controller.samples.length > controller.maxSamples) {
@@ -104,7 +104,7 @@ export function recordFrameMetrics(
 
 export function setAutoScalingEnabled(
   controller: PerformanceController,
-  enabled: boolean
+  enabled: boolean,
 ): void {
   controller.overlay.autoScalingEnabled = enabled;
   if (!enabled) {
@@ -112,6 +112,8 @@ export function setAutoScalingEnabled(
   }
 }
 
-export function getOverlayState(controller: PerformanceController): PerformanceOverlayState {
+export function getOverlayState(
+  controller: PerformanceController,
+): PerformanceOverlayState {
   return { ...controller.overlay };
 }

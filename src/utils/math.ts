@@ -1,4 +1,4 @@
-import type { Vector3 } from '../types';
+import type { Vector3 } from "../types";
 
 export function lerpVector(from: Vector3, to: Vector3, alpha: number): Vector3 {
   const clampedAlpha = Math.min(1, Math.max(0, alpha));

@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from "react";
 
-import type { Robot } from '../ecs/entities/Robot';
-import type { Vector3 } from '../types';
+import type { Robot } from "../ecs/entities/Robot";
+import type { Vector3 } from "../types";
 
 export interface UseCinematicModeOptions {
   robots: Robot[];
@@ -16,7 +16,7 @@ export interface CinematicModeResult {
   isActive: boolean;
   setActive: (active: boolean) => void;
   toggle: () => void;
-  handleKeyDown: (event: Pick<KeyboardEvent, 'code'>) => void;
+  handleKeyDown: (event: Pick<KeyboardEvent, "code">) => void;
   update: (deltaTime: number) => void;
 }
 
@@ -39,7 +39,7 @@ function averageVectors(vectors: Vector3[]): Vector3 {
       y: acc.y + value.y,
       z: acc.z + value.z,
     }),
-    { x: 0, y: 0, z: 0 }
+    { x: 0, y: 0, z: 0 },
   );
 
   return {
@@ -59,7 +59,12 @@ function calculateIntensity(robot: Robot): number {
   const incomingDamage = robot.stats.damageTaken / 300;
   const killWeight = robot.stats.kills * 0.2;
 
-  return healthPressure * 0.5 + damageMomentum * 0.3 + incomingDamage * 0.15 + killWeight;
+  return (
+    healthPressure * 0.5 +
+    damageMomentum * 0.3 +
+    incomingDamage * 0.15 +
+    killWeight
+  );
 }
 
 export function useCinematicMode({
@@ -74,7 +79,10 @@ export function useCinematicMode({
   const focusRef = useRef<Vector3>({ ...fallbackTarget });
 
   const sortedRobots = useMemo(() => {
-    const scored = robots.map((robot) => ({ robot, intensity: calculateIntensity(robot) }));
+    const scored = robots.map((robot) => ({
+      robot,
+      intensity: calculateIntensity(robot),
+    }));
     const positive = scored.filter((entry) => entry.intensity > 0);
     const pool = positive.length > 0 ? positive : scored;
 
@@ -84,7 +92,9 @@ export function useCinematicMode({
     }
 
     const focusCutoff = Math.max(sorted[0].intensity * 0.5, 0);
-    const focused = sorted.filter((entry, index) => index === 0 || entry.intensity >= focusCutoff);
+    const focused = sorted.filter(
+      (entry, index) => index === 0 || entry.intensity >= focusCutoff,
+    );
 
     return focused
       .slice(0, Math.max(1, maxFocusRobots))
@@ -109,12 +119,12 @@ export function useCinematicMode({
   }, []);
 
   const handleKeyDown = useCallback(
-    (event: Pick<KeyboardEvent, 'code'>) => {
-      if (event.code === 'KeyC') {
+    (event: Pick<KeyboardEvent, "code">) => {
+      if (event.code === "KeyC") {
         toggle();
       }
     },
-    [toggle]
+    [toggle],
   );
 
   const update = useCallback(
@@ -124,7 +134,8 @@ export function useCinematicMode({
       }
 
       const clampedDelta = Math.min(Math.max(deltaTime, 0), MAX_DELTA);
-      const normalizedAlpha = 1 - Math.pow(1 - followStrength, clampedDelta * 60);
+      const normalizedAlpha =
+        1 - Math.pow(1 - followStrength, clampedDelta * 60);
 
       focusRef.current = {
         x: lerp(focusRef.current.x, hotspot.x, normalizedAlpha),
@@ -133,7 +144,7 @@ export function useCinematicMode({
       };
       setFocus({ ...focusRef.current });
     },
-    [followStrength, hotspot, isActive]
+    [followStrength, hotspot, isActive],
   );
 
   return {

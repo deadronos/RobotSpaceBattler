@@ -1,15 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect } from "react";
 
-import type { ArenaEntity } from '../ecs/entities/Arena';
-import type { Team } from '../types';
+import type { ArenaEntity } from "../ecs/entities/Arena";
+import type { Team } from "../types";
 
 export interface ArenaProps {
   arena: ArenaEntity;
 }
 
 const TEAM_COLORS: Record<Team, string> = {
-  red: '#ff5f57',
-  blue: '#4a90e2',
+  red: "#ff5f57",
+  blue: "#4a90e2",
 };
 
 function renderWalls(arena: ArenaEntity) {
@@ -26,7 +26,9 @@ function renderWalls(arena: ArenaEntity) {
         castShadow
         receiveShadow
       >
-        <boxGeometry args={[arena.dimensions.x, arena.dimensions.y, wallThickness]} />
+        <boxGeometry
+          args={[arena.dimensions.x, arena.dimensions.y, wallThickness]}
+        />
         <meshStandardMaterial color="#20263b" />
       </mesh>
       <mesh
@@ -35,7 +37,9 @@ function renderWalls(arena: ArenaEntity) {
         castShadow
         receiveShadow
       >
-        <boxGeometry args={[arena.dimensions.x, arena.dimensions.y, wallThickness]} />
+        <boxGeometry
+          args={[arena.dimensions.x, arena.dimensions.y, wallThickness]}
+        />
         <meshStandardMaterial color="#20263b" />
       </mesh>
       <mesh
@@ -44,7 +48,9 @@ function renderWalls(arena: ArenaEntity) {
         castShadow
         receiveShadow
       >
-        <boxGeometry args={[wallThickness, arena.dimensions.y, arena.dimensions.z]} />
+        <boxGeometry
+          args={[wallThickness, arena.dimensions.y, arena.dimensions.z]}
+        />
         <meshStandardMaterial color="#1b2236" />
       </mesh>
       <mesh
@@ -53,7 +59,9 @@ function renderWalls(arena: ArenaEntity) {
         castShadow
         receiveShadow
       >
-        <boxGeometry args={[wallThickness, arena.dimensions.y, arena.dimensions.z]} />
+        <boxGeometry
+          args={[wallThickness, arena.dimensions.y, arena.dimensions.z]}
+        />
         <meshStandardMaterial color="#1b2236" />
       </mesh>
     </group>
@@ -61,7 +69,12 @@ function renderWalls(arena: ArenaEntity) {
 }
 
 function renderSpawnZones(arena: ArenaEntity) {
-  return (Object.entries(arena.spawnZones) as [Team, ArenaEntity['spawnZones'][Team]][]).map(([team, zone]) => (
+  return (
+    Object.entries(arena.spawnZones) as [
+      Team,
+      ArenaEntity["spawnZones"][Team],
+    ][]
+  ).map(([team, zone]) => (
     <group key={team} name={`spawn-zone-${team}-group`}>
       <mesh
         name={`spawn-zone-${team}`}
@@ -70,7 +83,11 @@ function renderSpawnZones(arena: ArenaEntity) {
         receiveShadow
       >
         <ringGeometry args={[zone.radius * 0.6, zone.radius, 64]} />
-        <meshBasicMaterial color={TEAM_COLORS[team]} transparent opacity={0.3} />
+        <meshBasicMaterial
+          color={TEAM_COLORS[team]}
+          transparent
+          opacity={0.3}
+        />
       </mesh>
       {zone.spawnPoints.map((point, index) => (
         <mesh
@@ -96,12 +113,22 @@ function renderObstacles(arena: ArenaEntity) {
     <mesh
       key={`${obstacle.position.x}-${obstacle.position.z}-${index}`}
       name={`arena-obstacle-${index}`}
-      position={[obstacle.position.x, obstacle.position.y + obstacle.dimensions.y / 2, obstacle.position.z]}
+      position={[
+        obstacle.position.x,
+        obstacle.position.y + obstacle.dimensions.y / 2,
+        obstacle.position.z,
+      ]}
       castShadow
       receiveShadow
     >
-      <boxGeometry args={[obstacle.dimensions.x, obstacle.dimensions.y, obstacle.dimensions.z]} />
-      <meshStandardMaterial color={obstacle.isCover ? '#374151' : '#1f2937'} />
+      <boxGeometry
+        args={[
+          obstacle.dimensions.x,
+          obstacle.dimensions.y,
+          obstacle.dimensions.z,
+        ]}
+      />
+      <meshStandardMaterial color={obstacle.isCover ? "#374151" : "#1f2937"} />
     </mesh>
   ));
 }
@@ -110,7 +137,7 @@ export function Arena({ arena }: ArenaProps) {
   useEffect(() => {
     // Dynamically import the perf harness so Playwright/CI can access window.__perf.
     // This avoids top-level side-effect import ordering issues with the linter.
-    void import('../utils/perfHarness');
+    void import("../utils/perfHarness");
   }, []);
 
   return (

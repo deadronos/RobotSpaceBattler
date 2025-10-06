@@ -3,9 +3,17 @@
 // via src/contracts/loadScoringContract.ts so runtime code and tests share the same
 // authoritative values.
 
-import { MULTIPLIERS, MULTIPLIER_NEUTRAL } from '../../contracts/loadScoringContract';
-import type { WeaponType } from '../../types';
-export { BASE_DAMAGE, MULTIPLIER_ADVANTAGE, MULTIPLIER_DISADVANTAGE, MULTIPLIER_NEUTRAL } from '../../contracts/loadScoringContract';
+import {
+  MULTIPLIER_NEUTRAL,
+  MULTIPLIERS,
+} from "../../contracts/loadScoringContract";
+import type { WeaponType } from "../../types";
+export {
+  BASE_DAMAGE,
+  MULTIPLIER_ADVANTAGE,
+  MULTIPLIER_DISADVANTAGE,
+  MULTIPLIER_NEUTRAL,
+} from "../../contracts/loadScoringContract";
 
 /**
  * Returns the damage multiplier for an attacker vs defender weapon matchup.
@@ -14,7 +22,7 @@ export { BASE_DAMAGE, MULTIPLIER_ADVANTAGE, MULTIPLIER_DISADVANTAGE, MULTIPLIER_
  */
 export function getDamageMultiplier(
   attackerWeapon: WeaponType,
-  defenderWeapon: WeaponType
+  defenderWeapon: WeaponType,
 ): number {
   return MULTIPLIERS[attackerWeapon][defenderWeapon] ?? MULTIPLIER_NEUTRAL;
 }

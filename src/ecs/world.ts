@@ -1,34 +1,78 @@
-import { createContext, createElement, useContext, useMemo, type ReactElement, type ReactNode } from 'react';
-import { World as MiniplexWorld } from 'miniplex';
+import { World as MiniplexWorld } from "miniplex";
+import {
+  createContext,
+  createElement,
+  type ReactElement,
+  type ReactNode,
+  useContext,
+  useMemo,
+} from "react";
 
-import { createInitialSimulationState, setPendingTeamConfig, tickSimulation, type SimulationState } from './entities/SimulationState';
-import { createDefaultArena, type ArenaEntity } from './entities/Arena';
-import { createInitialTeam, resetTeamForRestart, type TeamEntity } from './entities/Team';
-import type { Team, Vector3, WeaponType } from '../types';
-import { createPhysicsState, getPhysicsSnapshot as getPhysicsSnapshotInternal, applyRobotImpulse, setRobotBodyPosition, spawnProjectileBody, stepPhysics } from './simulation/physics';
-import { spawnInitialTeams } from './systems/spawnSystem';
-import { applyMovement, getAliveRobots, propagateCaptainTargets, updateBehaviors } from './simulation/aiController';
+import type { Team, Vector3, WeaponType } from "../types";
+import { type ArenaEntity, createDefaultArena } from "./entities/Arena";
+import { createProjectile, type Projectile } from "./entities/Projectile";
+import type { Robot } from "./entities/Robot";
+import {
+  createInitialSimulationState,
+  setPendingTeamConfig,
+  type SimulationState,
+  tickSimulation,
+} from "./entities/SimulationState";
+import {
+  createInitialTeam,
+  resetTeamForRestart,
+  type TeamEntity,
+} from "./entities/Team";
+import {
+  applyMovement,
+  getAliveRobots,
+  propagateCaptainTargets,
+  updateBehaviors,
+} from "./simulation/aiController";
+import {
+  createPerformanceController,
+  getOverlayState,
+  type PerformanceController,
+  recordFrameMetrics as recordFrameMetricsInternal,
+  setAutoScalingEnabled as setAutoScalingEnabledInternal,
+} from "./simulation/performance";
+import {
+  applyRobotImpulse,
+  createPhysicsState,
+  getPhysicsSnapshot as getPhysicsSnapshotInternal,
+  setRobotBodyPosition,
+  spawnProjectileBody,
+  stepPhysics,
+} from "./simulation/physics";
+import { refreshTeamStats } from "./simulation/teamStats";
+import {
+  closeSettings,
+  closeStats,
+  evaluateVictory,
+  openSettings,
+  openStats,
+  pauseAutoRestart as pauseCountdown,
+  resetCountdown,
+  resumeAutoRestart as resumeCountdown,
+  tickVictoryCountdown,
+} from "./simulation/victory";
+import type { ECSCollections, WorldView } from "./simulation/worldTypes";
 import {
   applyDamage,
   cleanupProjectiles,
   eliminateRobot as eliminateRobotInternal,
   handleProjectileHits,
-} from './systems/damageSystem';
-import { refreshTeamStats } from './simulation/teamStats';
-import { evaluateVictory, openSettings, openStats, pauseAutoRestart as pauseCountdown, resetCountdown, resumeAutoRestart as resumeCountdown, tickVictoryCountdown, closeSettings, closeStats } from './simulation/victory';
-import { createPerformanceController, getOverlayState, recordFrameMetrics as recordFrameMetricsInternal, setAutoScalingEnabled as setAutoScalingEnabledInternal, type PerformanceController } from './simulation/performance';
-import { createProjectile, type Projectile } from './entities/Projectile';
-import type { Robot } from './entities/Robot';
-import { getWeaponData, runWeaponSystem } from './systems/weaponSystem';
-import { cloneVector } from './utils/vector';
-import type { ECSCollections, WorldView } from './simulation/worldTypes';
-import { capturePostBattleStats } from './systems/statsSystem';
+} from "./systems/damageSystem";
+import { spawnInitialTeams } from "./systems/spawnSystem";
+import { capturePostBattleStats } from "./systems/statsSystem";
+import { getWeaponData, runWeaponSystem } from "./systems/weaponSystem";
+import { cloneVector } from "./utils/vector";
 
 export interface SimulationWorld extends WorldView {
   performance: PerformanceController;
 }
 
-const TEAM_LIST: Team[] = ['red', 'blue'];
+const TEAM_LIST: Team[] = ["red", "blue"];
 
 const SimulationWorldContext = createContext<SimulationWorld | null>(null);
 
@@ -45,23 +89,32 @@ type SimulationWorldProviderProps = {
   children: ReactNode;
 };
 
-export function SimulationWorldProvider({ value, children }: SimulationWorldProviderProps): ReactElement {
+export function SimulationWorldProvider({
+  value,
+  children,
+}: SimulationWorldProviderProps): ReactElement {
   const memoizedWorld = useMemo(() => value, [value]);
-  return createElement(SimulationWorldContext.Provider, { value: memoizedWorld }, children);
+  return createElement(
+    SimulationWorldContext.Provider,
+    { value: memoizedWorld },
+    children,
+  );
 }
 
 export function useSimulationWorld(): SimulationWorld {
   const world = useContext(SimulationWorldContext);
   if (!world) {
-    throw new Error('useSimulationWorld must be used within a SimulationWorldProvider');
+    throw new Error(
+      "useSimulationWorld must be used within a SimulationWorldProvider",
+    );
   }
   return world;
 }
 
 function createTeams(arena: ArenaEntity): Record<Team, TeamEntity> {
   return {
-    red: createInitialTeam('red', arena.spawnZones.red),
-    blue: createInitialTeam('blue', arena.spawnZones.blue),
+    red: createInitialTeam("red", arena.spawnZones.red),
+    blue: createInitialTeam("blue", arena.spawnZones.blue),
   };
 }
 
@@ -109,15 +162,19 @@ export function initializeSimulation(): SimulationWorld {
   return world;
 }
 
-function createPhysicsProjectile(world: SimulationWorld, config: {
-  id?: string;
-  ownerId: string;
-  weaponType: WeaponType;
-  position: Vector3;
-  velocity: Vector3;
-  damage?: number;
-}): string {
-  const id = config.id ?? `proj-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+function createPhysicsProjectile(
+  world: SimulationWorld,
+  config: {
+    id?: string;
+    ownerId: string;
+    weaponType: WeaponType;
+    position: Vector3;
+    velocity: Vector3;
+    damage?: number;
+  },
+): string {
+  const id =
+    config.id ?? `proj-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const weapon = getWeaponData(config.weaponType);
   const projectile = createProjectile({
     id,
@@ -137,7 +194,10 @@ function createPhysicsProjectile(world: SimulationWorld, config: {
   return id;
 }
 
-export function stepSimulation(world: SimulationWorld, deltaTime: number): void {
+export function stepSimulation(
+  world: SimulationWorld,
+  deltaTime: number,
+): void {
   const scaledDelta = deltaTime * world.simulation.timeScale;
   world.simulation = tickSimulation(world.simulation, deltaTime);
 
@@ -162,16 +222,28 @@ export function stepSimulation(world: SimulationWorld, deltaTime: number): void 
   cleanupProjectiles(world, physicsResult.despawnedProjectiles);
   refreshTeamStats(world, TEAM_LIST);
 
-  world.simulation = evaluateVictory({ robots: world.entities, teams: world.teams, simulation: world.simulation });
+  world.simulation = evaluateVictory({
+    robots: world.entities,
+    teams: world.teams,
+    simulation: world.simulation,
+  });
   // Capture a persistent snapshot of per-robot and per-team metrics when victory is detected
-  world.simulation = capturePostBattleStats({ robots: world.entities, teams: world.teams, simulation: world.simulation });
+  world.simulation = capturePostBattleStats({
+    robots: world.entities,
+    teams: world.teams,
+    simulation: world.simulation,
+  });
   world.simulation = tickVictoryCountdown(
-    { robots: world.entities, teams: world.teams, simulation: world.simulation },
+    {
+      robots: world.entities,
+      teams: world.teams,
+      simulation: world.simulation,
+    },
     deltaTime,
     () => {
       resetBattle(world);
       // post-battle stats are captured immediately after victory is evaluated; no-op here.
-    }
+    },
   );
 }
 
@@ -179,7 +251,11 @@ export function getProjectiles(world: SimulationWorld): Projectile[] {
   return world.projectiles;
 }
 
-export function inflictDamage(world: SimulationWorld, robotId: string, amount: number): void {
+export function inflictDamage(
+  world: SimulationWorld,
+  robotId: string,
+  amount: number,
+): void {
   applyDamage(world, robotId, amount);
 }
 
@@ -194,41 +270,72 @@ export function calculateDistance(a: Vector3, b: Vector3): number {
   return Math.hypot(dx, dy, dz);
 }
 
-export { getDamageMultiplier } from './systems/weaponSystem';
+export { getDamageMultiplier } from "./systems/weaponSystem";
 
 export function getSimulationState(world: SimulationWorld): SimulationState {
   return world.simulation;
 }
 
 export function pauseAutoRestart(world: SimulationWorld): void {
-  world.simulation = pauseCountdown({ robots: world.entities, teams: world.teams, simulation: world.simulation });
+  world.simulation = pauseCountdown({
+    robots: world.entities,
+    teams: world.teams,
+    simulation: world.simulation,
+  });
 }
 
 export function resumeAutoRestart(world: SimulationWorld): void {
-  world.simulation = resumeCountdown({ robots: world.entities, teams: world.teams, simulation: world.simulation });
+  world.simulation = resumeCountdown({
+    robots: world.entities,
+    teams: world.teams,
+    simulation: world.simulation,
+  });
 }
 
 export function resetAutoRestartCountdown(world: SimulationWorld): void {
-  world.simulation = resetCountdown({ robots: world.entities, teams: world.teams, simulation: world.simulation });
+  world.simulation = resetCountdown({
+    robots: world.entities,
+    teams: world.teams,
+    simulation: world.simulation,
+  });
 }
 
 export function openStatsOverlay(world: SimulationWorld): void {
-  world.simulation = openStats({ robots: world.entities, teams: world.teams, simulation: world.simulation });
+  world.simulation = openStats({
+    robots: world.entities,
+    teams: world.teams,
+    simulation: world.simulation,
+  });
 }
 
 export function closeStatsOverlay(world: SimulationWorld): void {
-  world.simulation = closeStats({ robots: world.entities, teams: world.teams, simulation: world.simulation });
+  world.simulation = closeStats({
+    robots: world.entities,
+    teams: world.teams,
+    simulation: world.simulation,
+  });
 }
 
 export function openSettingsOverlay(world: SimulationWorld): void {
-  world.simulation = openSettings({ robots: world.entities, teams: world.teams, simulation: world.simulation });
+  world.simulation = openSettings({
+    robots: world.entities,
+    teams: world.teams,
+    simulation: world.simulation,
+  });
 }
 
 export function closeSettingsOverlay(world: SimulationWorld): void {
-  world.simulation = closeSettings({ robots: world.entities, teams: world.teams, simulation: world.simulation });
+  world.simulation = closeSettings({
+    robots: world.entities,
+    teams: world.teams,
+    simulation: world.simulation,
+  });
 }
 
-export function applyTeamComposition(world: SimulationWorld, config: Record<Team, unknown>): void {
+export function applyTeamComposition(
+  world: SimulationWorld,
+  config: Record<Team, unknown>,
+): void {
   world.simulation = setPendingTeamConfig(world.simulation, config);
 }
 
@@ -237,10 +344,18 @@ export function getArenaConfig(world: SimulationWorld): ArenaEntity {
 }
 
 export function recordFrameMetrics(world: SimulationWorld, fps: number): void {
-  world.simulation = recordFrameMetricsInternal(world.performance, world.simulation, world.arena, fps);
+  world.simulation = recordFrameMetricsInternal(
+    world.performance,
+    world.simulation,
+    world.arena,
+    fps,
+  );
 }
 
-export function setAutoScalingEnabled(world: SimulationWorld, enabled: boolean): void {
+export function setAutoScalingEnabled(
+  world: SimulationWorld,
+  enabled: boolean,
+): void {
   setAutoScalingEnabledInternal(world.performance, enabled);
 }
 
@@ -248,7 +363,11 @@ export function getPerformanceOverlayState(world: SimulationWorld) {
   return getOverlayState(world.performance);
 }
 
-export function setPhysicsBodyPosition(world: SimulationWorld, robotId: string, position: Vector3): void {
+export function setPhysicsBodyPosition(
+  world: SimulationWorld,
+  robotId: string,
+  position: Vector3,
+): void {
   const robot = world.entities.find((entity) => entity.id === robotId);
   if (!robot) {
     return;
@@ -257,7 +376,11 @@ export function setPhysicsBodyPosition(world: SimulationWorld, robotId: string, 
   setRobotBodyPosition(world.physics, robot, position);
 }
 
-export function applyPhysicsImpulse(world: SimulationWorld, robotId: string, impulse: Vector3): void {
+export function applyPhysicsImpulse(
+  world: SimulationWorld,
+  robotId: string,
+  impulse: Vector3,
+): void {
   const robot = world.entities.find((entity) => entity.id === robotId);
   if (!robot) {
     return;
@@ -265,14 +388,17 @@ export function applyPhysicsImpulse(world: SimulationWorld, robotId: string, imp
   applyRobotImpulse(world.physics, robot, impulse);
 }
 
-export function spawnPhysicsProjectile(world: SimulationWorld, config: {
-  id?: string;
-  ownerId: string;
-  weaponType: WeaponType;
-  position: Vector3;
-  velocity: Vector3;
-  damage?: number;
-}): string {
+export function spawnPhysicsProjectile(
+  world: SimulationWorld,
+  config: {
+    id?: string;
+    ownerId: string;
+    weaponType: WeaponType;
+    position: Vector3;
+    velocity: Vector3;
+    damage?: number;
+  },
+): string {
   return createPhysicsProjectile(world, config);
 }
 

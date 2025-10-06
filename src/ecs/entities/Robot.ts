@@ -1,4 +1,11 @@
-import type { AIState, Quaternion, RobotStats, Team, Vector3, WeaponType } from '../../types';
+import type {
+  AIState,
+  Quaternion,
+  RobotStats,
+  Team,
+  Vector3,
+  WeaponType,
+} from "../../types";
 
 export interface Robot {
   id: string;
@@ -16,7 +23,7 @@ export interface Robot {
 
 export interface RobotInput extends Robot {}
 
-const VALID_TEAMS: readonly Team[] = ['red', 'blue'];
+const VALID_TEAMS: readonly Team[] = ["red", "blue"];
 
 function assertValidTeam(team: Team): void {
   if (!VALID_TEAMS.includes(team)) {
@@ -37,7 +44,12 @@ function sanitizeVector(vector: Vector3): Vector3 {
 }
 
 function sanitizeQuaternion(quaternion: Quaternion): Quaternion {
-  const length = Math.hypot(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+  const length = Math.hypot(
+    quaternion.x,
+    quaternion.y,
+    quaternion.z,
+    quaternion.w,
+  );
   if (length === 0) {
     return { x: 0, y: 0, z: 0, w: 1 };
   }

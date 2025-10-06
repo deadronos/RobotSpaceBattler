@@ -1,7 +1,7 @@
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent } from "react";
 
-import type { PerformanceStats } from '../../types';
-import { useUIStore } from '../../store/uiStore';
+import { useUIStore } from "../../store/uiStore";
+import type { PerformanceStats } from "../../types";
 
 export interface PerformanceOverlayProps {
   stats: PerformanceStats;
@@ -9,7 +9,11 @@ export interface PerformanceOverlayProps {
   onToggleAutoScaling: (enabled: boolean) => void;
 }
 
-export function PerformanceOverlay({ stats, autoScalingEnabled, onToggleAutoScaling }: PerformanceOverlayProps) {
+export function PerformanceOverlay({
+  stats,
+  autoScalingEnabled,
+  onToggleAutoScaling,
+}: PerformanceOverlayProps) {
   const visible = useUIStore((state) => state.performanceOverlayVisible);
   const setVisible = useUIStore((state) => state.setPerformanceOverlayVisible);
 
@@ -17,7 +21,7 @@ export function PerformanceOverlay({ stats, autoScalingEnabled, onToggleAutoScal
     return (
       <div
         aria-label="Performance Overlay"
-        style={{ position: 'absolute', bottom: '1rem', right: '1rem' }}
+        style={{ position: "absolute", bottom: "1rem", right: "1rem" }}
       >
         <button type="button" onClick={() => setVisible(true)}>
           Show Overlay
@@ -34,29 +38,33 @@ export function PerformanceOverlay({ stats, autoScalingEnabled, onToggleAutoScal
     <aside
       aria-label="Performance Overlay"
       style={{
-        position: 'absolute',
-        bottom: '1rem',
-        right: '1rem',
-        padding: '1rem',
-        background: 'rgba(15, 23, 42, 0.88)',
-        color: 'white',
-        borderRadius: '0.75rem',
-        minWidth: '220px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.75rem',
+        position: "absolute",
+        bottom: "1rem",
+        right: "1rem",
+        padding: "1rem",
+        background: "rgba(15, 23, 42, 0.88)",
+        color: "white",
+        borderRadius: "0.75rem",
+        minWidth: "220px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.75rem",
       }}
     >
       <div>
         <strong>{Math.round(stats.currentFPS)} fps</strong>
-        <div style={{ opacity: 0.75 }}>Avg: {Math.round(stats.averageFPS)} fps</div>
+        <div style={{ opacity: 0.75 }}>
+          Avg: {Math.round(stats.averageFPS)} fps
+        </div>
       </div>
 
       {stats.qualityScalingActive ? (
-        <div style={{ color: '#f97316', fontWeight: 600 }}>Performance mode active</div>
+        <div style={{ color: "#f97316", fontWeight: 600 }}>
+          Performance mode active
+        </div>
       ) : null}
 
-      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
         <input
           type="checkbox"
           checked={autoScalingEnabled}

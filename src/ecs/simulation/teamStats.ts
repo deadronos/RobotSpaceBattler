@@ -1,7 +1,10 @@
-import { updateTeamCounts, updateTeamStats, type TeamEntity } from '../entities/Team';
-import type { Team } from '../../types';
-import type { WorldView } from './worldTypes';
-import type { WeaponType } from '../../types';
+import type { Team, WeaponType } from "../../types";
+import {
+  type TeamEntity,
+  updateTeamCounts,
+  updateTeamStats,
+} from "../entities/Team";
+import type { WorldView } from "./worldTypes";
 
 function setTeam(world: WorldView, team: Team, entity: TeamEntity): void {
   world.teams[team] = entity;
@@ -22,7 +25,10 @@ export function refreshTeamStats(world: WorldView, teams: Team[]): void {
     robots.forEach((robot) => {
       weapons[robot.id] = robot.weaponType;
     });
-    setTeam(world, team, updateTeamStats(world.teams[team], healthValues, weapons));
+    setTeam(
+      world,
+      team,
+      updateTeamStats(world.teams[team], healthValues, weapons),
+    );
   });
 }
-

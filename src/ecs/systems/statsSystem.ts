@@ -1,7 +1,10 @@
-import type { RobotStats, Team as TeamName } from '../../types';
-import type { Robot } from '../entities/Robot';
-import { setPostBattleStats, type SimulationState } from '../entities/SimulationState';
-import type { TeamEntity, TeamStats } from '../entities/Team';
+import type { RobotStats, Team as TeamName } from "../../types";
+import type { Robot } from "../entities/Robot";
+import {
+  setPostBattleStats,
+  type SimulationState,
+} from "../entities/SimulationState";
+import type { TeamEntity, TeamStats } from "../entities/Team";
 
 /**
  * Aggregate final per-robot and per-team stats when a match reaches a terminal state
@@ -20,7 +23,10 @@ export function capturePostBattleStats({
 }): SimulationState {
   // Only capture once and only when the simulation is in a terminal status
   if (!simulation) return simulation;
-  if (simulation.status !== 'victory' && simulation.status !== 'simultaneous-elimination') {
+  if (
+    simulation.status !== "victory" &&
+    simulation.status !== "simultaneous-elimination"
+  ) {
     return simulation;
   }
   if (simulation.postBattleStats) {
@@ -32,7 +38,10 @@ export function capturePostBattleStats({
     perRobot[r.id] = { ...r.stats };
   });
 
-  const perTeam: Record<TeamName, TeamStats> = {} as Record<TeamName, TeamStats>;
+  const perTeam: Record<TeamName, TeamStats> = {} as Record<
+    TeamName,
+    TeamStats
+  >;
   (Object.keys(teams) as TeamName[]).forEach((teamName) => {
     perTeam[teamName] = { ...teams[teamName].aggregateStats };
   });

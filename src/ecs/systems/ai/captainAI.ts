@@ -1,11 +1,22 @@
-import { lerpVector } from '../../../utils/math';
-import type { Team } from '../../../types';
-import type { Robot } from '../../entities/Robot';
-import { updateTeamCaptain } from '../../entities/Team';
-import { setRobotBodyPosition } from '../../simulation/physics';
-import type { WorldView } from '../../simulation/worldTypes';
-import { addVectors, clampToArena, distance, normalize, scaleVector, subtractVectors } from '../../utils/vector';
-import { getAliveRobots, getBaseFormationOffset, setTeamEntity } from './common';
+import type { Team } from "../../../types";
+import { lerpVector } from "../../../utils/math";
+import type { Robot } from "../../entities/Robot";
+import { updateTeamCaptain } from "../../entities/Team";
+import { setRobotBodyPosition } from "../../simulation/physics";
+import type { WorldView } from "../../simulation/worldTypes";
+import {
+  addVectors,
+  clampToArena,
+  distance,
+  normalize,
+  scaleVector,
+  subtractVectors,
+} from "../../utils/vector";
+import {
+  getAliveRobots,
+  getBaseFormationOffset,
+  setTeamEntity,
+} from "./common";
 
 const FORMATION_SPEED = 8;
 
@@ -50,9 +61,15 @@ export function maintainFormations(world: WorldView, deltaTime: number): void {
           return;
         }
         const direction = normalize(offset);
-        const stepSize = Math.min(distanceToTarget, FORMATION_SPEED * deltaTime);
+        const stepSize = Math.min(
+          distanceToTarget,
+          FORMATION_SPEED * deltaTime,
+        );
         const movement = scaleVector(direction, stepSize);
-        const next = clampToArena(world.arena, addVectors(robot.position, movement));
+        const next = clampToArena(
+          world.arena,
+          addVectors(robot.position, movement),
+        );
         robot.position = next;
         setRobotBodyPosition(world.physics, robot, next);
       });
@@ -60,13 +77,18 @@ export function maintainFormations(world: WorldView, deltaTime: number): void {
 }
 
 export function reassignCaptain(world: WorldView, team: Team): void {
-  const candidates = getAliveRobots(world, team).sort((a, b) => b.health - a.health);
+  const candidates = getAliveRobots(world, team).sort(
+    (a, b) => b.health - a.health,
+  );
   const nextCaptain = candidates[0];
 
   candidates.forEach((robot) => {
     robot.isCaptain = !!nextCaptain && robot.id === nextCaptain.id;
   });
 
-  const updatedTeam = updateTeamCaptain(world.teams[team], nextCaptain ? nextCaptain.id : null);
+  const updatedTeam = updateTeamCaptain(
+    world.teams[team],
+    nextCaptain ? nextCaptain.id : null,
+  );
   setTeamEntity(world, team, updatedTeam);
 }

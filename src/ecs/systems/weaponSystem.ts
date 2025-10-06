@@ -1,10 +1,20 @@
-import type { WeaponType } from '../../types';
-import { calculateWeaponDamage, getDamageMultiplier, getWeaponConfig } from '../entities/Weapon';
-import { createProjectile, type Projectile } from '../entities/Projectile';
-import type { Robot } from '../entities/Robot';
-import { spawnProjectileBody } from '../simulation/physics';
-import type { WorldView } from '../simulation/worldTypes';
-import { cloneVector, distance, normalize, scaleVector, subtractVectors } from '../utils/vector';
+import type { WeaponType } from "../../types";
+import { createProjectile, type Projectile } from "../entities/Projectile";
+import type { Robot } from "../entities/Robot";
+import {
+  calculateWeaponDamage,
+  getDamageMultiplier,
+  getWeaponConfig,
+} from "../entities/Weapon";
+import { spawnProjectileBody } from "../simulation/physics";
+import type { WorldView } from "../simulation/worldTypes";
+import {
+  cloneVector,
+  distance,
+  normalize,
+  scaleVector,
+  subtractVectors,
+} from "../utils/vector";
 
 const PROJECTILE_LIFETIME_SECONDS = 5;
 
@@ -14,23 +24,38 @@ export function getWeaponData(weapon: WeaponType) {
   return getWeaponConfig(weapon);
 }
 
-export function calculateDamage(attacker: WeaponType, defender: WeaponType): number {
+export function calculateDamage(
+  attacker: WeaponType,
+  defender: WeaponType,
+): number {
   return calculateWeaponDamage(attacker, defender);
 }
 
-function createProjectileId(ownerId: string, now: number, suffix: number): string {
+function createProjectileId(
+  ownerId: string,
+  now: number,
+  suffix: number,
+): string {
   return `${ownerId}-projectile-${now.toFixed(3)}-${suffix}`;
 }
 
-function getTarget(world: WorldView, targetId: string | null): Robot | undefined {
+function getTarget(
+  world: WorldView,
+  targetId: string | null,
+): Robot | undefined {
   if (!targetId) {
     return undefined;
   }
 
-  return world.entities.find((entity) => entity.id === targetId && entity.health > 0);
+  return world.entities.find(
+    (entity) => entity.id === targetId && entity.health > 0,
+  );
 }
 
-function isTargetValid(shooter: Robot, target: Robot | undefined): target is Robot {
+function isTargetValid(
+  shooter: Robot,
+  target: Robot | undefined,
+): target is Robot {
   return Boolean(target && target.team !== shooter.team && target.health > 0);
 }
 
@@ -51,7 +76,9 @@ function createShotProjectile({
     return null;
   }
 
-  const direction = normalize(subtractVectors(target.position, shooter.position));
+  const direction = normalize(
+    subtractVectors(target.position, shooter.position),
+  );
   const velocity = scaleVector(direction, weaponConfig.projectileSpeed);
 
   return createProjectile({

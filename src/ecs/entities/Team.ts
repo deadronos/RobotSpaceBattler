@@ -1,11 +1,11 @@
-import type { SpawnZone, Team as TeamName, Vector3 } from '../../types';
+import type { SpawnZone, Team as TeamName, Vector3 } from "../../types";
 
 export interface TeamStats {
   totalKills: number;
   totalDamageDealt: number;
   totalDamageTaken: number;
   averageHealthRemaining: number;
-  weaponDistribution: Record<'laser' | 'gun' | 'rocket', number>;
+  weaponDistribution: Record<"laser" | "gun" | "rocket", number>;
 }
 
 export interface TeamEntity {
@@ -17,7 +17,10 @@ export interface TeamEntity {
   aggregateStats: TeamStats;
 }
 
-export function createInitialTeam(name: TeamName, spawnZone: SpawnZone): TeamEntity {
+export function createInitialTeam(
+  name: TeamName,
+  spawnZone: SpawnZone,
+): TeamEntity {
   return {
     name,
     activeRobots: 10,
@@ -47,7 +50,10 @@ export function updateTeamCounts(team: TeamEntity, active: number): TeamEntity {
   };
 }
 
-export function updateTeamCaptain(team: TeamEntity, captainId: string | null): TeamEntity {
+export function updateTeamCaptain(
+  team: TeamEntity,
+  captainId: string | null,
+): TeamEntity {
   return {
     ...team,
     captainId,
@@ -57,14 +63,14 @@ export function updateTeamCaptain(team: TeamEntity, captainId: string | null): T
 export function updateTeamStats(
   team: TeamEntity,
   healthValues: number[],
-  weaponTypes: Record<string, 'laser' | 'gun' | 'rocket'>
+  weaponTypes: Record<string, "laser" | "gun" | "rocket">,
 ): TeamEntity {
   const aliveHealth = healthValues.filter((value) => value > 0);
   const averageHealthRemaining = aliveHealth.length
     ? aliveHealth.reduce((sum, value) => sum + value, 0) / aliveHealth.length
     : 0;
 
-  const weaponDistribution: Record<'laser' | 'gun' | 'rocket', number> = {
+  const weaponDistribution: Record<"laser" | "gun" | "rocket", number> = {
     laser: 0,
     gun: 0,
     rocket: 0,
@@ -94,7 +100,10 @@ export function recordKill(team: TeamEntity): TeamEntity {
   };
 }
 
-export function recordDamageDealt(team: TeamEntity, amount: number): TeamEntity {
+export function recordDamageDealt(
+  team: TeamEntity,
+  amount: number,
+): TeamEntity {
   return {
     ...team,
     aggregateStats: {
@@ -104,7 +113,10 @@ export function recordDamageDealt(team: TeamEntity, amount: number): TeamEntity 
   };
 }
 
-export function recordDamageTaken(team: TeamEntity, amount: number): TeamEntity {
+export function recordDamageTaken(
+  team: TeamEntity,
+  amount: number,
+): TeamEntity {
   return {
     ...team,
     aggregateStats: {

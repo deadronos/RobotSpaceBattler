@@ -1,4 +1,4 @@
-import type { PerformanceStats, SimulationStatus, Team } from '../../types';
+import type { PerformanceStats, SimulationStatus, Team } from "../../types";
 
 export interface SimulationUIState {
   statsOpen: boolean;
@@ -7,7 +7,7 @@ export interface SimulationUIState {
 
 export interface SimulationState {
   status: SimulationStatus;
-  winner: Team | 'draw' | null;
+  winner: Team | "draw" | null;
   frameTime: number;
   totalFrames: number;
   simulationTime: number;
@@ -29,7 +29,7 @@ const INITIAL_PERFORMANCE: PerformanceStats = {
 
 export function createInitialSimulationState(): SimulationState {
   return {
-    status: 'running',
+    status: "running",
     winner: null,
     frameTime: 0,
     totalFrames: 0,
@@ -47,7 +47,10 @@ export function createInitialSimulationState(): SimulationState {
   };
 }
 
-export function tickSimulation(state: SimulationState, deltaTime: number): SimulationState {
+export function tickSimulation(
+  state: SimulationState,
+  deltaTime: number,
+): SimulationState {
   return {
     ...state,
     frameTime: deltaTime,
@@ -56,10 +59,14 @@ export function tickSimulation(state: SimulationState, deltaTime: number): Simul
   };
 }
 
-export function setVictoryState(state: SimulationState, winner: Team | 'draw', currentTime: number): SimulationState {
+export function setVictoryState(
+  state: SimulationState,
+  winner: Team | "draw",
+  currentTime: number,
+): SimulationState {
   return {
     ...state,
-    status: winner === 'draw' ? 'simultaneous-elimination' : 'victory',
+    status: winner === "draw" ? "simultaneous-elimination" : "victory",
     winner,
     victoryScreenStartTime: currentTime,
     autoRestartCountdown: 5,
@@ -67,7 +74,10 @@ export function setVictoryState(state: SimulationState, winner: Team | 'draw', c
   };
 }
 
-export function setCountdownPaused(state: SimulationState, paused: boolean): SimulationState {
+export function setCountdownPaused(
+  state: SimulationState,
+  paused: boolean,
+): SimulationState {
   if (state.autoRestartCountdown === null) {
     return state;
   }
@@ -78,7 +88,9 @@ export function setCountdownPaused(state: SimulationState, paused: boolean): Sim
   };
 }
 
-export function resetAutoRestartCountdown(state: SimulationState): SimulationState {
+export function resetAutoRestartCountdown(
+  state: SimulationState,
+): SimulationState {
   if (state.autoRestartCountdown === null) {
     return state;
   }
@@ -89,7 +101,10 @@ export function resetAutoRestartCountdown(state: SimulationState): SimulationSta
   };
 }
 
-export function tickAutoRestart(state: SimulationState, deltaTime: number): SimulationState {
+export function tickAutoRestart(
+  state: SimulationState,
+  deltaTime: number,
+): SimulationState {
   if (state.autoRestartCountdown === null || state.countdownPaused) {
     return state;
   }
@@ -104,7 +119,7 @@ export function tickAutoRestart(state: SimulationState, deltaTime: number): Simu
 export function clearVictoryState(state: SimulationState): SimulationState {
   return {
     ...state,
-    status: 'running',
+    status: "running",
     winner: null,
     victoryScreenStartTime: null,
     autoRestartCountdown: null,
@@ -116,7 +131,10 @@ export function clearVictoryState(state: SimulationState): SimulationState {
   };
 }
 
-export function setStatsOpen(state: SimulationState, open: boolean): SimulationState {
+export function setStatsOpen(
+  state: SimulationState,
+  open: boolean,
+): SimulationState {
   return {
     ...state,
     ui: {
@@ -126,7 +144,10 @@ export function setStatsOpen(state: SimulationState, open: boolean): SimulationS
   };
 }
 
-export function setSettingsOpen(state: SimulationState, open: boolean): SimulationState {
+export function setSettingsOpen(
+  state: SimulationState,
+  open: boolean,
+): SimulationState {
   return {
     ...state,
     ui: {
@@ -136,7 +157,10 @@ export function setSettingsOpen(state: SimulationState, open: boolean): Simulati
   };
 }
 
-export function setPendingTeamConfig(state: SimulationState, config: Record<Team, unknown>): SimulationState {
+export function setPendingTeamConfig(
+  state: SimulationState,
+  config: Record<Team, unknown>,
+): SimulationState {
   return {
     ...state,
     pendingTeamConfig: config,
@@ -145,7 +169,7 @@ export function setPendingTeamConfig(state: SimulationState, config: Record<Team
 
 export function updatePerformanceStats(
   state: SimulationState,
-  stats: Partial<PerformanceStats>
+  stats: Partial<PerformanceStats>,
 ): SimulationState {
   return {
     ...state,
@@ -156,7 +180,10 @@ export function updatePerformanceStats(
   };
 }
 
-export function setTimeScale(state: SimulationState, timeScale: number): SimulationState {
+export function setTimeScale(
+  state: SimulationState,
+  timeScale: number,
+): SimulationState {
   return {
     ...state,
     timeScale,
@@ -165,12 +192,18 @@ export function setTimeScale(state: SimulationState, timeScale: number): Simulat
 
 // Add snapshot types for post-battle statistics and helpers to set/clear them.
 export interface PostBattleStats {
-  perRobot: Record<string, import('../../types').RobotStats>;
-  perTeam: Record<import('../../types').Team, import('../entities/Team').TeamStats>;
+  perRobot: Record<string, import("../../types").RobotStats>;
+  perTeam: Record<
+    import("../../types").Team,
+    import("../entities/Team").TeamStats
+  >;
   computedAt: number;
 }
 
-export function setPostBattleStats(state: SimulationState, stats: PostBattleStats): SimulationState {
+export function setPostBattleStats(
+  state: SimulationState,
+  stats: PostBattleStats,
+): SimulationState {
   return {
     ...state,
     postBattleStats: stats,

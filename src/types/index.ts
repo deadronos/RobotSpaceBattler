@@ -27,7 +27,7 @@ export interface Quaternion {
 /**
  * Team affiliation for robots
  */
-export type Team = 'red' | 'blue';
+export type Team = "red" | "blue";
 
 /**
  * Weapon types with rock-paper-scissors balance
@@ -35,12 +35,12 @@ export type Team = 'red' | 'blue';
  * - Gun beats Rocket (1.5x damage)
  * - Rocket beats Laser (1.5x damage)
  */
-export type WeaponType = 'laser' | 'gun' | 'rocket';
+export type WeaponType = "laser" | "gun" | "rocket";
 
 /**
  * AI behavior modes for robot decision-making
  */
-export type AIBehaviorMode = 'aggressive' | 'defensive' | 'retreating';
+export type AIBehaviorMode = "aggressive" | "defensive" | "retreating";
 
 /**
  * AI state information for a robot
@@ -78,11 +78,11 @@ export interface RobotStats {
  * Simulation status states
  */
 export type SimulationStatus =
-  | 'initializing'
-  | 'running'
-  | 'paused'
-  | 'victory'
-  | 'simultaneous-elimination';
+  | "initializing"
+  | "running"
+  | "paused"
+  | "victory"
+  | "simultaneous-elimination";
 
 /**
  * Performance statistics for monitoring

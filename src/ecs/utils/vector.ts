@@ -1,5 +1,5 @@
-import type { ArenaEntity } from '../entities/Arena';
-import type { Vector3 } from '../../types';
+import type { Vector3 } from "../../types";
+import type { ArenaEntity } from "../entities/Arena";
 
 export function cloneVector(vector: Vector3): Vector3 {
   return { x: vector.x, y: vector.y, z: vector.z };
@@ -34,8 +34,14 @@ export function normalize(vector: Vector3): Vector3 {
 
 export function clampToArena(arena: ArenaEntity, position: Vector3): Vector3 {
   return {
-    x: Math.min(arena.boundaries.max.x, Math.max(arena.boundaries.min.x, position.x)),
+    x: Math.min(
+      arena.boundaries.max.x,
+      Math.max(arena.boundaries.min.x, position.x),
+    ),
     y: Math.max(0, position.y),
-    z: Math.min(arena.boundaries.max.z, Math.max(arena.boundaries.min.z, position.z)),
+    z: Math.min(
+      arena.boundaries.max.z,
+      Math.max(arena.boundaries.min.z, position.z),
+    ),
   };
 }

@@ -1,4 +1,5 @@
-import type { VictoryWorld } from '../systems/victorySystem';
+import type { SimulationState } from "../entities/SimulationState";
+import type { VictoryWorld } from "../systems/victorySystem";
 import {
   advanceVictoryCountdown,
   closeVictorySettings,
@@ -9,8 +10,7 @@ import {
   pauseVictoryCountdown,
   resetVictoryCountdown,
   resumeVictoryCountdown,
-} from '../systems/victorySystem';
-import type { SimulationState } from '../entities/SimulationState';
+} from "../systems/victorySystem";
 
 export function evaluateVictory(world: VictoryWorld): SimulationState {
   return evaluateVictoryState(world);
@@ -47,7 +47,7 @@ export function closeSettings(world: VictoryWorld): SimulationState {
 export function tickVictoryCountdown(
   world: VictoryWorld,
   deltaTime: number,
-  onRestart: () => void
+  onRestart: () => void,
 ): SimulationState {
   return advanceVictoryCountdown(world, deltaTime, onRestart);
 }

@@ -1,4 +1,10 @@
-import type { LightingConfig, Obstacle, SpawnZone, Team, Vector3 } from '../../types';
+import type {
+  LightingConfig,
+  Obstacle,
+  SpawnZone,
+  Team,
+  Vector3,
+} from "../../types";
 
 export interface ArenaEntity {
   id: string;
@@ -27,7 +33,7 @@ const BASE_SPAWN_POINTS: Vector3[] = [
 ];
 
 function buildSpawnZone(team: Team): SpawnZone {
-  const direction = team === 'red' ? -1 : 1;
+  const direction = team === "red" ? -1 : 1;
   const center: Vector3 = { x: direction * 30, y: 0, z: 0 };
   const spawnPoints = BASE_SPAWN_POINTS.map((offset) => ({
     x: center.x + offset.x * direction * -1,
@@ -44,12 +50,12 @@ function buildSpawnZone(team: Team): SpawnZone {
 
 export function createDefaultArena(): ArenaEntity {
   const spawnZones: Record<Team, SpawnZone> = {
-    red: buildSpawnZone('red'),
-    blue: buildSpawnZone('blue'),
+    red: buildSpawnZone("red"),
+    blue: buildSpawnZone("blue"),
   };
 
   return {
-    id: 'main-arena',
+    id: "main-arena",
     dimensions: { x: 120, y: 40, z: 80 },
     spawnZoneRadius: 10,
     obstacles: [
@@ -75,9 +81,9 @@ export function createDefaultArena(): ArenaEntity {
       },
     ],
     lightingConfig: {
-      ambientColor: '#0a0a1a',
+      ambientColor: "#0a0a1a",
       ambientIntensity: 0.4,
-      directionalColor: '#ffffff',
+      directionalColor: "#ffffff",
       directionalIntensity: 0.8,
       shadowsEnabled: true,
     },

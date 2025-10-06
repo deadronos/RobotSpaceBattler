@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame } from "@react-three/fiber";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
-import type { SimulationWorld } from '../ecs/world';
-import { stepSimulation } from '../ecs/world';
+import type { SimulationWorld } from "../ecs/world";
+import { stepSimulation } from "../ecs/world";
 
 export interface FrameSubscription {
   (callback: (state: unknown, delta: number) => void): void | (() => void);
@@ -76,7 +76,7 @@ export function usePhysicsSync({
     });
 
     return () => {
-      if (typeof unsubscribe === 'function') {
+      if (typeof unsubscribe === "function") {
         unsubscribe();
       }
     };

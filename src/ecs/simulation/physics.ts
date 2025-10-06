@@ -1,8 +1,14 @@
-import type { ArenaEntity } from '../entities/Arena';
-import type { Projectile } from '../entities/Projectile';
-import type { Robot } from '../entities/Robot';
-import { addVectors, clampToArena, cloneVector, distance, scaleVector } from '../utils/vector';
-import type { Vector3, WeaponType } from '../../types';
+import type { Vector3, WeaponType } from "../../types";
+import type { ArenaEntity } from "../entities/Arena";
+import type { Projectile } from "../entities/Projectile";
+import type { Robot } from "../entities/Robot";
+import {
+  addVectors,
+  clampToArena,
+  cloneVector,
+  distance,
+  scaleVector,
+} from "../utils/vector";
 
 interface PhysicsBody {
   id: string;
@@ -53,20 +59,31 @@ export function removeRobotBody(state: PhysicsState, robotId: string): void {
   state.robots.delete(robotId);
 }
 
-export function setRobotBodyPosition(state: PhysicsState, robot: Robot, position: Vector3): void {
+export function setRobotBodyPosition(
+  state: PhysicsState,
+  robot: Robot,
+  position: Vector3,
+): void {
   const body = ensureRobotBody(state, robot);
   body.position = cloneVector(position);
   body.velocity = { x: 0, y: 0, z: 0 };
   robot.position = cloneVector(position);
 }
 
-export function applyRobotImpulse(state: PhysicsState, robot: Robot, impulse: Vector3): void {
+export function applyRobotImpulse(
+  state: PhysicsState,
+  robot: Robot,
+  impulse: Vector3,
+): void {
   const body = ensureRobotBody(state, robot);
   body.velocity = addVectors(body.velocity, impulse);
   robot.velocity = addVectors(robot.velocity, impulse);
 }
 
-export function spawnProjectileBody(state: PhysicsState, projectile: Projectile): void {
+export function spawnProjectileBody(
+  state: PhysicsState,
+  projectile: Projectile,
+): void {
   const body: PhysicsProjectileBody = {
     id: projectile.id,
     ownerId: projectile.ownerId,
@@ -83,7 +100,10 @@ export function spawnProjectileBody(state: PhysicsState, projectile: Projectile)
   state.projectiles.set(projectile.id, body);
 }
 
-export function removeProjectileBody(state: PhysicsState, projectileId: string): void {
+export function removeProjectileBody(
+  state: PhysicsState,
+  projectileId: string,
+): void {
   state.projectiles.delete(projectileId);
 }
 
@@ -111,14 +131,21 @@ const LINEAR_DAMPING = 0.9;
 
 export function stepPhysics(context: PhysicsStepContext): PhysicsStepResult {
   const { state, robots, projectiles, arena, deltaTime } = context;
-  const hits: PhysicsStepResult['hits'] = [];
+  const hits: PhysicsStepResult["hits"] = [];
   const despawned: string[] = [];
 
   robots.forEach((robot) => {
     const body = ensureRobotBody(state, robot);
-    if (body.velocity.x !== 0 || body.velocity.y !== 0 || body.velocity.z !== 0) {
+    if (
+      body.velocity.x !== 0 ||
+      body.velocity.y !== 0 ||
+      body.velocity.z !== 0
+    ) {
       const delta = scaleVector(body.velocity, deltaTime);
-      const nextPosition = clampToArena(arena, addVectors(body.position, delta));
+      const nextPosition = clampToArena(
+        arena,
+        addVectors(body.position, delta),
+      );
       body.position = nextPosition;
       robot.position = cloneVector(nextPosition);
       robot.velocity = cloneVector(body.velocity);
@@ -146,7 +173,10 @@ export function stepPhysics(context: PhysicsStepContext): PhysicsStepResult {
     projectile.position = cloneVector(nextPosition);
     projectile.distanceTraveled = body.distanceTraveled;
 
-    if (body.distanceTraveled >= body.maxDistance || body.lifetime >= body.maxLifetime) {
+    if (
+      body.distanceTraveled >= body.maxDistance ||
+      body.lifetime >= body.maxLifetime
+    ) {
       state.projectiles.delete(projectile.id);
       despawned.push(projectile.id);
       return;
@@ -154,7 +184,7 @@ export function stepPhysics(context: PhysicsStepContext): PhysicsStepResult {
 
     if (!ownerTeamCache.has(body.ownerId)) {
       const owner = robots.find((robot) => robot.id === body.ownerId);
-      ownerTeamCache.set(body.ownerId, owner?.team ?? '');
+      ownerTeamCache.set(body.ownerId, owner?.team ?? "");
     }
     const ownerTeam = ownerTeamCache.get(body.ownerId);
 
@@ -191,7 +221,11 @@ export function getPhysicsSnapshot(state: PhysicsState): {
   const projectiles: Record<string, PhysicsProjectileBody> = {};
 
   state.robots.forEach((body, id) => {
-    robots[id] = { id, position: cloneVector(body.position), velocity: cloneVector(body.velocity) };
+    robots[id] = {
+      id,
+      position: cloneVector(body.position),
+      velocity: cloneVector(body.velocity),
+    };
   });
 
   state.projectiles.forEach((body, id) => {

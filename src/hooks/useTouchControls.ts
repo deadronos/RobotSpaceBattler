@@ -1,6 +1,6 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef } from "react";
 
-import type { CameraControlsResult } from './useCameraControls';
+import type { CameraControlsResult } from "./useCameraControls";
 
 interface TouchPointLike {
   identifier: number;
@@ -26,10 +26,18 @@ const PINCH_SPEED = 0.03;
 const toArray = (list: ArrayLike<TouchPointLike>): TouchPointLike[] => {
   const points: TouchPointLike[] = [];
   for (let index = 0; index < list.length; index += 1) {
-    const value = (list as Partial<ArrayLike<TouchPointLike>> & {
-      item?: (idx: number) => TouchPointLike | null;
-    })[index]
-      ?? ((list as Partial<ArrayLike<TouchPointLike>> & { item?: (idx: number) => TouchPointLike | null }).item?.(index) ?? null);
+    const value =
+      (
+        list as Partial<ArrayLike<TouchPointLike>> & {
+          item?: (idx: number) => TouchPointLike | null;
+        }
+      )[index] ??
+      (
+        list as Partial<ArrayLike<TouchPointLike>> & {
+          item?: (idx: number) => TouchPointLike | null;
+        }
+      ).item?.(index) ??
+      null;
     if (value) {
       points.push({
         identifier: value.identifier ?? index,
@@ -49,7 +57,9 @@ const centerPoint = (a: TouchPointLike, b: TouchPointLike) => ({
 const pinchDistance = (a: TouchPointLike, b: TouchPointLike) =>
   Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
 
-export function useTouchControls(controls: CameraControlsResult): TouchControlHandlers {
+export function useTouchControls(
+  controls: CameraControlsResult,
+): TouchControlHandlers {
   const stateRef = useRef({
     lastCenter: null as { x: number; y: number } | null,
     lastDistance: null as number | null,
@@ -90,7 +100,8 @@ export function useTouchControls(controls: CameraControlsResult): TouchControlHa
       if (touches.length === 1) {
         const point = touches[0];
         const previous =
-          stateRef.current.lastPositions.get(point.identifier) ?? ({ x: point.clientX, y: point.clientY } as const);
+          stateRef.current.lastPositions.get(point.identifier) ??
+          ({ x: point.clientX, y: point.clientY } as const);
         const deltaX = point.clientX - previous.x;
         const deltaY = point.clientY - previous.y;
         controls.orbit(-deltaX * ORBIT_SPEED, deltaY * ORBIT_SPEED);
