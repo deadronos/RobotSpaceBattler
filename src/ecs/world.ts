@@ -6,15 +6,15 @@ import { createDefaultArena, type ArenaEntity } from './entities/Arena';
 import { createInitialTeam, resetTeamForRestart, type TeamEntity } from './entities/Team';
 import type { Team, Vector3, WeaponType } from '../types';
 import { createPhysicsState, getPhysicsSnapshot as getPhysicsSnapshotInternal, applyRobotImpulse, setRobotBodyPosition, spawnProjectileBody, stepPhysics } from './simulation/physics';
-import { spawnInitialTeams } from './simulation/spawn';
-import { applyMovement, fireWeapons, getAliveRobots, propagateCaptainTargets, updateBehaviors } from './simulation/aiController';
+import { spawnInitialTeams } from './systems/spawnSystem';
+import { applyMovement, getAliveRobots, propagateCaptainTargets, updateBehaviors } from './simulation/aiController';
 import { applyDamage, cleanupProjectiles, eliminateRobot as eliminateRobotInternal, handleProjectileHits } from './simulation/combat';
 import { refreshTeamStats } from './simulation/teamStats';
 import { evaluateVictory, openSettings, openStats, pauseAutoRestart as pauseCountdown, resetCountdown, resumeAutoRestart as resumeCountdown, tickVictoryCountdown, closeSettings, closeStats } from './simulation/victory';
 import { createPerformanceController, getOverlayState, recordFrameMetrics as recordFrameMetricsInternal, setAutoScalingEnabled as setAutoScalingEnabledInternal, type PerformanceController } from './simulation/performance';
 import { createProjectile, type Projectile } from './entities/Projectile';
 import type { Robot } from './entities/Robot';
-import { getWeaponData } from './systems/weaponSystem';
+import { getWeaponData, runWeaponSystem } from './systems/weaponSystem';
 import { cloneVector } from './utils/vector';
 import type { ECSCollections, WorldView } from './simulation/worldTypes';
 
@@ -142,7 +142,7 @@ export function stepSimulation(world: SimulationWorld, deltaTime: number): void 
   updateBehaviors(world);
   propagateCaptainTargets(world);
   applyMovement(world, scaledDelta);
-  fireWeapons(world);
+  runWeaponSystem(world);
 
   const physicsResult = stepPhysics({
     state: world.physics,

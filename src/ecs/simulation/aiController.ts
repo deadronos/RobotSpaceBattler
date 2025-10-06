@@ -1,6 +1,4 @@
-import { createProjectile } from '../entities/Projectile';
 import type { Robot } from '../entities/Robot';
-import { calculateDamage, getWeaponData } from '../systems/weaponSystem';
 import { lerpVector } from '../../utils/math';
 import {
   addVectors,
@@ -12,7 +10,7 @@ import {
   subtractVectors,
 } from '../utils/vector';
 import type { Team, Vector3 } from '../../types';
-import { setRobotBodyPosition, spawnProjectileBody } from './physics';
+import { setRobotBodyPosition } from './physics';
 import type { WorldView } from './worldTypes';
 
 export function getAliveRobots(world: WorldView, team?: Team): Robot[] {
@@ -137,36 +135,3 @@ export function applyMovement(world: WorldView, deltaTime: number): void {
   });
 }
 
-export function fireWeapons(world: WorldView): void {
-  const now = world.simulation.simulationTime;
-  getAliveRobots(world).forEach((robot) => {
-    const target = getAliveRobots(world).find((entity) => entity.id === robot.aiState.targetId);
-    if (!target) {
-      return;
-    }
-    const weapon = getWeaponData(robot.weaponType);
-    if (now - robot.aiState.lastFireTime < weapon.fireRate) {
-      return;
-    }
-    if (distance(robot.position, target.position) > weapon.effectiveRange) {
-      return;
-    }
-    const projectile = createProjectile({
-      id: `${robot.id}-projectile-${now.toFixed(3)}`,
-      ownerId: robot.id,
-      weaponType: robot.weaponType,
-      position: cloneVector(robot.position),
-      velocity: normalize(subtractVectors(target.position, robot.position)),
-      damage: calculateDamage(robot.weaponType, target.weaponType),
-      distanceTraveled: 0,
-      maxDistance: weapon.effectiveRange * 2,
-      spawnTime: now,
-      maxLifetime: 5,
-    });
-    world.projectiles.push(projectile);
-    world.ecs?.projectiles.add(projectile);
-    spawnProjectileBody(world.physics, projectile);
-    robot.stats.shotsFired += 1;
-    robot.aiState.lastFireTime = now;
-  });
-}
