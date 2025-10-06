@@ -8,7 +8,12 @@ import type { Team, Vector3, WeaponType } from '../types';
 import { createPhysicsState, getPhysicsSnapshot as getPhysicsSnapshotInternal, applyRobotImpulse, setRobotBodyPosition, spawnProjectileBody, stepPhysics } from './simulation/physics';
 import { spawnInitialTeams } from './systems/spawnSystem';
 import { applyMovement, getAliveRobots, propagateCaptainTargets, updateBehaviors } from './simulation/aiController';
-import { applyDamage, cleanupProjectiles, eliminateRobot as eliminateRobotInternal, handleProjectileHits } from './simulation/combat';
+import {
+  applyDamage,
+  cleanupProjectiles,
+  eliminateRobot as eliminateRobotInternal,
+  handleProjectileHits,
+} from './systems/damageSystem';
 import { refreshTeamStats } from './simulation/teamStats';
 import { evaluateVictory, openSettings, openStats, pauseAutoRestart as pauseCountdown, resetCountdown, resumeAutoRestart as resumeCountdown, tickVictoryCountdown, closeSettings, closeStats } from './simulation/victory';
 import { createPerformanceController, getOverlayState, recordFrameMetrics as recordFrameMetricsInternal, setAutoScalingEnabled as setAutoScalingEnabledInternal, type PerformanceController } from './simulation/performance';

@@ -1,10 +1,10 @@
-import type { PhysicsStepResult } from './physics';
-import { removeProjectileBody, removeRobotBody } from './physics';
-import type { WorldView } from './worldTypes';
+import type { PhysicsStepResult } from '../simulation/physics';
+import { removeProjectileBody, removeRobotBody } from '../simulation/physics';
+import type { WorldView } from '../simulation/worldTypes';
 import { shouldDespawn } from '../entities/Projectile';
 import { recordDamageDealt, recordDamageTaken, recordKill, updateTeamCaptain, type TeamEntity } from '../entities/Team';
 import type { Team } from '../../types';
-import { getAliveRobots } from './aiController';
+import { getAliveRobots } from '../simulation/aiController';
 
 function setTeam(world: WorldView, team: Team, nextTeam: TeamEntity): void {
   const previous = world.teams[team];

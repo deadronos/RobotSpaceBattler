@@ -118,7 +118,7 @@ Single-project structure (per plan.md):
 
 - [x] T022 [P] Weapon system in `src/ecs/systems/weaponSystem.ts`: implement fireWeapon() to create Projectile entities, check fireRate cooldown, calculate damage with multipliers from Weapon model, update Robot.stats.shotsFired. Query active robots, update lastFireTime. Depends on T014, T015, T016, T020. (~150 LOC)
 
-- [ ] T023 [P] Damage system in `src/ecs/systems/damageSystem.ts`: handle projectile-robot collisions, apply damage to Robot.health, update stats (kills, damageDealt, damageTaken), remove eliminated robots from physics, trigger captain re-election if captain dies. Query projectiles and robots. Depends on T014, T016, T020. (~190 LOC)
+- [x] T023 [P] Damage system in `src/ecs/systems/damageSystem.ts`: handle projectile-robot collisions, apply damage to Robot.health, update stats (kills, damageDealt, damageTaken), remove eliminated robots from physics, trigger captain re-election if captain dies. Query projectiles and robots. Depends on T014, T016, T020. (~190 LOC)
 
 - [ ] T024 AI system - Individual behavior in `src/ecs/systems/ai/individualAI.ts`: implement target selection (prioritize rock-paper-scissors advantage), movement toward enemies, cover-seeking when damaged (<30 health), peek-and-shoot, low-health retreat. Query enemy robots, update aiState.behaviorMode/targetId/coverPosition. Depends on T014, T015, T020. (~200 LOC)
 
