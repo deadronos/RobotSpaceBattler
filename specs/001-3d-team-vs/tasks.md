@@ -114,9 +114,9 @@ Single-project structure (per plan.md):
 
 - [x] T020 Initialize Miniplex ECS world in `src/ecs/world.ts`: create world instance, register entity archetypes, export world singleton and React context provider. Import entity types from T014-T019. (~100 LOC)
 
-- [ ] T021 Spawn system in `src/ecs/systems/spawnSystem.ts`: implement robot spawning logic per spawn-contract.md: allocate 10 spawn points per team, create 20 Robot entities with team assignment, balanced weapon distribution, captain election, initialize physics bodies. Use Team and Arena entities. Depends on T014, T017, T018, T020. (~180 LOC)
+- [x] T021 Spawn system in `src/ecs/systems/spawnSystem.ts`: implement robot spawning logic per spawn-contract.md: allocate 10 spawn points per team, create 20 Robot entities with team assignment, balanced weapon distribution, captain election, initialize physics bodies. Use Team and Arena entities. Depends on T014, T017, T018, T020. (~180 LOC)
 
-- [ ] T022 [P] Weapon system in `src/ecs/systems/weaponSystem.ts`: implement fireWeapon() to create Projectile entities, check fireRate cooldown, calculate damage with multipliers from Weapon model, update Robot.stats.shotsFired. Query active robots, update lastFireTime. Depends on T014, T015, T016, T020. (~150 LOC)
+- [x] T022 [P] Weapon system in `src/ecs/systems/weaponSystem.ts`: implement fireWeapon() to create Projectile entities, check fireRate cooldown, calculate damage with multipliers from Weapon model, update Robot.stats.shotsFired. Query active robots, update lastFireTime. Depends on T014, T015, T016, T020. (~150 LOC)
 
 - [ ] T023 [P] Damage system in `src/ecs/systems/damageSystem.ts`: handle projectile-robot collisions, apply damage to Robot.health, update stats (kills, damageDealt, damageTaken), remove eliminated robots from physics, trigger captain re-election if captain dies. Query projectiles and robots. Depends on T014, T016, T020. (~190 LOC)
 
