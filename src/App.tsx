@@ -3,7 +3,7 @@ import React from 'react'
 import Scene from './components/Scene'
 import { useUIStore } from './store/uiStore'
 
-export default function App(): JSX.Element {
+export default function App() {
   const { performanceOverlayVisible, setPerformanceOverlayVisible } = useUIStore()
   return (
     <div id="app-root" style={{ height: '100%' }}>

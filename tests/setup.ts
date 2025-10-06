@@ -38,65 +38,67 @@ import {
   triggerCaptainReelection,
 } from '../src/ecs/world';
 
+type SimulationWorldApi = typeof import('../src/ecs/world');
+
 declare global {
   // eslint-disable-next-line no-var
-  var initializeSimulation: typeof initializeSimulation;
+  var initializeSimulation: SimulationWorldApi['initializeSimulation'];
   // eslint-disable-next-line no-var
-  var stepSimulation: typeof stepSimulation;
+  var stepSimulation: SimulationWorldApi['stepSimulation'];
   // eslint-disable-next-line no-var
-  var getProjectiles: typeof getProjectiles;
+  var getProjectiles: SimulationWorldApi['getProjectiles'];
   // eslint-disable-next-line no-var
-  var inflictDamage: typeof inflictDamage;
+  var inflictDamage: SimulationWorldApi['inflictDamage'];
   // eslint-disable-next-line no-var
-  var eliminateRobot: typeof eliminateRobot;
+  var eliminateRobot: SimulationWorldApi['eliminateRobot'];
   // eslint-disable-next-line no-var
-  var calculateDistance: typeof calculateDistance;
+  var calculateDistance: SimulationWorldApi['calculateDistance'];
   // eslint-disable-next-line no-var
-  var getDamageMultiplier: typeof getDamageMultiplier;
+  var getDamageMultiplier: SimulationWorldApi['getDamageMultiplier'];
   // eslint-disable-next-line no-var
-  var getSimulationState: typeof getSimulationState;
+  var getSimulationState: SimulationWorldApi['getSimulationState'];
   // eslint-disable-next-line no-var
-  var pauseAutoRestart: typeof pauseAutoRestart;
+  var pauseAutoRestart: SimulationWorldApi['pauseAutoRestart'];
   // eslint-disable-next-line no-var
-  var resumeAutoRestart: typeof resumeAutoRestart;
+  var resumeAutoRestart: SimulationWorldApi['resumeAutoRestart'];
   // eslint-disable-next-line no-var
-  var resetAutoRestartCountdown: typeof resetAutoRestartCountdown;
+  var resetAutoRestartCountdown: SimulationWorldApi['resetAutoRestartCountdown'];
   // eslint-disable-next-line no-var
-  var openStatsOverlay: typeof openStatsOverlay;
+  var openStatsOverlay: SimulationWorldApi['openStatsOverlay'];
   // eslint-disable-next-line no-var
-  var closeStatsOverlay: typeof closeStatsOverlay;
+  var closeStatsOverlay: SimulationWorldApi['closeStatsOverlay'];
   // eslint-disable-next-line no-var
-  var openSettingsOverlay: typeof openSettingsOverlay;
+  var openSettingsOverlay: SimulationWorldApi['openSettingsOverlay'];
   // eslint-disable-next-line no-var
-  var closeSettingsOverlay: typeof closeSettingsOverlay;
+  var closeSettingsOverlay: SimulationWorldApi['closeSettingsOverlay'];
   // eslint-disable-next-line no-var
-  var applyTeamComposition: typeof applyTeamComposition;
+  var applyTeamComposition: SimulationWorldApi['applyTeamComposition'];
   // eslint-disable-next-line no-var
-  var getArenaConfig: typeof getArenaConfig;
+  var getArenaConfig: SimulationWorldApi['getArenaConfig'];
   // eslint-disable-next-line no-var
-  var recordFrameMetrics: typeof recordFrameMetrics;
+  var recordFrameMetrics: SimulationWorldApi['recordFrameMetrics'];
   // eslint-disable-next-line no-var
-  var setAutoScalingEnabled: typeof setAutoScalingEnabled;
+  var setAutoScalingEnabled: SimulationWorldApi['setAutoScalingEnabled'];
   // eslint-disable-next-line no-var
-  var getPerformanceOverlayState: typeof getPerformanceOverlayState;
+  var getPerformanceOverlayState: SimulationWorldApi['getPerformanceOverlayState'];
   // eslint-disable-next-line no-var
-  var setPhysicsBodyPosition: typeof setPhysicsBodyPosition;
+  var setPhysicsBodyPosition: SimulationWorldApi['setPhysicsBodyPosition'];
   // eslint-disable-next-line no-var
-  var applyPhysicsImpulse: typeof applyPhysicsImpulse;
+  var applyPhysicsImpulse: SimulationWorldApi['applyPhysicsImpulse'];
   // eslint-disable-next-line no-var
-  var spawnPhysicsProjectile: typeof spawnPhysicsProjectile;
+  var spawnPhysicsProjectile: SimulationWorldApi['spawnPhysicsProjectile'];
   // eslint-disable-next-line no-var
-  var getPhysicsSnapshot: typeof getPhysicsSnapshot;
+  var getPhysicsSnapshot: SimulationWorldApi['getPhysicsSnapshot'];
   // eslint-disable-next-line no-var
-  var getRobotById: typeof getRobotById;
+  var getRobotById: SimulationWorldApi['getRobotById'];
   // eslint-disable-next-line no-var
-  var setRobotHealth: typeof setRobotHealth;
+  var setRobotHealth: SimulationWorldApi['setRobotHealth'];
   // eslint-disable-next-line no-var
-  var setRobotKills: typeof setRobotKills;
+  var setRobotKills: SimulationWorldApi['setRobotKills'];
   // eslint-disable-next-line no-var
-  var setRobotPosition: typeof setRobotPosition;
+  var setRobotPosition: SimulationWorldApi['setRobotPosition'];
   // eslint-disable-next-line no-var
-  var triggerCaptainReelection: typeof triggerCaptainReelection;
+  var triggerCaptainReelection: SimulationWorldApi['triggerCaptainReelection'];
 }
 
 globalThis.initializeSimulation = initializeSimulation;

@@ -21,5 +21,5 @@ export interface WorldView {
   teams: Record<Team, TeamEntity>;
   simulation: SimulationState;
   physics: PhysicsState;
-  ecs?: ECSCollections;
+  ecs: ECSCollections;
 }

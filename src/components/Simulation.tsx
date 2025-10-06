@@ -4,7 +4,7 @@ import React from 'react'
 import { useSimulationWorld } from '../ecs/world'
 import RobotPlaceholder from './RobotPlaceholder'
 
-export default function Simulation(): JSX.Element {
+export default function Simulation() {
   const world = useSimulationWorld()
 
   // Minimal frame hook to ensure useFrame is exercised. Real simulation

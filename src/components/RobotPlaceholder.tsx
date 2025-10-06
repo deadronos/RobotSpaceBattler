@@ -8,7 +8,7 @@ type Props = {
 export default function RobotPlaceholder({
   position = [0, 1, 0],
   team = 'red',
-}: Props): JSX.Element {
+}: Props) {
   const color = team === 'red' ? 'crimson' : 'dodgerblue'
   return (
     <mesh position={position} castShadow>

@@ -4,7 +4,7 @@ import React, { Suspense } from 'react'
 
 import Simulation from './Simulation'
 
-export default function Scene(): JSX.Element {
+export default function Scene() {
   return (
     <Canvas shadows camera={{ position: [0, 10, 20], fov: 60 }}>
       <ambientLight intensity={0.3} />
