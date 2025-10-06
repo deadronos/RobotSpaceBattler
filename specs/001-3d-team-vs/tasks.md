@@ -64,9 +64,9 @@ Single-project structure (per plan.md):
 
 ### Contract Tests (2 tasks)
 
-- [ ] T008 [P] Contract test for robot spawning (FR-001) in `tests/contracts/robot-spawning.test.ts`: verify exactly 10 red robots, 10 blue robots, one captain per team, designated spawn zones, no position overlaps, balanced weapon distribution, all robots start with 100 health
+- [x] T008 [P] Contract test for robot spawning (FR-001) in `tests/contracts/robot-spawning.test.ts`: verify exactly 10 red robots, 10 blue robots, one captain per team, designated spawn zones, no position overlaps, balanced weapon distribution, all robots start with 100 health
 
-- [ ] T009 [P] Contract test for weapon balance (FR-003) in `tests/contracts/weapon-balance.test.ts`: verify all 9 matchup scenarios (Laser vs Gun = 1.5x, Gun vs Rocket = 1.5x, Rocket vs Laser = 1.5x, opposites = 0.67x, same = 1.0x), base damage values (Laser 15, Gun 20, Rocket 30), no zero/negative damage
+- [x] T009 [P] Contract test for weapon balance (FR-003) in `tests/contracts/weapon-balance.test.ts`: verify all 9 matchup scenarios (Laser vs Gun = 1.5x, Gun vs Rocket = 1.5x, Rocket vs Laser = 1.5x, opposites = 0.67x, same = 1.0x), base damage values (Laser 15, Gun 20, Rocket 30), no zero/negative damage
 
 ### Integration Tests (4 tasks)
 
