@@ -142,4 +142,24 @@ describe('Integration Test: Victory Flow (FR-006)', () => {
     expect(world.entities.filter((robot) => robot.team === 'red').length).toBe(10);
     expect(world.entities.filter((robot) => robot.team === 'blue').length).toBe(10);
   });
+
+  it('captures fresh post-battle stats for consecutive matches', () => {
+    eliminateTeam('blue');
+    stepForSeconds(0.2);
+    const firstStats = getSimulationState(world).postBattleStats;
+    expect(firstStats).toBeTruthy();
+    resumeAutoRestart(world);
+    const firstComputedAt = firstStats!.computedAt;
+
+    stepForSeconds(6.2);
+
+    eliminateTeam('blue');
+    stepForSeconds(0.2);
+    const secondStats = getSimulationState(world).postBattleStats;
+
+    expect(secondStats).toBeTruthy();
+    expect(secondStats).not.toBe(firstStats);
+    expect(secondStats!.computedAt).toBeGreaterThan(firstComputedAt);
+    expect(Object.keys(secondStats!.perRobot).length).toBeGreaterThan(0);
+  });
 });

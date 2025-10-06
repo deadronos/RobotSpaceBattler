@@ -29,7 +29,13 @@ export function capturePostBattleStats({
   ) {
     return simulation;
   }
-  if (simulation.postBattleStats) {
+  const victoryTime = simulation.victoryScreenStartTime;
+  const existingSnapshot = simulation.postBattleStats ?? null;
+  if (
+    existingSnapshot &&
+    victoryTime !== null &&
+    existingSnapshot.computedAt === victoryTime
+  ) {
     return simulation; // already captured
   }
 
@@ -43,12 +49,16 @@ export function capturePostBattleStats({
     TeamStats
   >;
   (Object.keys(teams) as TeamName[]).forEach((teamName) => {
-    perTeam[teamName] = { ...teams[teamName].aggregateStats };
+    const aggregate = teams[teamName].aggregateStats;
+    perTeam[teamName] = {
+      ...aggregate,
+      weaponDistribution: { ...aggregate.weaponDistribution },
+    };
   });
 
   return setPostBattleStats(simulation, {
     perRobot,
     perTeam,
-    computedAt: simulation.simulationTime,
+    computedAt: victoryTime ?? simulation.simulationTime,
   });
 }
