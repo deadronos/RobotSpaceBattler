@@ -60,27 +60,48 @@ export function usePhysicsSync({
 
   stepRef.current = applyStep;
 
-  if (!useFrameHook) {
+  const frameHookRef = useRef(useFrameHook);
+  frameHookRef.current = useFrameHook;
+
+  const processFrame = useCallback((delta: number) => {
+    stepRef.current(delta);
+  }, []);
+
+  try {
     useFrame((_, delta) => {
-      stepRef.current(delta);
+      if (frameHookRef.current) {
+        return;
+      }
+      processFrame(delta);
     });
+  } catch (error) {
+    if (
+      !(error instanceof Error) ||
+      !error.message.includes(
+        "Hooks can only be used within the Canvas component",
+      )
+    ) {
+      throw error;
+    }
   }
 
   useEffect(() => {
-    if (!useFrameHook) {
-      return;
+    const subscribe = frameHookRef.current;
+    if (!subscribe) {
+      return undefined;
     }
 
-    const unsubscribe = useFrameHook((_, delta) => {
-      stepRef.current(delta);
+    const unsubscribe = subscribe((_, delta) => {
+      processFrame(delta);
     });
 
-    return () => {
-      if (typeof unsubscribe === "function") {
+    if (typeof unsubscribe === "function") {
+      return () => {
         unsubscribe();
-      }
-    };
-  }, [useFrameHook]);
+      };
+    }
+    return undefined;
+  }, [processFrame, useFrameHook]);
 
   const reset = useCallback(() => {
     accumulatorRef.current = 0;

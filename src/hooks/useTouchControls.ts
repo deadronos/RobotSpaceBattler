@@ -160,7 +160,7 @@ export function useTouchControls(
       }
       event.preventDefault?.();
     },
-    [updatePositions],
+    [resetState, updatePositions],
   );
 
   return {

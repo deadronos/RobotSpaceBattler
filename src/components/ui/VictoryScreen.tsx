@@ -1,4 +1,4 @@
-import React from "react";
+import "./VictoryScreen.css";
 
 import type { SimulationState } from "../../ecs/entities/SimulationState";
 import { useUIStore } from "../../store/uiStore";
@@ -79,34 +79,17 @@ export function VictoryScreen({
     : null;
 
   return (
-    <section
-      aria-label="Victory Screen"
-      className="victory-screen"
-      style={{
-        position: "absolute",
-        top: "10%",
-        left: "50%",
-        transform: "translateX(-50%)",
-        padding: "1.5rem",
-        background: "rgba(15, 23, 42, 0.9)",
-        color: "white",
-        borderRadius: "1rem",
-        display: "flex",
-        flexDirection: "column",
-        gap: "1rem",
-        minWidth: "320px",
-      }}
-    >
+    <section aria-label="Victory Screen" className="victory-screen">
       <header>
-        <h2 style={{ fontSize: "1.75rem", margin: 0 }}>
+        <h2 className="victory-screen__title">
           {formatWinnerMessage(simulation.winner)}
         </h2>
-        <p style={{ margin: "0.25rem 0 0", opacity: 0.8 }}>
+        <p className="victory-screen__countdown">
           {formatCountdown(simulation.autoRestartCountdown)}
         </p>
       </header>
 
-      <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+      <div className="victory-screen__actions">
         <button type="button" onClick={handlePauseClick}>
           {pauseLabel}
         </button>
@@ -124,15 +107,12 @@ export function VictoryScreen({
       {snapshot && (
         <div
           aria-label="post-battle-summary"
-          style={{
-            marginTop: "1rem",
-            padding: "0.75rem",
-            background: "rgba(255,255,255,0.03)",
-            borderRadius: "0.5rem",
-          }}
+          className="victory-screen__summary"
         >
-          <strong>Post-battle Summary</strong>
-          <ul style={{ margin: "0.5rem 0 0", paddingLeft: "1rem" }}>
+          <strong className="victory-screen__summary-heading">
+            Post-battle Summary
+          </strong>
+          <ul className="victory-screen__team-list">
             {Object.entries(snapshot.perTeam).map(([team, stats]) => (
               <li key={team}>
                 Team {team}: {stats.totalKills} kills — {stats.totalDamageDealt}{" "}
@@ -141,7 +121,9 @@ export function VictoryScreen({
             ))}
           </ul>
           {topRobotId && (
-            <p style={{ margin: "0.25rem 0 0" }}>Top performer: {topRobotId}</p>
+            <p className="victory-screen__top-performer">
+              Top performer: {topRobotId}
+            </p>
           )}
         </div>
       )}

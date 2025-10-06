@@ -78,6 +78,9 @@ export function usePerformanceManager({
   const stepRef = useRef(syncFromWorld);
   stepRef.current = syncFromWorld;
 
+  const frameHookRef = useRef(useFrameHook);
+  frameHookRef.current = useFrameHook;
+
   const handleFrame = useCallback(
     (_state: unknown, delta: number) => {
       const clamped = clampDelta(delta);
@@ -87,20 +90,36 @@ export function usePerformanceManager({
     [clampDelta],
   );
 
-  if (!useFrameHook) {
-    useFrame(handleFrame);
+  try {
+    useFrame((state, delta) => {
+      if (frameHookRef.current) {
+        return;
+      }
+      handleFrame(state, delta);
+    });
+  } catch (error) {
+    if (
+      !(error instanceof Error) ||
+      !error.message.includes(
+        "Hooks can only be used within the Canvas component",
+      )
+    ) {
+      throw error;
+    }
   }
 
   useEffect(() => {
-    if (!useFrameHook) {
-      return;
+    const subscribe = frameHookRef.current;
+    if (!subscribe) {
+      return undefined;
     }
-    const unsubscribe = useFrameHook(handleFrame);
-    return () => {
-      if (typeof unsubscribe === "function") {
+    const unsubscribe = subscribe(handleFrame);
+    if (typeof unsubscribe === "function") {
+      return () => {
         unsubscribe();
-      }
-    };
+      };
+    }
+    return undefined;
   }, [handleFrame, useFrameHook]);
 
   const recordSample = useCallback((fps: number) => {

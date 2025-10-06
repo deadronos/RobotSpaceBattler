@@ -21,7 +21,7 @@ export interface Robot {
   stats: RobotStats;
 }
 
-export interface RobotInput extends Robot {}
+export type RobotInput = Robot;
 
 const VALID_TEAMS: readonly Team[] = ["red", "blue"];
 

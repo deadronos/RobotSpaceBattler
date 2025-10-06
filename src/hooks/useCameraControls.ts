@@ -82,9 +82,9 @@ const toCartesian = (
   const radius = Math.max(spherical.distance, minDistance);
 
   const position: Vector3 = {
-    x: target.x + radius * sinPolar * Math.sin(spherical.azimuth),
+    x: target.x + radius * sinPolar * sinAzimuth,
     y: target.y + radius * cosPolar,
-    z: target.z + radius * sinPolar * Math.cos(spherical.azimuth),
+    z: target.z + radius * sinPolar * cosAzimuth,
   };
 
   return {

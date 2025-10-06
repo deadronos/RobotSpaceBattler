@@ -1,3 +1,5 @@
+import "./PerformanceOverlay.css";
+
 import type { ChangeEvent } from "react";
 
 import { useUIStore } from "../../store/uiStore";
@@ -21,7 +23,8 @@ export function PerformanceOverlay({
     return (
       <div
         aria-label="Performance Overlay"
-        style={{ position: "absolute", bottom: "1rem", right: "1rem" }}
+        className="performance-overlay"
+        data-state="hidden"
       >
         <button type="button" onClick={() => setVisible(true)}>
           Show Overlay
@@ -37,34 +40,22 @@ export function PerformanceOverlay({
   return (
     <aside
       aria-label="Performance Overlay"
-      style={{
-        position: "absolute",
-        bottom: "1rem",
-        right: "1rem",
-        padding: "1rem",
-        background: "rgba(15, 23, 42, 0.88)",
-        color: "white",
-        borderRadius: "0.75rem",
-        minWidth: "220px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.75rem",
-      }}
+      className="performance-overlay performance-overlay--open"
     >
       <div>
         <strong>{Math.round(stats.currentFPS)} fps</strong>
-        <div style={{ opacity: 0.75 }}>
+        <div className="performance-overlay__average">
           Avg: {Math.round(stats.averageFPS)} fps
         </div>
       </div>
 
       {stats.qualityScalingActive ? (
-        <div style={{ color: "#f97316", fontWeight: 600 }}>
+        <div className="performance-overlay__alert">
           Performance mode active
         </div>
       ) : null}
 
-      <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+      <label className="performance-overlay__switch">
         <input
           type="checkbox"
           checked={autoScalingEnabled}

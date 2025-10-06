@@ -13,7 +13,7 @@ export interface Projectile {
   maxLifetime: number;
 }
 
-export interface ProjectileInput extends Projectile {}
+export type ProjectileInput = Projectile;
 
 function clampPositive(value: number, fallback: number): number {
   if (!Number.isFinite(value) || value <= 0) {

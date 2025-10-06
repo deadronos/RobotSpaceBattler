@@ -1,0 +1,57 @@
+.stats-modal {
+  position: absolute;
+  top: 10%;
+  right: 5%;
+  padding: 1rem;
+  background: rgba(12, 18, 32, 0.95);
+  color: #ffffff;
+  border-radius: 8px;
+  min-width: 360px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.stats-modal__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stats-modal__title {
+  margin: 0;
+}
+
+.stats-modal__timestamp {
+  margin: 0;
+  opacity: 0.85;
+}
+
+.stats-modal__section {
+  margin-top: 0.75rem;
+}
+
+.stats-modal__section-title {
+  margin: 0 0 0.25rem;
+}
+
+.stats-modal__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.stats-modal__table th,
+.stats-modal__table td {
+  padding: 0.25rem 0;
+  text-align: right;
+}
+
+.stats-modal__table th:first-child,
+.stats-modal__table td:first-child {
+  text-align: left;
+}
+
+.stats-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}

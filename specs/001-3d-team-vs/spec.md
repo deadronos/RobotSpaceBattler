@@ -76,6 +76,18 @@
   the victory countdown and manual restart/team reconfiguration from the
   victory screen.
 
+- **FR-015**: System MUST include a minimal app scaffold before running tests that mount the application. The scaffold MUST contain the following files (small, single-purpose implementations):
+  - `src/main.tsx` — application entry that mounts React to `#root` and imports `App`.
+  - `src/App.tsx` — root React component that renders the main `Scene` and exposes basic UI placeholders like a `#status` element and pause control.
+  - `src/index.css` — minimal global CSS (ensures `#root` and canvas fill the viewport).
+  - `src/components/Scene.tsx` and `src/components/Simulation.tsx` — lightweight placeholders that render a `Canvas` and a simple simulation mount so tests can find a `canvas` element.
+  - `src/ecs/world.ts` — minimal `world` export or stub to satisfy imports for early iteration.
+  - `src/robots/RobotFactory.tsx` or `src/components/RobotPlaceholder.tsx` — tiny procedural robot placeholder.
+
+  Acceptance criteria:
+  - Dev server (`npm run dev`) must start and a Playwright smoke test can connect and detect a `canvas` element and `#status` text.
+  - These files are intentionally minimal; they do not need full game logic but must allow tests and CI to import/run the app without missing-import runtime errors.
+
 ### Performance & Scale
 
 - **FR-016**: System MUST handle multiple active projectiles (lasers,
@@ -239,6 +251,21 @@ spawn and captain AI systems (e.g., `src/ecs/systems/spawnSystem.ts` and
 - **ECS Architecture**: High-level game logic MUST use and reuse Miniplex
   ECS queries following best practices documented at
   <https://github.com/hmans/miniplex>.
+
+### Mandatory scaffolding (bootstrapping entrypoints)
+
+To enable UI-driven contract and integration tests, the implementation MUST include a minimal app scaffold before running tests that mount the application. The scaffold MUST contain the following files (small, single-purpose implementations):
+
+- `src/main.tsx` — application entry that mounts React to `#root` and imports `App`.
+- `src/App.tsx` — root React component that renders the main `Scene` and exposes basic UI placeholders like a `#status` element and pause control.
+- `src/index.css` — minimal global CSS (ensures `#root` and canvas fill the viewport).
+- `src/components/Scene.tsx` and `src/components/Simulation.tsx` — lightweight placeholders that render a `Canvas` and a simple simulation mount so tests can find a `canvas` element.
+- `src/ecs/world.ts` — minimal `world` export or stub to satisfy imports for early iteration.
+- `src/robots/RobotFactory.tsx` or `src/components/RobotPlaceholder.tsx` — tiny procedural robot placeholder.
+
+Acceptance criteria:
+- Dev server (`npm run dev`) must start and a Playwright smoke test can connect and detect a `canvas` element and `#status` text.
+- These files are intentionally minimal; they do not need full game logic but must allow tests and CI to import/run the app without missing-import runtime errors.
 
 ## Review & Acceptance Checklist
 

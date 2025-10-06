@@ -351,7 +351,23 @@ TDD Gate: T001-T004 MUST fail before T011+ can start
 - TDD ordering enforced (tests before implementation)
 - Decomposition applied to large systems (camera, AI, performance)
 
-**IMPORTANT**: This phase will be executed by the /tasks command, NOT by /plan
+### Scaffolding requirement (important for TDD and test execution)
+
+Before authoring or running contract/integration tests that expect a mounted React application, create a minimal app scaffold so tests can mount UI and fail on game logic rather than missing entrypoints. The scaffold should include the following files (small, single-responsibility implementations; each file ≤ 300 LOC):
+
+- `src/main.tsx` — mounts React root and imports `App`.
+- `src/App.tsx` — root React component that renders `Scene` and exposes basic UI placeholders (status text, pause control).
+- `src/index.css` — basic global styles (full height for `#root`, background, font).
+- `src/components/Scene.tsx` — renders `Canvas` (r3f) and simple light/controls placeholders.
+- `src/components/Simulation.tsx` — minimal simulation mount that can render a robot placeholder or `Html` fallback.
+- `src/ecs/world.ts` — export a minimal `world` stub or singleton the rest of the system can import.
+- `src/robots/RobotFactory.tsx` or `src/components/RobotPlaceholder.tsx` — tiny box-geometry robot placeholder.
+
+Acceptance criteria:
+- `npm run dev` starts the dev server and a headless/e2e runner can connect and find a `canvas` element and `#status` text.
+- The scaffolding files allow tests to import `App` without runtime import errors; tests may still assert failing game logic intentionally.
+
+TDD gate update: Scaffolding tasks MUST be implemented and committed before running Playwright or integration tests that mount the UI. Tests that only validate pure utility functions (unit tests) may run earlier.
 
 ## Phase 3+: Future Implementation
 *These phases are beyond the scope of the /plan command*

@@ -91,14 +91,6 @@ function addVectors(a: Vector3, b: Vector3): Vector3 {
   return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z };
 }
 
-function scaleVector(vector: Vector3, scalar: number): Vector3 {
-  return { x: vector.x * scalar, y: vector.y * scalar, z: vector.z * scalar };
-}
-
-function subtractVectors(a: Vector3, b: Vector3): Vector3 {
-  return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
-}
-
 function vectorDistance(a: Vector3, b: Vector3): number {
   const dx = a.x - b.x;
   const dy = a.y - b.y;

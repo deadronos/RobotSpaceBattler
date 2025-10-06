@@ -1,12 +1,12 @@
-// eslint-disable-next-line simple-import-sort/imports
-import { createRobot, type Robot } from "../entities/Robot";
+import { INITIAL_HEALTH,SPAWN_ZONES } from "../../contracts/loadSpawnContract";
+import type { AIState, Team, Vector3, WeaponType } from "../../types";
+import type { Robot } from "../entities/Robot";
+import { createRobot } from "../entities/Robot";
 import { updateTeamCaptain } from "../entities/Team";
 import { setRobotBodyPosition } from "../simulation/physics";
 import { refreshTeamStats } from "../simulation/teamStats";
-import { cloneVector, subtractVectors } from "../utils/vector";
-import { SPAWN_ZONES, INITIAL_HEALTH } from "../../contracts/loadSpawnContract";
 import type { WorldView } from "../simulation/worldTypes";
-import type { AIState, Team, Vector3, WeaponType } from "../../types";
+import { cloneVector, subtractVectors } from "../utils/vector";
 
 export const WEAPON_DISTRIBUTION: Record<Team, WeaponType[]> = {
   red: [

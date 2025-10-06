@@ -70,6 +70,28 @@ Single-project structure (per plan.md):
 
    Supports: Constitution Principles I (Component & Library-First) and IV (r3f Best Practices). Types reduce ambiguity across entities, tests, and systems and speed contract test authoring.
 
+### Scaffolding (MANDATORY - must exist before running UI/integration tests)
+
+- [x] S001 Create minimal app entry files (required files):
+  - `src/main.tsx` — mounts React root and imports `App`. Should be small (≤ 60 LOC) and include a placeholder hook/comment for `resetAndSpawnDefaultTeams()` so the ECS bootstrap is discoverable.
+  - `src/App.tsx` — root React component that renders the main `Scene` component and basic UI placeholders (status text, pause button). Export default `App`.
+  - `src/index.css` — basic global CSS (sets html/body/#root full height and default background).
+  - Acceptance: `npm run dev` must start the dev server and the Playwright smoke test (`playwright/tests/smoke.spec.ts`) should be able to connect and look for a `canvas` or `#status` element (tests may still assert failing game logic, but the app must mount successfully).
+
+- [x] S002 Create minimal rendering placeholders:
+  - `src/components/Scene.tsx` — renders a `<Canvas>` from `@react-three/fiber` and includes `Suspense`+`OrbitControls` placeholders.
+  - `src/components/Simulation.tsx` — minimal simulation component that mounts inside the Canvas and provides a placeholder robot render (or `Html` fallback) allowing tests to find a canvas element.
+  - Acceptance: Playwright and unit tests that render `App` can find a `<canvas>` element and basic status text.
+
+- [x] S003 Minimal ECS wiring and robot placeholder:
+  - `src/ecs/world.ts` — export a minimal `createWorld()` / `world` singleton or stub that downstream systems/components can import (keeps file under 300 LOC).
+  - `src/robots/RobotFactory.tsx` or `src/components/RobotPlaceholder.tsx` — a tiny procedural robot mesh or box geometry used for the MVP.
+  - Acceptance: project compiles; `App` imports do not error and simple rendering of robot placeholder succeeds.
+
+Notes:
+- These scaffolding tasks are intentionally small and should be implemented before attempting to run integration tests that expect a running UI. They do not implement game rules — they only provide a runnable app shell so tests can properly mount and fail on game logic rather than on missing entrypoints.
+- Mark each scaffolding task 'completed' as soon as the file exists and the app mounts (even if contract/integration tests still fail for intended reasons). These tasks are prerequisites for the TDD gate and should be checked before writing tests that expect a mounted app.
+
 ---
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
