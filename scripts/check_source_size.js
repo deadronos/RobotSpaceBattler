@@ -5,8 +5,8 @@
 //  - If CHANGED_FILES_LIST is empty, the script scans the `src/`, `scripts/`,
 //    `tests/`, and `playwright/` directories.
 
-const fs = require('fs').promises;
-const path = require('path');
+import { promises as fs } from 'fs';
+import path from 'path';
 
 const THRESHOLD = 300;
 const EXT_RE = /\.(js|jsx|ts|tsx)$/i;

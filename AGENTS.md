@@ -2,7 +2,7 @@
 
 > A quick, actionable contributor guide for RobotSpaceBattler.
 
-**Important:** This project follows the constitution defined in `.specify/memory/constitution.md`. 
+**Important:** This project follows the constitution defined in `.specify/memory/constitution.md`.
 
 ## Instructions/Prompts are in:  `.github/prompts`
 
@@ -81,3 +81,8 @@ Project documentation and workflow artifacts are managed in `specs/` (numbered f
 
 - Agents MUST consult `.specify/memory/constitution.md` and the `specs/` folder when
   planning or implementing changes to ensure conformity with project governance.
+
+- **ES modules policy for agents:** When creating or modifying Node-invoked scripts, use ESM syntax
+  (`import` / `export`) and avoid `require()` / `module.exports` in `.js` files. If CommonJS is
+  required, name the file with a `.cjs` extension. Agents must follow this rule for any automated
+  edits to scripts or CI configuration.
