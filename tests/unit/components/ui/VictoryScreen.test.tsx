@@ -80,4 +80,37 @@ describe('VictoryScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: /Settings/i }));
     expect(useUIStore.getState().settingsOpen).toBe(true);
   });
+
+  it('renders a concise post-battle summary when a snapshot is present', async () => {
+    const simulation = createSimulationState();
+    simulation.postBattleStats = {
+      perRobot: {
+        'robot-1': { kills: 2, damageDealt: 40, damageTaken: 12, timeAlive: 10, shotsFired: 4 },
+      },
+      perTeam: {
+        red: {
+          totalKills: 2,
+          totalDamageDealt: 40,
+          totalDamageTaken: 12,
+          averageHealthRemaining: 50,
+          weaponDistribution: { laser: 1, gun: 0, rocket: 0 },
+        },
+        blue: {
+          totalKills: 0,
+          totalDamageDealt: 0,
+          totalDamageTaken: 40,
+          averageHealthRemaining: 0,
+          weaponDistribution: { laser: 0, gun: 0, rocket: 0 },
+        },
+      },
+      computedAt: 123,
+    };
+
+    const { VictoryScreen } = await import('../../../../src/components/ui/VictoryScreen');
+    render(<VictoryScreen simulation={simulation} />);
+
+    expect(screen.getByText(/Post-battle Summary/i)).toBeInTheDocument();
+    expect(screen.getByText(/Team red: 2 kills/i)).toBeInTheDocument();
+    expect(screen.getByText(/Top performer: robot-1/i)).toBeInTheDocument();
+  });
 });

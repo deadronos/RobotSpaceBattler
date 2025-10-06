@@ -1,0 +1,53 @@
+import { render, screen } from '@testing-library/react';
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
+
+import { useUIStore } from '../../../../src/store/uiStore';
+import * as worldModule from '../../../../src/ecs/world';
+
+describe('StatsModal', () => {
+  beforeEach(() => {
+    // Reset zustand UI store
+    useUIStore.getState().reset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('does not render when statsOpen is false', async () => {
+    const { StatsModal } = await import('../../../../src/components/ui/StatsModal');
+    render(<StatsModal />);
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('renders team and robot details when open and snapshot exists', async () => {
+    const snapshot = {
+      perRobot: {
+        r1: { kills: 2, damageDealt: 40, damageTaken: 10, timeAlive: 12, shotsFired: 5 },
+        r2: { kills: 0, damageDealt: 0, damageTaken: 40, timeAlive: 3, shotsFired: 1 },
+      },
+      perTeam: {
+        red: { totalKills: 2, totalDamageDealt: 40, totalDamageTaken: 10, averageHealthRemaining: 50, weaponDistribution: { laser: 1, gun: 0, rocket: 0 } },
+        blue: { totalKills: 0, totalDamageDealt: 0, totalDamageTaken: 40, averageHealthRemaining: 0, weaponDistribution: { laser: 0, gun: 0, rocket: 0 } },
+      },
+      computedAt: 123,
+    } as any;
+
+    // Mock the world hook to return our snapshot
+    vi.spyOn(worldModule, 'useSimulationWorld').mockImplementation(() => ({ simulation: { postBattleStats: snapshot } } as any));
+
+    // Open the modal via zustand
+    useUIStore.getState().setStatsOpen(true);
+
+    const { StatsModal } = await import('../../../../src/components/ui/StatsModal');
+    render(<StatsModal />);
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    // Team table should show team red with kills
+    expect(screen.getByText(/Team/)).toBeInTheDocument();
+    expect(screen.getByText(/red/)).toBeInTheDocument();
+    expect(screen.getByText(/2/)).toBeInTheDocument();
+    // Robot row should show robot id r1
+    expect(screen.getByText(/r1/)).toBeInTheDocument();
+  });
+});

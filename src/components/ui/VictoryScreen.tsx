@@ -1,3 +1,4 @@
+import React from 'react';
 import type { SimulationState } from '../../ecs/entities/SimulationState';
 import { useUIStore } from '../../store/uiStore';
 
@@ -5,7 +6,7 @@ export interface VictoryScreenProps {
   simulation: Pick<
     SimulationState,
     'status' | 'winner' | 'autoRestartCountdown' | 'countdownPaused'
-  >;
+  > & { postBattleStats?: SimulationState['postBattleStats'] };
   onTogglePause?: (paused: boolean) => void;
   onResetCountdown?: () => void;
   onShowStats?: () => void;
@@ -65,6 +66,11 @@ export function VictoryScreen({
     onShowSettings?.();
   };
 
+  const snapshot = simulation.postBattleStats;
+  const topRobotId = snapshot
+    ? Object.entries(snapshot.perRobot).sort(([, a], [, b]) => b.kills - a.kills)[0]?.[0]
+    : null;
+
   return (
     <section
       aria-label="Victory Screen"
@@ -103,6 +109,23 @@ export function VictoryScreen({
           Settings
         </button>
       </div>
+
+      {snapshot && (
+        <div
+          aria-label="post-battle-summary"
+          style={{ marginTop: '1rem', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '0.5rem' }}
+        >
+          <strong>Post-battle Summary</strong>
+          <ul style={{ margin: '0.5rem 0 0', paddingLeft: '1rem' }}>
+            {Object.entries(snapshot.perTeam).map(([team, stats]) => (
+              <li key={team}>
+                Team {team}: {stats.totalKills} kills — {stats.totalDamageDealt} dmg
+              </li>
+            ))}
+          </ul>
+          {topRobotId && <p style={{ margin: '0.25rem 0 0' }}>Top performer: {topRobotId}</p>}
+        </div>
+      )}
     </section>
   );
 }
