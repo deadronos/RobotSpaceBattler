@@ -135,3 +135,47 @@ export interface LightingConfig {
   /** Whether shadows are enabled */
   shadowsEnabled: boolean;
 }
+
+/**
+ * Performance measurement report returned by the test harness
+ */
+export interface PerfReport {
+  /** Median FPS computed over 1s windows (primary metric) */
+  medianFPS: number;
+  /** 5th percentile FPS across 1s windows (p5) */
+  p5FPS: number;
+  /** Total frames observed during the measurement (after warm-up) */
+  totalFrames: number;
+  /** Estimated dropped frames relative to the target frame rate */
+  droppedFrames: number;
+  /** Measurement duration in milliseconds (excluding warm-up) */
+  durationMs: number;
+  /** Per-1s bucket summary (startMs is relative to navigation start) */
+  buckets: Array<{ startMs: number; frames: number; fps: number }>;
+}
+
+export interface PerfMeasurementOptions {
+  /** Warm-up in seconds (frames during warm-up are ignored) */
+  warmupSeconds?: number;
+  /** Target frame rate to compute dropped frames (default 60) */
+  targetFrameRate?: number;
+}
+
+declare global {
+  interface Window {
+    /**
+     * Test harness performance API used by Playwright/CI to programmatically
+     * start/stop/reset FPS measurements. The implementation is a no-op when
+     * not present (e.g., in older browsers) and is added by the app at
+     * runtime so tests can access deterministically.
+     */
+    __perf?: {
+      startMeasurement: (opts?: PerfMeasurementOptions) => void;
+      stopMeasurement: () => Promise<PerfReport>;
+      reset: () => void;
+      getLastReport?: () => PerfReport | null;
+    };
+  }
+}
+
+export {};

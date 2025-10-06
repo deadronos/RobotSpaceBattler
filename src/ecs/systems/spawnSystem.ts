@@ -1,9 +1,11 @@
+// eslint-disable-next-line simple-import-sort/imports
 import { createRobot, type Robot } from '../entities/Robot';
 import { updateTeamCaptain } from '../entities/Team';
 import { setRobotBodyPosition } from '../simulation/physics';
 import { refreshTeamStats } from '../simulation/teamStats';
-import type { WorldView } from '../simulation/worldTypes';
 import { cloneVector, subtractVectors } from '../utils/vector';
+import { SPAWN_ZONES, INITIAL_HEALTH } from '../../contracts/loadSpawnContract';
+import type { WorldView } from '../simulation/worldTypes';
 import type { AIState, Team, Vector3, WeaponType } from '../../types';
 
 export const WEAPON_DISTRIBUTION: Record<Team, WeaponType[]> = {
@@ -30,7 +32,8 @@ function assignCaptain(world: WorldView, team: Team, robots: Robot[]): void {
 }
 
 export function spawnTeam(world: WorldView, team: Team): Robot[] {
-  const spawnZone = world.arena.spawnZones[team];
+  // Prefer arena-configured spawn zones; fall back to canonical contract zones when undefined
+  const spawnZone = (world.arena.spawnZones && world.arena.spawnZones[team]) || SPAWN_ZONES[team];
   const weapons = WEAPON_DISTRIBUTION[team];
   const robots: Robot[] = [];
 
@@ -43,8 +46,8 @@ export function spawnTeam(world: WorldView, team: Team): Robot[] {
       position: cloneVector(point),
       rotation: { x: 0, y: team === 'red' ? 0.2 : -0.2, z: 0, w: 1 },
       velocity: { x: 0, y: 0, z: 0 },
-      health: 100,
-      maxHealth: 100,
+      health: INITIAL_HEALTH,
+      maxHealth: INITIAL_HEALTH,
       weaponType: weapons[index % weapons.length],
       isCaptain: index === 0,
       aiState: createAIState(formationOffset),

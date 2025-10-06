@@ -1,4 +1,3 @@
-
 # Handover: 3D Team vs Team Autobattler — Analysis & Next Steps
 
 Date: 2025-10-06
@@ -41,7 +40,7 @@ implementation starts.
 | T1 | Terminology / numbering drift | LOW | `plan.md` vs `tasks.md` | Plan drafts earlier referenced ~30 tasks; `tasks.md` contains 37 — plan later notes 37, but some earlier enumerations in `plan.md` still show older numbers. | No functional change required; consider consolidating numbering references in `plan.md` to avoid confusion. |
 | A2 | Ambiguity (non-functional) | MEDIUM | `spec.md` FR-010 / FR-017 / `tasks.md` T013/T037 | Performance requirements specify target values (60 fps target, 30 fps floor) — measurable — but acceptance tests must define environment/measurement method (device, resolution, build/dev). The tests/tasks assume "modern Chromium"; this is likely fine but should be explicitly documented. | Add precise test environment spec (e.g., test harness: headless Chromium on CI with GPU flags or device profile) and measurement method (rolling average over N seconds, sampling frequency). Put this in `quickstart.md` or `contracts/performance-contract.md`. |
 | D2 | Duplication (infra) | LOW | `tasks.md` T003-T007 | Multiple infra tasks (linters, CI checks, size checks, code-health) are listed. They are valid but partially overlap in intent (T004/T005 both enforce PR-level checks). | Keep, but consider grouping or clarifying ownership and outputs (which check each enforces). |
-| U2 | Underspecification (spawn details) | LOW | `tasks.md` T008/T021 vs `spec.md` FR-001 | `tasks.md` contains specific spawn validations (no overlap, spawn zone definitions). `spec.md` requires "designated starting zones" but does not define the zone geometry or anti-overlap rules precisely. | Move spawn geometry and overlap rules into `contracts/spawn-contract.md` or `data-model.md` so tests and implementations use the canonical definitions. |
+| U2 | Underspecification (spawn details) | LOW | `tasks.md` T008/T021 vs `spec.md` FR-001 | `tasks.md` contains specific spawn validations (no overlap, spawn zone definitions). `spec.md` requires "designated starting zones" but does not define the zone geometry or anti-overlap rules precisely. | DONE: Spawn geometry and anti-overlap rules have been moved into `specs/001-3d-team-vs/contracts/spawn-contract.md` and captured in `specs/001-3d-team-vs/data-model.md`. Tests and the spawn system should reference `spawn-contract.md` as the canonical source. Verify `tests/contracts/robot-spawning.test.ts` and `src/ecs/systems/spawnSystem.ts` reference this contract. |
 | M1 | Missing mapping (small) | LOW | `plan.md` `systems/statsSystem.ts` mentioned vs `tasks.md` | `plan.md` referenced `systems/statsSystem.ts` in the source structure; `tasks.md` does not include a dedicated `statsSystem` item. (Overlaps with C1 but this entry notes the plan→tasks mismatch.) | Add `statsSystem` to tasks.md and specify file path and acceptance criteria. |
 
 Notes: Main table limited to the most actionable items. Lower-priority wording/formatting improvements are available if desired.
@@ -52,7 +51,7 @@ Notes: Main table limited to the most actionable items. Lower-priority wording/f
 
 | Requirement Key | Has Task? | Task IDs | Notes |
 |-----------------|----------:|---------:|-------|
-| fr-001-spawn-10v10 | Yes | T008, T021 | Good: contract + spawn system. Recommend adding spawn geometry to contract. |
+| fr-001-spawn-10v10 | Yes | T008, T021 | Good: contract + spawn system. Spawn geometry and overlap rules have been added to `specs/001-3d-team-vs/contracts/spawn-contract.md` and `specs/001-3d-team-vs/data-model.md`. |
 | fr-002-ai-multilayer | Yes | T010, T024, T025, T026 | Covered. Need explicit captain-election algorithm (see A1). |
 | fr-003-weapons-rps | Yes | T009, T022 | Tests assert numeric damage values not present in spec → reconcile (see U1). |
 | fr-004-hit-damage | Yes | T023, T012 | Covered by Damage system & physics test. |

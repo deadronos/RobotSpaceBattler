@@ -1,3 +1,5 @@
+import React, { useEffect } from 'react';
+
 import type { ArenaEntity } from '../ecs/entities/Arena';
 import type { Team } from '../types';
 
@@ -105,6 +107,12 @@ function renderObstacles(arena: ArenaEntity) {
 }
 
 export function Arena({ arena }: ArenaProps) {
+  useEffect(() => {
+    // Dynamically import the perf harness so Playwright/CI can access window.__perf.
+    // This avoids top-level side-effect import ordering issues with the linter.
+    void import('../utils/perfHarness');
+  }, []);
+
   return (
     <group name="arena">
       <ambientLight

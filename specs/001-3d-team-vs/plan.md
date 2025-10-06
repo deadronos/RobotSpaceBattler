@@ -264,7 +264,7 @@ playwright/tests/
 
 **Task Generation Strategy**:
 
-Based on Phase 1 design artifacts, the /tasks command will generate approximately 25-30 tasks organized by TDD workflow:
+Based on Phase 1 design artifacts, the /tasks command will generate 38 tasks organized by TDD workflow:
 
 **From Contracts (tests/contracts/)**:
 - T001: Contract test for robot spawning (spawn-contract.md → FR-001 validation)
@@ -343,7 +343,7 @@ TDD Gate: T001-T004 MUST fail before T011+ can start
 - T013-T015: All AI systems independent, can develop in parallel
 - T019-T025: All components read from ECS, no shared mutations
 
-**Estimated Output**: 30 numbered tasks with clear dependencies and parallel execution markers
+**Estimated Output**: 38 numbered tasks with clear dependencies and parallel execution markers
 
 **Constitutional Compliance**:
 - All tasks specify exact file paths
@@ -394,7 +394,7 @@ TDD Gate: T001-T004 MUST fail before T011+ can start
 - ✅ contracts/scoring-contract.md (weapon balance validation)
 - ✅ contracts/spawn-contract.md (robot spawning validation)
 - ✅ quickstart.md (validation and demonstration guide)
-- ✅ tasks.md (37 numbered tasks across 5 phases)
+- ✅ tasks.md (38 numbered tasks across 5 phases)
 
 **Next Steps**:
 1. Begin TDD execution: write contract tests (T008-T009) - all must fail

@@ -8,13 +8,8 @@
 
 import { describe, it, expect } from 'vitest';
 import type { WeaponType } from '../../src/types';
-import {
-  BASE_DAMAGE,
-  getDamageMultiplier,
-  MULTIPLIER_ADVANTAGE,
-  MULTIPLIER_DISADVANTAGE,
-  MULTIPLIER_NEUTRAL,
-} from '../../src/ecs/constants/weaponConstants';
+import { BASE_DAMAGE, getDamageMultiplier } from '../../src/ecs/constants/weaponConstants';
+import { MULTIPLIERS, MULTIPLIER_ADVANTAGE, MULTIPLIER_DISADVANTAGE, MULTIPLIER_NEUTRAL } from '../../src/contracts/loadScoringContract';
 
 // Mock interface for weapon config that doesn't exist yet
 interface WeaponConfig {
@@ -56,36 +51,42 @@ describe('Contract Test: Weapon Balance', () => {
   });
 
   describe('Advantage Matchups (1.5x multiplier)', () => {
-    it('should apply 1.5x multiplier for Laser vs Gun (Laser wins)', () => {
+    it('should apply advantage multiplier for Laser vs Gun (Laser wins)', () => {
       const multiplier = getDamageMultiplier('laser', 'gun');
-      expect(multiplier).toBe(1.5);
+      expect(multiplier).toBe(MULTIPLIERS.laser.gun);
+      expect(multiplier).toBe(MULTIPLIER_ADVANTAGE);
     });
 
-    it('should apply 1.5x multiplier for Gun vs Rocket (Gun wins)', () => {
+    it('should apply advantage multiplier for Gun vs Rocket (Gun wins)', () => {
       const multiplier = getDamageMultiplier('gun', 'rocket');
-      expect(multiplier).toBe(1.5);
+      expect(multiplier).toBe(MULTIPLIERS.gun.rocket);
+      expect(multiplier).toBe(MULTIPLIER_ADVANTAGE);
     });
 
-    it('should apply 1.5x multiplier for Rocket vs Laser (Rocket wins)', () => {
+    it('should apply advantage multiplier for Rocket vs Laser (Rocket wins)', () => {
       const multiplier = getDamageMultiplier('rocket', 'laser');
-      expect(multiplier).toBe(1.5);
+      expect(multiplier).toBe(MULTIPLIERS.rocket.laser);
+      expect(multiplier).toBe(MULTIPLIER_ADVANTAGE);
     });
   });
 
   describe('Disadvantage Matchups (0.67x multiplier)', () => {
     it('should apply 0.67x multiplier for Laser vs Rocket (Laser loses)', () => {
       const multiplier = getDamageMultiplier('laser', 'rocket');
-      expect(multiplier).toBeCloseTo(0.67, 2);
+      expect(multiplier).toBeCloseTo(MULTIPLIERS.laser.rocket, 2);
+      expect(multiplier).toBeCloseTo(MULTIPLIER_DISADVANTAGE, 2);
     });
 
     it('should apply 0.67x multiplier for Gun vs Laser (Gun loses)', () => {
       const multiplier = getDamageMultiplier('gun', 'laser');
-      expect(multiplier).toBeCloseTo(0.67, 2);
+      expect(multiplier).toBeCloseTo(MULTIPLIERS.gun.laser, 2);
+      expect(multiplier).toBeCloseTo(MULTIPLIER_DISADVANTAGE, 2);
     });
 
     it('should apply 0.67x multiplier for Rocket vs Gun (Rocket loses)', () => {
       const multiplier = getDamageMultiplier('rocket', 'gun');
-      expect(multiplier).toBeCloseTo(0.67, 2);
+      expect(multiplier).toBeCloseTo(MULTIPLIERS.rocket.gun, 2);
+      expect(multiplier).toBeCloseTo(MULTIPLIER_DISADVANTAGE, 2);
     });
   });
 
@@ -112,15 +113,15 @@ describe('Contract Test: Weapon Balance', () => {
       defender: WeaponType;
       expectedMultiplier: number;
     }> = [
-      { attacker: 'laser', defender: 'laser', expectedMultiplier: 1.0 },
-      { attacker: 'laser', defender: 'gun', expectedMultiplier: 1.5 },
-      { attacker: 'laser', defender: 'rocket', expectedMultiplier: 0.67 },
-      { attacker: 'gun', defender: 'laser', expectedMultiplier: 0.67 },
-      { attacker: 'gun', defender: 'gun', expectedMultiplier: 1.0 },
-      { attacker: 'gun', defender: 'rocket', expectedMultiplier: 1.5 },
-      { attacker: 'rocket', defender: 'laser', expectedMultiplier: 1.5 },
-      { attacker: 'rocket', defender: 'gun', expectedMultiplier: 0.67 },
-      { attacker: 'rocket', defender: 'rocket', expectedMultiplier: 1.0 },
+      { attacker: 'laser', defender: 'laser', expectedMultiplier: MULTIPLIERS.laser.laser },
+      { attacker: 'laser', defender: 'gun', expectedMultiplier: MULTIPLIERS.laser.gun },
+      { attacker: 'laser', defender: 'rocket', expectedMultiplier: MULTIPLIERS.laser.rocket },
+      { attacker: 'gun', defender: 'laser', expectedMultiplier: MULTIPLIERS.gun.laser },
+      { attacker: 'gun', defender: 'gun', expectedMultiplier: MULTIPLIERS.gun.gun },
+      { attacker: 'gun', defender: 'rocket', expectedMultiplier: MULTIPLIERS.gun.rocket },
+      { attacker: 'rocket', defender: 'laser', expectedMultiplier: MULTIPLIERS.rocket.laser },
+      { attacker: 'rocket', defender: 'gun', expectedMultiplier: MULTIPLIERS.rocket.gun },
+      { attacker: 'rocket', defender: 'rocket', expectedMultiplier: MULTIPLIERS.rocket.rocket },
     ];
 
     matchups.forEach(({ attacker, defender, expectedMultiplier }) => {

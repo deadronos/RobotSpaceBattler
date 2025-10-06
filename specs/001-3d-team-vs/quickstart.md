@@ -197,6 +197,8 @@ npx vitest tests/integration/physics-sync.test.ts
 
 ### Test 6: Performance (FR-010, FR-021-023)
 
+> See `specs/001-3d-team-vs/contracts/performance-contract.md` for the formal test environment, device profiles, and measurement method (warmup, sampling, rolling-average windows, and pass/fail criteria).
+
 ```bash
 # Run performance test
 npx vitest tests/integration/performance.test.ts

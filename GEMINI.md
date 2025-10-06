@@ -1,4 +1,5 @@
 # RobotSpaceBattler Development Guidelines
+**Important:** This project follows the constitution defined in `.specify/memory/constitution.md`.
 
 Auto-generated from all feature plans. Last updated: 2025-10-06
 

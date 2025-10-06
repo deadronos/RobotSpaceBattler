@@ -13,7 +13,7 @@
    → quickstart.md: 6 test scenarios
 3. Generate tasks by category:
    → Setup: project init, dependencies, linting, constitution checks
-   → Tests: 2 contract tests + 4 integration tests (TDD - must fail first)
+   → Tests: 3 contract tests + 4 integration tests (TDD - must fail first)
    → Core: 6 entity models + 8 systems + 3 hooks
    → Rendering: 6 r3f components + 2 UI components
    → Integration: physics sync, performance monitoring
@@ -76,23 +76,25 @@ Single-project structure (per plan.md):
 
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
 
-### Contract Tests (2 tasks)
+### Contract Tests (3 tasks)
 
-- [x] T008 [P] Contract test for robot spawning (FR-001) in `tests/contracts/robot-spawning.test.ts`: verify exactly 10 red robots, 10 blue robots, one captain per team, designated spawn zones, no position overlaps, balanced weapon distribution, all robots start with 100 health
+- [x] T008 [P] Contract test for robot spawning (FR-001) in `tests/contracts/robot-spawning.test.ts`: verify exactly 10 red robots, 10 blue robots, one captain per team, designated spawn zones, no position overlaps, balanced weapon distribution, all robots start with 100 health. Reference canonical spawn rules in `specs/001-3d-team-vs/contracts/spawn-contract.md`.
 
 - [x] T009 [P] Contract test for weapon balance (FR-003) in `tests/contracts/weapon-balance.test.ts`:
    - Verify all 9 matchup scenarios and damage calculations per `contracts/scoring-contract.md`.
    - Ensure no zero/negative damage.
 
+- [x] T010 [P] Contract test for camera system (FR-013) in `tests/contracts/camera-system.test.ts`: verify hybrid camera requirements per plan: free camera controls (mouse/keyboard), touch controls (pinch/drag), cinematic auto-follow mode, smooth transitions (no snapping), camera bounds (no leaving arena or penetrating obstacles), configurable smoothing parameters, and correct toggling between control modes. Ensure the camera does not cause visual artifacts or desync with ECS state.
+
 ### Integration Tests (4 tasks)
 
-- [x] T010 [P] Integration test for AI behavior (FR-002) in `tests/integration/ai-behavior.test.ts`: verify autonomous target selection, movement toward enemies, weapon firing in range, cover-seeking when damaged, low-health retreat, captain coordination, formation maintenance, priority target calls, adaptive strategy switching
+- [x] T011 [P] Integration test for AI behavior (FR-002) in `tests/integration/ai-behavior.test.ts`: verify autonomous target selection, movement toward enemies, weapon firing in range, cover-seeking when damaged, low-health retreat, captain coordination, formation maintenance, priority target calls, adaptive strategy switching
 
-- [x] T011 [P] Integration test for victory flow (FR-006) in `tests/integration/victory-flow.test.ts`: verify team elimination detection, victory screen display with winner, 5-second countdown timer, pause/reset countdown controls, stats button opens post-battle metrics, settings button allows team composition changes, auto-restart after countdown
+- [x] T012 [P] Integration test for victory flow (FR-006) in `tests/integration/victory-flow.test.ts`: verify team elimination detection, victory screen display with winner, 5-second countdown timer, pause/reset countdown controls, stats button opens post-battle metrics, settings button allows team composition changes, auto-restart after countdown
 
-- [x] T012 [P] Integration test for physics sync (FR-012) in `tests/integration/physics-sync.test.ts`: verify ECS positions sync with Rapier physics every frame, projectile trajectories follow physics, collisions trigger damage events, eliminated robots removed from physics world, no rendering/physics desync
+- [x] T013 [P] Integration test for physics sync (FR-012) in `tests/integration/physics-sync.test.ts`: verify ECS positions sync with Rapier physics every frame, projectile trajectories follow physics, collisions trigger damage events, eliminated robots removed from physics world, no rendering/physics desync
 
-- [x] T013 [P] Integration test for performance (FR-010, FR-021-023) in `tests/integration/performance.test.ts`: verify 60 fps maintained with 20 robots + shadows, quality scaling activates below 30 fps, shadows disabled when quality scaling active, time scale reduces when FPS critically low, warning overlay displays, user can disable auto-scaling
+- [x] T014 [P] Integration test for performance (FR-010, FR-021-023) in `tests/integration/performance.test.ts`: verify 60 fps maintained with 20 robots + shadows, quality scaling activates below 30 fps, shadows disabled when quality scaling active, time scale reduces when FPS critically low, warning overlay displays, user can disable auto-scaling
 
 ---
 
@@ -100,47 +102,47 @@ Single-project structure (per plan.md):
 
 ### Entity Models (6 tasks - can parallelize)
 
-- [x] T014 [P] Robot entity model in `src/ecs/entities/Robot.ts`: define Robot archetype with id, team, position, rotation, velocity, health, maxHealth, weaponType, isCaptain, aiState (behaviorMode, targetId, coverPosition, lastFireTime, formationOffset), stats (kills, damageDealt, damageTaken, timeAlive, shotsFired). Validate health bounds, team values, captain uniqueness. Export type and validation functions. (~120 LOC)
+- [x] T015 [P] Robot entity model in `src/ecs/entities/Robot.ts`: define Robot archetype with id, team, position, rotation, velocity, health, maxHealth, weaponType, isCaptain, aiState (behaviorMode, targetId, coverPosition, lastFireTime, formationOffset), stats (kills, damageDealt, damageTaken, timeAlive, shotsFired). Validate health bounds, team values, captain uniqueness. Export type and validation functions. (~120 LOC)
 
-- [x] T015 [P] Weapon entity model in `src/ecs/entities/Weapon.ts`: define Weapon config with type, baseDamage, fireRate, projectileSpeed, effectiveRange, visualEffect. Include type-specific properties table and damage multiplier matrix (rock-paper-scissors). Export WeaponConfig type and getDamageMultiplier() function. (~80 LOC)
+- [x] T016 [P] Weapon entity model in `src/ecs/entities/Weapon.ts`: define Weapon config with type, baseDamage, fireRate, projectileSpeed, effectiveRange, visualEffect. Include type-specific properties table and damage multiplier matrix (rock-paper-scissors). Export WeaponConfig type and getDamageMultiplier() function. (~80 LOC)
 
-- [x] T016 [P] Projectile entity model in `src/ecs/entities/Projectile.ts`: define Projectile archetype with id, ownerId, weaponType, position, velocity, damage, distanceTraveled, maxDistance, spawnTime, maxLifetime. Include despawn condition checks. Export type and shouldDespawn() function. (~90 LOC)
+- [x] T017 [P] Projectile entity model in `src/ecs/entities/Projectile.ts`: define Projectile archetype with id, ownerId, weaponType, position, velocity, damage, distanceTraveled, maxDistance, spawnTime, maxLifetime. Include despawn condition checks. Export type and shouldDespawn() function. (~90 LOC)
 
-- [x] T017 [P] Team entity model in `src/ecs/entities/Team.ts`: define Team archetype with name, activeRobots, eliminatedRobots, captainId, spawnZone (center, radius, spawnPoints), aggregateStats (totalKills, totalDamageDealt, totalDamageTaken, averageHealthRemaining, weaponDistribution). Export type and victory condition check. (~110 LOC)
+- [x] T018 [P] Team entity model in `src/ecs/entities/Team.ts`: define Team archetype with name, activeRobots, eliminatedRobots, captainId, spawnZone (center, radius, spawnPoints), aggregateStats (totalKills, totalDamageDealt, totalDamageTaken, averageHealthRemaining, weaponDistribution). Export type and victory condition check. (~110 LOC)
 
-- [x] T018 [P] Arena entity model in `src/ecs/entities/Arena.ts`: define Arena config with id, dimensions, spawnZones (2 zones with 10 spawn points each), obstacles (position, dimensions, isCover), lightingConfig (ambient/directional colors, intensities, shadow settings), boundaries. Export ArenaConfig type and spawn zone definitions. (~100 LOC)
+- [x] T019 [P] Arena entity model in `src/ecs/entities/Arena.ts`: define Arena config with id, dimensions, spawnZones (2 zones with 10 spawn points each), obstacles (position, dimensions, isCover), lightingConfig (ambient/directional colors, intensities, shadow settings), boundaries. Export ArenaConfig type and spawn zone definitions. (~100 LOC)
 
-- [x] T019 [P] SimulationState entity model in `src/ecs/entities/SimulationState.ts`: define SimulationState with status (initializing|running|paused|victory|simultaneous-elimination), winner, frameTime, totalFrames, simulationTime, timeScale, victoryScreenStartTime, autoRestartCountdown, performanceStats (currentFPS, averageFPS, qualityScalingActive). Export type and state transition helpers. (~130 LOC)
+- [x] T020 [P] SimulationState entity model in `src/ecs/entities/SimulationState.ts`: define SimulationState with status (initializing|running|paused|victory|simultaneous-elimination), winner, frameTime, totalFrames, simulationTime, timeScale, victoryScreenStartTime, autoRestartCountdown, performanceStats (currentFPS, averageFPS, qualityScalingActive). Export type and state transition helpers. (~130 LOC)
 
 ### ECS Systems (8 tasks - sequential dependencies)
 
-- [x] T020 Initialize Miniplex ECS world in `src/ecs/world.ts`: create world instance, register entity archetypes, export world singleton and React context provider. Import entity types from T014-T019. (~100 LOC)
+- [x] T021 Initialize Miniplex ECS world in `src/ecs/world.ts`: create world instance, register entity archetypes, export world singleton and React context provider. Import entity types from T014-T019. (~100 LOC)
 
-- [x] T021 Spawn system in `src/ecs/systems/spawnSystem.ts`: implement robot spawning logic per spawn-contract.md: allocate 10 spawn points per team, create 20 Robot entities with team assignment, balanced weapon distribution, captain election, initialize physics bodies. Use Team and Arena entities. Depends on T014, T017, T018, T020. (~180 LOC)
+- [x] T022 Spawn system in `src/ecs/systems/spawnSystem.ts`: implement robot spawning logic per `specs/001-3d-team-vs/contracts/spawn-contract.md`: allocate 10 spawn points per team, create 20 Robot entities with team assignment, balanced weapon distribution, captain election, initialize physics bodies. Use Team and Arena entities. Depends on T014, T017, T018, T020. (~180 LOC)
 
-- [x] T022 [P] Weapon system in `src/ecs/systems/weaponSystem.ts`: implement fireWeapon() to create Projectile entities, check fireRate cooldown, calculate damage with multipliers from Weapon model, update Robot.stats.shotsFired. Query active robots, update lastFireTime. Depends on T014, T015, T016, T020. (~150 LOC)
+- [x] T023 [P] Weapon system in `src/ecs/systems/weaponSystem.ts`: implement fireWeapon() to create Projectile entities, check fireRate cooldown, calculate damage with multipliers from Weapon model, update Robot.stats.shotsFired. Query active robots, update lastFireTime. Depends on T014, T015, T016, T020. (~150 LOC)
 
-- [x] T023 [P] Damage system in `src/ecs/systems/damageSystem.ts`: handle projectile-robot collisions, apply damage to Robot.health, update stats (kills, damageDealt, damageTaken), remove eliminated robots from physics, trigger captain re-election if captain dies. Query projectiles and robots. Depends on T014, T016, T020. (~190 LOC)
+- [x] T024 [P] Damage system in `src/ecs/systems/damageSystem.ts`: handle projectile-robot collisions, apply damage to Robot.health, update stats (kills, damageDealt, damageTaken), remove eliminated robots from physics, trigger captain re-election if captain dies. Query projectiles and robots. Depends on T014, T016, T020. (~190 LOC)
 
-- [x] T024 AI system - Individual behavior in `src/ecs/systems/ai/individualAI.ts`: implement target selection (prioritize rock-paper-scissors advantage), movement toward enemies, cover-seeking when damaged (<30 health), peek-and-shoot, low-health retreat. Query enemy robots, update aiState.behaviorMode/targetId/coverPosition. Depends on T014, T015, T020. (~200 LOC)
+- [x] T025 AI system - Individual behavior in `src/ecs/systems/ai/individualAI.ts`: implement target selection (prioritize rock-paper-scissors advantage), movement toward enemies, cover-seeking when damaged (<30 health), peek-and-shoot, low-health retreat. Query enemy robots, update aiState.behaviorMode/targetId/coverPosition. Depends on T014, T015, T020. (~200 LOC)
 
-- [x] T025 AI system - Captain coordination in `src/ecs/systems/ai/captainAI.ts`: implement formation maintenance (formationOffset for non-captains), priority target calling (aiState.targetId override), captain reassignment on death (elect highest health robot). Query captains and team members. Depends on T014, T017, T020, T024. (~180 LOC)
+- [x] T026 AI system - Captain coordination in `src/ecs/systems/ai/captainAI.ts`: implement formation maintenance (formationOffset for non-captains), priority target calling (aiState.targetId override), captain reassignment on death (elect highest health robot). Query captains and team members. Depends on T014, T017, T020, T024. (~180 LOC)
 
-- [x] T026 AI system - Adaptive strategy in `src/ecs/systems/ai/adaptiveStrategy.ts`: implement behavior switching based on health (<50 = defensive, >70 = aggressive), team advantage (active robot count ratio), adjust formation spacing. Query team stats. Depends on T014, T017, T020, T024, T025. (~150 LOC)
+- [x] T027 AI system - Adaptive strategy in `src/ecs/systems/ai/adaptiveStrategy.ts`: implement behavior switching based on health (<50 = defensive, >70 = aggressive), team advantage (active robot count ratio), adjust formation spacing. Query team stats. Depends on T014, T017, T020, T024, T025. (~150 LOC)
 
-- [x] T027 Victory system in `src/ecs/systems/victorySystem.ts`: detect team elimination (Team.activeRobots = 0), update SimulationState.status to "victory", set winner, start autoRestartCountdown at 5 seconds, handle simultaneous elimination (draw). Query teams and simulation state. Depends on T017, T019, T020. (~130 LOC)
+- [x] T028 Victory system in `src/ecs/systems/victorySystem.ts`: detect team elimination (Team.activeRobots = 0), update SimulationState.status to "victory", set winner, start autoRestartCountdown at 5 seconds, handle simultaneous elimination (draw). Query teams and simulation state. Depends on T017, T019, T020. (~130 LOC)
 
-- [x] T028 [P] Robot rendering component in `src/components/Robot.tsx`: render procedural robot mesh (THREE.BoxGeometry for MVP), apply team color material, display health bar (floating above robot), captain visual indicator (glow/outline), sync position/rotation from ECS. Use useFrame for interpolation only. Depends on T014, T020. (~150 LOC)
+- [x] T029 [P] Robot rendering component in `src/components/Robot.tsx`: render procedural robot mesh (THREE.BoxGeometry for MVP), apply team color material, display health bar (floating above robot), captain visual indicator (glow/outline), sync position/rotation from ECS. Use useFrame for interpolation only. Depends on T014, T020. (~150 LOC)
 
-- [x] T029 [P] Projectile rendering component in `src/components/Projectile.tsx`: render projectile based on weaponType (beam for laser, tracer for gun, exhaust for rocket), apply visual effects, sync position from ECS. Use GPU instancing for multiple projectiles. Depends on T016, T020. (~120 LOC)
+- [x] T030 [P] Projectile rendering component in `src/components/Projectile.tsx`: render projectile based on weaponType (beam for laser, tracer for gun, exhaust for rocket), apply visual effects, sync position from ECS. Use GPU instancing for multiple projectiles. Depends on T016, T020. (~120 LOC)
 
-- [x] T030 [P] Arena rendering component in `src/components/Arena.tsx`: render space-station environment (procedural floor/walls), spawn zone markers, obstacles (cover boxes), setup directional + ambient lighting, configure shadows. Use Arena entity config. Depends on T018, T020. (~180 LOC)
+- [x] T031 [P] Arena rendering component in `src/components/Arena.tsx`: render space-station environment (procedural floor/walls), spawn zone markers, obstacles (cover boxes), setup directional + ambient lighting, configure shadows. Use Arena entity config. Depends on T018, T020. (~180 LOC)
 
-- [x] T031 Camera system - Free camera hook in `src/hooks/useCameraControls.ts`: implement orbit controls (mouse drag), zoom (scroll wheel), pan (right-click drag), keyboard controls (arrow keys for rotate, W/S for zoom, A/D for strafe). Query arena for boundaries. Depends on T018, T020. (~150 LOC)
+- [x] T032 Camera system - Free camera hook in `src/hooks/useCameraControls.ts`: implement orbit controls (mouse drag), zoom (scroll wheel), pan (right-click drag), keyboard controls (arrow keys for rotate, W/S for zoom, A/D for strafe). Query arena for boundaries. Depends on T018, T020. (~150 LOC)
 
-- [x] T032 Camera system - Touch controls hook in `src/hooks/useTouchControls.ts`: implement single finger drag (orbit), pinch-to-zoom, two-finger drag (pan). Integrate with useCameraControls for unified control state. Depends on T031. (~100 LOC)
+- [x] T033 Camera system - Touch controls hook in `src/hooks/useTouchControls.ts`: implement single finger drag (orbit), pinch-to-zoom, two-finger drag (pan). Integrate with useCameraControls for unified control state. Depends on T031. (~100 LOC)
 
-- [x] T033 Camera system - Cinematic mode hook in `src/hooks/useCinematicMode.ts`: implement auto-follow combat hotspots (query robots with lowest health or highest damage), smooth camera transitions, toggleable mode (keyboard "C" or button). Query robots and calculate action centers. Depends on T014, T020, T031. (~120 LOC)
+- [x] T034 Camera system - Cinematic mode hook in `src/hooks/useCinematicMode.ts`: implement auto-follow combat hotspots (query robots with lowest health or highest damage), smooth camera transitions, toggleable mode (keyboard "C" or button). Query robots and calculate action centers. Depends on T014, T020, T031. (~120 LOC)
 
 ### UI Components (2 tasks)
 

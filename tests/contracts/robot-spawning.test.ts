@@ -7,6 +7,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { Team, WeaponType, Vector3 } from '../../src/types';
+import { SPAWN_ZONES, INITIAL_HEALTH, MIN_SPAWN_SPACING } from '../../src/contracts/loadSpawnContract';
 
 // Mock interfaces for entities that don't exist yet
 interface Robot {
@@ -27,6 +28,11 @@ interface World {
 declare function initializeSimulation(): World;
 declare function calculateDistance(a: Vector3, b: Vector3): number;
 
+const redZone = SPAWN_ZONES.red;
+const blueZone = SPAWN_ZONES.blue;
+const initialHealth = INITIAL_HEALTH;
+const minSpacing = MIN_SPAWN_SPACING;
+
 describe('Contract Test: Robot Spawning', () => {
   let world: World;
 
@@ -41,9 +47,9 @@ describe('Contract Test: Robot Spawning', () => {
       expect(redRobots).toHaveLength(10);
     });
 
-    it('should spawn all red robots with 100 health', () => {
+    it('should spawn all red robots with contract-defined health', () => {
       const redRobots = world.entities.filter((r) => r.team === 'red');
-      expect(redRobots.every((r) => r.health === 100)).toBe(true);
+      expect(redRobots.every((r) => r.health === initialHealth)).toBe(true);
     });
 
     it('should spawn red robots on the red side (x < 0)', () => {
@@ -64,9 +70,9 @@ describe('Contract Test: Robot Spawning', () => {
       expect(blueRobots).toHaveLength(10);
     });
 
-    it('should spawn all blue robots with 100 health', () => {
+    it('should spawn all blue robots with contract-defined health', () => {
       const blueRobots = world.entities.filter((r) => r.team === 'blue');
-      expect(blueRobots.every((r) => r.health === 100)).toBe(true);
+      expect(blueRobots.every((r) => r.health === initialHealth)).toBe(true);
     });
 
     it('should spawn blue robots on the blue side (x > 0)', () => {
@@ -100,23 +106,24 @@ describe('Contract Test: Robot Spawning', () => {
   });
 
   describe('Test Case 4: No Spawn Overlap', () => {
-    it('should spawn robots with minimum spacing of 2.0 units', () => {
+    it('should spawn robots with minimum spacing defined by the contract', () => {
       const allRobots = world.entities;
 
       for (let i = 0; i < allRobots.length; i++) {
         for (let j = i + 1; j < allRobots.length; j++) {
           const distance = calculateDistance(allRobots[i].position, allRobots[j].position);
-          expect(distance).toBeGreaterThan(2.0);
+          expect(distance).toBeGreaterThan(minSpacing);
         }
       }
     });
   });
 
   describe('Spawn Zone Validation', () => {
-    it('should spawn red robots within red spawn zone (center: -30, 0, 0, radius: 10)', () => {
+    it('should spawn red robots within red spawn zone (contract)', () => {
+      if (!redZone) throw new Error('Red spawn zone not found in contract');
       const redRobots = world.entities.filter((r) => r.team === 'red');
-      const redCenter = { x: -30, y: 0, z: 0 };
-      const radius = 10;
+      const redCenter = redZone.center;
+      const radius = redZone.radius;
 
       redRobots.forEach((robot) => {
         const distance = calculateDistance(robot.position, redCenter);
@@ -124,10 +131,11 @@ describe('Contract Test: Robot Spawning', () => {
       });
     });
 
-    it('should spawn blue robots within blue spawn zone (center: 30, 0, 0, radius: 10)', () => {
+    it('should spawn blue robots within blue spawn zone (contract)', () => {
+      if (!blueZone) throw new Error('Blue spawn zone not found in contract');
       const blueRobots = world.entities.filter((r) => r.team === 'blue');
-      const blueCenter = { x: 30, y: 0, z: 0 };
-      const radius = 10;
+      const blueCenter = blueZone.center;
+      const radius = blueZone.radius;
 
       blueRobots.forEach((robot) => {
         const distance = calculateDistance(robot.position, blueCenter);
