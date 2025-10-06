@@ -231,6 +231,13 @@ playwright/tests/
    - Use standard REST/GraphQL patterns
    - Output OpenAPI/GraphQL schema to `/contracts/`
 
+> NOTE: Contracts are the canonical source for numeric rules and
+> configuration values used by the feature. For example, the weapon base
+> damage values and matchup multipliers are defined in
+> `specs/001-3d-team-vs/contracts/scoring-contract.md`. Tests and
+> implementations should reference the contract rather than hard-coding
+> numbers in code or documentation.
+
 3. **Generate contract tests** from contracts:
    - One test file per endpoint
    - Assert request/response schemas
@@ -305,7 +312,7 @@ Based on Phase 1 design artifacts, the /tasks command will generate approximatel
 
 **Phase 1: Setup & Infrastructure** (T001-T004)
 - Contract tests written FIRST (all must fail initially per TDD)
-- Tests [P] parallelizable (independent files)
+- Tests [P] parallelizable (all independent files)
 
 **Phase 2: ECS Foundation** (T005-T010)
 - Entity archetypes [P] parallelizable (separate files)

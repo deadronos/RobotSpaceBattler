@@ -36,7 +36,7 @@
 - `position.y` must be >= 0 (ground level or above)
 
 **State Transitions**:
-```
+```text
 Spawned → Active → (hit) → Damaged → (health = 0) → Eliminated
                  ↓
               (elected) → Captain → (captain dies) → Re-election
@@ -45,7 +45,7 @@ Spawned → Active → (hit) → Damaged → (health = 0) → Eliminated
 **AIState Sub-object**:
 - `behaviorMode`: "aggressive" | "defensive" | "retreating"
 - `targetId`: string | null (current enemy target)
-- `coverPositio n`: Vector3 | null (current cover location)
+- `coverPosition`: Vector3 | null (current cover location)
 - `lastFireTime`: number (timestamp of last weapon discharge)
 - `formationOffset`: Vector3 (offset from captain, if following formation)
 
@@ -124,7 +124,7 @@ Spawned → Active → (hit) → Damaged → (health = 0) → Eliminated
 - Age (now - `spawnTime`) must be <= `maxLifetime`
 
 **State Transitions**:
-```
+```text
 Spawned → Flying → (collision) → Impact → Despawn
                  ↓
               (max distance/lifetime) → Despawn
@@ -243,7 +243,7 @@ Spawned → Flying → (collision) → Impact → Despawn
 - `autoRestartCountdown` must be >= 0 and <= 5
 
 **State Transitions**:
-```
+```text
 initializing → running → (all eliminated one side) → victory → (countdown) → initializing
                        ↓                                       ↑
                     paused ----------------------------------------
@@ -265,7 +265,7 @@ initializing → running → (all eliminated one side) → victory → (countdow
 
 ### Robot Spawn Lifecycle
 
-```
+```text
 1. Simulation initializes → Team entities created
 2. Team.spawnZone positions allocated (10 per team)
 3. Robot entities created:
@@ -274,7 +274,13 @@ initializing → running → (all eliminated one side) → victory → (countdow
    - Health = 100
    - WeaponType = randomly assigned (even distribution)
    - IsCaptain = false (initially)
-4. Captain election: Robot with highest health (all 100) gets isCaptain = true
+4. Captain election: Elect the active robot with the highest current health as the team's captain. If
+   multiple robots share the same highest health, apply deterministic tie-breakers in the following order:
+   (a) robot with the higher `stats.kills`; (b) robot with the smallest euclidean distance to the team's
+   spawn center; (c) lexicographically smallest `id` to guarantee a deterministic, reproducible choice. If
+   all candidates are functionally equivalent `id` ordering ensures stability. Set the chosen robot's
+   `isCaptain = true` and update `Team.captainId` accordingly. This election occurs at spawn and
+   immediately whenever the current captain is eliminated.
 5. Physics bodies created in Rapier for each robot
 6. Robot transitions to Active state
 ```
@@ -358,10 +364,13 @@ function enemiesInRange(robot: Robot, range: number) {
 
 ## Data Integrity Rules
 
-1. **Captain Uniqueness**: Each team must have exactly one captain when `activeRobots` > 0
+1. **Captain Uniqueness**: Each team must have exactly one captain when `activeRobots` > 0. Captain
+   selection MUST follow the "Captain Election Rules" (highest health + deterministic tie-breakers).
 2. **Team Balance**: Both teams must start with exactly 10 robots
 3. **Health Bounds**: Robot health must always be 0 <= health <= maxHealth
-4. **Projectile Ownership**: Every projectile must have a valid `ownerId` referencing an existing (or recently eliminated) robot
+4. **Projectile Ownership**: Every projectile MUST have a valid `ownerId` that references an existing robot
+   (or, in the case of immediate cleanup cycles, a recently-eliminated robot record preserved long enough
+   for the projectile collision handling to attribute damage).
 5. **Position Validity**: All entity positions must be within arena boundaries
 6. **Physics Sync**: ECS entity positions must match Rapier physics body positions (sync every frame)
 

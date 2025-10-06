@@ -22,6 +22,7 @@ import type { Robot } from './entities/Robot';
 import { getWeaponData, runWeaponSystem } from './systems/weaponSystem';
 import { cloneVector } from './utils/vector';
 import type { ECSCollections, WorldView } from './simulation/worldTypes';
+import { capturePostBattleStats } from './systems/statsSystem';
 
 export interface SimulationWorld extends WorldView {
   performance: PerformanceController;
@@ -162,10 +163,15 @@ export function stepSimulation(world: SimulationWorld, deltaTime: number): void 
   refreshTeamStats(world, TEAM_LIST);
 
   world.simulation = evaluateVictory({ robots: world.entities, teams: world.teams, simulation: world.simulation });
+  // Capture a persistent snapshot of per-robot and per-team metrics when victory is detected
+  world.simulation = capturePostBattleStats({ robots: world.entities, teams: world.teams, simulation: world.simulation });
   world.simulation = tickVictoryCountdown(
     { robots: world.entities, teams: world.teams, simulation: world.simulation },
     deltaTime,
-    () => resetBattle(world)
+    () => {
+      resetBattle(world);
+      // post-battle stats are captured immediately after victory is evaluated; no-op here.
+    }
   );
 }
 

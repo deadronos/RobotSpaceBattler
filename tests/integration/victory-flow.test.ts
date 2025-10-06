@@ -24,6 +24,11 @@ declare interface SimulationState {
     settingsOpen: boolean;
   };
   pendingTeamConfig: Record<Team, unknown> | null;
+  postBattleStats?: {
+    perRobot: Record<string, { kills: number; damageDealt: number; damageTaken: number; timeAlive: number; shotsFired: number }>;
+    perTeam: Record<Team, { totalKills: number; totalDamageDealt: number; totalDamageTaken: number; averageHealthRemaining: number; weaponDistribution: Record<'laser' | 'gun' | 'rocket', number> }>;
+    computedAt: number;
+  } | null;
 }
 
 declare function initializeSimulation(): SimulationWorld;
@@ -103,6 +108,10 @@ describe('Integration Test: Victory Flow (FR-006)', () => {
 
     openStatsOverlay(world);
     expect(getSimulationState(world).ui.statsOpen).toBe(true);
+    const postStats = getSimulationState(world).postBattleStats;
+    expect(postStats).toBeDefined();
+    expect(Object.keys(postStats!.perTeam).length).toBe(2);
+    expect(Object.keys(postStats!.perRobot).length).toBeGreaterThan(0);
     closeStatsOverlay(world);
     expect(getSimulationState(world).ui.statsOpen).toBe(false);
 

@@ -25,7 +25,7 @@
    → Systems before rendering components
    → Core before integration
    → Everything before polish
-5. Total tasks: 37 numbered tasks (T001-T037)
+5. Total tasks: 38 numbered tasks (T001-T038)
 ```
 
 ## Format: `[ID] [P?] Description`
@@ -80,7 +80,9 @@ Single-project structure (per plan.md):
 
 - [x] T008 [P] Contract test for robot spawning (FR-001) in `tests/contracts/robot-spawning.test.ts`: verify exactly 10 red robots, 10 blue robots, one captain per team, designated spawn zones, no position overlaps, balanced weapon distribution, all robots start with 100 health
 
-- [x] T009 [P] Contract test for weapon balance (FR-003) in `tests/contracts/weapon-balance.test.ts`: verify all 9 matchup scenarios (Laser vs Gun = 1.5x, Gun vs Rocket = 1.5x, Rocket vs Laser = 1.5x, opposites = 0.67x, same = 1.0x), base damage values (Laser 15, Gun 20, Rocket 30), no zero/negative damage
+- [x] T009 [P] Contract test for weapon balance (FR-003) in `tests/contracts/weapon-balance.test.ts`:
+   - Verify all 9 matchup scenarios and damage calculations per `contracts/scoring-contract.md`.
+   - Ensure no zero/negative damage.
 
 ### Integration Tests (4 tasks)
 
@@ -128,12 +130,6 @@ Single-project structure (per plan.md):
 
 - [x] T027 Victory system in `src/ecs/systems/victorySystem.ts`: detect team elimination (Team.activeRobots = 0), update SimulationState.status to "victory", set winner, start autoRestartCountdown at 5 seconds, handle simultaneous elimination (draw). Query teams and simulation state. Depends on T017, T019, T020. (~130 LOC)
 
----
-
-## Phase 3.4: Rendering Components
-
-### r3f 3D Components (6 tasks - can parallelize after core)
-
 - [x] T028 [P] Robot rendering component in `src/components/Robot.tsx`: render procedural robot mesh (THREE.BoxGeometry for MVP), apply team color material, display health bar (floating above robot), captain visual indicator (glow/outline), sync position/rotation from ECS. Use useFrame for interpolation only. Depends on T014, T020. (~150 LOC)
 
 - [x] T029 [P] Projectile rendering component in `src/components/Projectile.tsx`: render projectile based on weaponType (beam for laser, tracer for gun, exhaust for rocket), apply visual effects, sync position from ECS. Use GPU instancing for multiple projectiles. Depends on T016, T020. (~120 LOC)
@@ -162,6 +158,11 @@ Single-project structure (per plan.md):
 
 - [x] T037 Performance management system in `src/systems/performanceManager.ts`: monitor FPS (rolling average), activate quality scaling below 30 fps (disable shadows, reduce particles, adjust draw distance), reduce timeScale when critically low FPS, update SimulationState.performanceStats, display warning overlay. Depends on T019, T020, T035. (~200 LOC)
 
+- [ ] T038 Stats aggregation system in `src/ecs/systems/statsSystem.ts`: compute and persist per-robot (`RobotStats`) and per-team (`TeamStats`) metrics at the end of each match (victory or draw). Provide helpers to snapshot stats into `SimulationState.postBattleStats`, and ensure the victory UI (`T034`) can read a stable post-battle snapshot after entities are reset. Add unit tests in `tests/unit/systems/statsSystem.test.ts` and integration assertions in `tests/integration/victory-flow.test.ts`. Maps to: FR-019 (post-battle statistics).
+
+  - Files: `src/ecs/systems/statsSystem.ts`, `src/ecs/entities/SimulationState.ts` (new `postBattleStats` field), `tests/unit/systems/statsSystem.test.ts`, `tests/integration/victory-flow.test.ts`
+  - Acceptance: After a match ends, `SimulationState.postBattleStats` is defined with entries for both teams and all robots; the Victory UI can render metrics without querying live entities.
+
 ---
 
 ## Dependencies
@@ -169,7 +170,7 @@ Single-project structure (per plan.md):
 **Critical Path**:
 ```
 Setup (T001-T007) → Tests (T008-T013) → Entity Models (T014-T019) → ECS World (T020) →
-Core Systems (T021-T027) → Rendering (T028-T035) → Integration (T036-T037)
+Core Systems (T021-T027) → Rendering (T028-T035) → Integration (T036-T037) → Stats System (T038)
 ```
 
 **Parallel Execution Groups**:
@@ -286,7 +287,7 @@ Task: "Camera system - Free camera hook in src/hooks/useCameraControls.ts"
 
 ---
 
-**Total Tasks**: 37
+**Total Tasks**: 38
 **Estimated Completion**: 5-7 sprints (assuming 5-8 tasks per sprint)
 **Critical Tests**: 6 (must pass before feature considered complete)
 

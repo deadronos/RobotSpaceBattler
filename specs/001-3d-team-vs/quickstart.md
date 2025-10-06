@@ -84,16 +84,15 @@ npx vitest tests/contracts/robot-spawning.test.ts
 # Run weapon balance contract test
 npx vitest tests/contracts/weapon-balance.test.ts
 
-# Expected output:
-# ✓ Laser vs Gun deals 1.5x damage (advantage)
-# ✓ Gun vs Rocket deals 1.5x damage (advantage)
-# ✓ Rocket vs Laser deals 1.5x damage (advantage)
-# ✓ Gun vs Laser deals 0.67x damage (disadvantage)
-# ✓ Rocket vs Gun deals 0.67x damage (disadvantage)
-# ✓ Laser vs Rocket deals 0.67x damage (disadvantage)
-# ✓ Same weapon type deals 1.0x damage (neutral)
-# ✓ All damage values are positive
-# ✓ Validates all 9 matchup scenarios
+# NOTE: Canonical base damage values and multipliers are defined in the
+# scoring contract at
+# `specs/001-3d-team-vs/contracts/scoring-contract.md`. The contract is the
+# source of truth; tests and implementations should reference it rather than
+# duplicating numeric values in docs.
+# Expected output (validate per scoring contract):
+# ✓ All 9 matchup scenarios validate the multipliers defined in the contract
+# ✓ Multipliers (advantage/disadvantage/neutral) match the contract
+# ✓ All damage values computed from the canonical base damage are positive
 
 # All tests should PASS
 ```

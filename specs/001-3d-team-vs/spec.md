@@ -16,13 +16,20 @@
 > the 10 vs 10 spawn configuration. References elsewhere have been
 > removed to avoid duplication.
 
-- **FR-002**: System MUST provide autonomous AI control for all robots
-  with multi-layered behavior: (a) individual tactical AI (cover-seeking,
-  peek-and-shoot, retreat when low health); (b) team captain system with
-  auto-assignment and reassignment on captain death; (c) captain-level
-  coordination for formation maintenance and priority target selection; (d)
-  adaptive strategy switching based on health and team advantage
-  conditions.
+- **FR-002**: System MUST provide autonomous AI control for all robots with multi-layered
+  behavior: (a) individual tactical AI (cover-seeking, peek-and-shoot, retreat when low
+  health); (b) team captain system with auto-assignment and reassignment on captain
+  death — captain election MUST be deterministic and follow the algorithm defined in the
+  project data model (see "Captain Election Decision" below). At spawn and whenever
+  reassignment is required, elect the active robot with the highest current health as
+  captain. If multiple robots share the same highest health, apply deterministic
+  tie-breakers in the following order: (1) robot with more `stats.kills`; (2) robot with the
+  smallest euclidean distance to the team's spawn center; (3) lexicographically smallest
+  robot `id` to guarantee a stable, reproducible selection. Re-election MUST occur
+  immediately when the current captain is eliminated. If no active robots remain the
+  team's `captainId` MUST be null. (c) captain-level coordination for formation
+  maintenance and priority target selection; (d) adaptive strategy switching based on
+  health and team advantage conditions.
 
 - **FR-003**: System MUST support three weapon types with
   rock-paper-scissors balance: Laser beats Gun, Gun beats Rocket, Rocket
@@ -206,6 +213,16 @@
 
 - **Simulation State**: Overall game state including running/paused/completed
   status, winner determination, frame time, entity registry.
+
+### Captain Election Decision
+
+To avoid ambiguity in tests and implementation, the captain election algorithm is a
+project-level decision and is REQUIRED to be implemented exactly as specified above.
+Rationale: choosing the highest-health robot promotes early survival of the captain
+role; deterministic tie-breakers ensure reproducible simulation runs and deterministic
+contract/integration tests. This decision is referenced by contract tests and by the
+spawn and captain AI systems (e.g., `src/ecs/systems/spawnSystem.ts` and
+`src/ecs/systems/ai/captainAI.ts`).
 
 ## Implementation Constraints
 

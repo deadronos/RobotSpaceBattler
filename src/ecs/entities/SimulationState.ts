@@ -18,6 +18,7 @@ export interface SimulationState {
   performanceStats: PerformanceStats;
   pendingTeamConfig: Record<Team, unknown> | null;
   ui: SimulationUIState;
+  postBattleStats?: PostBattleStats | null;
 }
 
 const INITIAL_PERFORMANCE: PerformanceStats = {
@@ -159,5 +160,26 @@ export function setTimeScale(state: SimulationState, timeScale: number): Simulat
   return {
     ...state,
     timeScale,
+  };
+}
+
+// Add snapshot types for post-battle statistics and helpers to set/clear them.
+export interface PostBattleStats {
+  perRobot: Record<string, import('../../types').RobotStats>;
+  perTeam: Record<import('../../types').Team, import('../entities/Team').TeamStats>;
+  computedAt: number;
+}
+
+export function setPostBattleStats(state: SimulationState, stats: PostBattleStats): SimulationState {
+  return {
+    ...state,
+    postBattleStats: stats,
+  };
+}
+
+export function clearPostBattleStats(state: SimulationState): SimulationState {
+  return {
+    ...state,
+    postBattleStats: null,
   };
 }
