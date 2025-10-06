@@ -84,11 +84,11 @@ Single-project structure (per plan.md):
 
 ### Entity Models (6 tasks - can parallelize)
 
-- [ ] T014 [P] Robot entity model in `src/ecs/entities/Robot.ts`: define Robot archetype with id, team, position, rotation, velocity, health, maxHealth, weaponType, isCaptain, aiState (behaviorMode, targetId, coverPosition, lastFireTime, formationOffset), stats (kills, damageDealt, damageTaken, timeAlive, shotsFired). Validate health bounds, team values, captain uniqueness. Export type and validation functions. (~120 LOC)
+- [x] T014 [P] Robot entity model in `src/ecs/entities/Robot.ts`: define Robot archetype with id, team, position, rotation, velocity, health, maxHealth, weaponType, isCaptain, aiState (behaviorMode, targetId, coverPosition, lastFireTime, formationOffset), stats (kills, damageDealt, damageTaken, timeAlive, shotsFired). Validate health bounds, team values, captain uniqueness. Export type and validation functions. (~120 LOC)
 
 - [ ] T015 [P] Weapon entity model in `src/ecs/entities/Weapon.ts`: define Weapon config with type, baseDamage, fireRate, projectileSpeed, effectiveRange, visualEffect. Include type-specific properties table and damage multiplier matrix (rock-paper-scissors). Export WeaponConfig type and getDamageMultiplier() function. (~80 LOC)
 
-- [ ] T016 [P] Projectile entity model in `src/ecs/entities/Projectile.ts`: define Projectile archetype with id, ownerId, weaponType, position, velocity, damage, distanceTraveled, maxDistance, spawnTime, maxLifetime. Include despawn condition checks. Export type and shouldDespawn() function. (~90 LOC)
+- [x] T016 [P] Projectile entity model in `src/ecs/entities/Projectile.ts`: define Projectile archetype with id, ownerId, weaponType, position, velocity, damage, distanceTraveled, maxDistance, spawnTime, maxLifetime. Include despawn condition checks. Export type and shouldDespawn() function. (~90 LOC)
 
 - [ ] T017 [P] Team entity model in `src/ecs/entities/Team.ts`: define Team archetype with name, activeRobots, eliminatedRobots, captainId, spawnZone (center, radius, spawnPoints), aggregateStats (totalKills, totalDamageDealt, totalDamageTaken, averageHealthRemaining, weaponDistribution). Export type and victory condition check. (~110 LOC)
 
@@ -120,9 +120,9 @@ Single-project structure (per plan.md):
 
 ### r3f 3D Components (6 tasks - can parallelize after core)
 
-- [ ] T028 [P] Robot rendering component in `src/components/Robot.tsx`: render procedural robot mesh (THREE.BoxGeometry for MVP), apply team color material, display health bar (floating above robot), captain visual indicator (glow/outline), sync position/rotation from ECS. Use useFrame for interpolation only. Depends on T014, T020. (~150 LOC)
+- [x] T028 [P] Robot rendering component in `src/components/Robot.tsx`: render procedural robot mesh (THREE.BoxGeometry for MVP), apply team color material, display health bar (floating above robot), captain visual indicator (glow/outline), sync position/rotation from ECS. Use useFrame for interpolation only. Depends on T014, T020. (~150 LOC)
 
-- [ ] T029 [P] Projectile rendering component in `src/components/Projectile.tsx`: render projectile based on weaponType (beam for laser, tracer for gun, exhaust for rocket), apply visual effects, sync position from ECS. Use GPU instancing for multiple projectiles. Depends on T016, T020. (~120 LOC)
+- [x] T029 [P] Projectile rendering component in `src/components/Projectile.tsx`: render projectile based on weaponType (beam for laser, tracer for gun, exhaust for rocket), apply visual effects, sync position from ECS. Use GPU instancing for multiple projectiles. Depends on T016, T020. (~120 LOC)
 
 - [ ] T030 [P] Arena rendering component in `src/components/Arena.tsx`: render space-station environment (procedural floor/walls), spawn zone markers, obstacles (cover boxes), setup directional + ambient lighting, configure shadows. Use Arena entity config. Depends on T018, T020. (~180 LOC)
 
