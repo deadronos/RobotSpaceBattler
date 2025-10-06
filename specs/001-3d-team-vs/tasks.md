@@ -84,13 +84,13 @@ Single-project structure (per plan.md):
 
 ### Integration Tests (4 tasks)
 
-- [ ] T010 [P] Integration test for AI behavior (FR-002) in `tests/integration/ai-behavior.test.ts`: verify autonomous target selection, movement toward enemies, weapon firing in range, cover-seeking when damaged, low-health retreat, captain coordination, formation maintenance, priority target calls, adaptive strategy switching
+- [x] T010 [P] Integration test for AI behavior (FR-002) in `tests/integration/ai-behavior.test.ts`: verify autonomous target selection, movement toward enemies, weapon firing in range, cover-seeking when damaged, low-health retreat, captain coordination, formation maintenance, priority target calls, adaptive strategy switching
 
-- [ ] T011 [P] Integration test for victory flow (FR-006) in `tests/integration/victory-flow.test.ts`: verify team elimination detection, victory screen display with winner, 5-second countdown timer, pause/reset countdown controls, stats button opens post-battle metrics, settings button allows team composition changes, auto-restart after countdown
+- [x] T011 [P] Integration test for victory flow (FR-006) in `tests/integration/victory-flow.test.ts`: verify team elimination detection, victory screen display with winner, 5-second countdown timer, pause/reset countdown controls, stats button opens post-battle metrics, settings button allows team composition changes, auto-restart after countdown
 
-- [ ] T012 [P] Integration test for physics sync (FR-012) in `tests/integration/physics-sync.test.ts`: verify ECS positions sync with Rapier physics every frame, projectile trajectories follow physics, collisions trigger damage events, eliminated robots removed from physics world, no rendering/physics desync
+- [x] T012 [P] Integration test for physics sync (FR-012) in `tests/integration/physics-sync.test.ts`: verify ECS positions sync with Rapier physics every frame, projectile trajectories follow physics, collisions trigger damage events, eliminated robots removed from physics world, no rendering/physics desync
 
-- [ ] T013 [P] Integration test for performance (FR-010, FR-021-023) in `tests/integration/performance.test.ts`: verify 60 fps maintained with 20 robots + shadows, quality scaling activates below 30 fps, shadows disabled when quality scaling active, time scale reduces when FPS critically low, warning overlay displays, user can disable auto-scaling
+- [x] T013 [P] Integration test for performance (FR-010, FR-021-023) in `tests/integration/performance.test.ts`: verify 60 fps maintained with 20 robots + shadows, quality scaling activates below 30 fps, shadows disabled when quality scaling active, time scale reduces when FPS critically low, warning overlay displays, user can disable auto-scaling
 
 ---
 
@@ -100,15 +100,15 @@ Single-project structure (per plan.md):
 
 - [x] T014 [P] Robot entity model in `src/ecs/entities/Robot.ts`: define Robot archetype with id, team, position, rotation, velocity, health, maxHealth, weaponType, isCaptain, aiState (behaviorMode, targetId, coverPosition, lastFireTime, formationOffset), stats (kills, damageDealt, damageTaken, timeAlive, shotsFired). Validate health bounds, team values, captain uniqueness. Export type and validation functions. (~120 LOC)
 
-- [ ] T015 [P] Weapon entity model in `src/ecs/entities/Weapon.ts`: define Weapon config with type, baseDamage, fireRate, projectileSpeed, effectiveRange, visualEffect. Include type-specific properties table and damage multiplier matrix (rock-paper-scissors). Export WeaponConfig type and getDamageMultiplier() function. (~80 LOC)
+- [x] T015 [P] Weapon entity model in `src/ecs/entities/Weapon.ts`: define Weapon config with type, baseDamage, fireRate, projectileSpeed, effectiveRange, visualEffect. Include type-specific properties table and damage multiplier matrix (rock-paper-scissors). Export WeaponConfig type and getDamageMultiplier() function. (~80 LOC)
 
 - [x] T016 [P] Projectile entity model in `src/ecs/entities/Projectile.ts`: define Projectile archetype with id, ownerId, weaponType, position, velocity, damage, distanceTraveled, maxDistance, spawnTime, maxLifetime. Include despawn condition checks. Export type and shouldDespawn() function. (~90 LOC)
 
-- [ ] T017 [P] Team entity model in `src/ecs/entities/Team.ts`: define Team archetype with name, activeRobots, eliminatedRobots, captainId, spawnZone (center, radius, spawnPoints), aggregateStats (totalKills, totalDamageDealt, totalDamageTaken, averageHealthRemaining, weaponDistribution). Export type and victory condition check. (~110 LOC)
+- [x] T017 [P] Team entity model in `src/ecs/entities/Team.ts`: define Team archetype with name, activeRobots, eliminatedRobots, captainId, spawnZone (center, radius, spawnPoints), aggregateStats (totalKills, totalDamageDealt, totalDamageTaken, averageHealthRemaining, weaponDistribution). Export type and victory condition check. (~110 LOC)
 
-- [ ] T018 [P] Arena entity model in `src/ecs/entities/Arena.ts`: define Arena config with id, dimensions, spawnZones (2 zones with 10 spawn points each), obstacles (position, dimensions, isCover), lightingConfig (ambient/directional colors, intensities, shadow settings), boundaries. Export ArenaConfig type and spawn zone definitions. (~100 LOC)
+- [x] T018 [P] Arena entity model in `src/ecs/entities/Arena.ts`: define Arena config with id, dimensions, spawnZones (2 zones with 10 spawn points each), obstacles (position, dimensions, isCover), lightingConfig (ambient/directional colors, intensities, shadow settings), boundaries. Export ArenaConfig type and spawn zone definitions. (~100 LOC)
 
-- [ ] T019 [P] SimulationState entity model in `src/ecs/entities/SimulationState.ts`: define SimulationState with status (initializing|running|paused|victory|simultaneous-elimination), winner, frameTime, totalFrames, simulationTime, timeScale, victoryScreenStartTime, autoRestartCountdown, performanceStats (currentFPS, averageFPS, qualityScalingActive). Export type and state transition helpers. (~130 LOC)
+- [x] T019 [P] SimulationState entity model in `src/ecs/entities/SimulationState.ts`: define SimulationState with status (initializing|running|paused|victory|simultaneous-elimination), winner, frameTime, totalFrames, simulationTime, timeScale, victoryScreenStartTime, autoRestartCountdown, performanceStats (currentFPS, averageFPS, qualityScalingActive). Export type and state transition helpers. (~130 LOC)
 
 ### ECS Systems (8 tasks - sequential dependencies)
 
