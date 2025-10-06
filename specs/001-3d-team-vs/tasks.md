@@ -138,19 +138,19 @@ Single-project structure (per plan.md):
 
 - [x] T029 [P] Projectile rendering component in `src/components/Projectile.tsx`: render projectile based on weaponType (beam for laser, tracer for gun, exhaust for rocket), apply visual effects, sync position from ECS. Use GPU instancing for multiple projectiles. Depends on T016, T020. (~120 LOC)
 
-- [ ] T030 [P] Arena rendering component in `src/components/Arena.tsx`: render space-station environment (procedural floor/walls), spawn zone markers, obstacles (cover boxes), setup directional + ambient lighting, configure shadows. Use Arena entity config. Depends on T018, T020. (~180 LOC)
+- [x] T030 [P] Arena rendering component in `src/components/Arena.tsx`: render space-station environment (procedural floor/walls), spawn zone markers, obstacles (cover boxes), setup directional + ambient lighting, configure shadows. Use Arena entity config. Depends on T018, T020. (~180 LOC)
 
 - [ ] T031 Camera system - Free camera hook in `src/hooks/useCameraControls.ts`: implement orbit controls (mouse drag), zoom (scroll wheel), pan (right-click drag), keyboard controls (arrow keys for rotate, W/S for zoom, A/D for strafe). Query arena for boundaries. Depends on T018, T020. (~150 LOC)
 
 - [ ] T032 Camera system - Touch controls hook in `src/hooks/useTouchControls.ts`: implement single finger drag (orbit), pinch-to-zoom, two-finger drag (pan). Integrate with useCameraControls for unified control state. Depends on T031. (~100 LOC)
 
-- [ ] T033 Camera system - Cinematic mode hook in `src/hooks/useCinematicMode.ts`: implement auto-follow combat hotspots (query robots with lowest health or highest damage), smooth camera transitions, toggleable mode (keyboard "C" or button). Query robots and calculate action centers. Depends on T014, T020, T031. (~120 LOC)
+- [x] T033 Camera system - Cinematic mode hook in `src/hooks/useCinematicMode.ts`: implement auto-follow combat hotspots (query robots with lowest health or highest damage), smooth camera transitions, toggleable mode (keyboard "C" or button). Query robots and calculate action centers. Depends on T014, T020, T031. (~120 LOC)
 
 ### UI Components (2 tasks)
 
-- [ ] T034 Victory screen component in `src/components/ui/VictoryScreen.tsx`: display winner (red/blue/draw), 5-second countdown timer, "Stats" button to open post-battle metrics modal, pause/reset countdown controls, settings icon for team composition changes. Use Zustand for UI state. Depends on T019, T020. (~140 LOC)
+- [x] T034 Victory screen component in `src/components/ui/VictoryScreen.tsx`: display winner (red/blue/draw), 5-second countdown timer, "Stats" button to open post-battle metrics modal, pause/reset countdown controls, settings icon for team composition changes. Use Zustand for UI state. Depends on T019, T020. (~140 LOC)
 
-- [ ] T035 Performance overlay component in `src/components/ui/PerformanceOverlay.tsx`: display FPS counter, warning message when quality scaling active, toggleable auto-scaling checkbox. Read SimulationState.performanceStats. Use Zustand for visibility toggle. Depends on T019, T020. (~90 LOC)
+- [x] T035 Performance overlay component in `src/components/ui/PerformanceOverlay.tsx`: display FPS counter, warning message when quality scaling active, toggleable auto-scaling checkbox. Read SimulationState.performanceStats. Use Zustand for visibility toggle. Depends on T019, T020. (~90 LOC)
 
 ---
 
