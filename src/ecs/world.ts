@@ -57,6 +57,7 @@ import {
   tickVictoryCountdown,
 } from "./simulation/victory";
 import type { ECSCollections, WorldView } from "./simulation/worldTypes";
+import { reassignCaptain } from "./systems/ai/captainAI";
 import {
   applyDamage,
   cleanupProjectiles,
@@ -408,4 +409,62 @@ export function getPhysicsSnapshot(world: SimulationWorld) {
 
 export function getRobotById(world: SimulationWorld, robotId: string) {
   return world.entities.find((robot) => robot.id === robotId);
+}
+
+function findRobot(world: SimulationWorld, robotId: string) {
+  return world.entities.find((robot) => robot.id === robotId);
+}
+
+function refreshTeam(world: SimulationWorld, team: Team): void {
+  refreshTeamStats(world, [team]);
+}
+
+export function setRobotHealth(
+  world: SimulationWorld,
+  robotId: string,
+  health: number,
+): void {
+  const robot = findRobot(world, robotId);
+  if (!robot) {
+    return;
+  }
+  const clamped = Math.max(0, Math.min(robot.maxHealth, health));
+  robot.health = clamped;
+  if (clamped <= 0) {
+    robot.isCaptain = false;
+  }
+  refreshTeam(world, robot.team);
+}
+
+export function setRobotKills(
+  world: SimulationWorld,
+  robotId: string,
+  kills: number,
+): void {
+  const robot = findRobot(world, robotId);
+  if (!robot) {
+    return;
+  }
+  robot.stats.kills = Math.max(0, kills);
+}
+
+export function setRobotPosition(
+  world: SimulationWorld,
+  robotId: string,
+  position: Vector3,
+): void {
+  const robot = findRobot(world, robotId);
+  if (!robot) {
+    return;
+  }
+  robot.position = cloneVector(position);
+  setRobotBodyPosition(world.physics, robot, robot.position);
+}
+
+export function triggerCaptainReelection(
+  world: SimulationWorld,
+  team: Team,
+): void {
+  reassignCaptain(world, team);
+  refreshTeam(world, team);
 }

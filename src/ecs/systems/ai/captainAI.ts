@@ -1,7 +1,7 @@
 import type { Team } from "../../../types";
 import { lerpVector } from "../../../utils/math";
 import type { Robot } from "../../entities/Robot";
-import { updateTeamCaptain } from "../../entities/Team";
+import { getTeamCenter, updateTeamCaptain } from "../../entities/Team";
 import { setRobotBodyPosition } from "../../simulation/physics";
 import type { WorldView } from "../../simulation/worldTypes";
 import {
@@ -77,14 +77,31 @@ export function maintainFormations(world: WorldView, deltaTime: number): void {
 }
 
 export function reassignCaptain(world: WorldView, team: Team): void {
-  const candidates = getAliveRobots(world, team).sort(
-    (a, b) => b.health - a.health,
-  );
-  const nextCaptain = candidates[0];
+  const spawnCenter = getTeamCenter(world.teams[team]);
+  const candidates = getAliveRobots(world, team).sort((a, b) => {
+    if (b.health !== a.health) {
+      return b.health - a.health;
+    }
 
-  candidates.forEach((robot) => {
-    robot.isCaptain = !!nextCaptain && robot.id === nextCaptain.id;
+    if (b.stats.kills !== a.stats.kills) {
+      return b.stats.kills - a.stats.kills;
+    }
+
+    const distanceA = distance(a.position, spawnCenter);
+    const distanceB = distance(b.position, spawnCenter);
+    if (distanceA !== distanceB) {
+      return distanceA - distanceB;
+    }
+
+    return a.id.localeCompare(b.id);
   });
+  const nextCaptain = candidates[0] ?? null;
+
+  world.entities
+    .filter((robot) => robot.team === team)
+    .forEach((robot) => {
+      robot.isCaptain = !!nextCaptain && robot.id === nextCaptain.id;
+    });
 
   const updatedTeam = updateTeamCaptain(
     world.teams[team],

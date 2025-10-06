@@ -109,9 +109,11 @@ describe('Contract Test: Captain Election (FR-002)', () => {
     const rA = blueRobots[4];
     const rB = blueRobots[5];
 
-    // Equalize health and kills
-    setRobotHealth(world, rA.id, 90);
-    setRobotHealth(world, rB.id, 90);
+    // Equalize health to keep only two robots alive as tie candidates
+    blueRobots.forEach((robot) => {
+      const targetHealth = robot.id === rA.id || robot.id === rB.id ? 90 : 0;
+      setRobotHealth(world, robot.id, targetHealth);
+    });
     setRobotKills(world, rA.id, 0);
     setRobotKills(world, rB.id, 0);
 

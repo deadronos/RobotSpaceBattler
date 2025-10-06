@@ -32,6 +32,10 @@ import {
   spawnPhysicsProjectile,
   closeSettingsOverlay,
   closeStatsOverlay,
+  setRobotHealth,
+  setRobotKills,
+  setRobotPosition,
+  triggerCaptainReelection,
 } from '../src/ecs/world';
 
 declare global {
@@ -85,6 +89,14 @@ declare global {
   var getPhysicsSnapshot: typeof getPhysicsSnapshot;
   // eslint-disable-next-line no-var
   var getRobotById: typeof getRobotById;
+  // eslint-disable-next-line no-var
+  var setRobotHealth: typeof setRobotHealth;
+  // eslint-disable-next-line no-var
+  var setRobotKills: typeof setRobotKills;
+  // eslint-disable-next-line no-var
+  var setRobotPosition: typeof setRobotPosition;
+  // eslint-disable-next-line no-var
+  var triggerCaptainReelection: typeof triggerCaptainReelection;
 }
 
 globalThis.initializeSimulation = initializeSimulation;
@@ -112,6 +124,10 @@ globalThis.applyPhysicsImpulse = applyPhysicsImpulse;
 globalThis.spawnPhysicsProjectile = spawnPhysicsProjectile;
 globalThis.getPhysicsSnapshot = getPhysicsSnapshot;
 globalThis.getRobotById = getRobotById;
+globalThis.setRobotHealth = setRobotHealth;
+globalThis.setRobotKills = setRobotKills;
+globalThis.setRobotPosition = setRobotPosition;
+globalThis.triggerCaptainReelection = triggerCaptainReelection;
 
 // Suppress console warnings during tests (optional)
 // global.console = {

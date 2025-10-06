@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 
 import { useSimulationWorld } from "../../ecs/world";
 import { useUIStore } from "../../store/uiStore";
+import type { RobotStats } from "../../types";
 
 export function StatsModal() {
   const open = useUIStore((s) => s.statsOpen);
@@ -9,8 +10,10 @@ export function StatsModal() {
   const world = useSimulationWorld();
   const snapshot = world?.simulation?.postBattleStats ?? null;
 
-  const robotsSorted = useMemo(() => {
-    if (!snapshot) return [] as [string, any][];
+  const robotsSorted = useMemo<Array<[string, RobotStats]>>(() => {
+    if (!snapshot) {
+      return [];
+    }
     return Object.entries(snapshot.perRobot).sort(
       ([, a], [, b]) => b.kills - a.kills,
     );

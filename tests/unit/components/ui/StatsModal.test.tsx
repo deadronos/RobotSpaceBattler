@@ -1,13 +1,18 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 
 import { useUIStore } from '../../../../src/store/uiStore';
 import * as worldModule from '../../../../src/ecs/world';
 
 describe('StatsModal', () => {
+  let useWorldSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     // Reset zustand UI store
     useUIStore.getState().reset();
+    useWorldSpy = vi
+      .spyOn(worldModule, 'useSimulationWorld')
+      .mockImplementation(() => ({ simulation: { postBattleStats: null } } as any));
   });
 
   afterEach(() => {
@@ -34,7 +39,7 @@ describe('StatsModal', () => {
     } as any;
 
     // Mock the world hook to return our snapshot
-    vi.spyOn(worldModule, 'useSimulationWorld').mockImplementation(() => ({ simulation: { postBattleStats: snapshot } } as any));
+    useWorldSpy.mockImplementation(() => ({ simulation: { postBattleStats: snapshot } } as any));
 
     // Open the modal via zustand
     useUIStore.getState().setStatsOpen(true);
@@ -44,9 +49,11 @@ describe('StatsModal', () => {
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     // Team table should show team red with kills
-    expect(screen.getByText(/Team/)).toBeInTheDocument();
-    expect(screen.getByText(/red/)).toBeInTheDocument();
-    expect(screen.getByText(/2/)).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Team' })).toBeInTheDocument();
+    const redCell = screen.getByRole('cell', { name: 'red' });
+    const redRow = redCell.closest('tr');
+    expect(redRow).not.toBeNull();
+    expect(within(redRow as HTMLTableRowElement).getByRole('cell', { name: '2' })).toBeInTheDocument();
     // Robot row should show robot id r1
     expect(screen.getByText(/r1/)).toBeInTheDocument();
   });
