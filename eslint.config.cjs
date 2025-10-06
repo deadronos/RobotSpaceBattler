@@ -81,6 +81,8 @@ module.exports = [
     rules: Object.assign({}, (tsRecommended && tsRecommended.rules) ? tsRecommended.rules : {}, {
       // Typescript handles undefined vars at type level; disable core no-undef for TS to avoid false positives
       'no-undef': 'off',
+      '@typescript-eslint/no-var-requires': 'error',
+
       // react hooks plugin rules
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
@@ -166,5 +168,23 @@ module.exports = [
       // keep tests readable; prefer warnings for stylistic rules in tests
       'vitest/expect-expect': 'warn'
     }
-  }
+  },
+
+  // add JS-specific rules to forbid CommonJS patterns in .js files (enforced across the repo)
+  {
+    files: ['**/*.js', '**/*.jsx', 'scripts/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.name='require']",
+          message: 'Use ESM `import` instead of `require()` in .js files (or rename the file to .cjs if CommonJS is required).'
+        },
+        {
+          selector: "AssignmentExpression[left.object.name='module'][left.property.name='exports']",
+          message: 'Use ESM `export` syntax instead of `module.exports` in .js files (or rename the file to .cjs if CommonJS is required).'
+        }
+      ]
+    }
+  },
 ]
