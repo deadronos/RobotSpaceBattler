@@ -7,8 +7,8 @@
 import React from 'react';
 import { act } from 'react-dom/test-utils';
 // Ensure React.act exists and assign before other testing imports to satisfy legacy code paths
-(React as any).act = act;
 (globalThis as any).act = act;
+(React as any).act = act;
 
 import '@testing-library/jest-dom';
 
