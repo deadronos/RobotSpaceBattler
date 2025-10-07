@@ -7,9 +7,11 @@
 import '@testing-library/jest-dom';
 
 import React from 'react';
-import { act } from 'react';
-// Ensure React.act exists for libraries expecting it (compat shim for testing libs)
-(React as any).act = act;
+import { act } from 'react-dom/test-utils';
+// Expose a global `act` implementation for test-runner compat. Avoid assigning React.act to prevent
+// recursive call cycles between react-dom and react act implementations.
+// Some libraries look for a global `act` function; provide it here.
+(globalThis as any).act = act;
 
 import {
   calculateDistance,
