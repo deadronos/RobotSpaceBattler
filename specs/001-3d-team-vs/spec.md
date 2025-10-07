@@ -6,7 +6,9 @@
 
 ## Requirements
 
+
 ### Functional Requirements
+
 
 - **FR-001**: System MUST spawn exactly 10 red team robots and 10 blue
   team robots at simulation start in designated starting zones.
@@ -88,7 +90,9 @@
   - Dev server (`npm run dev`) must start and a Playwright smoke test can connect and detect a `canvas` element and `#status` text.
   - These files are intentionally minimal; they do not need full game logic but must allow tests and CI to import/run the app without missing-import runtime errors.
 
+
 ### Performance & Scale
+
 
 - **FR-016**: System MUST handle multiple active projectiles (lasers,
   bullets, rockets) without significant frame rate degradation.
@@ -119,7 +123,9 @@
 - **FR-023**: System MUST display a non-intrusive warning overlay when
   performance degradation is detected or quality scaling is active.
 
+
 ### Key Entities
+
 
 - **Robot**: Autonomous humanoid combatant with team affiliation
   (red/blue), health/damage state, position, orientation, weapon type, AI
@@ -148,85 +154,9 @@
   victory countdown and manual restart/team reconfiguration from the
   victory screen.
 
-### Performance & Scale
-
- 
-
-- **FR-016**: System MUST handle multiple active projectiles (lasers, bullets, rockets) without significant frame rate degradation.
-
-
-  dropping below 30 fps on the target platform (Chrome 120+, Edge 120+).
-
-- **FR-017**: System MUST render shadows and lighting effects without
-  dropping below 30 fps on the target platform (Chrome 120+, Edge 120+).
-
-- **FR-018**: System MUST support touch input for camera controls on mobile/tablet devices, including pinch-to-zoom gestures.
-
-
-  including per-robot kills, damage dealt, damage taken, time survived,
-  and team-level aggregate metrics accessible via the victory screen
-  "Stats" button.
-
-- **FR-019**: System MUST track and display post-battle statistics
-  including per-robot kills, damage dealt, damage taken, time survived,
-  and team-level aggregate metrics accessible via the victory screen
-  "Stats" button.
-
-
-  robots (e.g., visual indicator, different material/glow) and display
-  captain reassignment when the current captain is eliminated.
-
-- **FR-020**: System MUST visually distinguish team captains from regular
-  robots (e.g., visual indicator, different material/glow) and display
-  captain reassignment when the current captain is eliminated.
-
-
-  reduces shadow quality, particle effects, and draw distance when frame
-  rate drops below 30 fps.
-
-- **FR-021**: System MUST implement toggleable automatic quality scaling that
-  reduces shadow quality, particle effects, and draw distance when frame
-  rate drops below 30 fps.
-
-
-  speed) proportionally when performance degradation occurs to maintain
-  smooth rendering.
-
-- **FR-022**: System MUST reduce simulation time scale (slow down game
-  speed) proportionally when performance degradation occurs to maintain
-  smooth rendering.
-
-
-  performance degradation is detected or quality scaling is active.
-
-- **FR-023**: System MUST display a non-intrusive warning overlay when
-  performance degradation is detected or quality scaling is active.
-
-### Key Entities
-
-
-  (red/blue), health/damage state, position, orientation, weapon type, AI
-  state (individual: targeting, movement, cover-seeking, retreat; captain:
-  formation coordination, priority target designation), captain role flag.
-
-- **Robot**: Autonomous humanoid combatant with team affiliation
-  (red/blue), health/damage state, position, orientation, weapon type, AI
-  state (individual: targeting, movement, cover-seeking, retreat; captain:
-  formation coordination, priority target designation), captain role flag.
-
-- **Weapon**: Offensive capability with type (laser/gun/rocket), damage value, fire rate, projectile behavior, visual effect.
-
-- **Projectile**: Active weapon discharge with trajectory, velocity, collision detection, damage on impact, visual representation.
-
-- **Arena**: Space-station battlefield environment with spawn zones,
-  boundaries, obstacles, lighting configuration, camera anchor points.
-
-- **Team**: Group of robots (red or blue) with team-level state (active count, eliminated count, victory condition).
-
-- **Simulation State**: Overall game state including running/paused/completed
-  status, winner determination, frame time, entity registry.
 
 ### Captain Election Decision
+
 
 To avoid ambiguity in tests and implementation, the captain election algorithm is a
 project-level decision and is REQUIRED to be implemented exactly as specified above.
@@ -252,7 +182,9 @@ spawn and captain AI systems (e.g., `src/ecs/systems/spawnSystem.ts` and
   ECS queries following best practices documented at
   <https://github.com/hmans/miniplex>.
 
+
 ### Mandatory scaffolding (bootstrapping entrypoints)
+
 
 To enable UI-driven contract and integration tests, the implementation MUST include a minimal app scaffold before running tests that mount the application. The scaffold MUST contain the following files (small, single-purpose implementations):
 
@@ -269,14 +201,18 @@ Acceptance criteria:
 
 ## Review & Acceptance Checklist
 
+
 ### Content Quality
+
 
 - [x] No implementation details (languages, frameworks, APIs)
 - [x] Focused on user value and business needs
 - [x] Written for non-technical stakeholders
 - [x] All mandatory sections completed
 
+
 ### Requirement Completeness
+
 
 - [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous  
