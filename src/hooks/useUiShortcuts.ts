@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+
 import { useUiStore } from '../store/uiStore';
 
 export function useUiShortcuts() {

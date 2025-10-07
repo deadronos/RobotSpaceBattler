@@ -2,6 +2,7 @@
 // Implements startMeasurement/stopMeasurement/reset/getLastReport used by Playwright
 
 import type { PerfReport } from "../types";
+import { isPerfDebug } from '../utils/debugFlags';
 
 type RAFHandle = number | null;
 
@@ -50,10 +51,12 @@ export function startMeasurement(opts?: {
   state.running = true;
   state.startTime = nowMs();
   state.rafHandle = window.requestAnimationFrame(rafLoop);
-  console.debug("[__perf] measurement started", {
-    warmupMs: state.warmupMs,
-    targetFps: state.targetFps,
-  });
+  if (isPerfDebug()) {
+    console.debug("[__perf] measurement started", {
+      warmupMs: state.warmupMs,
+      targetFps: state.targetFps,
+    });
+  }
 }
 
 function computeBuckets(frames: number[], startMs: number, endMs: number) {
@@ -97,7 +100,7 @@ const EMPTY_REPORT: PerfReport = {
 
 export async function stopMeasurement(): Promise<PerfReport> {
   if (!state.running) {
-    console.debug("[__perf] stopMeasurement called but not running");
+    if (isPerfDebug()) console.debug("[__perf] stopMeasurement called but not running");
     return state.lastReport ?? EMPTY_REPORT;
   }
 
@@ -143,7 +146,7 @@ export async function stopMeasurement(): Promise<PerfReport> {
   };
 
   state.lastReport = report;
-  console.debug("[__perf] measurement stopped", report);
+  if (isPerfDebug()) console.debug("[__perf] measurement stopped", report);
   return report;
 }
 

@@ -1,12 +1,11 @@
 import React from 'react';
+
 import { useUiStore } from '../../store/uiStore';
 
 export function SettingsDrawer() {
-  const { settingsOpen, closeSettings, setSettingsOpen } = useUiStore((s) => ({
-    settingsOpen: s.settingsOpen,
-    closeSettings: s.closeSettings,
-    setSettingsOpen: s.setSettingsOpen,
-  }));
+  const settingsOpen = useUiStore((s) => s.settingsOpen);
+  const closeSettings = useUiStore((s) => s.closeSettings);
+  const setSettingsOpen = useUiStore((s) => s.setSettingsOpen);
 
   if (!settingsOpen) return null;
 

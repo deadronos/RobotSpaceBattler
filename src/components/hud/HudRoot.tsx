@@ -1,6 +1,5 @@
-import useBattleHudData from '../../hooks/useBattleHudData';
 import type { BattleHudData } from '../../hooks/useBattleHudData';
-
+import useBattleHudData from '../../hooks/useBattleHudData';
 import { BattleTimer } from './BattleTimer';
 import { ControlStrip, type ControlStripProps } from './ControlStrip';
 import { TeamStatusPanel } from './TeamStatusPanel';

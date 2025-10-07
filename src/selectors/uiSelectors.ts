@@ -26,8 +26,8 @@ export interface SnapshotRobotSummary {
 }
 
 export interface VictorySnapshot {
-  teams: SnapshotTeamSummary[];
-  robots: SnapshotRobotSummary[];
+  teams: readonly SnapshotTeamSummary[];
+  robots: readonly SnapshotRobotSummary[];
   simulation: {
     status: string;
     winner: Team | 'draw' | null;

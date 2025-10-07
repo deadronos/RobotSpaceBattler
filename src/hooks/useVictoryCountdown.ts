@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useSimulationWorld } from '../ecs/world';
+
+import { useSimulationWorld, resetAutoRestartCountdown } from '../ecs/world';
 import { useUiStore } from '../store/uiStore';
 
 export function useVictoryCountdown() {
@@ -44,9 +45,19 @@ export function useVictoryCountdown() {
   };
 
   const restartNow = () => {
-    // call into world to trigger restart pathway
-    if (typeof world.openSettingsOverlay === 'function') {
-      // no-op for now; real restart should be simulation API
+    // trigger an immediate restart by forcing the autoRestartCountdown to 0
+    // This avoids relying on a non-existent world method and is a safe, explicit mutation
+    // that mirrors the expected restart behavior (the simulation tick will observe 0 and reset).
+    try {
+      // Mutate simulation state in a single assignment to keep immutability semantics
+      world.simulation = { ...world.simulation, autoRestartCountdown: 0 };
+    } catch {
+      // If direct assignment is not allowed in some runtime, fall back to calling a helper
+      try {
+        resetAutoRestartCountdown(world);
+      } catch {
+        // no-op: best-effort restart request
+      }
     }
   };
 

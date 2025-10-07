@@ -6,13 +6,13 @@ vi.mock('../../../../src/hooks/useBattleHudData', () => ({
   default: vi.fn(),
 }));
 
+import type { Mock } from 'vitest';
+
 import type { BattleHudData } from '../../../../src/hooks/useBattleHudData';
 import useBattleHudData from '../../../../src/hooks/useBattleHudData';
 import { useUiStore } from '../../../../src/store/uiStore';
 
-const mockedUseBattleHudData = useBattleHudData as unknown as vi.Mock<
-  BattleHudData
->;
+const mockedUseBattleHudData = useBattleHudData as unknown as Mock<() => BattleHudData>;
 
 function createHudData(): BattleHudData {
   return {

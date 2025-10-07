@@ -3,8 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { SimulationState } from '../ecs/entities/SimulationState';
 import type { TeamEntity } from '../ecs/entities/Team';
 import { useSimulationWorld } from '../ecs/world';
-import { buildTeamSummaries, formatCountdownLabel } from '../selectors/uiSelectors';
 import type { TeamSummaryViewModel, VictorySnapshot } from '../selectors/uiSelectors';
+import { buildTeamSummaries, formatCountdownLabel } from '../selectors/uiSelectors';
 import { useUiStore } from '../store/uiStore';
 import type { Team } from '../types';
 
@@ -207,48 +207,47 @@ export function useBattleHudData(): BattleHudData {
     };
   }, [world]);
 
-  const { isHudVisible, toggleHud, openStats, openSettings, countdownOverrideSeconds } =
-    useUiStore(
-      useMemo(
-        () =>
-          (state) => ({
-            isHudVisible: state.isHudVisible,
-            toggleHud: state.toggleHud,
-            openStats: state.openStats,
-            openSettings: state.openSettings,
-            countdownOverrideSeconds: state.countdownOverrideSeconds,
-          }),
-        [],
-      ),
-    );
-
-  const teamsSnapshot: VictorySnapshot = {
-    teams: snapshot.teams.map((team) => ({
-      name: team.name,
-      label: formatTeamLabel(team.name),
-      activeRobots: team.activeRobots,
-      eliminatedRobots: team.eliminatedRobots,
-      captainId: team.captainId,
-      weaponDistribution: { ...team.weaponDistribution },
-    })),
-    robots: snapshot.robots,
-    simulation: {
-      status: snapshot.simulation.status,
-      winner: snapshot.simulation.winner,
-      simulationTime: snapshot.simulation.simulationTime,
-      autoRestartCountdown:
-        countdownOverrideSeconds ?? snapshot.simulation.autoRestartCountdown ?? null,
-    },
-    performance: {
-      currentFPS: snapshot.simulation.performanceStats.currentFPS,
-      averageFPS: snapshot.simulation.performanceStats.averageFPS,
-      qualityScalingActive: snapshot.simulation.performanceStats.qualityScalingActive,
-      autoScalingEnabled: snapshot.performanceOverlay.autoScalingEnabled,
-    },
-  };
+  // Subscribe to individual store values instead of returning a new object
+  // from a single selector. Returning a fresh object on every selector
+  // call can cause the snapshot/getSnapshot used by the subscription to
+  // appear to change every render and lead to re-render loops.
+  const isHudVisible = useUiStore((s) => s.isHudVisible);
+  const toggleHud = useUiStore((s) => s.toggleHud);
+  const openStats = useUiStore((s) => s.openStats);
+  const openSettings = useUiStore((s) => s.openSettings);
+  const countdownOverrideSeconds = useUiStore((s) => s.countdownOverrideSeconds);
 
   const status = buildStatus(snapshot.simulation, countdownOverrideSeconds ?? null);
-  const teams = useMemo(() => buildTeamSummaries(teamsSnapshot), [teamsSnapshot]);
+
+  const teams = useMemo(() => {
+    const teamsSnapshot: VictorySnapshot = {
+      teams: snapshot.teams.map((team) => ({
+        name: team.name,
+        label: formatTeamLabel(team.name),
+        activeRobots: team.activeRobots,
+        eliminatedRobots: team.eliminatedRobots,
+        captainId: team.captainId,
+        weaponDistribution: { ...team.weaponDistribution },
+      })),
+      robots: snapshot.robots,
+      simulation: {
+        status: snapshot.simulation.status,
+        winner: snapshot.simulation.winner,
+        simulationTime: snapshot.simulation.simulationTime,
+        autoRestartCountdown:
+          countdownOverrideSeconds ?? snapshot.simulation.autoRestartCountdown ?? null,
+      },
+      performance: {
+        currentFPS: snapshot.simulation.performanceStats.currentFPS,
+        averageFPS: snapshot.simulation.performanceStats.averageFPS,
+        qualityScalingActive: snapshot.simulation.performanceStats.qualityScalingActive,
+        autoScalingEnabled: snapshot.performanceOverlay.autoScalingEnabled,
+      },
+    };
+
+    return buildTeamSummaries(teamsSnapshot);
+  }, [snapshot, countdownOverrideSeconds]);
+
   const performance = useMemo(() => buildPerformanceInfo(snapshot), [snapshot]);
 
   return {

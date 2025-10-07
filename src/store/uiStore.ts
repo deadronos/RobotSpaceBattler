@@ -7,6 +7,7 @@ export interface UiState {
   settingsOpen: boolean;
   isSettingsOpen: boolean;
   isHudVisible: boolean;
+  victoryOverlayVisible: boolean;
   performanceOverlayVisible: boolean;
   performanceBannerDismissed: boolean;
   countdownOverrideSeconds: number | null;
@@ -21,6 +22,7 @@ export interface UiActions {
   setSettingsOpen: (open: boolean) => void;
   toggleHud: () => void;
   setHudVisible: (visible: boolean) => void;
+  setVictoryOverlayVisible: (visible: boolean) => void;
   showPerformanceOverlay: () => void;
   hidePerformanceOverlay: () => void;
   setPerformanceOverlayVisible: (visible: boolean) => void;
@@ -39,6 +41,7 @@ const DEFAULT_STATE: UiState = {
   settingsOpen: false,
   isSettingsOpen: false,
   isHudVisible: true,
+  victoryOverlayVisible: false,
   performanceOverlayVisible: true,
   performanceBannerDismissed: false,
   countdownOverrideSeconds: null,
@@ -80,6 +83,8 @@ function normalizeState(overrides: UiStateOverrides = {}): UiState {
     settingsOpen,
     isSettingsOpen: settingsOpen,
     isHudVisible: hudVisible,
+    victoryOverlayVisible:
+      overrides.victoryOverlayVisible ?? DEFAULT_STATE.victoryOverlayVisible,
     performanceOverlayVisible:
       overrides.performanceOverlayVisible ?? DEFAULT_STATE.performanceOverlayVisible,
     performanceBannerDismissed:
@@ -106,6 +111,7 @@ export const createUiStore = (
 
   return createStore<UiStore>((set) => ({
     ...baseState,
+    setVictoryOverlayVisible: (visible) => set({ victoryOverlayVisible: !!visible }),
     openStats: () => set(withStatsOpen(true)),
     closeStats: () => set(withStatsOpen(false)),
     setStatsOpen: (open) => set(withStatsOpen(open)),
@@ -145,8 +151,6 @@ type BoundUseUiStore = {
   getState: StoreApi<UiStore>['getState'];
   setState: StoreApi<UiStore>['setState'];
   subscribe: StoreApi<UiStore>['subscribe'];
-  destroy: StoreApi<UiStore>['destroy'];
-  getInitialState: StoreApi<UiStore>['getInitialState'];
 };
 
 function createBoundUseUiStore(api: StoreApi<UiStore>): BoundUseUiStore {
@@ -159,19 +163,19 @@ function createBoundUseUiStore(api: StoreApi<UiStore>): BoundUseUiStore {
     selector?: (state: UiStore) => T,
     equalityFn?: (a: T, b: T) => boolean,
   ) {
+    // Call `useStore` inside the hook body — that ensures hooks are resolved
     if (selector) {
-      return useStore(api, selector, equalityFn);
+      // cast to any to accommodate different zustand overload signatures across versions
+      return (useStore as any)(api, selector, equalityFn);
     }
 
-    return useStore(api);
+    return (useStore as any)(api);
   }
 
   const bound = useBoundStore as BoundUseUiStore;
   bound.getState = api.getState;
   bound.setState = api.setState;
   bound.subscribe = api.subscribe;
-  bound.destroy = api.destroy;
-  bound.getInitialState = api.getInitialState;
   return bound;
 }
 
