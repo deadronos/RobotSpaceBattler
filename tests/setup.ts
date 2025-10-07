@@ -6,11 +6,14 @@
 
 import React from 'react';
 import { act as reactAct } from 'react';
-import * as reactDomTestUtils from 'react-dom/test-utils';
-// Override react-dom/test-utils.act to delegate to react's act and expose global act
-(reactDomTestUtils as any).act = reactAct;
-(globalThis as any).act = reactAct;
-(React as any).act = act;
+// Expose act shims without mutating read-only properties
+if (!(globalThis as any).act) {
+  (globalThis as any).act = reactAct;
+}
+if (!(React as any).act) {
+  (React as any).act = reactAct;
+}
+
 
 import '@testing-library/jest-dom';
 
