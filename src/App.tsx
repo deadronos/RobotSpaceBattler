@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react'
-import { isAppDebug, setAppMounted, setAppSimStatus, setAppUiVictory, getPlaywrightTriggerFlag } from './utils/debugFlags';
 
 import HudRoot from './components/hud/HudRoot';
 import SettingsDrawer from './components/overlays/SettingsDrawer';
 import StatsModal from './components/overlays/StatsModal';
 import VictoryOverlay from './components/overlays/VictoryOverlay';
 import Scene from './components/Scene'
+import { openSettingsOverlay,openStatsOverlay, useSimulationWorld } from './ecs/world';
 import useUiShortcuts from './hooks/useUiShortcuts';
 import useVictoryCountdown from './hooks/useVictoryCountdown';
 import { useUIStore } from './store/uiStore'
 import { useUiBridgeSystem } from './systems/uiBridgeSystem';
-import { useSimulationWorld, openStatsOverlay, openSettingsOverlay } from './ecs/world';
+import { getPlaywrightTriggerFlag,isAppDebug, setAppMounted, setAppSimStatus, setAppUiVictory } from './utils/debugFlags';
 
 export default function App() {
   useUiShortcuts();

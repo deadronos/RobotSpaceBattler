@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { useSimulationWorld, resetAutoRestartCountdown } from '../ecs/world';
+import { resetAutoRestartCountdown,useSimulationWorld } from '../ecs/world';
 import { useUiStore } from '../store/uiStore';
 
 export function useVictoryCountdown() {

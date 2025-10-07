@@ -3,10 +3,10 @@ import { useCallback, useRef, useState } from 'react';
 
 import type { BattleHudData } from '../../hooks/useBattleHudData';
 import useBattleHudData from '../../hooks/useBattleHudData';
+import { useUiStore } from '../../store/uiStore';
 import { BattleTimer } from './BattleTimer';
 import { ControlStrip, type ControlStripProps } from './ControlStrip';
 import { TeamStatusPanel } from './TeamStatusPanel';
-import { useUiStore } from '../../store/uiStore';
 
 export type HudRootProps = Pick<
   ControlStripProps,

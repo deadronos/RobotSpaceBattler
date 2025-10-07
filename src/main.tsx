@@ -6,7 +6,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import { initializeSimulation, SimulationWorldProvider } from './ecs/world'
 import { useUIStore } from './store/uiStore'
-import { isAppDebug, setTriggerVictory, setPlaywrightTriggerFlag, setSetVictoryVisible, setGetUiState, getTriggerVictory, isSemverDebug } from './utils/debugFlags';
+import { getTriggerVictory, isAppDebug, isSemverDebug,setGetUiState, setPlaywrightTriggerFlag, setSetVictoryVisible, setTriggerVictory } from './utils/debugFlags';
 
 const world = initializeSimulation()
 
