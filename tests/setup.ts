@@ -4,8 +4,12 @@
  * Global test configuration and setup for the test suite.
  */
 
-import { act } from 'react-dom/test-utils';
-(globalThis as any).act = act;
+import { act as reactAct } from 'react';
+// Ensure testing libraries detect react act environment and use react's act implementation
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+(globalThis as any).act = reactAct;
+(React as any).act = reactAct;
+
 import '@testing-library/jest-dom';
 
 import {
