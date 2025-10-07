@@ -1,4 +1,4 @@
-import "./StatsModal.css";
+import "../styles/overlays.css";
 
 import { useMemo } from "react";
 

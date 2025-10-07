@@ -3,20 +3,57 @@ import React from 'react'
 import Scene from './components/Scene'
 import { useUIStore } from './store/uiStore'
 
+import React from 'react';
+import Scene from './components/Scene';
+import HudRoot from './components/hud/HudRoot';
+import VictoryOverlay from './components/overlays/VictoryOverlay';
+import StatsModal from './components/overlays/StatsModal';
+import SettingsDrawer from './components/overlays/SettingsDrawer';
+import { useUIStore } from './store/uiStore';
+import useUiShortcuts from './hooks/useUiShortcuts';
+import { useUiBridgeSystem } from './systems/uiBridgeSystem';
+import useVictoryCountdown from './hooks/useVictoryCountdown';
+
 export default function App() {
-  const { performanceOverlayVisible, setPerformanceOverlayVisible } = useUIStore()
+  useUiShortcuts();
+  useUiBridgeSystem();
+
+  const { performanceOverlayVisible } = useUIStore();
+  const hud = {} as any; // placeholder for props
+
+  const { remainingSeconds, pause, resume, restartNow } = useVictoryCountdown();
+
+  const ui = useUIStore((s) => ({
+    statsOpen: s.statsOpen,
+    settingsOpen: s.settingsOpen,
+  }));
+
   return (
     <div id="app-root" style={{ height: '100%' }}>
-      <div id="status" style={{ position: 'absolute', zIndex: 10, padding: 8 }}>
-        Space Station Autobattler — status placeholder
-        <button
-          onClick={() => setPerformanceOverlayVisible(!performanceOverlayVisible)}
-          style={{ marginLeft: 8 }}
-        >
-          Toggle Overlay
-        </button>
-      </div>
+      <HudRoot onTogglePause={() => {}} onToggleCinematic={() => {}} />
+      <VictoryOverlay
+        visible={false}
+        winnerName=""
+        countdownSeconds={remainingSeconds}
+        countdownPaused={false}
+        teamSummaries={[]}
+        actions={{ openStats: () => {}, openSettings: () => {}, restartNow: () => {}, pauseCountdown: pause, resumeCountdown: resume }}
+      />
+
+      <StatsModal
+        open={ui.statsOpen}
+        winnerName=""
+        teamSummaries={[]}
+        robotStats={[]}
+        sort={{ column: 'kills', direction: 'desc' }}
+        onClose={() => useUIStore.getState().closeStats()}
+        onSortChange={() => {}}
+        onExport={() => {}}
+      />
+
+      <SettingsDrawer />
+
       <Scene />
     </div>
-  )
+  );
 }

@@ -55,21 +55,21 @@
 
 - [x] T013 Implement `src/components/overlays/VictoryOverlay.tsx` (≤200 LOC) showing winner, countdown timer, Stats & Settings buttons, manual restart control, and team summary chips. Connect to uiStore + `useVictoryCountdown`. Fulfill FR-006 + FR-014.
 - [x] T014 Implement `src/components/overlays/StatsModal.tsx` with focus trap, keyboard navigation, table sorting, and responsive layout. Consume `usePostBattleStats`, display per-robot rows, team totals, and captain highlight. Satisfies FR-019 + FR-020.
-- [ ] T015 Implement `src/components/overlays/SettingsDrawer.tsx` sliding drawer that exposes team composition controls (weapon sliders/toggles), apply/cancel, and resets. Persist values through uiStore for next battle spawn. Aligns with FR-006.
+- [x] T015 Implement `src/components/overlays/SettingsDrawer.tsx` sliding drawer that exposes team composition controls (weapon sliders/toggles), apply/cancel, and resets. Persist values through uiStore for next battle spawn. Aligns with FR-006.
 - [x] T016 Implement `src/components/overlays/PerformanceBanner.tsx` to show FPS, quality-scaling state, auto-hide progress, and dismiss button. Support `aria-live` announcements and user toggle. Covers FR-021 – FR-023.
 
 ## Gate 4: Interaction & Integration (4 tasks)
 *Goal: wire runtime events and input handling into the UI.*
 
-- [ ] T017 Implement `src/hooks/useVictoryCountdown.ts` handling `SimulationState.status` transitions, starting/stopping the 5s countdown, dispatching auto-restart, and exposing `remainingSeconds`. Integrate with `victorySystem` reset pathway (FR-006, FR-014).
-- [ ] T018 Implement `src/hooks/useUiShortcuts.ts` binding keyboard/gamepad events (Space pause, C cinematic, O HUD, Esc close modals) with cleanup, optional touch handling for mobile, and testable command mapping. Supports FR-013, FR-006.
-- [ ] T019 Implement `src/systems/uiBridgeSystem.ts` (≤200 LOC Miniplex system) syncing ECS state to uiStore: update team counts, performance metrics, and Stats snapshots when battles end. Keep rendering components pure per Constitution Principle IV. Covers FR-006, FR-019, FR-021.
-- [ ] T020 Update `src/App.tsx` to mount `HudRoot`, overlays, providers, and hook initializers (`useBattleHudData`, `useUiShortcuts`, `useVictoryCountdown`). Update `/specs/001-3d-team-vs/quickstart.md` to document new controls and overlays. Ensure no direct ECS mutations from components.
+- [x] T017 Implement `src/hooks/useVictoryCountdown.ts` handling `SimulationState.status` transitions, starting/stopping the 5s countdown, dispatching auto-restart, and exposing `remainingSeconds`. Integrate with `victorySystem` reset pathway (FR-006, FR-014).
+- [x] T018 Implement `src/hooks/useUiShortcuts.ts` binding keyboard/gamepad events (Space pause, C cinematic, O HUD, Esc close modals) with cleanup, optional touch handling for mobile, and testable command mapping. Supports FR-013, FR-006.
+- [x] T019 Implement `src/systems/uiBridgeSystem.ts` (≤200 LOC Miniplex system) syncing ECS state to uiStore: update team counts, performance metrics, and Stats snapshots when battles end. Keep rendering components pure per Constitution Principle IV. Covers FR-006, FR-019, FR-021.
+- [x] T020 Update `src/App.tsx` to mount `HudRoot`, overlays, providers, and hook initializers (`useBattleHudData`, `useUiShortcuts`, `useVictoryCountdown`). Update `/specs/001-3d-team-vs/quickstart.md` to document new controls and overlays. Ensure no direct ECS mutations from components.
 
 ## Gate 5: Styling & Accessibility (1 task)
 *Goal: unify look & feel, ensure responsive + accessible presentation.*
 
-- [ ] T021 Create `src/styles/hud.css` and `src/styles/overlays.css` defining layout, typography, color tokens, focus states, prefers-reduced-motion handling, and mobile breakpoints. Wire styles into `App.tsx`. Verify contrast ratios meet WCAG AA.
+- [x] T021 Create `src/styles/hud.css` and `src/styles/overlays.css` defining layout, typography, color tokens, focus states, prefers-reduced-motion handling, and mobile breakpoints. Wire styles into `App.tsx`. Verify contrast ratios meet WCAG AA.
 
 ## Gate 6: End-to-End Validation (1 task)
 *Goal: prove the complete player flow via browser automation.*
@@ -105,4 +105,4 @@ T001-T004 → T005-T008 → T009-T012 → T013-T016 → T017-T020 → T021 → T
 ---
 
 **Total Tasks**: 22  
-**Status**: ☐ Not started — follow gate order, keep CONSTITUTION-CHECK updated.
+**Status**: ☐ In progress — implementing overlays and integration tasks.

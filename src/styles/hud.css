@@ -1,0 +1,16 @@
+/* Minimal HUD styles for accessibility and layout (placeholder) */
+.hud-root {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 8px;
+  pointer-events: none;
+}
+.hud-root * { pointer-events: auto; }
+.hud-root__header { display: flex; gap: 8px; align-items: center; }
+.control-strip { display: flex; gap: 8px; align-items: center; }
+.control-strip__actions button { min-width: 64px; }
