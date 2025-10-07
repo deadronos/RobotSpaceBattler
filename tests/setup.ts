@@ -6,6 +6,11 @@
 
 import '@testing-library/jest-dom';
 
+import React from 'react';
+import { act } from 'react-dom/test-utils';
+// Ensure React.act exists for libraries expecting it (compat shim for testing libs)
+(React as any).act = act;
+
 import {
   calculateDistance,
   eliminateRobot,
