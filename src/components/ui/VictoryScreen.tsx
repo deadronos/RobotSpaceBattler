@@ -43,8 +43,61 @@ export function VictoryScreen({
   const isVisible =
     simulation.status === "victory" ||
     simulation.status === "simultaneous-elimination";
-  const setStatsOpen = useUIStore($1);
+
+  const openStats = useUIStore((s) => s.openStats);
   const openSettings = useUIStore((s) => s.openSettings);
+
+  function handlePause() {
+    if (onTogglePause) onTogglePause(true);
+  }
+
+  function handleOpenStats() {
+    if (onShowStats) onShowStats();
+    openStats();
+  }
+
+  function handleOpenSettings() {
+    if (onShowSettings) onShowSettings();
+    openSettings();
+  }
+
+  if (!isVisible) return null;
+
+  const countdownText = formatCountdown(simulation.autoRestartCountdown ?? null);
+
+  // compute top performer if postBattleStats present
+  let topPerformer: string | null = null;
+  if (simulation.postBattleStats?.perRobot) {
+    const entries = Object.entries(simulation.postBattleStats.perRobot);
+    if (entries.length > 0) {
+      entries.sort((a, b) => (b[1].kills ?? 0) - (a[1].kills ?? 0));
+      topPerformer = entries[0][0];
+    }
+  }
+
+  return (
+    <div className="victory-overlay" role="region" aria-label="Victory Overlay">
+      <h1>{formatWinnerMessage(simulation.winner)}</h1>
+      <p>{countdownText}</p>
+
+      <div>
+        <button onClick={handlePause} aria-label="Pause">Pause</button>
+        <button onClick={handleOpenStats} aria-label="Stats">Stats</button>
+        <button onClick={handleOpenSettings} aria-label="Settings">Settings</button>
+      </div>
+
+      {simulation.postBattleStats && (
+        <section aria-label="post-battle-summary">
+          <h2>Post-battle Summary</h2>
+          {/* team summary minimal rendering for tests */}
+          {Object.entries(simulation.postBattleStats.perTeam ?? {}).map(([teamId, team]) => (
+            <p key={teamId}>Team {teamId}: {team.totalKills} kills</p>
+          ))}
+          {topPerformer && <p>Top performer: {topPerformer}</p>}
+        </section>
+      )}
+    </div>
+  );
 }
 
 export default VictoryScreen;
