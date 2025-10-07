@@ -1,18 +1,19 @@
-import { useFrame } from '@react-three/fiber'
 import React from 'react'
 
 import { useSimulationWorld } from '../ecs/world'
+import type { FrameSubscription } from '../systems/physicsSync'
+import { usePhysicsSync } from '../systems/physicsSync'
 import RobotPlaceholder from './RobotPlaceholder'
 
-export default function Simulation() {
+type SimulationProps = {
+  /** Optional override for frame subscription (testing). */
+  useFrameHook?: FrameSubscription
+}
+
+export default function Simulation({ useFrameHook }: SimulationProps) {
   const world = useSimulationWorld()
 
-  // Minimal frame hook to ensure useFrame is exercised. Real simulation
-  // will be handled by ECS stepSimulation.
-  useFrame(() => {
-    // no-op for now
-    void world
-  })
+  usePhysicsSync({ world, useFrameHook })
 
   return (
     <>
