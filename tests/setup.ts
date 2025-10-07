@@ -5,9 +5,11 @@
  */
 
 import React from 'react';
-import { act } from 'react-dom/test-utils';
-// Ensure React.act exists and assign before other testing imports to satisfy legacy code paths
-(globalThis as any).act = act;
+import { act as reactAct } from 'react';
+import * as reactDomTestUtils from 'react-dom/test-utils';
+// Override react-dom/test-utils.act to delegate to react's act and expose global act
+(reactDomTestUtils as any).act = reactAct;
+(globalThis as any).act = reactAct;
 (React as any).act = act;
 
 import '@testing-library/jest-dom';
