@@ -74,7 +74,7 @@
 ## Gate 6: End-to-End Validation (1 task)
 *Goal: prove the complete player flow via browser automation.*
 
-- [ ] T022 Author Playwright spec `playwright/tests/ui-flow.spec.ts` covering: battle completion triggers Victory overlay → open Stats modal and verify captain/metrics → open Settings, tweak composition, apply → wait for restart and confirm HUD resets. Run in headed + CI modes. Covers FR-006, FR-019, FR-014.
+- [x] T022 Author Playwright spec `playwright/tests/ui-flow.spec.ts` covering: battle completion triggers Victory overlay → open Stats modal and verify captain/metrics → open Settings, tweak composition, apply → wait for restart and confirm HUD resets. Run in headed + CI modes. Covers FR-006, FR-019, FR-014.
 
 ---
 
