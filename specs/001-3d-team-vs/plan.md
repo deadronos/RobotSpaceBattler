@@ -310,61 +310,63 @@ Tests are authored before any UI implementation to satisfy Constitution Principl
 - **T002**: Create `tests/integration/ui/stats-modal.test.ts` validating post-battle metrics (per-robot stats, team aggregates, captain markers) rendering in `StatsModal` (FR-019, FR-020).
 - **T003**: Create `tests/integration/ui/performance-banner.test.ts` verifying the quality-scaling warning overlay toggles when `performanceStats.qualityScalingActive` flips and that dismiss/auto-hide logic works (FR-021–FR-023).
 - **T004**: Author unit tests `tests/unit/store/uiStore.test.ts` & `tests/unit/selectors/uiSelectors.test.ts` covering store actions (open/close modals, toggle HUD) and derived data (team counts, captain display, countdown formatting).
+- **T005**: Author integration test `tests/integration/simulation/physics-step.test.tsx` mounting `Simulation` with a stub frame hook to confirm `stepSimulation` runs every frame (FR-012, Constitution Principle IV).
 
-**Gate 1 – Data & State Preparation**  
+**Gate 1 – Data & State Preparation**
 Build the data plumbing that UI components will consume:
-- **T005**: Implement `src/store/uiStore.ts` with Zustand slices for HUD visibility, modal state, countdown overrides, and performance banner flags (≤200 LOC).
-- **T006**: Implement `src/selectors/uiSelectors.ts` to convert ECS queries into memoized view models (team tallies, captain info, performance KPIs) (≤220 LOC).
-- **T007**: Implement `src/hooks/useBattleHudData.ts` consuming selectors and store to provide a typed HUD DTO (status text, team summaries, controls state).
-- **T008**: Implement `src/hooks/usePostBattleStats.ts` assembling the dataset required by `StatsModal`, including per-robot rows sorted by kills/damage.
+- **T006**: Implement `src/store/uiStore.ts` with Zustand slices for HUD visibility, modal state, countdown overrides, and performance banner flags (≤200 LOC).
+- **T007**: Implement `src/selectors/uiSelectors.ts` to convert ECS queries into memoized view models (team tallies, captain info, performance KPIs) (≤220 LOC).
+- **T008**: Implement `src/hooks/useBattleHudData.ts` consuming selectors and store to provide a typed HUD DTO (status text, team summaries, controls state).
+- **T009**: Implement `src/hooks/usePostBattleStats.ts` assembling the dataset required by `StatsModal`, including per-robot rows sorted by kills/damage.
 
-**Gate 2 – HUD Composition**  
+**Gate 2 – HUD Composition**
 Render the always-on HUD shell once data hooks exist:
-- **T009**: Build `src/components/hud/HudRoot.tsx` to compose the HUD layout, wiring `role="banner"` landmarks and responsive positioning (≤180 LOC).
-- **T010**: Build `src/components/hud/TeamStatusPanel.tsx` for each team’s counts, captain badge, weapon distribution chips, and alive/eliminated display (≤160 LOC).
-- **T011**: Build `src/components/hud/BattleTimer.tsx` showing elapsed time and, when active, the victory countdown overlaying the timer (≤120 LOC).
-- **T012**: Build `src/components/hud/ControlStrip.tsx` exposing pause/resume, cinematic toggle, overlay toggle, and settings button (dispatches store actions) (≤200 LOC).
+- **T010**: Build `src/components/hud/HudRoot.tsx` to compose the HUD layout, wiring `role="banner"` landmarks and responsive positioning (≤180 LOC).
+- **T011**: Build `src/components/hud/TeamStatusPanel.tsx` for each team’s counts, captain badge, weapon distribution chips, and alive/eliminated display (≤160 LOC).
+- **T012**: Build `src/components/hud/BattleTimer.tsx` showing elapsed time and, when active, the victory countdown overlaying the timer (≤120 LOC).
+- **T013**: Build `src/components/hud/ControlStrip.tsx` exposing pause/resume, cinematic toggle, overlay toggle, and settings button (dispatches store actions) (≤200 LOC).
 
-**Gate 3 – Overlays & Modals**  
+**Gate 3 – Overlays & Modals**
 Implement the pop-up flows triggered by battle events:
-- **T013**: Build `src/components/overlays/VictoryOverlay.tsx` with countdown, winner messaging, Stats + Settings buttons, and manual restart control (FR-006, FR-014).
-- **T014**: Build `src/components/overlays/StatsModal.tsx` with focus trap, sortable tables, and summary cards sourced from `usePostBattleStats` (FR-019).
-- **T015**: Build `src/components/overlays/SettingsDrawer.tsx` allowing team composition tweaks (weapon distribution sliders, save/apply actions), persisting choices to UI store (FR-006).
-- **T016**: Build `src/components/overlays/PerformanceBanner.tsx` showing FPS, scaling state, dismiss control, and auto-hide animation (FR-021–FR-023).
+- **T014**: Build `src/components/overlays/VictoryOverlay.tsx` with countdown, winner messaging, Stats + Settings buttons, and manual restart control (FR-006, FR-014).
+- **T015**: Build `src/components/overlays/StatsModal.tsx` with focus trap, sortable tables, and summary cards sourced from `usePostBattleStats` (FR-019).
+- **T016**: Build `src/components/overlays/SettingsDrawer.tsx` allowing team composition tweaks (weapon distribution sliders, save/apply actions), persisting choices to UI store (FR-006).
+- **T017**: Build `src/components/overlays/PerformanceBanner.tsx` showing FPS, scaling state, dismiss control, and auto-hide animation (FR-021–FR-023).
 
-**Gate 4 – Interaction & Integration**  
+**Gate 4 – Interaction & Integration**
 Connect UI to runtime state and inputs:
-- **T017**: Implement `src/hooks/useVictoryCountdown.ts` to bridge `SimulationState`, manage the 5-second countdown, and dispatch restart/reset intents (FR-006, FR-014).
-- **T018**: Implement `src/hooks/useUiShortcuts.ts` handling keyboard/gamepad bindings (Space pause, C cinematic, O overlay toggle, Esc close modals) with cleanup (FR-013, FR-006).
-- **T019**: Implement `src/systems/uiBridgeSystem.ts` (Miniplex system) to observe simulation/performance stats each frame and update the UI store without coupling render components to ECS (≤200 LOC).
-- **T020**: Integrate HUD + overlays into `src/App.tsx`, wire store providers, ensure victory & stats systems trigger store actions, and update `quickstart.md` instructions to reference new controls.
+- **T018**: Wire `src/components/Simulation.tsx` to invoke `usePhysicsSync`, supporting optional frame hook injection for deterministic testing and ensuring simulation advances independently of rendering (FR-012).
+- **T019**: Implement `src/hooks/useVictoryCountdown.ts` to bridge `SimulationState`, manage the 5-second countdown, and dispatch restart/reset intents (FR-006, FR-014).
+- **T020**: Implement `src/hooks/useUiShortcuts.ts` handling keyboard/gamepad bindings (Space pause, C cinematic, O overlay toggle, Esc close modals) with cleanup (FR-013, FR-006).
+- **T021**: Implement `src/systems/uiBridgeSystem.ts` (Miniplex system) to observe simulation/performance stats each frame and update the UI store without coupling render components to ECS (≤200 LOC).
+- **T022**: Integrate HUD + overlays into `src/App.tsx`, wire store providers, ensure victory & stats systems trigger store actions, and update `quickstart.md` instructions to reference new controls.
 
 **Gate 5 – Styling & Accessibility**
-- **T021**: Author `src/styles/hud.css` and `src/styles/overlays.css`, ensuring responsive layout, accessible contrast, motion preferences, and captain indicators (≤200 LOC combined).
+- **T023**: Author `src/styles/hud.css` and `src/styles/overlays.css`, ensuring responsive layout, accessible contrast, motion preferences, and captain indicators (≤200 LOC combined).
 
 **Gate 6 – End-to-End Verification**
-- **T022**: Add Playwright scenario `playwright/tests/ui-flow.spec.ts` covering battle completion → victory overlay → stats modal → settings adjustment → restart loop (FR-006, FR-019, FR-014).
+- **T024**: Add Playwright scenario `playwright/tests/ui-flow.spec.ts` covering battle completion → victory overlay → stats modal → settings adjustment → restart loop (FR-006, FR-019, FR-014).
 
 **Ordering Strategy**:
-- Gate 0 tasks (T001–T004) run first and must fail until later gates deliver implementations.
-- Gate 1 (T005–T008) establishes data plumbing; components may not begin until selectors/hooks exist.
-- Gate 2 (T009–T012) can run in parallel per component once data hooks compile.
-- Gate 3 (T013–T016) depends on Gate 1 hooks; T014 waits for `usePostBattleStats` (T008).
-- Gate 4 (T017–T020) depends on overlay/HUD components existing.
-- Gate 5 (T021) styles rely on component markup.
-- Gate 6 (T022) runs last after UI wiring is stable.
+- Gate 0 tasks (T001–T005) run first and must fail until later gates deliver implementations.
+- Gate 1 (T006–T009) establishes data plumbing; components may not begin until selectors/hooks exist.
+- Gate 2 (T010–T013) can run in parallel per component once data hooks compile.
+- Gate 3 (T014–T017) depends on Gate 1 hooks; T015 waits for `usePostBattleStats` (T009).
+- Gate 4 (T018–T022) depends on overlay/HUD components existing and physics sync wiring ready.
+- Gate 5 (T023) styles rely on component markup.
+- Gate 6 (T024) runs last after UI wiring is stable.
 
 **Dependencies**:
 ```
-Tests (T001-T004) → Data & Hooks (T005-T008) → HUD (T009-T012) → Overlays (T013-T016) → Integration (T017-T020) → Styling (T021) → E2E (T022)
+Tests (T001-T005) → Data & Hooks (T006-T009) → HUD (T010-T013) → Overlays (T014-T017) → Integration (T018-T022) → Styling (T023) → E2E (T024)
 
-TDD Gate: T001-T004 MUST fail before T005+ begins.
+TDD Gate: T001-T005 MUST fail before T006+ begins.
 ```
 
 **Parallelization Examples**:
-- After T008, T009–T012 (HUD components) can be developed concurrently (distinct files).
-- After T016, T017 and T018 can progress in parallel (independent hooks) before converging at T019.
-- Styling (T021) can overlap with T020 once component markup is stable.
+- After T009, T010–T013 (HUD components) can be developed concurrently (distinct files).
+- After T017, T019 and T020 can progress in parallel (independent hooks) before converging at T021/T022.
+- Styling (T023) can overlap with T022 once component markup is stable.
 
 **Constitutional Compliance**:
 - Every task references a concrete path under `src/` or `tests/`.
@@ -377,7 +379,7 @@ TDD Gate: T001-T004 MUST fail before T005+ begins.
 Ensure the existing scaffold (`src/main.tsx`, `src/App.tsx`, `src/index.css`, minimal Canvas scene) remains in place so new UI tests can mount the app. Before running the new UI integration suites, confirm:
 
 - `npm run dev` renders the Canvas plus HUD root container without runtime errors.
-- `App.tsx` exports a React component with `#status` placeholder (will be replaced during T020).
+- `App.tsx` exports a React component with `#status` placeholder (will be replaced during T022).
 
 Scaffolding is a prerequisite for Gate 0 tests; do not remove or regress it while implementing the new UI flows.
 
@@ -422,15 +424,15 @@ Scaffolding is a prerequisite for Gate 0 tests; do not remove or regress it whil
 - ✅ contracts/scoring-contract.md (weapon balance validation)
 - ✅ contracts/spawn-contract.md (robot spawning validation)
 - ✅ quickstart.md (validation and demonstration guide)
-- ✅ tasks.md (22 UI-centric tasks with Gate-based ordering)
+- ✅ tasks.md (24 UI-centric tasks with Gate-based ordering)
 
 **Next Steps**:
-1. Write the new UI tests (T001-T004) and confirm they fail.
-2. Deliver data plumbing hooks/store (T005-T008).
-3. Build HUD components (T009-T012) observing LOC limits.
-4. Implement overlays and modals (T013-T016) with focus management.
-5. Wire countdown + shortcuts + ECS bridge (T017-T020) then apply styles (T021).
-6. Run Playwright `ui-flow.spec.ts` (T022) and update CONSTITUTION-CHECK before PR.
+1. Write the new UI tests (T001-T005) and confirm they fail.
+2. Deliver data plumbing hooks/store (T006-T009).
+3. Build HUD components (T010-T013) observing LOC limits.
+4. Implement overlays and modals (T014-T017) with focus management.
+5. Wire physics sync, countdown, shortcuts, and ECS bridge (T018-T022) then apply styles (T023).
+6. Run Playwright `ui-flow.spec.ts` (T024) and update CONSTITUTION-CHECK before PR.
 
 ---
 *Based on Constitution v2.1.1 - See `/memory/constitution.md`*
