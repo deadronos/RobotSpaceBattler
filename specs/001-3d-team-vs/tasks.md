@@ -29,34 +29,34 @@
 ## Gate 0: UI Flow Tests (4 tasks)
 *Goal: establish failing tests before implementation (Constitution Principle II — Test-First).*
 
-- [ ] T001 Create Vitest integration suite `tests/integration/ui/victory-overlay.test.ts` asserting victory overlay countdown, winner label, Stats button, Settings button, manual restart, and auto-reset after 5s. Targets FR-006 + FR-014. Use Testing Library + msw mocks for store actions.
-- [ ] T002 Create Vitest integration suite `tests/integration/ui/stats-modal.test.ts` validating Stats modal renders team aggregates, robot rows (kills, damage dealt/taken, time alive), captain indicators, and sorting controls. Covers FR-019 + FR-020.
-- [ ] T003 Create Vitest integration suite `tests/integration/ui/performance-banner.test.ts` verifying quality-scaling banner appears when `performanceStats.qualityScalingActive` flips true, displays FPS and scaling state, supports dismiss + auto-hide, and hides when FPS recovers. Covers FR-021 – FR-023.
-- [ ] T004 Create unit tests `tests/unit/store/uiStore.test.ts` & `tests/unit/selectors/uiSelectors.test.ts` covering Zustand actions (open/close stats/settings, toggle HUD, set countdown) and selector outputs (team counts, captain info, countdown formatting). Ensures deterministic data layer before UI renders.
+- [x] T001 Create Vitest integration suite `tests/integration/ui/victory-overlay.test.ts` asserting victory overlay countdown, winner label, Stats button, Settings button, manual restart, and auto-reset after 5s. Targets FR-006 + FR-014. Use Testing Library + msw mocks for store actions.
+- [x] T002 Create Vitest integration suite `tests/integration/ui/stats-modal.test.ts` validating Stats modal renders team aggregates, robot rows (kills, damage dealt/taken, time alive), captain indicators, and sorting controls. Covers FR-019 + FR-020.
+- [x] T003 Create Vitest integration suite `tests/integration/ui/performance-banner.test.ts` verifying quality-scaling banner appears when `performanceStats.qualityScalingActive` flips true, displays FPS and scaling state, supports dismiss + auto-hide, and hides when FPS recovers. Covers FR-021 – FR-023.
+- [x] T004 Create unit tests `tests/unit/store/uiStore.test.ts` & `tests/unit/selectors/uiSelectors.test.ts` covering Zustand actions (open/close stats/settings, toggle HUD, set countdown) and selector outputs (team counts, captain info, countdown formatting). Ensures deterministic data layer before UI renders.
 
 ## Gate 1: Data & Hooks (4 tasks)
 *Goal: build deterministic data plumbing consumed by HUD and overlays.*
 
-- [ ] T005 Implement `src/store/uiStore.ts` (≤200 LOC) defining Zustand slices for HUD visibility, modal state, countdown overrides, performance banner flags, and persisted team composition draft. Include action creators and selectors exported for tests (FR-006, FR-014, FR-021).
-- [ ] T006 Implement `src/selectors/uiSelectors.ts` (≤220 LOC) mapping Miniplex queries to typed view models (team tallies, captain badge info, weapon distribution, performance KPIs). Memoize selectors; expose helpers used across hooks and tests (FR-019, FR-020, FR-021).
-- [ ] T007 Implement `src/hooks/useBattleHudData.ts` to combine ECS selectors + uiStore state into a HUD DTO (status text, team summaries, control states). Use `useSyncExternalStore` or Zustand hook to subscribe for React correctness. Supports FR-006, FR-013.
-- [ ] T008 Implement `src/hooks/usePostBattleStats.ts` aggregating per-robot and per-team metrics from `SimulationState` snapshots, sorting by kills → damage, formatting durations, and exposing summary totals for Stats modal (FR-019).
+- [x] T005 Implement `src/store/uiStore.ts` (≤200 LOC) defining Zustand slices for HUD visibility, modal state, countdown overrides, performance banner flags, and persisted team composition draft. Include action creators and selectors exported for tests (FR-006, FR-014, FR-021).
+- [x] T006 Implement `src/selectors/uiSelectors.ts` (≤220 LOC) mapping Miniplex queries to typed view models (team tallies, captain badge info, weapon distribution, performance KPIs). Memoize selectors; expose helpers used across hooks and tests (FR-019, FR-020, FR-021).
+- [x] T007 Implement `src/hooks/useBattleHudData.ts` to combine ECS selectors + uiStore state into a HUD DTO (status text, team summaries, control states). Use `useSyncExternalStore` or Zustand hook to subscribe for React correctness. Supports FR-006, FR-013.
+- [x] T008 Implement `src/hooks/usePostBattleStats.ts` aggregating per-robot and per-team metrics from `SimulationState` snapshots, sorting by kills → damage, formatting durations, and exposing summary totals for Stats modal (FR-019).
 
 ## Gate 2: HUD Composition (4 tasks)
 *Goal: render persistent HUD surfaces once data hooks exist.*
 
-- [ ] T009 Implement `src/components/hud/HudRoot.tsx` (≤180 LOC) that positions HUD via CSS grid, renders match title/status, composes `TeamStatusPanel`, `BattleTimer`, and `ControlStrip`, and exposes an overlay toggle region. Include `role="banner"` and `aria-live="polite"` for status text (FR-006).
-- [ ] T010 Implement `src/components/hud/TeamStatusPanel.tsx` for each team, showing alive/eliminated counts, captain marker, weapon distribution chips, and team color accent. Read data from `useBattleHudData`. Covers FR-001, FR-020.
-- [ ] T011 Implement `src/components/hud/BattleTimer.tsx` showing elapsed battle time and, when victory pending, the countdown overlay badge. Provide semantic labels for screen readers. Supports FR-006, FR-014.
-- [ ] T012 Implement `src/components/hud/ControlStrip.tsx` with buttons for Pause/Resume, Cinematic toggle, HUD toggle, and Settings. Dispatch uiStore actions, respect keyboard focus outlines, and disable controls when overlays/modal already active. Covers FR-006, FR-013.
+- [x] T009 Implement `src/components/hud/HudRoot.tsx` (≤180 LOC) that positions HUD via CSS grid, renders match title/status, composes `TeamStatusPanel`, `BattleTimer`, and `ControlStrip`, and exposes an overlay toggle region. Include `role="banner"` and `aria-live="polite"` for status text (FR-006).
+- [x] T010 Implement `src/components/hud/TeamStatusPanel.tsx` for each team, showing alive/eliminated counts, captain marker, weapon distribution chips, and team color accent. Read data from `useBattleHudData`. Covers FR-001, FR-020.
+- [x] T011 Implement `src/components/hud/BattleTimer.tsx` showing elapsed battle time and, when victory pending, the countdown overlay badge. Provide semantic labels for screen readers. Supports FR-006, FR-014.
+- [x] T012 Implement `src/components/hud/ControlStrip.tsx` with buttons for Pause/Resume, Cinematic toggle, HUD toggle, and Settings. Dispatch uiStore actions, respect keyboard focus outlines, and disable controls when overlays/modal already active. Covers FR-006, FR-013.
 
 ## Gate 3: Overlays & Modals (4 tasks)
 *Goal: deliver pop-up experiences triggered by battle outcomes & performance state.*
 
-- [ ] T013 Implement `src/components/overlays/VictoryOverlay.tsx` (≤200 LOC) showing winner, countdown timer, Stats & Settings buttons, manual restart control, and team summary chips. Connect to uiStore + `useVictoryCountdown`. Fulfill FR-006 + FR-014.
-- [ ] T014 Implement `src/components/overlays/StatsModal.tsx` with focus trap, keyboard navigation, table sorting, and responsive layout. Consume `usePostBattleStats`, display per-robot rows, team totals, and captain highlight. Satisfies FR-019 + FR-020.
+- [x] T013 Implement `src/components/overlays/VictoryOverlay.tsx` (≤200 LOC) showing winner, countdown timer, Stats & Settings buttons, manual restart control, and team summary chips. Connect to uiStore + `useVictoryCountdown`. Fulfill FR-006 + FR-014.
+- [x] T014 Implement `src/components/overlays/StatsModal.tsx` with focus trap, keyboard navigation, table sorting, and responsive layout. Consume `usePostBattleStats`, display per-robot rows, team totals, and captain highlight. Satisfies FR-019 + FR-020.
 - [ ] T015 Implement `src/components/overlays/SettingsDrawer.tsx` sliding drawer that exposes team composition controls (weapon sliders/toggles), apply/cancel, and resets. Persist values through uiStore for next battle spawn. Aligns with FR-006.
-- [ ] T016 Implement `src/components/overlays/PerformanceBanner.tsx` to show FPS, quality-scaling state, auto-hide progress, and dismiss button. Support `aria-live` announcements and user toggle. Covers FR-021 – FR-023.
+- [x] T016 Implement `src/components/overlays/PerformanceBanner.tsx` to show FPS, quality-scaling state, auto-hide progress, and dismiss button. Support `aria-live` announcements and user toggle. Covers FR-021 – FR-023.
 
 ## Gate 4: Interaction & Integration (4 tasks)
 *Goal: wire runtime events and input handling into the UI.*

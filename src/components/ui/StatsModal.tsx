@@ -7,7 +7,7 @@ import { useUIStore } from "../../store/uiStore";
 import type { RobotStats } from "../../types";
 
 export function StatsModal() {
-  const open = useUIStore((s) => s.statsOpen);
+  const open = useUIStore((s) => s.isStatsOpen);
   const setOpen = useUIStore((s) => s.setStatsOpen);
   const world = useSimulationWorld();
   const snapshot = world?.simulation?.postBattleStats ?? null;
