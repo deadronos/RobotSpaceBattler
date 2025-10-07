@@ -4,39 +4,8 @@
  * Global test configuration and setup for the test suite.
  */
 
-import React from 'react';
-// Provide a robust `act` shim that delegates to react-dom/test-utils.act when available,
-// falls back to a synchronous wrapper otherwise. This runs early to satisfy libraries
-// that reference React.act or a global act function.
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const rd = require('react-dom/test-utils');
-  const rdAct = rd && typeof rd.act === 'function' ? rd.act : null;
-  (React as any).act = (...args: any[]) => {
-    if (rdAct) return rdAct(...args);
-    const cb = args[0];
-    if (typeof cb === 'function') {
-      let result: any;
-      try {
-        result = cb();
-      } catch (e) {
-        throw e;
-      }
-      return { then: (f: any) => f(result) };
-    }
-    return undefined;
-  };
-  (globalThis as any).act = (React as any).act;
-} catch (e) {
-  // last-resort fallback
-  (React as any).act = (fn: any) => {
-    if (typeof fn === 'function') return fn();
-    return undefined;
-  };
-  (globalThis as any).act = (React as any).act;
-}
-
-
+import { act } from 'react-dom/test-utils';
+(globalThis as any).act = act;
 import '@testing-library/jest-dom';
 
 import {
