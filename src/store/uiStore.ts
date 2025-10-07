@@ -50,7 +50,7 @@ const DEFAULT_STATE: UiState = {
   performanceOverlayVisible: true,
   performanceBannerDismissed: false,
   countdownOverrideSeconds: null,
-  hudTranslucency: 0.72,
+  hudTranslucency: 0.5,
   hudPanelPosition: 'left-right',
 };
 
