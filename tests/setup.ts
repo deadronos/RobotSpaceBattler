@@ -4,14 +4,13 @@
  * Global test configuration and setup for the test suite.
  */
 
-import '@testing-library/jest-dom';
-
 import React from 'react';
 import { act } from 'react-dom/test-utils';
-// Expose a global `act` implementation for test-runner compat. Avoid assigning React.act to prevent
-// recursive call cycles between react-dom and react act implementations.
-// Some libraries look for a global `act` function; provide it here.
+// Ensure React.act exists and assign before other testing imports to satisfy legacy code paths
+(React as any).act = act;
 (globalThis as any).act = act;
+
+import '@testing-library/jest-dom';
 
 import {
   calculateDistance,
