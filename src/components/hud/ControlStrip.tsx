@@ -59,11 +59,11 @@ export function ControlStrip({
   return (
     <div className="control-strip" role="toolbar" aria-label="Battle controls">
       <div className="control-strip__metrics" aria-live="polite">
-        <span className="control-strip__fps" data-testid="fps-readout">
+        <span className="control-strip__metric control-strip__metric--fps" data-testid="fps-readout">
           {Math.round(performance.fps)} fps
         </span>
         {performance.qualityScalingActive ? (
-          <span className="control-strip__scaling" role="status">
+          <span className="control-strip__metric control-strip__metric--scaling" role="status">
             Performance scaling active
           </span>
         ) : null}
@@ -72,6 +72,7 @@ export function ControlStrip({
       <div className="control-strip__actions">
         <button
           type="button"
+          className="control-strip__button control-strip__button--pause"
           onClick={handlePauseClick}
           disabled={overlaysActive}
         >
@@ -80,18 +81,24 @@ export function ControlStrip({
 
         <button
           type="button"
+          className="control-strip__button control-strip__button--cinematic"
           onClick={handleCinematicClick}
           disabled={overlaysActive}
         >
           {cinematicLabel}
         </button>
 
-        <button type="button" onClick={controls.toggleHud}>
+        <button
+          type="button"
+          className="control-strip__button control-strip__button--hud"
+          onClick={controls.toggleHud}
+        >
           {hudLabel}
         </button>
 
         <button
           type="button"
+          className="control-strip__button control-strip__button--settings"
           onClick={handleSettingsClick}
           disabled={overlaysActive}
         >

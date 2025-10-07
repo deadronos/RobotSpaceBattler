@@ -21,7 +21,7 @@ export function TeamStatusPanel({ team }: TeamStatusPanelProps) {
       aria-label={`${team.label} status`}
     >
       <header className="team-status-panel__header">
-        <h2 className="team-status-panel__name">{team.label}</h2>
+        <h3 className="team-status-panel__name">{team.label}</h3>
         {team.captain ? (
           <span className="team-status-panel__captain" role="status">
             Captain: {formatCaptainLabel(team)}
@@ -34,13 +34,13 @@ export function TeamStatusPanel({ team }: TeamStatusPanelProps) {
       </header>
 
       <dl className="team-status-panel__stats">
-        <div>
-          <dt>Alive</dt>
-          <dd>{team.alive}</dd>
+        <div className="team-status-panel__stat">
+          <dt className="team-status-panel__stat-label">Alive</dt>
+          <dd className="team-status-panel__stat-value">{team.alive}</dd>
         </div>
-        <div>
-          <dt>Eliminated</dt>
-          <dd>{team.eliminated}</dd>
+        <div className="team-status-panel__stat">
+          <dt className="team-status-panel__stat-label">Eliminated</dt>
+          <dd className="team-status-panel__stat-value">{team.eliminated}</dd>
         </div>
       </dl>
 
@@ -53,7 +53,7 @@ export function TeamStatusPanel({ team }: TeamStatusPanelProps) {
           <span
             key={weapon}
             role="listitem"
-            className="team-status-panel__weapon"
+            className="team-status-panel__weapon-chip"
           >
             {weapon}: {count}
           </span>
