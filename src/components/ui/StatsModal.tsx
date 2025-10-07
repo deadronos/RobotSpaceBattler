@@ -1,4 +1,4 @@
-import "../styles/overlays.css";
+// overlay styles intentionally not imported in tests (imports cause Vite transform issues).
 
 import { useMemo } from "react";
 

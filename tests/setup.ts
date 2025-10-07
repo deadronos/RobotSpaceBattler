@@ -7,7 +7,7 @@
 import '@testing-library/jest-dom';
 
 import React from 'react';
-import { act } from 'react-dom/test-utils';
+import { act } from 'react';
 // Ensure React.act exists for libraries expecting it (compat shim for testing libs)
 (React as any).act = act;
 
