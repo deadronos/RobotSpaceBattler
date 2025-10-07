@@ -11,6 +11,9 @@ export interface UiState {
   performanceOverlayVisible: boolean;
   performanceBannerDismissed: boolean;
   countdownOverrideSeconds: number | null;
+  // UI customizations
+  hudTranslucency: number; // 0..1 alpha for translucent panels
+  hudPanelPosition: 'left-right' | 'stacked';
 }
 
 export interface UiActions {
@@ -31,6 +34,8 @@ export interface UiActions {
   setCountdownOverride: (seconds: number | null | undefined) => void;
   clearCountdownOverride: () => void;
   reset: () => void;
+  setHudTranslucency?: (alpha: number) => void;
+  setHudPanelPosition?: (pos: 'left-right' | 'stacked') => void;
 }
 
 export type UiStore = UiState & UiActions;
@@ -45,6 +50,8 @@ const DEFAULT_STATE: UiState = {
   performanceOverlayVisible: true,
   performanceBannerDismissed: false,
   countdownOverrideSeconds: null,
+  hudTranslucency: 0.72,
+  hudPanelPosition: 'left-right',
 };
 
 type UiStateOverrides = Partial<
@@ -91,6 +98,8 @@ function normalizeState(overrides: UiStateOverrides = {}): UiState {
       overrides.performanceBannerDismissed ?? DEFAULT_STATE.performanceBannerDismissed,
     countdownOverrideSeconds:
       overrides.countdownOverrideSeconds ?? DEFAULT_STATE.countdownOverrideSeconds,
+    hudTranslucency: overrides.hudTranslucency ?? DEFAULT_STATE.hudTranslucency,
+    hudPanelPosition: overrides.hudPanelPosition ?? DEFAULT_STATE.hudPanelPosition,
   };
 }
 
@@ -111,6 +120,8 @@ export const createUiStore = (
 
   return createStore<UiStore>((set) => ({
     ...baseState,
+    setHudTranslucency: (alpha: number) => set({ hudTranslucency: Math.max(0, Math.min(1, alpha)) }),
+    setHudPanelPosition: (pos: 'left-right' | 'stacked') => set({ hudPanelPosition: pos }),
     setVictoryOverlayVisible: (visible) => set({ victoryOverlayVisible: !!visible }),
     openStats: () => set(withStatsOpen(true)),
     closeStats: () => set(withStatsOpen(false)),

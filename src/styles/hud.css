@@ -1,16 +1,96 @@
-/* Minimal HUD styles for accessibility and layout (placeholder) */
+/* HUD overlays and translucent panels */
 .hud-root {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-  padding: 8px;
-  pointer-events: none;
+  inset: 0;
+  pointer-events: none; /* allow clicks through except on children */
 }
 .hud-root * { pointer-events: auto; }
-.hud-root__header { display: flex; gap: 8px; align-items: center; }
+
+/* Left column: Battle status and controls at top-left */
+.hud-root__left {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hud-panel {
+  /* use CSS variable --hud-translucency set on root */
+  background: rgba(10, 14, 20, var(--hud-translucency, 0.72)); /* translucent dark */
+  color: #e6eef8;
+  border: 1px solid rgba(255,255,255,0.04);
+  padding: 10px 12px;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  max-width: 420px;
+}
+
+.hud-panel--status .hud-root__header { display: flex; gap: 10px; align-items: baseline; }
+.hud-root__title { font-size: 20px; margin: 0; }
+.hud-root__status { margin: 0; opacity: 0.95; }
+
+.hud-root__header { display: flex; align-items: center; justify-content: space-between; }
+.hud-root__header-left { display: flex; gap: 10px; align-items: baseline; }
+.hud-root__header-right { display: flex; align-items: center; }
+.hud-root__settings-button {
+  background: transparent;
+  border: none;
+  color: inherit;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.hud-root__settings-button:hover { background: rgba(255,255,255,0.03); }
+.hud-root__settings-button:focus { outline: 2px solid rgba(255,255,255,0.12); }
+
+/* Controls panel sits to the right of status visually but grouped under left overlay */
+.hud-panel--controls { display: flex; align-items: center; }
 .control-strip { display: flex; gap: 8px; align-items: center; }
 .control-strip__actions button { min-width: 64px; }
+
+/* Right column: team panels grouped at top-right */
+.hud-root__right {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+.hud-panel--teams { display: flex; gap: 8px; flex-direction: column; max-width: 320px; }
+.hud-panel--teams { padding: 8px; }
+.team-status-panel { background: transparent; padding: 8px 10px; border-radius: 4px; margin-bottom: 6px; }
+
+/* Make the right panel a distinct container with panel background */
+.hud-root__right > .hud-panel--teams {
+  background: rgba(10,14,20,var(--hud-translucency,0.72));
+  border-radius: 6px;
+  padding: 10px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+}
+
+.hud-panel { transition: background-color 160ms ease, transform 160ms ease; }
+
+/* keep left panel width constrained so right panel sits next to it */
+.hud-root__left .hud-panel--status { max-width: 420px; }
+.hud-root__left .hud-panel--controls { max-width: 420px; }
+
+/* Responsive: stacked layout for small screens or when user prefers stacked */
+@media (max-width: 640px) {
+  .hud-root__left { left: 8px; top: 8px; }
+  .hud-root__right { right: 8px; top: 72px; }
+  .hud-root--stacked .hud-root__left,
+  .hud-root--stacked .hud-root__right {
+    position: static;
+    width: auto;
+  }
+  .hud-root--stacked .hud-panel--teams {
+    margin-top: 8px;
+    display: block;
+  }
+  .hud-root { display: flex; flex-direction: column; gap: 8px; padding: 8px; }
+}
+.team-status-panel { background: transparent; padding: 6px 8px; border-radius: 4px; }
+.team-status-panel__header { display: block; }
+.team-status-panel__name { margin: 0 0 6px 0; font-size: 18px; }

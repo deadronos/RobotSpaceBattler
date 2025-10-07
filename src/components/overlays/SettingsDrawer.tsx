@@ -6,6 +6,10 @@ export function SettingsDrawer() {
   const settingsOpen = useUiStore((s) => s.settingsOpen);
   const closeSettings = useUiStore((s) => s.closeSettings);
   const setSettingsOpen = useUiStore((s) => s.setSettingsOpen);
+  const hudTranslucency = useUiStore((s) => s.hudTranslucency);
+  const setHudTranslucency = useUiStore((s) => s.setHudTranslucency);
+  const hudPanelPosition = useUiStore((s) => s.hudPanelPosition);
+  const setHudPanelPosition = useUiStore((s) => s.setHudPanelPosition);
 
   if (!settingsOpen) return null;
 
@@ -44,6 +48,32 @@ export function SettingsDrawer() {
           <label>
             Reduced Motion
             <input type="checkbox" />
+          </label>
+        </section>
+
+        <section>
+          <h3>HUD</h3>
+          <label>
+            Translucency
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={hudTranslucency}
+              onChange={(e) => setHudTranslucency?.(Number(e.target.value))}
+            />
+          </label>
+
+          <label>
+            Panel layout
+            <select
+              value={hudPanelPosition}
+              onChange={(e) => setHudPanelPosition?.(e.target.value as 'left-right' | 'stacked')}
+            >
+              <option value="left-right">Left / Right</option>
+              <option value="stacked">Stacked (mobile)</option>
+            </select>
           </label>
         </section>
       </div>
