@@ -6,6 +6,24 @@
 **Input**: User description: "Implement actual 3D simulation fight graphics; switch or hide UI
 between rounds and show a battle UI during rounds."
 
+## Clarifications
+
+### Session 2025-10-13
+
+- Q: Baseline for performance acceptance environment (CI headless vs QA lab reference vs
+  synthetic baseline) →
+  A: QA lab reference machine; CI verifies quality-scaling behavior.
+- Q: Visual regression test approach (pixel diffs vs structural snapshots vs tolerant diffs) →
+  A: Structural/ARIA snapshot primary; tolerant visual-diff (SSIM ≥ 0.97) for layout regressions.
+- Q: QA lab reference machine specification? →
+  A: Single modern desktop: 8-core CPU (Intel i7 or AMD Ryzen 7), 16 GB RAM,
+  GeForce RTX 3060-class GPU, Chrome Stable with hardware acceleration, 1920×1080
+  resolution.
+- Q: Minimal UI behavior for follow-camera? →
+  A: Minimal UI shows match-level stats; per-robot overlay appears only while
+  follow-camera is active or when a robot is explicitly selected. Overlay includes
+  health, status icons, and team affiliation.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Enter match and watch a round (Priority: P1)
@@ -45,7 +63,9 @@ UI adapts (for example, show targeted robot details when following a robot).
 
 **Acceptance Scenarios**:
 
-1. **Given** follow-camera mode, **When** the player follows a robot, **Then** the battle UI displays the followed robot's health and status.
+1. **Given** follow-camera mode, **When** the player follows a robot,
+   **Then** the minimal UI continues to show match-level stats and a per-robot overlay
+   displays the followed robot's health, status icons, and team affiliation.
 2. **Given** cinematic overview, **When** toggled, **Then** the battle UI reduces clutter, presenting only high-level match stats.
 
 ---
@@ -83,7 +103,10 @@ unchanged.
 
 - **FR-001**: The system MUST show a distinct in-round "battle UI" during active rounds and hide or minimize non-essential UI elements used outside rounds.
 - **FR-002**: The system MUST allow toggling between full UI and minimal/spectator UI during rounds via a configurable input (hotkey/controller mapping).
-- **FR-003**: The system MUST display per-robot key data in the battle UI when following a robot (health, status icons, team affiliation).
+- **FR-003**: The system MUST display per-robot key data in the battle UI for the
+  followed robot (health, status icons, team affiliation). When minimal UI is active,
+  per-robot details MUST be visible only while follow-camera mode is active or when a
+  robot is explicitly selected.
 - **FR-004**: The system MUST support at least two camera modes during a round (follow and cinematic) with the UI adapting to the selected mode.
 - **FR-005**: The system MUST gracefully handle UI transitions between states (lobby → round start → round end) without causing simulation pauses or loss of game state.
 - **FR-006**: The system MUST expose accessibility settings (reduced motion, simplified visuals) that affect in-round rendering but preserve textual UI elements.
@@ -93,7 +116,11 @@ unchanged.
 
 ### Non-Functional Requirements
 
-- **NFR-001**: Visual performance during rounds MUST target 60 fps on baseline target hardware (modern Chromium browsers) with a minimum fallback of 30 fps.
+- **NFR-001**: Visual performance during rounds MUST target 60 fps when measured on the
+  project's QA lab reference machine (see Clarifications Session 2025-10-13). The system
+  MUST maintain a fallback target of at least 30 fps via the performance manager's
+  quality-scaling when under resource constraints; CI will verify scaling behavior rather
+  than assert raw baseline FPS.
 - **NFR-002**: UI transitions must complete within 250ms to maintain perceived responsiveness.
 - **NFR-003**: Reduced-motion mode MUST disable camera shakes and particle bursts (where applicable) and be togglable at runtime.
 
@@ -102,8 +129,13 @@ unchanged.
 
 ### Measurable Outcomes
 
-- **SC-001**: 95% of test runs for round transitions (start/end) complete without UI glitches visible in recorded frames (Playwright video or screenshot diffs).
-- **SC-002**: On baseline test hardware, average frame time during representative rounds is <=16ms (60 fps) in 80% of recorded runs; when below threshold, quality-scaling compensates to maintain >=30 fps.
+- **SC-001**: 95% of test runs for round transitions (start/end) pass automated structural (ARIA)
+  snapshot checks and tolerant visual-diff checks (SSIM ≥ 0.97) without requiring manual review; no
+  more than 5% of runs are flagged for human triage.
+- **SC-002**: On the QA lab reference machine (defined in Clarifications Session
+  2025-10-13), average frame time during representative rounds is <=16ms (60 fps) in
+  80% of recorded runs. When below threshold, automated CI tests must verify the
+  performance manager's quality-scaling compensates to maintain ≥30 fps.
 - **SC-003**: Player toggles UI visibility via hotkey with action latency under 100ms in 95% of trials.
 - **SC-004**: Accessibility reduced-motion toggles take effect within one frame of change and persist across rounds.
 
@@ -117,7 +149,8 @@ unchanged.
 - **Round**: Represents an active match round. Fields: id, status (initializing, running, ending, finished), startTime, endTime, metadata (map, rules).
 - **Robot**: Existing entity; battle UI reads robot: id, team, currentHealth, statusFlags, currentTarget, isCaptain.
 - **CameraState**: mode (follow|cinematic|free), targetEntityId (optional), interpolation settings.
-- **UIState**: inRound (bool), activeUI (battle|lobby|summary), userPreferences (reducedMotion, minimalUi), lastToggleTime.
+- **UIState**: inRound (bool), activeUI (battle|lobby|summary), userPreferences
+	(reducedMotion, minimalUi, followModeShowsPerRobot), lastToggleTime.
 
 
 ## Assumptions
@@ -145,6 +178,11 @@ unchanged.
 - Expose runtime preferences (UI visibility, reduced-motion, minimal UI) in a single UI
 	state area so tests can assert behavior deterministically.
 
+ - Implementation note: Use Playwright's accessibility snapshot utilities (toMatchAriaSnapshot)
+	 as the primary regression check. Add a tolerant visual-diff stage that computes SSIM for
+	 Playwright screenshots with a threshold of 0.97; failures produce a triage artifact bundle
+	 (video + failing frames + aria snapshot) for human review.
+
 
 ## Traceability
 
@@ -168,6 +206,9 @@ unchanged.
 	 adapter so rendering remains decoupled from authoritative logic.
 4. Add end-to-end Playwright scenarios that verify round transitions visually (video or
 	 screenshot diffs) and validate accessibility and reduced-motion behaviors.
+5. Define and document a QA lab reference machine (hardware + browser configuration) and
+   add CI tests that verify quality-scaling behavior; CI should avoid asserting raw
+   baseline FPS as an absolute gate.
 
 
 ---
