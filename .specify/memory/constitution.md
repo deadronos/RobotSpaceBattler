@@ -1,20 +1,20 @@
 <!--
 SYNC IMPACT REPORT
-- Version change: TEMPLATE → 1.0.0
+- Version change: 1.0.0 → 1.0.1
 - Modified principles:
-  - TEMPLATE placeholders → six concrete principles
-    (Component/Library-First; Test-First; Size & Separation;
-     React & r3f Best Practices; Observability & Performance;
-     Deprecation & Dependency Hygiene)
-- Added sections: Agentic AI Usage Guidance (when to update constitution)
-- Removed sections: none (template placeholders replaced with concrete text)
+  - None (no substantive governance changes)
+- Added sections: none
+- Removed sections: none
+- Repo references updated:
+  - .github/copilot-instructions.md → align principle list with current six
+  - specs/001-3d-team-vs/plan.md → fix constitution path + version string
 - Templates requiring updates:
-  - .specify/templates/plan-template.md ✅ updated
-  - .specify/templates/spec-template.md ✅ updated
-  - .specify/templates/tasks-template.md ✅ updated
-  - .specify/templates/agent-file-template.md ✅ updated
+  - .specify/templates/plan-template.md ✅ reviewed (no changes required)
+  - .specify/templates/spec-template.md ✅ reviewed (no changes required)
+  - .specify/templates/tasks-template.md ✅ reviewed (no changes required)
+  - .specify/templates/agent-file-template.md ✅ reviewed (no changes required)
 - Follow-up TODOs:
-  - Verify README.md and AGENTS.md references to constitution rules (⚠ pending)
+  - Verify README.md and AGENTS.md references to constitution rules ✅ done
   - Run repository-wide lint/test and update any infra that assumes older
     constitution text (⚠ pending)
 -->
@@ -192,4 +192,4 @@ approved and governed.
   reflect changes in this document. CI or pre-merge checks SHOULD include a linter
   that validates new PRs for the `CONSTITUTION-CHECK` section and fails if absent.
 
-**Version**: 1.0.0 | **Ratified**: 2025-10-06 | **Last Amended**: 2025-10-06
+**Version**: 1.0.1 | **Ratified**: 2025-10-06 | **Last Amended**: 2025-10-13

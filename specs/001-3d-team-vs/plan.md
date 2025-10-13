@@ -435,4 +435,4 @@ Scaffolding is a prerequisite for Gate 0 tests; do not remove or regress it whil
 6. Run Playwright `ui-flow.spec.ts` (T024) and update CONSTITUTION-CHECK before PR.
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
+*Based on Constitution v1.0.1 - See `.specify/memory/constitution.md`*
