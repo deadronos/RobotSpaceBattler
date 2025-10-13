@@ -24,6 +24,32 @@ between rounds and show a battle UI during rounds."
   follow-camera is active or when a robot is explicitly selected. Overlay includes
   health, status icons, and team affiliation.
 
+### Session 2025-10-14
+
+ - Q: What match scale should visuals and performance be designed for? → A: Moderate — 11–50 robots.
+		- Implication: Expect repeated robot visuals at this scale. Implementation should
+			prefer GPU instancing, geometry/texture atlasing, and LOD tiers for robot models
+			to keep the r3f render loop light. The performance manager must expose knobs
+			(particle density, shadow resolution, LOD thresholds) so CI and QA can validate
+			quality-scaling behavior for matches in this range.
+
+ - Q: How should simulation state be delivered to the UI? → A: Hybrid — event push for
+	 discrete changes and a lightweight per-frame snapshot API for continuous values.
+	 - Implication: Selectors/adapters must expose both subscription-based event hooks
+		 (e.g., onRoundStart, onRobotUpdate) and a low-overhead per-frame snapshot getter
+		 (e.g., getCameraSnapshot() or getFrameSnapshot()) for values that must be
+		 frame-aligned (camera transforms, interpolation targets). Implementations must
+		 minimize allocations during per-frame reads and provide deterministic ordering
+		 so renderers can run without additional synchronization complexity.
+
+ - Q: How should UI toggle latency be measured? → A: Event → first visible frame.
+	 - Implication: Define a canonical measurement: the latency is measured from the
+		 authoritative event (hotkey press for user toggles; round-start event for
+		 round transitions) to the first rendered frame in which the battle UI root
+		 element is present and visible. Tests and perf harnesses must implement a
+		 helper that records the event timestamp and the first-visible-frame timestamp
+		 and report the delta for assertion in CI (e.g., 95th percentile < 100ms).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Enter match and watch a round (Priority: P1)
@@ -136,7 +162,12 @@ unchanged.
   2025-10-13), average frame time during representative rounds is <=16ms (60 fps) in
   80% of recorded runs. When below threshold, automated CI tests must verify the
   performance manager's quality-scaling compensates to maintain ≥30 fps.
-- **SC-003**: Player toggles UI visibility via hotkey with action latency under 100ms in 95% of trials.
+ - **SC-003**: Player toggles UI visibility via hotkey with action latency under 100ms in 95% of trials.
+	 - Measurement: Latency is measured from the authoritative event to the first visible
+		 frame of the battle UI. For hotkey toggles the authoritative event is the
+		 keypress; for round transitions the authoritative event is the round-start
+		 signal. The Playwright/CI harness must record event timestamp and the
+		 first-visible-frame timestamp and assert the 95th percentile is < 100ms.
 - **SC-004**: Accessibility reduced-motion toggles take effect within one frame of change and persist across rounds.
 
 ### Qualitative Outcomes
