@@ -1,85 +1,137 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from "react";
 
-import HudRoot from './components/hud/HudRoot';
-import SettingsDrawer from './components/overlays/SettingsDrawer';
-import StatsModal from './components/overlays/StatsModal';
-import VictoryOverlay from './components/overlays/VictoryOverlay';
-import Scene from './components/Scene'
-import { openSettingsOverlay,openStatsOverlay, useSimulationWorld } from './ecs/world';
-import useUiShortcuts from './hooks/useUiShortcuts';
-import useVictoryCountdown from './hooks/useVictoryCountdown';
-import { useUIStore } from './store/uiStore'
-import { useUiBridgeSystem } from './systems/uiBridgeSystem';
-import { getPlaywrightTriggerFlag,isAppDebug, setAppMounted, setAppSimStatus, setAppUiVictory } from './utils/debugFlags';
+import HudRoot from "./components/hud/HudRoot";
+import SettingsDrawer from "./components/overlays/SettingsDrawer";
+import StatsModal from "./components/overlays/StatsModal";
+import VictoryOverlay from "./components/overlays/VictoryOverlay";
+import Scene from "./components/Scene";
+import { setVictoryState } from "./ecs/entities/SimulationState";
+import {
+  openSettingsOverlay,
+  openStatsOverlay,
+  useSimulationWorld,
+} from "./ecs/world";
+import useUiShortcuts from "./hooks/useUiShortcuts";
+import useVictoryCountdown from "./hooks/useVictoryCountdown";
+import { useUIStore } from "./store/uiStore";
+import { useUiBridgeSystem } from "./systems/uiBridgeSystem";
+import {
+  getPlaywrightTriggerFlag,
+  isAppDebug,
+  setAppMounted,
+  setAppSimStatus,
+  setAppUiVictory,
+} from "./utils/debugFlags";
+
+function logDebug(message: string, error?: unknown) {
+  if (!isAppDebug()) {
+    return;
+  }
+
+  if (error) {
+    console.warn(`[test-helper] ${message}`, error);
+    return;
+  }
+
+  console.log(`[test-helper] ${message}`);
+}
 
 export default function App() {
   useUiShortcuts();
   useUiBridgeSystem();
 
   const { remainingSeconds, pause, resume, restartNow } = useVictoryCountdown();
-
   const statsOpen = useUIStore((s) => s.statsOpen);
-  // const settingsOpen = useUIStore((s) => s.settingsOpen); // Note: Settings drawer reads its own open state from the store; we don't need
-  // to select it here. Keep selectors minimal to avoid unnecessary subscriptions.
-
   const world = useSimulationWorld();
   const sim = world.simulation;
   const [testTriggered, setTestTriggered] = useState(false);
-  const victoryVisible = useUIStore((s) => s.victoryOverlayVisible) || testTriggered;
-  const winnerName = sim.winner ? String(sim.winner) : '';
+  const victoryVisible =
+    useUIStore((s) => s.victoryOverlayVisible) || testTriggered;
+  const winnerName = sim.winner ? String(sim.winner) : "";
+
+  const forceVictoryFromQuery = useMemo(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    try {
+      const params = new URLSearchParams(window.location.search ?? "");
+      return params.get("forceVictory") === "1";
+    } catch (error) {
+      logDebug("failed to parse query string for forceVictory flag", error);
+      return false;
+    }
+  }, []);
 
   useEffect(() => {
-    // mark app mounted for external debugging
     setAppMounted(true);
 
-    const handler = () => {
-      if (isAppDebug()) console.log('[test-helper] received playwright:triggerVictory');
+    const applyVictoryState = () => {
       try {
-        // try to use the SimulationState helper where available
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { setVictoryState } = require('./ecs/entities/SimulationState');
-        world.simulation = setVictoryState(world.simulation, 'red', Date.now());
-      } catch {
-        try {
-          world.simulation = { ...world.simulation, status: 'victory', winner: 'red', autoRestartCountdown: 5 };
-        } catch {}
+        world.simulation = setVictoryState(world.simulation, "red", Date.now());
+        logDebug("applied SimulationState.setVictoryState helper");
+      } catch (error) {
+        logDebug("falling back to manual simulation victory patch", error);
+        world.simulation = {
+          ...world.simulation,
+          status: "victory",
+          winner: "red",
+          autoRestartCountdown: 5,
+        };
       }
+    };
 
-      // ensure UI immediately reflects victory for test flows
+    const syncUiVictory = () => {
       try {
         useUIStore.getState().setVictoryOverlayVisible(true);
-      } catch {}
-      // local state to force a render in case UI store update was lost
+        logDebug("forced victory overlay visible");
+      } catch (error) {
+        logDebug("failed to set victory overlay visibility", error);
+      }
       setTestTriggered(true);
+    };
 
-      // reflect sim state for debugging
+    const syncDebugFlags = () => {
       try {
         setAppSimStatus(world.simulation.status);
         setAppUiVictory(useUIStore.getState().victoryOverlayVisible);
-      } catch {}
+      } catch (error) {
+        logDebug("failed to update debug flag mirrors", error);
+      }
     };
 
-    // If the page was opened with ?forceVictory=1, immediately trigger victory
-    try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('forceVictory') === '1') {
-        if (isAppDebug()) console.log('[test-helper] forceVictory param detected, triggering victory');
-        handler();
-      }
-    } catch {}
+    const handleVictory = () => {
+      logDebug("received playwright:triggerVictory event");
+      applyVictoryState();
+      syncUiVictory();
+      syncDebugFlags();
+    };
 
-    // if the test helper fired before we mounted, honor the persistent flag as well
-    if (getPlaywrightTriggerFlag()) {
-      if (isAppDebug()) console.log('[test-helper] detected persisted victory flag');
-      handler();
+    if (forceVictoryFromQuery) {
+      logDebug("forceVictory query param detected, triggering victory");
+      handleVictory();
     }
 
-    window.addEventListener('playwright:triggerVictory', handler as EventListener);
-    return () => window.removeEventListener('playwright:triggerVictory', handler as EventListener);
-  }, [world]);
+    if (getPlaywrightTriggerFlag()) {
+      logDebug("detected persisted playwright trigger flag");
+      handleVictory();
+    }
+
+    window.addEventListener(
+      "playwright:triggerVictory",
+      handleVictory as EventListener,
+    );
+    return () => {
+      setAppMounted(false);
+      window.removeEventListener(
+        "playwright:triggerVictory",
+        handleVictory as EventListener,
+      );
+    };
+  }, [forceVictoryFromQuery, world]);
 
   return (
-    <div id="app-root" style={{ height: '100%' }}>
+    <div id="app-root" style={{ height: "100%" }}>
       <HudRoot onTogglePause={() => {}} onToggleCinematic={() => {}} />
       <VictoryOverlay
         visible={victoryVisible}
@@ -90,9 +142,9 @@ export default function App() {
         actions={{
           openStats: () => openStatsOverlay(world),
           openSettings: () => openSettingsOverlay(world),
-          restartNow: restartNow,
-          pauseCountdown: pause,
-          resumeCountdown: resume,
+          restartNow: () => restartNow(),
+          pauseCountdown: () => pause(),
+          resumeCountdown: () => resume(),
         }}
       />
 
@@ -101,7 +153,7 @@ export default function App() {
         winnerName={winnerName}
         teamSummaries={[]}
         robotStats={[]}
-        sort={{ column: 'kills', direction: 'desc' }}
+        sort={{ column: "kills", direction: "desc" }}
         onClose={() => useUIStore.getState().closeStats()}
         onSortChange={() => {}}
         onExport={() => {}}

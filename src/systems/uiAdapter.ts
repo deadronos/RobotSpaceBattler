@@ -1,11 +1,17 @@
-import type { BattleSelectorsContext } from '../selectors/battleSelectors';
+import type { BattleSelectorsContext } from "../selectors/battleSelectors";
 import {
   getActiveCamera,
   getBattleUiState,
   getRobotView,
   getRoundView,
-} from '../selectors/battleSelectors';
-import type { BattleUiState, CameraState, FrameSnapshot, RobotView, RoundView } from '../types/ui';
+} from "../selectors/battleSelectors";
+import type {
+  BattleUiState,
+  CameraState,
+  FrameSnapshot,
+  RobotView,
+  RoundView,
+} from "../types/ui";
 
 type UnsubscribeFn = () => void;
 type RoundHandler = (round: RoundView) => void;
@@ -23,7 +29,9 @@ export interface UiAdapter {
   updateContext: (newContext: BattleSelectorsContext) => void;
 }
 
-export function createUiAdapter(initialContext: BattleSelectorsContext): UiAdapter {
+export function createUiAdapter(
+  initialContext: BattleSelectorsContext,
+): UiAdapter {
   let context = initialContext;
   let previousRoundStatus = context.round.status;
 
@@ -61,7 +69,10 @@ export function createUiAdapter(initialContext: BattleSelectorsContext): UiAdapt
       const interpolationMs = context.camera.interpolationMs ?? 0;
       if (interpolationMs > 0) {
         const elapsed = now - lastUpdateTime;
-        frameSnapshot.interpolationFactor = Math.min(1, Math.max(0, elapsed / interpolationMs));
+        frameSnapshot.interpolationFactor = Math.min(
+          1,
+          Math.max(0, elapsed / interpolationMs),
+        );
       } else {
         frameSnapshot.interpolationFactor = 1;
       }
@@ -100,8 +111,8 @@ export function createUiAdapter(initialContext: BattleSelectorsContext): UiAdapt
 
       // Check for round status transitions
       if (
-        previousRoundStatus !== 'running' &&
-        context.round.status === 'running' &&
+        previousRoundStatus !== "running" &&
+        context.round.status === "running" &&
         roundStartHandlers.size > 0
       ) {
         const roundView = getRoundView(context);
@@ -111,8 +122,8 @@ export function createUiAdapter(initialContext: BattleSelectorsContext): UiAdapt
       }
 
       if (
-        previousRoundStatus !== 'finished' &&
-        context.round.status === 'finished' &&
+        previousRoundStatus !== "finished" &&
+        context.round.status === "finished" &&
         roundEndHandlers.size > 0
       ) {
         const roundView = getRoundView(context);
@@ -121,8 +132,12 @@ export function createUiAdapter(initialContext: BattleSelectorsContext): UiAdapt
         }
       }
 
-      // Check for camera mode changes
-      if (oldContext.camera.mode !== context.camera.mode && cameraChangeHandlers.size > 0) {
+      // Check for camera updates
+      const cameraChanged =
+        oldContext.camera.mode !== context.camera.mode ||
+        oldContext.camera.targetEntityId !== context.camera.targetEntityId;
+
+      if (cameraChanged && cameraChangeHandlers.size > 0) {
         const cameraState = getActiveCamera(context);
         cameraChangeHandlers.forEach((handler) => handler(cameraState));
       }
