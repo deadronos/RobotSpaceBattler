@@ -1,6 +1,8 @@
 import { useStore } from 'zustand';
 import { createStore, type StoreApi } from 'zustand/vanilla';
 
+import type { BattleUiPreferences } from '../types/ui';
+
 export interface UiState {
   statsOpen: boolean;
   isStatsOpen: boolean;
@@ -14,6 +16,7 @@ export interface UiState {
   // UI customizations
   hudTranslucency: number; // 0..1 alpha for translucent panels
   hudPanelPosition: 'left-right' | 'stacked';
+  userPreferences: BattleUiPreferences;
 }
 
 export interface UiActions {
@@ -36,9 +39,18 @@ export interface UiActions {
   reset: () => void;
   setHudTranslucency?: (alpha: number) => void;
   setHudPanelPosition?: (pos: 'left-right' | 'stacked') => void;
+  setReducedMotion: (enabled: boolean) => void;
+  setMinimalUi: (enabled: boolean) => void;
+  setFollowModeShowsPerRobot: (enabled: boolean) => void;
 }
 
 export type UiStore = UiState & UiActions;
+
+const DEFAULT_PREFERENCES: BattleUiPreferences = {
+  reducedMotion: false,
+  minimalUi: false,
+  followModeShowsPerRobot: true,
+};
 
 const DEFAULT_STATE: UiState = {
   statsOpen: false,
@@ -52,6 +64,7 @@ const DEFAULT_STATE: UiState = {
   countdownOverrideSeconds: null,
   hudTranslucency: 0.5,
   hudPanelPosition: 'left-right',
+  userPreferences: { ...DEFAULT_PREFERENCES },
 };
 
 type UiStateOverrides = Partial<
@@ -62,7 +75,9 @@ type UiStateOverrides = Partial<
     settingsOpen?: boolean;
     isSettingsOpen?: boolean;
   }
->;
+> & {
+  userPreferences?: Partial<BattleUiPreferences>;
+};
 
 function normalizeCountdown(seconds: number | null | undefined): number | null {
   if (seconds === null || seconds === undefined) {
@@ -83,6 +98,15 @@ function normalizeState(overrides: UiStateOverrides = {}): UiState {
     overrides.settingsOpen ?? overrides.isSettingsOpen ?? DEFAULT_STATE.settingsOpen;
   const hudVisible =
     overrides.isHudVisible ?? overrides.hudVisible ?? DEFAULT_STATE.isHudVisible;
+  const preferenceOverrides = overrides.userPreferences ?? {};
+  const userPreferences: BattleUiPreferences = {
+    reducedMotion:
+      preferenceOverrides.reducedMotion ?? DEFAULT_PREFERENCES.reducedMotion,
+    minimalUi: preferenceOverrides.minimalUi ?? DEFAULT_PREFERENCES.minimalUi,
+    followModeShowsPerRobot:
+      preferenceOverrides.followModeShowsPerRobot ??
+      DEFAULT_PREFERENCES.followModeShowsPerRobot,
+  };
 
   return {
     statsOpen,
@@ -100,6 +124,7 @@ function normalizeState(overrides: UiStateOverrides = {}): UiState {
       overrides.countdownOverrideSeconds ?? DEFAULT_STATE.countdownOverrideSeconds,
     hudTranslucency: overrides.hudTranslucency ?? DEFAULT_STATE.hudTranslucency,
     hudPanelPosition: overrides.hudPanelPosition ?? DEFAULT_STATE.hudPanelPosition,
+    userPreferences,
   };
 }
 
@@ -150,7 +175,23 @@ export const createUiStore = (
     setCountdownOverride: (seconds) =>
       set({ countdownOverrideSeconds: normalizeCountdown(seconds) }),
     clearCountdownOverride: () => set({ countdownOverrideSeconds: null }),
-    reset: () => set({ ...baseState }),
+    setReducedMotion: (enabled) =>
+      set((state) => ({
+        userPreferences: { ...state.userPreferences, reducedMotion: !!enabled },
+      })),
+    setMinimalUi: (enabled) =>
+      set((state) => ({
+        userPreferences: { ...state.userPreferences, minimalUi: !!enabled },
+      })),
+    setFollowModeShowsPerRobot: (enabled) =>
+      set((state) => ({
+        userPreferences: { ...state.userPreferences, followModeShowsPerRobot: !!enabled },
+      })),
+    reset: () =>
+      set({
+        ...baseState,
+        userPreferences: { ...baseState.userPreferences },
+      }),
   }));
 };
 

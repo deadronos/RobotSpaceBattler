@@ -10,34 +10,34 @@
 Purpose: Prepare test helpers, perf harness, and skeleton files so every story can be worked
 on independently and via TDD.
 
-- [ ] T001 [P] [Setup] Create component directory and exports
+- [X] T001 [P] [Setup] Create component directory and exports
   - Create directory `src/components/battle/` and add `index.ts` that re-exports components.
   - File: `src/components/battle/index.ts` (new)
   - Success: `index.ts` exports `BattleUI` and `RobotOverlay` (both may be placeholders initially).
 
-- [ ] T002 [P] [Setup] Add Playwright visual-diff helper (SSIM threshold 0.97)
+- [X] T002 [P] [Setup] Add Playwright visual-diff helper (SSIM threshold 0.97)
   - Create: `playwright/utils/visualDiff.ts` implementing a helper that:
     - Accepts two PNG buffers and returns SSIM (and a boolean pass/fail using threshold 0.97).
     - Uses existing dev deps (`pngjs`, `pixelmatch`) and documents any new dev-dependency required (e.g., `ssim.js` or `ssim` polyfill) in the task comments.
   - File: `playwright/utils/visualDiff.ts` (new)
   - Test: unit test `tests/unit/visualDiff.test.ts` that compares two tiny fixtures and asserts expected threshold behavior.
 
-- [ ] T003 [P] [Setup] Add Playwright E2E skeleton for battle UI (ARIA + visual-diff)
+- [X] T003 [P] [Setup] Add Playwright E2E skeleton for battle UI (ARIA + visual-diff)
   - Create: `playwright/tests/battle-ui.spec.ts` with an initial failing test that:
     - Navigates to the app scene route used for manual dev testing (e.g., `/` or `/simulate`).
     - Asserts accessibility snapshot via `toMatchAriaSnapshot()` and captures a screenshot to run `visualDiff` helper (expect fail initially).
   - File: `playwright/tests/battle-ui.spec.ts` (new)
 
-- [ ] T004 [P] [Setup] Add Playwright perf test skeleton using existing fixture
+- [X] T004 [P] [Setup] Add Playwright perf test skeleton using existing fixture
   - Create: `playwright/tests/battle-perf.spec.ts` that imports `perf` fixture from `playwright/fixtures/perfFixture.ts`, measures a sample round, and stores a perf artifact.
   - File: `playwright/tests/battle-perf.spec.ts` (new)
 
-- [ ] T005 [P] [Setup] Add unit test utilities for r3f component mounting
+- [X] T005 [P] [Setup] Add unit test utilities for r3f component mounting
   - Create a small test helper to mount react-three-fiber components in Vitest using `@react-three/test-renderer` and `@testing-library/react`.
   - File: `tests/utils/r3fHelper.ts` (new)
   - Add example usage in `tests/unit/battle-ui.test.tsx` (created in later tasks).
 
-- [ ] T006 [P] [Setup] Add test skeletons for unit & integration tests
+- [X] T006 [P] [Setup] Add test skeletons for unit & integration tests
   - Files (new):
     - `tests/unit/battle-ui.test.tsx` (unit tests for component behavior — failing tests to be written per TDD order)
     - `tests/integration/battle-selectors.test.ts` (integration tests for selector adapters)
@@ -51,17 +51,17 @@ on independently and via TDD.
 Purpose: Implement core types, selectors and store changes that every user story depends on.
 These tasks MUST complete before user story implementation begins.
 
-- [ ] T010 [P] [Foundational] Add canonical UI types from `data-model.md`
+- [X] T010 [P] [Foundational] Add canonical UI types from `data-model.md`
   - Create `src/types/ui.ts` with TypeScript interfaces: `RoundView`, `RobotView`, `CameraState`, `BattleUiState` (mirror `data-model.md`).
   - File: `src/types/ui.ts` (new)
   - Rationale: Strong typing ensures selectors and components can be validated in tests.
 
-- [ ] T011 [P] [Foundational] Add failing unit test for UI store preferences
+- [X] T011 [P] [Foundational] Add failing unit test for UI store preferences
   - Create a test `tests/unit/ui-store-preferences.test.ts` that imports `createUiStore` (from `src/store/uiStore.ts`) and asserts that the new preference fields exist with safe defaults:
     - `reducedMotion: false`, `minimalUi: false`, `followModeShowsPerRobot: true` (or documented defaults in the test).
   - File: `tests/unit/ui-store-preferences.test.ts` (new)
 
-- [ ] T012 [ ] [Foundational] Implement preference fields in the UI store (must be sequential)
+- [X] T012 [ ] [Foundational] Implement preference fields in the UI store (must be sequential)
   - Edit `src/store/uiStore.ts` (existing):
     - Add to the state and actions: `userPreferences: { reducedMotion: boolean; minimalUi: boolean; followModeShowsPerRobot: boolean }` plus actions to set each preference.
     - Ensure getters and `reset` preserve backward compatibility.
