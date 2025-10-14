@@ -61,9 +61,17 @@ export function VictoryScreen({
     openSettings();
   }
 
+  function handleResetCountdown() {
+    if (onResetCountdown) {
+      onResetCountdown();
+    }
+  }
+
   if (!isVisible) return null;
 
-  const countdownText = formatCountdown(simulation.autoRestartCountdown ?? null);
+  const countdownText = formatCountdown(
+    simulation.autoRestartCountdown ?? null,
+  );
 
   // compute top performer if postBattleStats present
   let topPerformer: string | null = null;
@@ -81,18 +89,31 @@ export function VictoryScreen({
       <p>{countdownText}</p>
 
       <div>
-        <button onClick={handlePause} aria-label="Pause">Pause</button>
-        <button onClick={handleOpenStats} aria-label="Stats">Stats</button>
-        <button onClick={handleOpenSettings} aria-label="Settings">Settings</button>
+        <button onClick={handlePause} aria-label="Pause">
+          Pause
+        </button>
+        <button onClick={handleResetCountdown} aria-label="Reset Countdown">
+          Reset
+        </button>
+        <button onClick={handleOpenStats} aria-label="Stats">
+          Stats
+        </button>
+        <button onClick={handleOpenSettings} aria-label="Settings">
+          Settings
+        </button>
       </div>
 
       {simulation.postBattleStats && (
         <section aria-label="post-battle-summary">
           <h2>Post-battle Summary</h2>
           {/* team summary minimal rendering for tests */}
-          {Object.entries(simulation.postBattleStats.perTeam ?? {}).map(([teamId, team]) => (
-            <p key={teamId}>Team {teamId}: {team.totalKills} kills</p>
-          ))}
+          {Object.entries(simulation.postBattleStats.perTeam ?? {}).map(
+            ([teamId, team]) => (
+              <p key={teamId}>
+                Team {teamId}: {team.totalKills} kills
+              </p>
+            ),
+          )}
           {topPerformer && <p>Top performer: {topPerformer}</p>}
         </section>
       )}

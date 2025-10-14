@@ -1,30 +1,79 @@
-import './index.css'
+import "./index.css";
 
-import React from 'react'
-import { createRoot } from 'react-dom/client'
+import React from "react";
+import { createRoot } from "react-dom/client";
 
-import App from './App'
-import { initializeSimulation, SimulationWorldProvider } from './ecs/world'
-import { useUIStore } from './store/uiStore'
-import { getTriggerVictory, isAppDebug, isSemverDebug,setGetUiState, setPlaywrightTriggerFlag, setSetVictoryVisible, setTriggerVictory } from './utils/debugFlags';
+import App from "./App";
+import { BattleUiHarness } from "./components/battle/BattleUiHarness";
+import { setVictoryState } from "./ecs/entities/SimulationState";
+import { initializeSimulation, SimulationWorldProvider } from "./ecs/world";
+import { useUIStore } from "./store/uiStore";
+import {
+  getTriggerVictory,
+  isAppDebug,
+  isSemverDebug,
+  setGetUiState,
+  setPlaywrightTriggerFlag,
+  setSetVictoryVisible,
+  setTriggerVictory,
+} from "./utils/debugFlags";
 
-const world = initializeSimulation()
+function logTestHelper(message: string, error?: unknown) {
+  if (!isAppDebug()) {
+    return;
+  }
+
+  const prefix = "[test-helper]";
+  if (error) {
+    console.warn(`${prefix} ${message}`, error);
+    return;
+  }
+
+  console.log(`${prefix} ${message}`);
+}
+
+const world = initializeSimulation();
+const renderHarness =
+  typeof window !== "undefined" &&
+  (() => {
+    const search = window.location?.search ?? "";
+    try {
+      const params = new URLSearchParams(search);
+      return params.get("battleUiHarness") === "1";
+    } catch (error) {
+      logTestHelper("failed to parse battleUiHarness query parameter", error);
+      return false;
+    }
+  })();
 
 // Provide a small global test helper that dispatches an event. Using an event
 // avoids bundler/runtime issues and keeps the helper available in all builds.
-if (typeof window !== 'undefined' && !getTriggerVictory()) {
+if (typeof window !== "undefined" && !getTriggerVictory()) {
   setTriggerVictory(() => {
-    if (isAppDebug()) console.log('[test-helper] triggerVictory called');
+    logTestHelper("triggerVictory called");
     setPlaywrightTriggerFlag(true);
+
     try {
-      world.simulation = { ...world.simulation, status: 'victory', winner: 'red', autoRestartCountdown: 5 };
-      if (isAppDebug()) console.log('[test-helper] world.simulation set to victory');
-      try {
-        useUIStore.getState().setVictoryOverlayVisible(true);
-        if (isAppDebug()) console.log('[test-helper] uiStore victory flag set');
-      } catch {}
-    } catch {}
-    window.dispatchEvent(new CustomEvent('playwright:triggerVictory'));
+      world.simulation = setVictoryState(world.simulation, "red", Date.now());
+      logTestHelper("world.simulation patched to victory");
+    } catch (error) {
+      logTestHelper("failed to apply SimulationState victory helper", error);
+      world.simulation = {
+        ...world.simulation,
+        status: "victory",
+        winner: "red",
+        autoRestartCountdown: 5,
+      };
+    }
+
+    try {
+      useUIStore.getState().setVictoryOverlayVisible(true);
+      logTestHelper("uiStore victory flag set");
+    } catch (error) {
+      logTestHelper("failed to set uiStore victory flag", error);
+    }
+
+    window.dispatchEvent(new CustomEvent("playwright:triggerVictory"));
   });
 }
 // test helpers to introspect runtime state from Playwright — always exposed
@@ -32,9 +81,9 @@ if (typeof window !== 'undefined' && !getTriggerVictory()) {
   setSetVictoryVisible((visible: boolean) => {
     try {
       useUIStore.getState().setVictoryOverlayVisible(!!visible);
-      if (isAppDebug()) console.log('[test-helper] __setVictoryVisible called ->', !!visible);
-    } catch (err) {
-      if (isAppDebug()) console.log('[test-helper] __setVictoryVisible failed', String(err));
+      logTestHelper(`__setVictoryVisible called -> ${visible}`);
+    } catch (error) {
+      logTestHelper("__setVictoryVisible failed", error);
     }
   });
 
@@ -49,37 +98,39 @@ if (typeof window !== 'undefined' && !getTriggerVictory()) {
 // the exact error message so the app can continue initializing. This
 // ensures tests are resilient while we investigate and fix the
 // underlying dependency or its configuration.
-window.addEventListener('error', (ev) => {
-  try {
-    const message = (ev && (ev as ErrorEvent).message) || '';
-    if (typeof message === 'string' && message.includes('Invalid argument not valid semver')) {
-      // Prevent the error from being reported as uncaught and aborting
-      // page initialization in E2E runs. Keep a console warning for
-      // visibility during local debugging.
-      if (isSemverDebug() || isAppDebug()) console.warn('[semver-shim] suppressed invalid semver error:', message);
-      ev.preventDefault();
+window.addEventListener("error", (ev) => {
+  const message = (ev as ErrorEvent | undefined)?.message ?? "";
+  if (
+    typeof message === "string" &&
+    message.includes("Invalid argument not valid semver")
+  ) {
+    if (isSemverDebug() || isAppDebug()) {
+      console.warn("[semver-shim] suppressed invalid semver error:", message);
     }
-  } catch {
-    // intentionally ignore errors from our handler
+    ev.preventDefault();
   }
 });
 
-window.addEventListener('unhandledrejection', (ev) => {
-  try {
-    const reason = ev && (ev as PromiseRejectionEvent).reason;
-    const msg = typeof reason === 'string' ? reason : (reason && reason.message) || '';
-    if (typeof msg === 'string' && msg.includes('Invalid argument not valid semver')) {
-      // suppress promise rejections caused by the same issue
-      if (isSemverDebug() || isAppDebug()) console.warn('[semver-shim] suppressed invalid semver rejection:', msg);
-      ev.preventDefault();
+window.addEventListener("unhandledrejection", (ev) => {
+  const reason = (ev as PromiseRejectionEvent | undefined)?.reason;
+  const msg =
+    typeof reason === "string"
+      ? reason
+      : ((reason && (reason as { message?: string }).message) ?? "");
+
+  if (
+    typeof msg === "string" &&
+    msg.includes("Invalid argument not valid semver")
+  ) {
+    if (isSemverDebug() || isAppDebug()) {
+      console.warn("[semver-shim] suppressed invalid semver rejection:", msg);
     }
-  } catch {
-    // intentionally ignore errors from our handler
+    ev.preventDefault();
   }
 });
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <SimulationWorldProvider value={world}>
-    <App />
+    {renderHarness ? <BattleUiHarness /> : <App />}
   </SimulationWorldProvider>,
-)
+);

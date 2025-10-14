@@ -1,7 +1,8 @@
-import { useStore } from 'zustand';
-import { createStore, type StoreApi } from 'zustand/vanilla';
+import { useStore } from "zustand";
+import { useStoreWithEqualityFn } from "zustand/traditional";
+import { createStore, type StoreApi } from "zustand/vanilla";
 
-import type { BattleUiPreferences } from '../types/ui';
+import type { BattleUiPreferences } from "../types/ui";
 
 export interface UiState {
   statsOpen: boolean;
@@ -15,7 +16,7 @@ export interface UiState {
   countdownOverrideSeconds: number | null;
   // UI customizations
   hudTranslucency: number; // 0..1 alpha for translucent panels
-  hudPanelPosition: 'left-right' | 'stacked';
+  hudPanelPosition: "left-right" | "stacked";
   userPreferences: BattleUiPreferences;
 }
 
@@ -38,7 +39,7 @@ export interface UiActions {
   clearCountdownOverride: () => void;
   reset: () => void;
   setHudTranslucency?: (alpha: number) => void;
-  setHudPanelPosition?: (pos: 'left-right' | 'stacked') => void;
+  setHudPanelPosition?: (pos: "left-right" | "stacked") => void;
   setReducedMotion: (enabled: boolean) => void;
   setMinimalUi: (enabled: boolean) => void;
   setFollowModeShowsPerRobot: (enabled: boolean) => void;
@@ -63,7 +64,7 @@ const DEFAULT_STATE: UiState = {
   performanceBannerDismissed: false,
   countdownOverrideSeconds: null,
   hudTranslucency: 0.5,
-  hudPanelPosition: 'left-right',
+  hudPanelPosition: "left-right",
   userPreferences: { ...DEFAULT_PREFERENCES },
 };
 
@@ -95,10 +96,15 @@ function normalizeState(overrides: UiStateOverrides = {}): UiState {
   const statsOpen =
     overrides.statsOpen ?? overrides.isStatsOpen ?? DEFAULT_STATE.statsOpen;
   const settingsOpen =
-    overrides.settingsOpen ?? overrides.isSettingsOpen ?? DEFAULT_STATE.settingsOpen;
+    overrides.settingsOpen ??
+    overrides.isSettingsOpen ??
+    DEFAULT_STATE.settingsOpen;
   const hudVisible =
-    overrides.isHudVisible ?? overrides.hudVisible ?? DEFAULT_STATE.isHudVisible;
-  const preferenceOverrides = overrides.userPreferences ?? {};
+    overrides.isHudVisible ??
+    overrides.hudVisible ??
+    DEFAULT_STATE.isHudVisible;
+  const preferenceOverrides: Partial<BattleUiPreferences> =
+    overrides.userPreferences ?? {};
   const userPreferences: BattleUiPreferences = {
     reducedMotion:
       preferenceOverrides.reducedMotion ?? DEFAULT_PREFERENCES.reducedMotion,
@@ -117,13 +123,17 @@ function normalizeState(overrides: UiStateOverrides = {}): UiState {
     victoryOverlayVisible:
       overrides.victoryOverlayVisible ?? DEFAULT_STATE.victoryOverlayVisible,
     performanceOverlayVisible:
-      overrides.performanceOverlayVisible ?? DEFAULT_STATE.performanceOverlayVisible,
+      overrides.performanceOverlayVisible ??
+      DEFAULT_STATE.performanceOverlayVisible,
     performanceBannerDismissed:
-      overrides.performanceBannerDismissed ?? DEFAULT_STATE.performanceBannerDismissed,
+      overrides.performanceBannerDismissed ??
+      DEFAULT_STATE.performanceBannerDismissed,
     countdownOverrideSeconds:
-      overrides.countdownOverrideSeconds ?? DEFAULT_STATE.countdownOverrideSeconds,
+      overrides.countdownOverrideSeconds ??
+      DEFAULT_STATE.countdownOverrideSeconds,
     hudTranslucency: overrides.hudTranslucency ?? DEFAULT_STATE.hudTranslucency,
-    hudPanelPosition: overrides.hudPanelPosition ?? DEFAULT_STATE.hudPanelPosition,
+    hudPanelPosition:
+      overrides.hudPanelPosition ?? DEFAULT_STATE.hudPanelPosition,
     userPreferences,
   };
 }
@@ -145,9 +155,12 @@ export const createUiStore = (
 
   return createStore<UiStore>((set) => ({
     ...baseState,
-    setHudTranslucency: (alpha: number) => set({ hudTranslucency: Math.max(0, Math.min(1, alpha)) }),
-    setHudPanelPosition: (pos: 'left-right' | 'stacked') => set({ hudPanelPosition: pos }),
-    setVictoryOverlayVisible: (visible) => set({ victoryOverlayVisible: !!visible }),
+    setHudTranslucency: (alpha: number) =>
+      set({ hudTranslucency: Math.max(0, Math.min(1, alpha)) }),
+    setHudPanelPosition: (pos: "left-right" | "stacked") =>
+      set({ hudPanelPosition: pos }),
+    setVictoryOverlayVisible: (visible) =>
+      set({ victoryOverlayVisible: !!visible }),
     openStats: () => set(withStatsOpen(true)),
     closeStats: () => set(withStatsOpen(false)),
     setStatsOpen: (open) => set(withStatsOpen(open)),
@@ -185,7 +198,10 @@ export const createUiStore = (
       })),
     setFollowModeShowsPerRobot: (enabled) =>
       set((state) => ({
-        userPreferences: { ...state.userPreferences, followModeShowsPerRobot: !!enabled },
+        userPreferences: {
+          ...state.userPreferences,
+          followModeShowsPerRobot: !!enabled,
+        },
       })),
     reset: () =>
       set({
@@ -197,34 +213,27 @@ export const createUiStore = (
 
 const uiStoreApi = createUiStore();
 
+type Selector<T> = (state: UiStore) => T;
+type EqualityFn<T> = (a: T, b: T) => boolean;
+
 type BoundUseUiStore = {
   (): UiStore;
-  <T>(selector: (state: UiStore) => T, equalityFn?: (a: T, b: T) => boolean): T;
-  getState: StoreApi<UiStore>['getState'];
-  setState: StoreApi<UiStore>['setState'];
-  subscribe: StoreApi<UiStore>['subscribe'];
-};
+  <T>(selector: Selector<T>, equalityFn?: EqualityFn<T>): T;
+} & Pick<StoreApi<UiStore>, "getState" | "setState" | "subscribe">;
 
 function createBoundUseUiStore(api: StoreApi<UiStore>): BoundUseUiStore {
-  function useBoundStore(): UiStore;
-  function useBoundStore<T>(
-    selector: (state: UiStore) => T,
-    equalityFn?: (a: T, b: T) => boolean,
-  ): T;
-  function useBoundStore<T>(
-    selector?: (state: UiStore) => T,
-    equalityFn?: (a: T, b: T) => boolean,
-  ) {
-    // Call `useStore` inside the hook body — that ensures hooks are resolved
+  const bound = (<T>(selector?: Selector<T>, equalityFn?: EqualityFn<T>) => {
     if (selector) {
-      // cast to any to accommodate different zustand overload signatures across versions
-      return (useStore as any)(api, selector, equalityFn);
+      if (equalityFn) {
+        return useStoreWithEqualityFn(api, selector, equalityFn);
+      }
+
+      return useStore(api, selector);
     }
 
-    return (useStore as any)(api);
-  }
+    return useStore(api);
+  }) as BoundUseUiStore;
 
-  const bound = useBoundStore as BoundUseUiStore;
   bound.getState = api.getState;
   bound.setState = api.setState;
   bound.subscribe = api.subscribe;
