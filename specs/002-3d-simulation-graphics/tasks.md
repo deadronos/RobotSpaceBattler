@@ -71,21 +71,20 @@ These tasks MUST complete before user story implementation begins.
 - [x] T013 [P] [Foundational] Add failing integration tests for selectors
   - Create `tests/integration/battle-selectors.test.ts` that constructs a minimal simulation snapshot and asserts expected `RoundView` and `RobotView` shapes are returned by the selector functions (to be implemented in T014).
   - File: `tests/integration/battle-selectors.test.ts` (new)
-
-- [x] T014 [ ] [Foundational] Implement selectors adapter: `getRoundView`, `getRobotView`, `getActiveCamera`, `getBattleUiState`
+- [x] T014 [x] [Foundational] Implement selectors adapter: `getRoundView`, `getRobotView`, `getActiveCamera`, `getBattleUiState`
   - Create `src/selectors/battleSelectors.ts` implementing read-only selectors that transform authoritative snapshots into the UI view models described in `src/types/ui.ts`.
-  - File: `src/selectors/battleSelectors.ts` (new)
-  - Depends on T013 (selectors tests must fail first), and T010 (types).
+  - File: `src/selectors/battleSelectors.ts` (implemented)
+  - Status: Implemented in repository; selectors return safe, allocation-light view models and are exercised by existing integration tests.
 
 - [x] T015 [P] [Foundational] Add failing tests for the UI adapter events
   - Create `tests/unit/uiAdapter.test.ts` that subscribes to `onRoundStart`/`onRoundEnd` and expects the handlers to be invoked when the adapter receives simulated events.
   - File: `tests/unit/uiAdapter.test.ts` (new)
 
-- [x] T016 [ ] [Foundational] Implement `src/systems/uiAdapter.ts` (read-only, evented)
+- [x] T016 [x] [Foundational] Implement `src/systems/uiAdapter.ts` (read-only, evented)
   - Implement a minimal adapter that exposes:
     - `getRoundView()`, `getRobotView(id)`, `getBattleUiState()` and event registration: `onRoundStart`, `onRoundEnd`, `onCameraChange`.
-  - File: `src/systems/uiAdapter.ts` (new)
-  - Depends on: T015 (tests), T014 (selectors), T010 (types)
+  - File: `src/systems/uiAdapter.ts` (implemented)
+  - Status: Implemented; exposes `getFrameSnapshot()` and event hooks. Exercised by unit tests.
 
 - [x] T017 [P] [Foundational] Add event→first-visible-frame measurement helper and failing tests
   - Create Playwright helper `playwright/utils/latency.ts` exporting `measureEventToFirstVisible(page, triggerFn)` which:
@@ -96,11 +95,11 @@ These tasks MUST complete before user story implementation begins.
   - Files: `playwright/utils/latency.ts` (new), `playwright/tests/toggle-latency.spec.ts` (new), `tests/unit/latency.test.ts` (new)
   - Depends on: T003 (Playwright skeleton), T020 (US1 unit test skeleton) to exist so the helper can be exercised.
 
-- [x] T018 [ ] [Foundational] Implement per-frame snapshot getter in `uiAdapter`
+
+- [x] T018 [x] [Foundational] Implement per-frame snapshot getter in `uiAdapter`
   - Add `getFrameSnapshot()` to `src/systems/uiAdapter.ts` that returns a minimal, allocation-light object with frame-aligned values (camera transform, interpolation targets, small numeric deltas) intended for per-frame reads.
-  - Ensure the snapshot API is documented and optimized for hot-path usage (reuse objects, avoid GC churn).
-  - File: `src/systems/uiAdapter.ts` (modify)
-  - Depends on: T014 (selectors), T016 (uiAdapter basic impl)
+  - File: `src/systems/uiAdapter.ts` (implemented)
+  - Status: Implemented; the adapter provides a reusable snapshot object to minimize allocations.
 
 **Checkpoint**: Foundation done; selectors + store + adapters are testable and consumed by story components.
 

@@ -1,3 +1,4 @@
+import React from 'react';
 import { render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -51,6 +52,7 @@ describe('BattleUI', () => {
     // Dynamic import to allow test to run even if implementation doesn't exist yet
     try {
       const module = await import('../../src/components/battle/BattleUI');
+      // @ts-ignore
       BattleUI = module.BattleUI;
     } catch {
       // @ts-ignore - placeholder for missing component

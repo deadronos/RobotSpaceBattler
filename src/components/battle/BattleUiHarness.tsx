@@ -62,6 +62,19 @@ function useHarnessAdapter(): [
     adapter.updateContext(context);
   }, [adapter, context]);
 
+  useEffect(() => {
+    // register adapter for global integrators (e.g., Scene's CameraUiIntegrator)
+    import('../../systems/uiAdapterRegistry').then((registry) => {
+      registry.registerUiAdapter(adapter);
+    });
+
+    return () => {
+      import('../../systems/uiAdapterRegistry').then((registry) => {
+        registry.registerUiAdapter(null);
+      });
+    };
+  }, [adapter]);
+
   return [adapter, setContext];
 }
 
@@ -101,7 +114,13 @@ export function BattleUiHarness() {
   return (
     <div data-testid="battle-ui-harness" className="battle-ui-harness">
       <BattleUI adapter={adapter} />
+    {/* The production CameraUiIntegrator is mounted where real camera controls
+      are created (see Scene). The harness uses updateContext to simulate
+      camera transitions instead of live controls. */}
       <RobotOverlay adapter={adapter} robotId="robot-alpha" />
     </div>
   );
 }
+
+// Camera controls are created in the real app (e.g., in Scene) and the
+// CameraUiIntegrator is mounted there so the adapter receives live frames.

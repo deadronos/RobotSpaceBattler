@@ -59,20 +59,21 @@ const baseProps: StatsModalProps = {
 };
 
 describe('StatsModal', () => {
-  it('renders winner summary, team aggregates, and robot rows', () => {
+  it('renders winner summary, team aggregates, and robot rows', async () => {
     render(<StatsModal {...baseProps} />);
 
-    expect(
-      screen.getByRole('heading', { name: /blue team victory stats/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/red team/)).toBeInTheDocument();
-    expect(screen.getByText(/blue team/)).toBeInTheDocument();
-    expect(screen.getByText(/average health remaining: 56%/i)).toBeInTheDocument();
+    // use async findBy* queries to avoid timing races in integration environment
+    const heading = await screen.findByRole('heading', { name: /blue team victory stats/i });
+    expect(heading).toBeInTheDocument();
 
-    expect(screen.getByRole('row', { name: /b-07/ })).toBeInTheDocument();
-    expect(screen.getByRole('row', { name: /r-01/ })).toBeInTheDocument();
-    expect(screen.getByText(/captain/i)).toBeInTheDocument();
-  });
+    expect(await screen.findByText(/red team/)).toBeInTheDocument();
+    expect(await screen.findByText(/blue team/)).toBeInTheDocument();
+    expect(await screen.findByText(/average health remaining: 56%/i)).toBeInTheDocument();
+
+    expect(await screen.findByRole('row', { name: /b-07/ })).toBeInTheDocument();
+    expect(await screen.findByRole('row', { name: /r-01/ })).toBeInTheDocument();
+    expect(await screen.findByText(/captain/i)).toBeInTheDocument();
+  }, 10000);
 
   it('invokes callbacks for sort and close actions', () => {
     const props: StatsModalProps = {

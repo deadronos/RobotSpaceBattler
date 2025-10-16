@@ -23,10 +23,12 @@ export interface UiAdapter {
   getBattleUiState: () => BattleUiState;
   getActiveCamera: () => CameraState;
   getFrameSnapshot: () => FrameSnapshot;
+  setFrameSnapshot: (snapshot: FrameSnapshot) => void;
   onRoundStart: (handler: RoundHandler) => UnsubscribeFn;
   onRoundEnd: (handler: RoundHandler) => UnsubscribeFn;
   onCameraChange: (handler: CameraHandler) => UnsubscribeFn;
   updateContext: (newContext: BattleSelectorsContext) => void;
+    setFrameSnapshot: (snapshot: FrameSnapshot) => void;
 }
 
 export function createUiAdapter(
@@ -143,6 +145,21 @@ export function createUiAdapter(
       }
 
       previousRoundStatus = context.round.status;
+    },
+
+    setFrameSnapshot: (snapshot: FrameSnapshot) => {
+      // shallow-copy values into the reusable frameSnapshot to avoid allocations
+      frameSnapshot.time = snapshot.time;
+      frameSnapshot.interpolationFactor = snapshot.interpolationFactor;
+      frameSnapshot.camera.position[0] = snapshot.camera.position[0];
+      frameSnapshot.camera.position[1] = snapshot.camera.position[1];
+      frameSnapshot.camera.position[2] = snapshot.camera.position[2];
+      frameSnapshot.camera.target[0] = snapshot.camera.target[0];
+      frameSnapshot.camera.target[1] = snapshot.camera.target[1];
+      frameSnapshot.camera.target[2] = snapshot.camera.target[2];
+      frameSnapshot.camera.up[0] = snapshot.camera.up[0];
+      frameSnapshot.camera.up[1] = snapshot.camera.up[1];
+      frameSnapshot.camera.up[2] = snapshot.camera.up[2];
     },
   };
 
