@@ -536,3 +536,24 @@
     transition: none;
   }
 }
+
+/* Reduced Motion Preferences */
+.battle-ui--reduced-motion .hud-panel,
+.battle-ui--reduced-motion .control-strip__button,
+.battle-ui--reduced-motion .robot-overlay,
+.battle-ui--reduced-motion .robot-overlay__health-fill {
+  transition: none !important;
+  animation: none !important;
+}
+
+.battle-ui--reduced-motion .robot-overlay {
+  transform: translate(-50%, calc(-50% - 80px)) !important;
+}
+
+.battle-ui--reduced-motion .control-strip__button:hover {
+  transform: none !important;
+}
+
+.battle-ui--reduced-motion .control-strip__button:active {
+  transform: none !important;
+}

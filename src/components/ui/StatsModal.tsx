@@ -60,9 +60,7 @@ export function StatsModal() {
                 <td>{stats.totalKills}</td>
                 <td>{stats.totalDamageDealt}</td>
                 <td>{stats.totalDamageTaken}</td>
-                <td>
-                  {Math.round(stats.averageHealthRemaining)}
-                </td>
+                <td>{Math.round(stats.averageHealthRemaining)}</td>
               </tr>
             ))}
           </tbody>
@@ -89,9 +87,7 @@ export function StatsModal() {
                 <td>{stats.kills}</td>
                 <td>{stats.damageDealt}</td>
                 <td>{stats.damageTaken}</td>
-                <td>
-                  {stats.timeAlive.toFixed?.(2) ?? stats.timeAlive}
-                </td>
+                <td>{stats.timeAlive.toFixed?.(2) ?? stats.timeAlive}</td>
                 <td>{stats.shotsFired}</td>
               </tr>
             ))}

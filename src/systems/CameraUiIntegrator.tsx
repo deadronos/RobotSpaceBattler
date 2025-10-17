@@ -1,13 +1,17 @@
-import { useEffect, useRef } from 'react';
-import type { CameraControlsResult } from '../hooks/useCameraControls';
-import type { UiAdapter } from './uiAdapter';
+import { useEffect, useRef } from "react";
+
+import type { CameraControlsResult } from "../hooks/useCameraControls";
+import type { UiAdapter } from "./uiAdapter";
 
 interface CameraUiIntegratorProps {
   adapter: UiAdapter;
   controls: CameraControlsResult;
 }
 
-export function CameraUiIntegrator({ adapter, controls }: CameraUiIntegratorProps) {
+export function CameraUiIntegrator({
+  adapter,
+  controls,
+}: CameraUiIntegratorProps) {
   const rafRef = useRef<number | null>(null);
   const lastTime = useRef<number | null>(null);
 
@@ -24,8 +28,8 @@ export function CameraUiIntegrator({ adapter, controls }: CameraUiIntegratorProp
 
       try {
         // Some control implementations expect seconds; protect with try/catch
-        if (typeof controls.update === 'function') controls.update(deltaSec);
-      } catch (e) {
+        if (typeof controls.update === "function") controls.update(deltaSec);
+      } catch {
         // swallow to avoid breaking the render loop in tests
       }
 
@@ -45,7 +49,7 @@ export function CameraUiIntegrator({ adapter, controls }: CameraUiIntegratorProp
       // Forward the live camera snapshot into the adapter (allocation-light via adapter implementation)
       try {
         adapter.setFrameSnapshot(snapshot);
-      } catch (e) {
+      } catch {
         // tolerate missing adapter implementations during tests
       }
 

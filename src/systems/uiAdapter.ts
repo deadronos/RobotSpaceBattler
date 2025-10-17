@@ -28,7 +28,7 @@ export interface UiAdapter {
   onRoundEnd: (handler: RoundHandler) => UnsubscribeFn;
   onCameraChange: (handler: CameraHandler) => UnsubscribeFn;
   updateContext: (newContext: BattleSelectorsContext) => void;
-    setFrameSnapshot: (snapshot: FrameSnapshot) => void;
+  setFrameSnapshot: (snapshot: FrameSnapshot) => void;
 }
 
 export function createUiAdapter(

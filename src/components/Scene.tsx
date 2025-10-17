@@ -1,12 +1,12 @@
-import { Html, OrbitControls } from '@react-three/drei'
-import { Canvas } from '@react-three/fiber'
-import React, { Suspense } from 'react'
+import { Html, OrbitControls } from "@react-three/drei";
+import { Canvas } from "@react-three/fiber";
+import React, { Suspense } from "react";
 
-import Simulation from './Simulation'
-import { useCameraControls } from '../hooks/useCameraControls'
-import { CameraUiIntegrator } from '../systems/CameraUiIntegrator'
-import { getRegisteredUiAdapter } from '../systems/uiAdapterRegistry'
-import { useSimulationWorld } from '../ecs/world'
+import { useSimulationWorld } from "../ecs/world";
+import { useCameraControls } from "../hooks/useCameraControls";
+import { CameraUiIntegrator } from "../systems/CameraUiIntegrator";
+import { getRegisteredUiAdapter } from "../systems/uiAdapterRegistry";
+import Simulation from "./Simulation";
 
 export default function Scene() {
   // create camera controls at the Scene level (production mount point)
@@ -26,5 +26,5 @@ export default function Scene() {
         <CameraUiIntegrator adapter={adapter} controls={controls} />
       ) : null}
     </Canvas>
-  )
+  );
 }

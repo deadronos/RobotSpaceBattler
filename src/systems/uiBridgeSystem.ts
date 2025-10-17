@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
-import { useSimulationWorld } from '../ecs/world';
-import { useUiStore } from '../store/uiStore';
+import { useSimulationWorld } from "../ecs/world";
+import { useUiStore } from "../store/uiStore";
 
 export function useUiBridgeSystem() {
   const setHudVisible = useUiStore((s) => s.setHudVisible);
@@ -29,14 +29,18 @@ export function useUiBridgeSystem() {
       }
 
       // sync victory overlay visibility
-      const isVictory = sim.status === 'victory' || sim.status === 'simultaneous-elimination';
+      const isVictory =
+        sim.status === "victory" || sim.status === "simultaneous-elimination";
       // Previously we logged the flag here every tick; that generated
       // thousands of lines in CI and during dev. Remove the noisy log
       // and only keep the state update.
       useUiStore.getState().setVictoryOverlayVisible(!!isVictory);
 
       // Only react to a status transition into victory to avoid repeated opens
-      if (sim.status === 'victory' || sim.status === 'simultaneous-elimination') {
+      if (
+        sim.status === "victory" ||
+        sim.status === "simultaneous-elimination"
+      ) {
         if (lastStatus !== sim.status) {
           openStats();
         }
@@ -64,7 +68,14 @@ export function useUiBridgeSystem() {
     raf = requestAnimationFrame(tick);
 
     return () => cancelAnimationFrame(raf);
-  }, [world, setHudVisible, showPerformanceOverlay, hidePerformanceOverlay, openStats, openSettings]);
+  }, [
+    world,
+    setHudVisible,
+    showPerformanceOverlay,
+    hidePerformanceOverlay,
+    openStats,
+    openSettings,
+  ]);
 }
 
 export default useUiBridgeSystem;

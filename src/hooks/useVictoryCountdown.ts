@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
-import { resetAutoRestartCountdown,useSimulationWorld } from '../ecs/world';
-import { useUiStore } from '../store/uiStore';
+import { resetAutoRestartCountdown, useSimulationWorld } from "../ecs/world";
+import { useUiStore } from "../store/uiStore";
 
 export function useVictoryCountdown() {
   const world = useSimulationWorld();
@@ -20,7 +20,10 @@ export function useVictoryCountdown() {
 
     compute();
 
-    if (world.simulation.status === 'victory' || world.simulation.status === 'simultaneous-elimination') {
+    if (
+      world.simulation.status === "victory" ||
+      world.simulation.status === "simultaneous-elimination"
+    ) {
       if (!countdownPaused) {
         interval = window.setInterval(() => {
           // world.simulation.autoRestartCountdown is expected to be updated by simulation loop

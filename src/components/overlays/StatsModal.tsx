@@ -1,7 +1,11 @@
-import type { Team, WeaponType } from '../../types';
+import type { Team, WeaponType } from "../../types";
 
-export type StatsSortColumn = 'kills' | 'damageDealt' | 'damageTaken' | 'timeAliveSeconds';
-export type StatsSortDirection = 'asc' | 'desc';
+export type StatsSortColumn =
+  | "kills"
+  | "damageDealt"
+  | "damageTaken"
+  | "timeAliveSeconds";
+export type StatsSortDirection = "asc" | "desc";
 
 export interface StatsSortState {
   column: StatsSortColumn;
@@ -60,8 +64,10 @@ export function StatsModal({
 
   const handleSortByDamage = () => {
     const nextDirection =
-      sort.column === 'damageDealt' && sort.direction === 'desc' ? 'asc' : 'desc';
-    onSortChange({ column: 'damageDealt', direction: nextDirection });
+      sort.column === "damageDealt" && sort.direction === "desc"
+        ? "asc"
+        : "desc";
+    onSortChange({ column: "damageDealt", direction: nextDirection });
   };
 
   return (
@@ -104,7 +110,10 @@ export function StatsModal({
                 <td>{team.totalKills}</td>
                 <td>{team.totalDamageDealt}</td>
                 <td>{team.totalDamageTaken}</td>
-                <td>Average health remaining: {formatPercent(team.averageHealthRemaining)}</td>
+                <td>
+                  Average health remaining:{" "}
+                  {formatPercent(team.averageHealthRemaining)}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -141,7 +150,7 @@ export function StatsModal({
                 <td>{robot.damageDealt}</td>
                 <td>{robot.damageTaken}</td>
                 <td>{robot.timeAliveSeconds}s</td>
-                <td>{robot.isCaptain ? 'Captain' : '—'}</td>
+                <td>{robot.isCaptain ? "Captain" : "—"}</td>
               </tr>
             ))}
           </tbody>

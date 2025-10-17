@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 import type {
   BattleHudControls,
   BattleHudPerformanceInfo,
   BattleHudStatusInfo,
-} from '../../hooks/useBattleHudData';
-import { useUiStore } from '../../store/uiStore';
+} from "../../hooks/useBattleHudData";
+import { useUiStore } from "../../store/uiStore";
 
 export interface ControlStripProps {
   status: BattleHudStatusInfo;
@@ -31,14 +31,15 @@ export function ControlStrip({
   const overlaysActive = useOverlayDisabled();
   const [internalCinematic, setInternalCinematic] = useState(false);
   const cinematicActive = cinematicEnabled ?? internalCinematic;
-  const pauseLabel = status.status === 'paused' ? 'Resume Battle' : 'Pause Battle';
+  const pauseLabel =
+    status.status === "paused" ? "Resume Battle" : "Pause Battle";
   const cinematicLabel = cinematicActive
-    ? 'Disable Cinematic'
-    : 'Enable Cinematic';
-  const hudLabel = controls.isHudVisible ? 'Hide HUD' : 'Show HUD';
+    ? "Disable Cinematic"
+    : "Enable Cinematic";
+  const hudLabel = controls.isHudVisible ? "Hide HUD" : "Show HUD";
 
   const handlePauseClick = () => {
-    const nextPaused = status.status !== 'paused';
+    const nextPaused = status.status !== "paused";
     onTogglePause?.(nextPaused);
   };
 
@@ -59,11 +60,17 @@ export function ControlStrip({
   return (
     <div className="control-strip" role="toolbar" aria-label="Battle controls">
       <div className="control-strip__metrics" aria-live="polite">
-        <span className="control-strip__metric control-strip__metric--fps" data-testid="fps-readout">
+        <span
+          className="control-strip__metric control-strip__metric--fps"
+          data-testid="fps-readout"
+        >
           {Math.round(performance.fps)} fps
         </span>
         {performance.qualityScalingActive ? (
-          <span className="control-strip__metric control-strip__metric--scaling" role="status">
+          <span
+            className="control-strip__metric control-strip__metric--scaling"
+            role="status"
+          >
             Performance scaling active
           </span>
         ) : null}

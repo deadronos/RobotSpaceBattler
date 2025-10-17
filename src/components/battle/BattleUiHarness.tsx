@@ -64,12 +64,12 @@ function useHarnessAdapter(): [
 
   useEffect(() => {
     // register adapter for global integrators (e.g., Scene's CameraUiIntegrator)
-    import('../../systems/uiAdapterRegistry').then((registry) => {
+    import("../../systems/uiAdapterRegistry").then((registry) => {
       registry.registerUiAdapter(adapter);
     });
 
     return () => {
-      import('../../systems/uiAdapterRegistry').then((registry) => {
+      import("../../systems/uiAdapterRegistry").then((registry) => {
         registry.registerUiAdapter(null);
       });
     };
@@ -114,7 +114,7 @@ export function BattleUiHarness() {
   return (
     <div data-testid="battle-ui-harness" className="battle-ui-harness">
       <BattleUI adapter={adapter} />
-    {/* The production CameraUiIntegrator is mounted where real camera controls
+      {/* The production CameraUiIntegrator is mounted where real camera controls
       are created (see Scene). The harness uses updateContext to simulate
       camera transitions instead of live controls. */}
       <RobotOverlay adapter={adapter} robotId="robot-alpha" />

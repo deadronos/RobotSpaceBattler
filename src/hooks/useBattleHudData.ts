@@ -1,26 +1,36 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import type { SimulationState } from '../ecs/entities/SimulationState';
-import type { TeamEntity } from '../ecs/entities/Team';
-import { useSimulationWorld } from '../ecs/world';
-import type { TeamSummaryViewModel, VictorySnapshot } from '../selectors/uiSelectors';
-import { buildTeamSummaries, formatCountdownLabel } from '../selectors/uiSelectors';
-import { useUiStore } from '../store/uiStore';
-import type { Team } from '../types';
+import type { SimulationState } from "../ecs/entities/SimulationState";
+import type { TeamEntity } from "../ecs/entities/Team";
+import { useSimulationWorld } from "../ecs/world";
+import type {
+  TeamSummaryViewModel,
+  VictorySnapshot,
+} from "../selectors/uiSelectors";
+import {
+  buildTeamSummaries,
+  formatCountdownLabel,
+} from "../selectors/uiSelectors";
+import { useUiStore } from "../store/uiStore";
+import type { Team } from "../types";
 
 interface BattleHudSubscriptionSnapshot {
   simulation: Pick<
     SimulationState,
-    'status' | 'winner' | 'simulationTime' | 'autoRestartCountdown' | 'countdownPaused'
-  > & { performanceStats: SimulationState['performanceStats'] };
+    | "status"
+    | "winner"
+    | "simulationTime"
+    | "autoRestartCountdown"
+    | "countdownPaused"
+  > & { performanceStats: SimulationState["performanceStats"] };
   teams: Array<{
-    name: TeamEntity['name'];
-    activeRobots: TeamEntity['activeRobots'];
-    eliminatedRobots: TeamEntity['eliminatedRobots'];
-    captainId: TeamEntity['captainId'];
-    weaponDistribution: TeamEntity['aggregateStats']['weaponDistribution'];
+    name: TeamEntity["name"];
+    activeRobots: TeamEntity["activeRobots"];
+    eliminatedRobots: TeamEntity["eliminatedRobots"];
+    captainId: TeamEntity["captainId"];
+    weaponDistribution: TeamEntity["aggregateStats"]["weaponDistribution"];
   }>;
-  robots: VictorySnapshot['robots'];
+  robots: VictorySnapshot["robots"];
   performanceOverlay: {
     visible: boolean;
     autoScalingEnabled: boolean;
@@ -28,9 +38,9 @@ interface BattleHudSubscriptionSnapshot {
 }
 
 export interface BattleHudStatusInfo {
-  status: SimulationState['status'];
+  status: SimulationState["status"];
   label: string;
-  winner: SimulationState['winner'];
+  winner: SimulationState["winner"];
   countdownSeconds: number | null;
   countdownLabel: string | null;
   countdownPaused: boolean;
@@ -61,10 +71,10 @@ export interface BattleHudData {
 
 function formatTeamLabel(team: Team | string): string {
   switch (team) {
-    case 'red':
-      return 'Red Team';
-    case 'blue':
-      return 'Blue Team';
+    case "red":
+      return "Red Team";
+    case "blue":
+      return "Blue Team";
     default:
       return String(team);
   }
@@ -85,7 +95,9 @@ function subscribeToWorld(world: ReturnType<typeof useSimulationWorld>) {
   };
 }
 
-function createSnapshot(world: ReturnType<typeof useSimulationWorld>): BattleHudSubscriptionSnapshot {
+function createSnapshot(
+  world: ReturnType<typeof useSimulationWorld>,
+): BattleHudSubscriptionSnapshot {
   const { simulation } = world;
   const teams = world.ecs.teams.entities.map((team) => ({
     name: team.name,
@@ -95,21 +107,23 @@ function createSnapshot(world: ReturnType<typeof useSimulationWorld>): BattleHud
     weaponDistribution: { ...team.aggregateStats.weaponDistribution },
   }));
 
-  const robots: VictorySnapshot['robots'] = world.ecs.robots.entities.map((robot) => ({
-    id: robot.id,
-    name: robot.id,
-    team: robot.team,
-    weaponType: robot.weaponType,
-    isCaptain: robot.isCaptain,
-    stats: {
-      kills: robot.stats.kills,
-      damageDealt: robot.stats.damageDealt,
-      damageTaken: robot.stats.damageTaken,
-      timeAlive: robot.stats.timeAlive,
-      timeAliveSeconds: robot.stats.timeAlive,
-      shotsFired: robot.stats.shotsFired,
-    },
-  }));
+  const robots: VictorySnapshot["robots"] = world.ecs.robots.entities.map(
+    (robot) => ({
+      id: robot.id,
+      name: robot.id,
+      team: robot.team,
+      weaponType: robot.weaponType,
+      isCaptain: robot.isCaptain,
+      stats: {
+        kills: robot.stats.kills,
+        damageDealt: robot.stats.damageDealt,
+        damageTaken: robot.stats.damageTaken,
+        timeAlive: robot.stats.timeAlive,
+        timeAliveSeconds: robot.stats.timeAlive,
+        shotsFired: robot.stats.shotsFired,
+      },
+    }),
+  );
 
   return {
     simulation: {
@@ -130,27 +144,29 @@ function createSnapshot(world: ReturnType<typeof useSimulationWorld>): BattleHud
 }
 
 function buildStatus(
-  simulation: BattleHudSubscriptionSnapshot['simulation'],
+  simulation: BattleHudSubscriptionSnapshot["simulation"],
   countdownOverride: number | null,
 ): BattleHudStatusInfo {
-  const countdown = countdownOverride ?? simulation.autoRestartCountdown ?? null;
-  let label = 'Battle in progress';
+  const countdown =
+    countdownOverride ?? simulation.autoRestartCountdown ?? null;
+  let label = "Battle in progress";
 
-  if (simulation.status === 'paused') {
-    label = 'Battle paused';
+  if (simulation.status === "paused") {
+    label = "Battle paused";
   } else if (
-    simulation.status === 'victory' ||
-    simulation.status === 'simultaneous-elimination'
+    simulation.status === "victory" ||
+    simulation.status === "simultaneous-elimination"
   ) {
-    if (simulation.winner === 'draw' || simulation.winner === null) {
-      label = 'Battle ends in a draw';
+    if (simulation.winner === "draw" || simulation.winner === null) {
+      label = "Battle ends in a draw";
     } else {
       label = `${formatTeamLabel(simulation.winner)} Wins`;
     }
   }
 
   const showCountdown =
-    simulation.status === 'victory' || simulation.status === 'simultaneous-elimination';
+    simulation.status === "victory" ||
+    simulation.status === "simultaneous-elimination";
   const countdownLabel = showCountdown ? formatCountdownLabel(countdown) : null;
 
   return {
@@ -170,7 +186,8 @@ function buildPerformanceInfo(
   return {
     fps: snapshot.simulation.performanceStats.currentFPS,
     averageFps: snapshot.simulation.performanceStats.averageFPS,
-    qualityScalingActive: snapshot.simulation.performanceStats.qualityScalingActive,
+    qualityScalingActive:
+      snapshot.simulation.performanceStats.qualityScalingActive,
     overlayVisible: snapshot.performanceOverlay.visible,
     autoScalingEnabled: snapshot.performanceOverlay.autoScalingEnabled,
   };
@@ -195,7 +212,7 @@ export function useBattleHudData(): BattleHudData {
 
     const unsubscribe = subscribeToWorld(world)(handleUpdate);
     let intervalId: number | undefined;
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       intervalId = window.setInterval(handleUpdate, 250);
     }
 
@@ -215,9 +232,14 @@ export function useBattleHudData(): BattleHudData {
   const toggleHud = useUiStore((s) => s.toggleHud);
   const openStats = useUiStore((s) => s.openStats);
   const openSettings = useUiStore((s) => s.openSettings);
-  const countdownOverrideSeconds = useUiStore((s) => s.countdownOverrideSeconds);
+  const countdownOverrideSeconds = useUiStore(
+    (s) => s.countdownOverrideSeconds,
+  );
 
-  const status = buildStatus(snapshot.simulation, countdownOverrideSeconds ?? null);
+  const status = buildStatus(
+    snapshot.simulation,
+    countdownOverrideSeconds ?? null,
+  );
 
   const teams = useMemo(() => {
     const teamsSnapshot: VictorySnapshot = {
@@ -235,12 +257,15 @@ export function useBattleHudData(): BattleHudData {
         winner: snapshot.simulation.winner,
         simulationTime: snapshot.simulation.simulationTime,
         autoRestartCountdown:
-          countdownOverrideSeconds ?? snapshot.simulation.autoRestartCountdown ?? null,
+          countdownOverrideSeconds ??
+          snapshot.simulation.autoRestartCountdown ??
+          null,
       },
       performance: {
         currentFPS: snapshot.simulation.performanceStats.currentFPS,
         averageFPS: snapshot.simulation.performanceStats.averageFPS,
-        qualityScalingActive: snapshot.simulation.performanceStats.qualityScalingActive,
+        qualityScalingActive:
+          snapshot.simulation.performanceStats.qualityScalingActive,
         autoScalingEnabled: snapshot.performanceOverlay.autoScalingEnabled,
       },
     };

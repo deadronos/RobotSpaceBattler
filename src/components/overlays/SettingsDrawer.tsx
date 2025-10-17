@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react";
 
-import { useUiStore } from '../../store/uiStore';
+import { useUiStore } from "../../store/uiStore";
 
 export function SettingsDrawer() {
   const settingsOpen = useUiStore((s) => s.settingsOpen);
@@ -36,7 +36,9 @@ export function SettingsDrawer() {
       <div className="settings-drawer__content">
         <section>
           <h3>Team Composition</h3>
-          <p>Adjust weapon sliders and toggles for next match (placeholder UI).</p>
+          <p>
+            Adjust weapon sliders and toggles for next match (placeholder UI).
+          </p>
           <label>
             Weapon power
             <input type="range" min={0} max={100} defaultValue={50} />
@@ -69,7 +71,11 @@ export function SettingsDrawer() {
             Panel layout
             <select
               value={hudPanelPosition}
-              onChange={(e) => setHudPanelPosition?.(e.target.value as 'left-right' | 'stacked')}
+              onChange={(e) =>
+                setHudPanelPosition?.(
+                  e.target.value as "left-right" | "stacked",
+                )
+              }
             >
               <option value="left-right">Left / Right</option>
               <option value="stacked">Stacked (mobile)</option>
@@ -79,8 +85,12 @@ export function SettingsDrawer() {
       </div>
 
       <footer className="settings-drawer__footer">
-        <button type="button" onClick={handleApply}>Apply</button>
-        <button type="button" onClick={handleClose}>Cancel</button>
+        <button type="button" onClick={handleApply}>
+          Apply
+        </button>
+        <button type="button" onClick={handleClose}>
+          Cancel
+        </button>
       </footer>
     </aside>
   );

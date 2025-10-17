@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import type { Robot } from '../ecs/entities/Robot';
-import type { PostBattleStats } from '../ecs/entities/SimulationState';
-import { useSimulationWorld } from '../ecs/world';
-import type { Team } from '../types';
+import type { Robot } from "../ecs/entities/Robot";
+import type { PostBattleStats } from "../ecs/entities/SimulationState";
+import { useSimulationWorld } from "../ecs/world";
+import type { Team } from "../types";
 
 export interface PostBattleTeamSummary {
   teamId: Team | string;
@@ -30,7 +30,7 @@ export interface PostBattleRobotStat {
 
 export interface PostBattleStatsResult {
   hasStats: boolean;
-  winner: Team | 'draw' | null;
+  winner: Team | "draw" | null;
   computedAt: number | null;
   teamSummaries: PostBattleTeamSummary[];
   robotStats: PostBattleRobotStat[];
@@ -41,12 +41,12 @@ export interface PostBattleStatsResult {
   };
 }
 
-type RobotMetadata = Pick<Robot, 'id' | 'team' | 'weaponType' | 'isCaptain'>;
+type RobotMetadata = Pick<Robot, "id" | "team" | "weaponType" | "isCaptain">;
 
 interface PostBattleSnapshot {
   stats: PostBattleStats | null;
   robots: RobotMetadata[];
-  winner: Team | 'draw' | null;
+  winner: Team | "draw" | null;
 }
 
 function subscribeToWorld(world: ReturnType<typeof useSimulationWorld>) {
@@ -62,7 +62,9 @@ function subscribeToWorld(world: ReturnType<typeof useSimulationWorld>) {
   };
 }
 
-function createSnapshot(world: ReturnType<typeof useSimulationWorld>): PostBattleSnapshot {
+function createSnapshot(
+  world: ReturnType<typeof useSimulationWorld>,
+): PostBattleSnapshot {
   return {
     stats: world.simulation.postBattleStats ?? null,
     robots: world.ecs.robots.entities.map((robot) => ({
@@ -77,10 +79,10 @@ function createSnapshot(world: ReturnType<typeof useSimulationWorld>): PostBattl
 
 function formatTeamLabel(team: Team | string): string {
   switch (team) {
-    case 'red':
-      return 'Red Team';
-    case 'blue':
-      return 'Blue Team';
+    case "red":
+      return "Red Team";
+    case "blue":
+      return "Blue Team";
     default:
       return String(team);
   }
@@ -93,7 +95,7 @@ function formatDuration(seconds: number): string {
   if (minutes <= 0) {
     return `${secs}s`;
   }
-  return `${minutes}m ${secs.toString().padStart(2, '0')}s`;
+  return `${minutes}m ${secs.toString().padStart(2, "0")}s`;
 }
 
 function buildRobotStats(
@@ -115,8 +117,8 @@ function buildRobotStats(
       return {
         id,
         name: robot?.id ?? id,
-        team: robot?.team ?? 'unknown',
-        weaponType: robot?.weaponType ?? 'unknown',
+        team: robot?.team ?? "unknown",
+        weaponType: robot?.weaponType ?? "unknown",
         kills: stats.kills,
         damageDealt: stats.damageDealt,
         damageTaken: stats.damageTaken,
@@ -144,10 +146,11 @@ function buildTeamSummariesFromStats(
     return [];
   }
 
-  return (Object.entries(snapshot.perTeam) as Array<[
-    Team | string,
-    PostBattleStats['perTeam'][Team],
-  ]>).map(([teamId, stats]) => ({
+  return (
+    Object.entries(snapshot.perTeam) as Array<
+      [Team | string, PostBattleStats["perTeam"][Team]]
+    >
+  ).map(([teamId, stats]) => ({
     teamId,
     label: formatTeamLabel(teamId),
     totalKills: stats.totalKills,
@@ -159,7 +162,9 @@ function buildTeamSummariesFromStats(
 
 export function usePostBattleStats(): PostBattleStatsResult {
   const world = useSimulationWorld();
-  const [snapshot, setSnapshot] = useState<PostBattleSnapshot>(() => createSnapshot(world));
+  const [snapshot, setSnapshot] = useState<PostBattleSnapshot>(() =>
+    createSnapshot(world),
+  );
   const signatureRef = useRef<string>(JSON.stringify(snapshot));
 
   useEffect(() => {
@@ -174,7 +179,7 @@ export function usePostBattleStats(): PostBattleStatsResult {
 
     const unsubscribe = subscribeToWorld(world)(handleUpdate);
     let intervalId: number | undefined;
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       intervalId = window.setInterval(handleUpdate, 300);
     }
 

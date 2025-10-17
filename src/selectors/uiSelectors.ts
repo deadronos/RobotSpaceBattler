@@ -1,4 +1,4 @@
-import type { Team, WeaponType } from '../types';
+import type { Team, WeaponType } from "../types";
 
 export interface SnapshotTeamSummary {
   name: Team;
@@ -30,7 +30,7 @@ export interface VictorySnapshot {
   robots: readonly SnapshotRobotSummary[];
   simulation: {
     status: string;
-    winner: Team | 'draw' | null;
+    winner: Team | "draw" | null;
     simulationTime: number;
     autoRestartCountdown: number | null;
   };
@@ -70,7 +70,7 @@ export function buildTeamSummaries(
 
   return snapshot.teams.map((team) => {
     const captainRobot =
-      team.captainId !== null ? robotsById.get(team.captainId) ?? null : null;
+      team.captainId !== null ? (robotsById.get(team.captainId) ?? null) : null;
 
     const captain = captainRobot
       ? {
@@ -91,12 +91,12 @@ export function buildTeamSummaries(
   });
 }
 
-function resolveTimeAlive(stats: SnapshotRobotSummary['stats']): number {
-  if (typeof stats.timeAliveSeconds === 'number') {
+function resolveTimeAlive(stats: SnapshotRobotSummary["stats"]): number {
+  if (typeof stats.timeAliveSeconds === "number") {
     return stats.timeAliveSeconds;
   }
 
-  if (typeof stats.timeAlive === 'number') {
+  if (typeof stats.timeAlive === "number") {
     return stats.timeAlive;
   }
 
@@ -133,10 +133,10 @@ export function buildRobotStatRows(
 
 export function formatCountdownLabel(countdown: number | null): string {
   if (countdown === null) {
-    return 'Auto-restart paused';
+    return "Auto-restart paused";
   }
 
   const seconds = Math.max(0, Math.floor(countdown));
-  const padded = seconds.toString().padStart(2, '0');
+  const padded = seconds.toString().padStart(2, "0");
   return `Restarts in ${padded}s`;
 }

@@ -1,19 +1,19 @@
-import React from 'react'
+import React from "react";
 
-import { useSimulationWorld } from '../ecs/world'
-import type { FrameSubscription } from '../systems/physicsSync'
-import { usePhysicsSync } from '../systems/physicsSync'
-import RobotPlaceholder from './RobotPlaceholder'
+import { useSimulationWorld } from "../ecs/world";
+import type { FrameSubscription } from "../systems/physicsSync";
+import { usePhysicsSync } from "../systems/physicsSync";
+import RobotPlaceholder from "./RobotPlaceholder";
 
 type SimulationProps = {
   /** Optional override for frame subscription (testing). */
-  useFrameHook?: FrameSubscription
-}
+  useFrameHook?: FrameSubscription;
+};
 
 export default function Simulation({ useFrameHook }: SimulationProps) {
-  const world = useSimulationWorld()
+  const world = useSimulationWorld();
 
-  usePhysicsSync({ world, useFrameHook })
+  usePhysicsSync({ world, useFrameHook });
 
   return (
     <>
@@ -25,5 +25,5 @@ export default function Simulation({ useFrameHook }: SimulationProps) {
       <RobotPlaceholder position={[0, 1, 0]} team="red" />
       <RobotPlaceholder position={[2, 1, 0]} team="blue" />
     </>
-  )
+  );
 }

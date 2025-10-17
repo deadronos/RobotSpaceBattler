@@ -1,4 +1,4 @@
-import { INITIAL_HEALTH,SPAWN_ZONES } from "../../contracts/loadSpawnContract";
+import { INITIAL_HEALTH, SPAWN_ZONES } from "../../contracts/loadSpawnContract";
 import type { AIState, Team, Vector3, WeaponType } from "../../types";
 import type { Robot } from "../entities/Robot";
 import { createRobot } from "../entities/Robot";

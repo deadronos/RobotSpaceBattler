@@ -1,4 +1,4 @@
-import type { Team } from '../types';
+import type { Team } from "../types";
 import type {
   BattleUiPreferences,
   BattleUiState,
@@ -6,7 +6,7 @@ import type {
   RobotView,
   RoundStatus,
   RoundView,
-} from '../types/ui';
+} from "../types/ui";
 
 export interface RobotSnapshot {
   id: string;
@@ -34,13 +34,14 @@ export interface BattleSelectorsContext {
   camera: CameraState;
   ui: {
     inRound: boolean;
-    activeUI: 'battle' | 'lobby' | 'summary';
+    activeUI: "battle" | "lobby" | "summary";
     userPreferences: BattleUiPreferences;
     lastToggleTime: number | null;
   };
 }
 
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
 
 export function getRoundView(context: BattleSelectorsContext): RoundView {
   const { round } = context;
@@ -63,7 +64,7 @@ export function getRobotView(
     return null;
   }
 
-  const hasMaxHealth = typeof robot.maxHealth === 'number';
+  const hasMaxHealth = typeof robot.maxHealth === "number";
   const maxHealth = hasMaxHealth ? robot.maxHealth : undefined;
   let currentHealth = Math.max(0, robot.health);
   if (maxHealth !== undefined) {
@@ -75,7 +76,7 @@ export function getRobotView(
     name: robot.name,
     team: robot.team,
     currentHealth,
-  maxHealth,
+    maxHealth,
     statusFlags: robot.statusFlags ? [...robot.statusFlags] : [],
     currentTarget: robot.currentTarget ?? robot.currentTargetId ?? null,
     isCaptain: robot.isCaptain,
@@ -86,7 +87,9 @@ export function getActiveCamera(context: BattleSelectorsContext): CameraState {
   return { ...context.camera };
 }
 
-export function getBattleUiState(context: BattleSelectorsContext): BattleUiState {
+export function getBattleUiState(
+  context: BattleSelectorsContext,
+): BattleUiState {
   return {
     ...context.ui,
     userPreferences: { ...context.ui.userPreferences },

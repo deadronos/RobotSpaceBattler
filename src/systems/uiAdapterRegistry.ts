@@ -1,4 +1,4 @@
-import type { UiAdapter } from './uiAdapter';
+import type { UiAdapter } from "./uiAdapter";
 
 let currentAdapter: UiAdapter | null = null;
 

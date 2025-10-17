@@ -13,7 +13,7 @@ type Flags = {
   __setVictoryVisible?: (v: boolean) => void;
   __getUiState?: () => unknown;
   __perf?: unknown;
-  __setCameraMode?: (mode: 'follow' | 'cinematic') => void;
+  __setCameraMode?: (mode: "follow" | "cinematic") => void;
   __setCameraTarget?: (id: string | null) => void;
 };
 
@@ -70,7 +70,7 @@ export function setGetUiState(fn: () => unknown): void {
 }
 
 export function setSetCameraMode(
-  fn: (mode: 'follow' | 'cinematic') => void,
+  fn: (mode: "follow" | "cinematic") => void,
 ): void {
   (globalThis as unknown as Flags).__setCameraMode = fn;
 }

@@ -1,6 +1,6 @@
-import type { Team } from './index';
+import type { Team } from "./index";
 
-export type RoundStatus = 'initializing' | 'running' | 'ending' | 'finished';
+export type RoundStatus = "initializing" | "running" | "ending" | "finished";
 
 export interface RoundView {
   id: string;
@@ -23,7 +23,7 @@ export interface RobotView {
   isCaptain?: boolean;
 }
 
-export type CameraMode = 'follow' | 'cinematic' | 'free';
+export type CameraMode = "follow" | "cinematic" | "free";
 
 export interface CameraState {
   mode: CameraMode;
@@ -39,7 +39,7 @@ export interface BattleUiPreferences {
 
 export interface BattleUiState {
   inRound: boolean;
-  activeUI: 'battle' | 'lobby' | 'summary';
+  activeUI: "battle" | "lobby" | "summary";
   userPreferences: BattleUiPreferences;
   lastToggleTime: number | null;
 }

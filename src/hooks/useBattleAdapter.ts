@@ -1,7 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
-import type { UiAdapter } from '../systems/uiAdapter';
-import type { BattleUiState, CameraState, RobotView, RoundView } from '../types/ui';
+import type { UiAdapter } from "../systems/uiAdapter";
+import type {
+  BattleUiState,
+  CameraState,
+  RobotView,
+  RoundView,
+} from "../types/ui";
 
 export interface BattleAdapterData {
   round: RoundView | null;
@@ -11,9 +16,15 @@ export interface BattleAdapterData {
 }
 
 export function useBattleAdapter(adapter: UiAdapter): BattleAdapterData {
-  const [round, setRound] = useState<RoundView | null>(() => adapter.getRoundView());
-  const [uiState, setUiState] = useState<BattleUiState>(() => adapter.getBattleUiState());
-  const [camera, setCamera] = useState<CameraState>(() => adapter.getActiveCamera());
+  const [round, setRound] = useState<RoundView | null>(() =>
+    adapter.getRoundView(),
+  );
+  const [uiState, setUiState] = useState<BattleUiState>(() =>
+    adapter.getBattleUiState(),
+  );
+  const [camera, setCamera] = useState<CameraState>(() =>
+    adapter.getActiveCamera(),
+  );
 
   useEffect(() => {
     // Subscribe to round events

@@ -36,7 +36,9 @@ export function PerformanceBanner({
     >
       <div className="performance-banner__content">
         <strong>{Math.round(fps)} FPS</strong>
-        <span className="performance-banner__target">Target {targetFps} FPS</span>
+        <span className="performance-banner__target">
+          Target {targetFps} FPS
+        </span>
         {qualityScalingActive ? (
           <span className="performance-banner__scaling">
             Quality scaling status: active

@@ -1,8 +1,8 @@
-import type { ReactElement } from 'react';
+import type { ReactElement } from "react";
 
-import { useBattleAdapter } from '../../hooks/useBattleAdapter';
-import type { UiAdapter } from '../../systems/uiAdapter';
-import { CinematicHud } from './CinematicHud';
+import { useBattleAdapter } from "../../hooks/useBattleAdapter";
+import type { UiAdapter } from "../../systems/uiAdapter";
+import { CinematicHud } from "./CinematicHud";
 
 export interface BattleUIProps {
   adapter: UiAdapter;
@@ -16,15 +16,17 @@ export function BattleUI({ adapter }: BattleUIProps): ReactElement | null {
     return null;
   }
 
-  const isCinematic = camera.mode === 'cinematic';
+  const isCinematic = camera.mode === "cinematic";
   const showDetailed = !uiState.userPreferences.minimalUi && !isCinematic;
+  const hasReducedMotion = uiState.userPreferences.reducedMotion;
   const className = [
-    'battle-ui',
+    "battle-ui",
     `battle-ui--${camera.mode}`,
-    showDetailed ? '' : 'battle-ui--minimal',
+    showDetailed ? "" : "battle-ui--minimal",
+    hasReducedMotion ? "battle-ui--reduced-motion" : "",
   ]
     .filter(Boolean)
-    .join(' ');
+    .join(" ");
 
   return (
     <div data-testid="battle-ui" className={className} aria-live="polite">

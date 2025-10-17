@@ -1,4 +1,4 @@
-import type { Team, WeaponType } from '../../types';
+import type { Team, WeaponType } from "../../types";
 
 export interface VictoryOverlayTeamSummary {
   teamId: Team | string;
@@ -29,11 +29,11 @@ export interface VictoryOverlayProps {
 
 function formatCountdown(seconds: number | null): string {
   if (seconds === null) {
-    return 'Auto-restart paused';
+    return "Auto-restart paused";
   }
 
   const normalized = Math.max(0, Math.floor(seconds));
-  return `Auto-restarts in ${normalized.toString().padStart(2, '0')}s`;
+  return `Auto-restarts in ${normalized.toString().padStart(2, "0")}s`;
 }
 
 export function VictoryOverlay({
@@ -50,7 +50,7 @@ export function VictoryOverlay({
   }
 
   const countdownLabel = performanceHint ?? formatCountdown(countdownSeconds);
-  const pauseLabel = countdownPaused ? 'Resume Countdown' : 'Pause Countdown';
+  const pauseLabel = countdownPaused ? "Resume Countdown" : "Pause Countdown";
   const handlePauseClick = () => {
     if (countdownPaused) {
       actions.resumeCountdown();
@@ -91,8 +91,8 @@ export function VictoryOverlay({
         {teamSummaries.map((team) => {
           const captainState = team.captain ?? null;
           const captainLabel = captainState
-            ? `Captain ${captainState.alive ? 'Active' : 'Eliminated'}`
-            : 'Captain Unknown';
+            ? `Captain ${captainState.alive ? "Active" : "Eliminated"}`
+            : "Captain Unknown";
 
           return (
             <article
@@ -104,12 +104,17 @@ export function VictoryOverlay({
               <p>Alive: {team.alive}</p>
               <p>Eliminated: {team.eliminated}</p>
               <p>{captainLabel}</p>
-              <div className="victory-overlay__weapons" aria-label="Weapon distribution">
-                {Object.entries(team.weaponDistribution).map(([weapon, count]) => (
-                  <span key={weapon} className="victory-overlay__weapon-chip">
-                    {weapon}: {count}
-                  </span>
-                ))}
+              <div
+                className="victory-overlay__weapons"
+                aria-label="Weapon distribution"
+              >
+                {Object.entries(team.weaponDistribution).map(
+                  ([weapon, count]) => (
+                    <span key={weapon} className="victory-overlay__weapon-chip">
+                      {weapon}: {count}
+                    </span>
+                  ),
+                )}
               </div>
             </article>
           );

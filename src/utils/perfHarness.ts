@@ -2,7 +2,7 @@
 // Implements startMeasurement/stopMeasurement/reset/getLastReport used by Playwright
 
 import type { PerfReport } from "../types";
-import { isPerfDebug } from '../utils/debugFlags';
+import { isPerfDebug } from "../utils/debugFlags";
 
 type RAFHandle = number | null;
 
@@ -100,7 +100,8 @@ const EMPTY_REPORT: PerfReport = {
 
 export async function stopMeasurement(): Promise<PerfReport> {
   if (!state.running) {
-    if (isPerfDebug()) console.debug("[__perf] stopMeasurement called but not running");
+    if (isPerfDebug())
+      console.debug("[__perf] stopMeasurement called but not running");
     return state.lastReport ?? EMPTY_REPORT;
   }
 

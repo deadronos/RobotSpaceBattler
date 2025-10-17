@@ -1,4 +1,4 @@
-import type { BattleHudStatusInfo } from '../../hooks/useBattleHudData';
+import type { BattleHudStatusInfo } from "../../hooks/useBattleHudData";
 
 export interface BattleTimerProps {
   status: BattleHudStatusInfo;
@@ -8,7 +8,7 @@ function formatElapsed(seconds: number): string {
   const totalSeconds = Math.max(0, Math.floor(seconds));
   const minutes = Math.floor(totalSeconds / 60);
   const remainder = totalSeconds % 60;
-  const padded = remainder.toString().padStart(2, '0');
+  const padded = remainder.toString().padStart(2, "0");
 
   if (minutes <= 0) {
     return `${padded}s`;
@@ -32,10 +32,10 @@ export function BattleTimer({ status }: BattleTimerProps) {
           className="battle-timer__countdown"
           role="status"
           aria-live="polite"
-          data-paused={status.countdownPaused ? 'true' : 'false'}
+          data-paused={status.countdownPaused ? "true" : "false"}
         >
           {countdownLabel}
-          {status.countdownPaused ? ' (paused)' : ''}
+          {status.countdownPaused ? " (paused)" : ""}
         </span>
       ) : null}
     </div>

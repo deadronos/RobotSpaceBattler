@@ -1,4 +1,4 @@
-import type { TeamSummaryViewModel } from '../../selectors/uiSelectors';
+import type { TeamSummaryViewModel } from "../../selectors/uiSelectors";
 
 export interface TeamStatusPanelProps {
   team: TeamSummaryViewModel;
@@ -6,10 +6,10 @@ export interface TeamStatusPanelProps {
 
 function formatCaptainLabel(team: TeamSummaryViewModel): string {
   if (!team.captain) {
-    return 'Captain unknown';
+    return "Captain unknown";
   }
 
-  const statusLabel = team.captain.alive ? 'Alive' : 'Eliminated';
+  const statusLabel = team.captain.alive ? "Alive" : "Eliminated";
   return `${team.captain.name} (${statusLabel})`;
 }
 
