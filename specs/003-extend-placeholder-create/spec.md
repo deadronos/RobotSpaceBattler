@@ -5,6 +5,18 @@
 **Created**: 2025-10-17  
 **Status**: Draft  
 **Input**: User description: "extend-placeholder create a fully 3d team fight autobattler extending 001 and 002 spec to build better graphics and integrate with background simulation"
+ 
+## Clarifications
+
+### Session 2025-10-17
+
+- Q: When the renderer can't keep up with the simulation timing, should the renderer follow the simulation timestamps strictly, tie playback to renderer frames, or use a hybrid approach with interpolation/extrapolation and an optional frame-step debug mode? → A: C (Hybrid: renderer follows simulation timestamps as source of truth but uses interpolation/extrapolation to smooth visuals; supports optional frame-step debug mode)
+- Q: What timestamp format should MatchTrace events use to synchronize simulation and renderer? → A: D (Both: include integer ms since match start and an optional frameIndex)
+
+- Q: What ordering rule should MatchTrace enforce when multiple events share the same `timestampMs`? → A: B (Stable ordering by `timestampMs`, then `sequenceId` assigned by the simulation to break ties)
+
+- Q: What implementation and test format should the FR-009-A contract validator use? → A: B (TypeScript validator using JSON Schema (ajv) + Vitest tests to integrate with the repo and provide strong typing and automated assertions)
+- Q: What timestamp format should MatchTrace events use to synchronize simulation and renderer? → A: D (Both: include integer ms since match start and an optional frameIndex)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -58,6 +70,7 @@ As an engineer I want the visual playback to reflect the background simulation d
 - If the renderer falls behind (low frame rate), the background simulation must continue and the renderer should interpolate/extrapolate visuals to avoid corrupting simulation state.
 - If assets (models/textures) fail to load mid-match, use a placeholder visual and continue the simulation.
 
+
 ## Out of scope
 
 - Networked multiplayer / online matchmaking is explicitly excluded from this feature. This spec focuses on local, single-process automated matches and renderer integration only.
@@ -73,6 +86,7 @@ As an engineer I want the visual playback to reflect the background simulation d
 - **FR-003**: The simulation and renderer MUST be decoupled and synchronized via a timeline or event stream such that the renderer can deterministically replay simulation events.
 - **FR-004**: The feature MUST provide runtime visual quality modes (e.g., High, Medium, Low) that change renderer fidelity without affecting simulation logic.
 - **FR-005**: The system MUST record a simulation trace (timestamped events) for each match and expose a playback mode that replays the trace in the renderer.
+	- Implementation note: MatchTrace events SHOULD include a monotonic `timestampMs` (integer milliseconds since match start) as the primary timebase and MAY include an optional `frameIndex` (integer) to support deterministic frame-stepped playback and debugging.
 - **FR-006**: The system MUST present a HUD at match end that shows match summary: team names, surviving units, and winner.
 - **FR-007**: The renderer MUST fall back to placeholder assets if an asset fails to load and must not crash the simulation.
 - **FR-008**: The system MUST allow a short automatic cinematic camera sweep at match end to showcase the outcome.
@@ -114,6 +128,41 @@ As an engineer I want the visual playback to reflect the background simulation d
 	 definition and a sample MatchTrace and confirms the presence and structure of the fields
 	 above. The validator must point to the referenced files/headings as the normative mapping.
 	 The check passes if all required fields are present and map sensibly to simulation events.
+
+	Implementation note: The contract validator will be implemented in TypeScript and use JSON
+	Schema validation (for example `ajv`) to perform structural checks. Tests will be written
+	using the project's existing Vitest setup so the validator can run as part of CI. Recommended
+	artifacts:
+
+	- `specs/003-extend-placeholder-create/schemas/team.schema.json` — JSON Schema for Team
+	- `specs/003-extend-placeholder-create/schemas/matchtrace.schema.json` — JSON Schema for MatchTrace
+	- `tests/contract-validator.spec.ts` — Vitest test harness that loads example payloads and asserts schema validity
+
+	This approach keeps the validator strongly-typed, automatable, and consistent with the repo's TypeScript toolchain.
+
+
+Data shape guidance (hit & damage events): For deterministic replay and clear
+validation, prefer separate `hit` and `damage` events:
+
+- `hit` event fields:
+  - `type: 'hit'`
+  - `timestampMs`
+  - `attackerId`
+  - `targetId`
+  - `position` (x,y,z)
+  - `projectileId` (optional)
+  - `collisionNormal` (optional)
+
+- `damage` event fields:
+  - `type: 'damage'`
+  - `timestampMs`
+  - `targetId`
+  - `amount`
+  - `resultingHealth`
+  - `sourceEventId` (optional link to the `hit` event)
+
+Include these shapes in `matchtrace.schema.json` so the validator can assert both
+presence and semantics of collision vs damage recording.
 - **FR-010**: The system MUST provide debug logging and an in-memory match record suitable for automated tests.
 
 *Assumptions*: This spec extends and reuses the team, spawn, and scoring contracts from `specs/001-3d-team-vs` and simulation/graphics decisions from `specs/002-3d-simulation-graphics`. The implementation will avoid specifying frameworks or file formats.
@@ -121,6 +170,10 @@ As an engineer I want the visual playback to reflect the background simulation d
 ### Key Entities *(include if feature involves data)*
 
 - **MatchTrace**: Timestamped event stream produced by the background simulation; events include spawn, move, fire, hit, damage, death, score.
+  - Timing fields (clarified): Each MatchTrace event MUST include a monotonic timebase and may include a frame reference. Recommended fields:
+    - `timestampMs` (integer): milliseconds since match start (monotonic). Primary timebase for synchronization and interpolation.
+    - `frameIndex` (integer, optional): frame number useful for deterministic frame-stepped playback and debugging.
+	- `sequenceId` (integer, optional): strictly increasing integer assigned by the simulation to break ties for events with identical `timestampMs`. Use for deterministic ordering.
 - **Team**: Collection of robot entity definitions with attributes (id, modelRef, teamId, initialPosition, health).
 - **RenderedEntity**: Visual representation of a simulation entity; maps to a MatchTrace entity id and exposes transform, material state, and VFX state.
 - **VisualQualityProfile**: Named preset (High/Medium/Low) that determines renderer parameters (shadow quality, particle density, texture resolution).
