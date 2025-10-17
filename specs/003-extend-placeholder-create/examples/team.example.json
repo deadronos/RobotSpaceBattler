@@ -1,0 +1,17 @@
+{
+  "id": "team-alpha",
+  "name": "Alpha",
+  "units": [
+    {
+      "id": "alpha-1",
+      "modelRef": "models/robot-alpha.glb",
+      "teamId": "team-alpha",
+      "maxHealth": 100,
+      "weapons": [],
+      "isCaptain": true
+    }
+  ],
+  "spawnPoints": [
+    { "spawnPointId": "sp-1", "position": { "x": -5, "y": 0, "z": 0 } }
+  ]
+}
