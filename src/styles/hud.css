@@ -3,8 +3,16 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+  z-index: 9999;
   color: #f5f7ff;
   font-family: 'Inter', Arial, sans-serif;
+
+  /* responsive grid layout: left (status), center (controls), right (teams) */
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "status controls teams";
+  gap: var(--hud-gap, 20px);
+  align-items: start;
 }
 
 .hud-root * {
@@ -23,22 +31,15 @@
   transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
+.hud-root__status { grid-area: status; }
+.hud-root__controls { grid-area: controls; justify-self: center; }
+.hud-root__teams { grid-area: teams; justify-self: end; }
+
+/* ensure panels are positioned statically inside the grid */
 .hud-root__status,
-.hud-root__controls {
-  position: absolute;
-}
-
-.hud-root__status {
-  top: 20px;
-  left: 24px;
-  max-width: 360px;
-}
-
-.hud-root__controls {
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  min-width: 420px;
+.hud-root__controls,
+.hud-root__teams {
+  position: relative;
 }
 
 .hud-panel--status {
@@ -411,6 +412,46 @@
   }
 }
 
+/* Responsive breakpoints: stack the HUD vertically on narrower viewports */
+@media (max-width: 1000px) {
+  .hud-root {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "controls"
+      "status"
+      "teams";
+    padding: 12px;
+  }
+
+  .hud-root__controls,
+  .hud-root__status,
+  .hud-root__teams {
+    justify-self: stretch;
+    width: 100%;
+  }
+}
+
+/* CSS clamp-driven sizing variables for smooth scaling */
+:root {
+  --hud-gap: clamp(8px, 1.2vw, 24px);
+  --hud-padding: clamp(8px, 1.0vw, 20px);
+  --hud-font-size: clamp(13px, 1.0vw, 18px);
+}
+
+.hud-panel {
+  padding: var(--hud-padding);
+  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  font-size: var(--hud-font-size);
+}
+
+/* Keep the teams panel from growing past viewport and allow internal scroll */
+.hud-root__teams {
+  max-width: 360px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
 @media (max-width: 520px) {
   .hud-root__status {
     max-width: calc(100% - 32px);
@@ -548,6 +589,24 @@
 
 .battle-ui--reduced-motion .robot-overlay {
   transform: translate(-50%, calc(-50% - 80px)) !important;
+}
+
+/* Transparent HUD mode: removes panel chrome so 3D scene is fully visible
+   Use the `hud-root--transparent` class on the root to enable. This preserves
+   interactive controls (pointer-events) but hides heavy backgrounds and borders.
+*/
+.hud-root--transparent .hud-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.hud-root--transparent .hud-root__status-chip,
+.hud-root--transparent .control-strip__button,
+.hud-root--transparent .team-status-panel {
+  background: rgba(255,255,255,0.02) !important;
+  box-shadow: none !important;
+  border: 1px solid rgba(255,255,255,0.02) !important;
 }
 
 .battle-ui--reduced-motion .control-strip__button:hover {

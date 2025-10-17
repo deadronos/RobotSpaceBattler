@@ -10,6 +10,8 @@ export function SettingsDrawer() {
   const setHudTranslucency = useUiStore((s) => s.setHudTranslucency);
   const hudPanelPosition = useUiStore((s) => s.hudPanelPosition);
   const setHudPanelPosition = useUiStore((s) => s.setHudPanelPosition);
+  const minimalUi = useUiStore((s) => s.userPreferences.minimalUi);
+  const setMinimalUi = useUiStore((s) => s.setMinimalUi);
 
   if (!settingsOpen) return null;
 
@@ -80,6 +82,15 @@ export function SettingsDrawer() {
               <option value="left-right">Left / Right</option>
               <option value="stacked">Stacked (mobile)</option>
             </select>
+          </label>
+
+          <label>
+            Minimal UI (transparent HUD)
+            <input
+              type="checkbox"
+              checked={!!minimalUi}
+              onChange={(e) => setMinimalUi?.(!!e.target.checked)}
+            />
           </label>
         </section>
       </div>

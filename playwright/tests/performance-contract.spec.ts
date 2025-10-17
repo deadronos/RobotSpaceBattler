@@ -6,7 +6,6 @@
 // @ts-nocheck
 /// <reference types="@playwright/test" />
 import { test, expect } from '@playwright/test';
-import type { Page } from '@playwright/test';
 import type { PerfReport } from '../utils/perfHelper';
 import { ensurePerfHarness, startPerfMeasurement, stopPerfMeasurement } from '../utils/perfHelper';
 

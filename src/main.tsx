@@ -1,4 +1,6 @@
 import "./index.css";
+import "./styles/hud.css";
+import "./styles/overlays.css";
 
 import React from "react";
 import { createRoot } from "react-dom/client";

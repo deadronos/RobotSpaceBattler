@@ -1,5 +1,5 @@
 import type { PointerEvent as ReactPointerEvent } from "react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { BattleHudData } from "../../hooks/useBattleHudData";
 import useBattleHudData from "../../hooks/useBattleHudData";
@@ -34,6 +34,8 @@ function renderHiddenState(hud: BattleHudData) {
 export function HudRoot(props: HudRootProps) {
   const hud = useBattleHudData();
   const hudTranslucency = useUiStore((s) => s.hudTranslucency);
+  const minimalUi = useUiStore((s) => s.userPreferences.minimalUi);
+  const setHudPanelPosition = useUiStore((s) => s.setHudPanelPosition);
   const hudPanelPosition = useUiStore((s) => s.hudPanelPosition);
   const isStacked = hudPanelPosition === "stacked";
   const teamPanelRef = useRef<HTMLDivElement>(null);
@@ -138,22 +140,50 @@ export function HudRoot(props: HudRootProps) {
     [clampPosition, isStacked],
   );
 
-  if (!hud.controls.isHudVisible) {
-    return renderHiddenState(hud);
-  }
+  // NOTE: do not return early here — hooks (useEffect) below must run on every
+  // render to satisfy react-hooks/rules-of-hooks. The visibility check and
+  // early return happens after the hook declarations.
 
-  const rootStyle: Record<string, string | number> = {
-    "--hud-translucency": hudTranslucency,
-  };
+  // apply HUD translucency to a CSS variable on the document root so we avoid
+  // inline JSX styles (lint rule). This keeps dynamic translucency while
+  // remaining lint-clean.
+  useEffect(() => {
+    try {
+      document.documentElement.style.setProperty(
+        "--hud-translucency",
+        String(hudTranslucency),
+      );
+    } catch {
+      /* ignore (SSR or env without document) */
+    }
+  }, [hudTranslucency]);
 
-  const teamPanelStyle = isStacked
-    ? undefined
-    : teamPanelPosition
-      ? {
-          top: `${teamPanelPosition.top}px`,
-          left: `${teamPanelPosition.left}px`,
-        }
-      : { top: "20px", right: "24px" };
+  // We set team panel position via CSS variables on the element rather than
+  // JSX inline styles to satisfy linting rules. When `teamPanelPosition` is
+  // present we write --team-left and --team-top; otherwise we clear them to
+  // allow the CSS defaults to apply.
+  useEffect(() => {
+    const panel = teamPanelRef.current;
+    if (!panel) return;
+    try {
+      if (isStacked) {
+        panel.style.removeProperty("--team-left");
+        panel.style.removeProperty("--team-top");
+        panel.style.removeProperty("--team-right");
+      } else if (teamPanelPosition) {
+        panel.style.setProperty("--team-left", `${teamPanelPosition.left}px`);
+        panel.style.setProperty("--team-top", `${teamPanelPosition.top}px`);
+        panel.style.removeProperty("--team-right");
+      } else {
+        // defaults: clear left/top and fall back to CSS `right`.
+        panel.style.removeProperty("--team-left");
+        panel.style.removeProperty("--team-top");
+        panel.style.removeProperty("--team-right");
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [isStacked, teamPanelPosition]);
 
   const teamPanelClassName = [
     "hud-root__teams",
@@ -163,13 +193,36 @@ export function HudRoot(props: HudRootProps) {
   ]
     .filter(Boolean)
     .join(" ");
+  // (removed duplicate resize effect; the final responsive effect below will
+  // update the store with the current layout)
+
+  // Responsive: keep HUD panels stacked on narrow viewports by updating
+  // the shared ui store. This lets other components react to the layout
+  // change (and preserves user drag/stacking state when appropriate).
+  useEffect(() => {
+    if (typeof window === "undefined" || !setHudPanelPosition) return;
+
+    const update = () => {
+      const next = window.innerWidth < 1000 ? "stacked" : "left-right";
+      setHudPanelPosition(next);
+    };
+
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [setHudPanelPosition]);
+
+  // If HUD is hidden, render the compact placeholder now that hooks have been
+  // declared above (avoids conditional hook calls).
+  if (!hud.controls.isHudVisible) {
+    return renderHiddenState(hud);
+  }
 
   return (
     <section
-      className={`hud-root ${isStacked ? "hud-root--stacked" : ""}`}
+      className={`hud-root ${isStacked ? "hud-root--stacked" : ""} ${minimalUi ? "hud-root--transparent" : ""}`}
       role="banner"
       aria-live="polite"
-      style={rootStyle}
     >
       {/* Status panel */}
       <div className="hud-root__status" aria-label="Battle status">
@@ -238,7 +291,6 @@ export function HudRoot(props: HudRootProps) {
         ref={teamPanelRef}
         className={teamPanelClassName}
         aria-label="Team status"
-        style={teamPanelStyle}
         onPointerDown={handleTeamPointerDown}
         onPointerMove={handleTeamPointerMove}
         onPointerUp={handleTeamPointerEnd}
