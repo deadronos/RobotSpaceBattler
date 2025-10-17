@@ -1,14 +1,6 @@
 // Minimal helper to mount r3f components in Vitest using @react-three/test-renderer
 // This file is intentionally small and used by unit tests that need to render
 // react-three-fiber components without a real WebGL context.
-import { create } from '@react-three/test-renderer'
-import React from 'react'
-
-export async function mountR3f(element: React.ReactElement) {
-  // create() returns a renderer with toJSON and unmount
-  const renderer = await create(element as any)
-  return renderer
-}
 import type { ReactElement } from 'react';
 import { create } from '@react-three/test-renderer';
 import type { ReactThreeTest } from '@react-three/test-renderer';

@@ -23,18 +23,18 @@ const createContextWithRoundStatus = (
     targetEntityId: 'robot-1',
     interpolationMs: 100,
   },
-  robots: {
-    'robot-1': {
+  robots: [
+    {
       id: 'robot-1',
       name: 'Alpha',
-      team: 'team-a',
-      currentHealth: 100,
+      team: 'red',
+      health: 100,
       maxHealth: 100,
       statusFlags: [],
       currentTarget: null,
       isCaptain: true,
     },
-  },
+  ],
   ui: {
     inRound: status === 'running',
     activeUI: status === 'running' ? 'battle' : status === 'finished' ? 'summary' : 'lobby',
@@ -84,8 +84,8 @@ describe('Reduced Motion Persistence Across Rounds', () => {
     rerender(<BattleUI adapter={adapter} />);
 
     // After round finishes, UI should not render (inRound becomes false)
-    battleUi = container.querySelector('[data-testid="battle-ui"]') as HTMLElement | null;
-    expect(battleUi).toBeNull();
+    let battleUiElement = container.querySelector('[data-testid="battle-ui"]');
+    expect(battleUiElement).toBeNull();
   });
 
   it('should respect independent adapter updates', () => {
@@ -106,8 +106,8 @@ describe('Reduced Motion Persistence Across Rounds', () => {
 
     // After rerender, component should reflect the new preference
     // Note: Due to hook behavior, the component may need fresh props to force re-evaluate
-    battleUi = container.querySelector('[data-testid="battle-ui"]') as HTMLElement;
-    expect(battleUi).toBeTruthy();
+    let battleUiElement2 = container.querySelector('[data-testid="battle-ui"]');
+    expect(battleUiElement2).toBeTruthy();
   });
 
   it('should persist reduced-motion preference across multiple rounds', () => {
@@ -116,14 +116,17 @@ describe('Reduced Motion Persistence Across Rounds', () => {
     const adapter = createUiAdapter(context);
     const { container, rerender } = render(<BattleUI adapter={adapter} />);
 
-    let battleUi = container.querySelector('[data-testid="battle-ui"]') as HTMLElement;
-    expect(battleUi.classList.contains('battle-ui--reduced-motion')).toBe(true);
+    let battleUi = container.querySelector('[data-testid="battle-ui"]');
+    expect(battleUi).toBeTruthy();
+    if (battleUi instanceof HTMLElement) {
+      expect(battleUi.classList.contains('battle-ui--reduced-motion')).toBe(true);
+    }
 
     // Round 1: finishes
     context = createContextWithRoundStatus('finished', true);
     adapter.updateContext(context);
     rerender(<BattleUI adapter={adapter} />);
-    battleUi = container.querySelector('[data-testid="battle-ui"]') as HTMLElement | null;
+    battleUi = container.querySelector('[data-testid="battle-ui"]');
     expect(battleUi).toBeNull();
 
     // Round 2: starts with same preference
@@ -131,8 +134,10 @@ describe('Reduced Motion Persistence Across Rounds', () => {
     adapter.updateContext(context);
     rerender(<BattleUI adapter={adapter} />);
 
-    battleUi = container.querySelector('[data-testid="battle-ui"]') as HTMLElement;
+    battleUi = container.querySelector('[data-testid="battle-ui"]');
     expect(battleUi).toBeTruthy();
-    expect(battleUi.classList.contains('battle-ui--reduced-motion')).toBe(true);
+    if (battleUi instanceof HTMLElement) {
+      expect(battleUi.classList.contains('battle-ui--reduced-motion')).toBe(true);
+    }
   });
 });

@@ -43,6 +43,7 @@ describe('BattleUI', () => {
         time: performance.now(),
         interpolationFactor: 1,
       })),
+      setFrameSnapshot: vi.fn(),
       onRoundStart: vi.fn(() => () => {}),
       onRoundEnd: vi.fn(() => () => {}),
       onCameraChange: vi.fn(() => () => {}),

@@ -234,10 +234,18 @@ Purpose: Final integration, documentation, CI updates, and performance tuning.
   - Run `npm run lint` and `npm run format` and ensure no linter warnings for modified files. Fix any found issues.
   - Status: Completed. All source files pass ESLint and Prettier formatting checks. Fixed unused variable issues in `CameraUiIntegrator.tsx`.
 
+- [x] T056 [Polish] Remove HUD scrollbars and ensure transparent overlay layout
+  - Update `src/index.css` to add `overflow: hidden` and `position: relative` on `#app-root`
+  - Result: Canvas and HUD layer properly (Canvas fullscreen, HUD as absolute overlay on top)
+  - Verified: Dev server running; no scrollbars appear; HUD elements overlay battle scene cleanly
+  - Status: ✅ COMPLETE — CSS-only fix (2 lines) ensures UI overlays battle scene without document overflow
+
 **Final Status**: All user stories (US1, US2, US3) implemented & test suites passing locally.
+- **Total Tasks Complete**: 40/41 core tasks (97.6%)
 - **Test Results**: 215 tests passed, 1 skipped (performance contract test)
 - **Code Quality**: ESLint passes, Prettier formatting complete
 - **Coverage**: Reduced-motion preferences, accessibility, camera controls, battle UI, all integrated and tested
+- **Layout**: HUD transparent overlay properly positioned with `overflow: hidden` — no scrollbars, clean battle scene overlay
 
 ---
 

@@ -20,18 +20,18 @@ const createMockContextWithReducedMotion = (reducedMotion: boolean): BattleSelec
     targetEntityId: 'robot-1',
     interpolationMs: 100,
   },
-  robots: {
-    'robot-1': {
+  robots: [
+    {
       id: 'robot-1',
       name: 'Alpha',
-      team: 'team-a',
-      currentHealth: 100,
+      team: 'red',
+      health: 100,
       maxHealth: 100,
       statusFlags: [],
       currentTarget: null,
       isCaptain: true,
     },
-  },
+  ],
   ui: {
     inRound: true,
     activeUI: 'battle',

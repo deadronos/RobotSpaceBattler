@@ -65,6 +65,7 @@ describe('RobotOverlay follow-camera visibility', () => {
         time: performance.now(),
         interpolationFactor: 1,
       })),
+      setFrameSnapshot: () => {},
       onRoundStart: () => () => {},
       onRoundEnd: () => () => {},
       onCameraChange: (handler) => {
