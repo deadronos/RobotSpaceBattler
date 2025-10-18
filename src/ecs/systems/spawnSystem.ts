@@ -1,4 +1,5 @@
 import { INITIAL_HEALTH, SPAWN_ZONES } from "../../contracts/loadSpawnContract";
+import { emitLiveTraceEvent } from "../../systems/matchTrace/liveTraceEmitter";
 import type { AIState, Team, Vector3, WeaponType } from "../../types";
 import type { Robot } from "../entities/Robot";
 import { createRobot } from "../entities/Robot";
@@ -91,6 +92,14 @@ export function spawnTeam(world: WorldView, team: Team): Robot[] {
     world.entities.push(robot);
     world.ecs?.robots.add(robot);
     setRobotBodyPosition(world.physics, robot, robot.position);
+
+    emitLiveTraceEvent({
+      type: "spawn",
+      entityId: robot.id,
+      teamId: robot.team,
+      position: cloneVector(robot.position),
+      timestampMs: Math.round(world.simulation.simulationTime * 1000),
+    });
   });
 
   assignCaptain(world, team, robots);

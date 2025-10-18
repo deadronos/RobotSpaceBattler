@@ -11,10 +11,10 @@
  * - Event timeline inspection
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from "react";
 
-import { MatchPlayer, ReplayMode } from '../systems/matchTrace/matchPlayer';
-import { MatchTraceEvent } from '../systems/matchTrace/types';
+import { MatchPlayer, ReplayMode } from "../systems/matchTrace/matchPlayer";
+import { MatchTraceEvent } from "../systems/matchTrace/types";
 
 // ============================================================================
 // Hook Types
@@ -93,9 +93,9 @@ export function useMatchReplay(
     const metadata = matchPlayer.getTraceMetadata();
 
     return {
-      isPlaying: snapshot.state === 'playing',
-      isPaused: snapshot.state === 'paused',
-      isFinished: snapshot.state === 'finished',
+      isPlaying: snapshot.state === "playing",
+      isPaused: snapshot.state === "paused",
+      isFinished: snapshot.state === "finished",
       currentTimeMs: snapshot.currentTimestampMs,
       playbackRate: matchPlayer.getPlaybackRate(),
       progress: snapshot.progress,
@@ -105,7 +105,8 @@ export function useMatchReplay(
       rngValid: rngValidation?.valid ?? false,
       rngWarning: rngValidation?.warning,
       currentEventCount: snapshot.currentFrameIndex + 1,
-      totalEventCount: snapshot.eventsAtTimestamp.length + snapshot.currentFrameIndex,
+      totalEventCount:
+        snapshot.eventsAtTimestamp.length + snapshot.currentFrameIndex,
     };
   }, [matchPlayer, rngValidation]);
 
@@ -121,7 +122,8 @@ export function useMatchReplay(
         if (matchPlayer) {
           matchPlayer.play();
           forceUpdate();
-          if (onTimeChange) onTimeChange(matchPlayer.getSnapshot().currentTimestampMs);
+          if (onTimeChange)
+            onTimeChange(matchPlayer.getSnapshot().currentTimestampMs);
         }
       },
 

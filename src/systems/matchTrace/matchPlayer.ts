@@ -12,23 +12,23 @@
  * - Debug mode: frame-step mode with event inspection
  */
 
-import { RNG_ALGORITHM_ID,RNGManager } from './rngManager';
-import { MatchTrace, MatchTraceEvent } from './types';
+import { RNG_ALGORITHM_ID, RNGManager } from "./rngManager";
+import { MatchTrace, MatchTraceEvent } from "./types";
 
 // ============================================================================
 // Types & Constants
 // ============================================================================
 
 export enum PlaybackState {
-  Idle = 'idle',
-  Playing = 'playing',
-  Paused = 'paused',
-  Finished = 'finished',
+  Idle = "idle",
+  Playing = "playing",
+  Paused = "paused",
+  Finished = "finished",
 }
 
 export enum ReplayMode {
-  Live = 'live', // Normal trace playback without RNG seeding
-  Deterministic = 'deterministic', // Replay with RNG seed for exact reproduction
+  Live = "live", // Normal trace playback without RNG seeding
+  Deterministic = "deterministic", // Replay with RNG seed for exact reproduction
 }
 
 export interface MatchPlayerConfig {
@@ -152,7 +152,9 @@ export class MatchPlayer {
     }
 
     // Update frame index based on current timestamp
-    this.currentFrameIndex = this.findFrameIndexAtTimestamp(this.currentTimestampMs);
+    this.currentFrameIndex = this.findFrameIndexAtTimestamp(
+      this.currentTimestampMs,
+    );
   }
 
   /**
@@ -163,7 +165,9 @@ export class MatchPlayer {
   public seek(timestampMs: number): void {
     const maxTs = this.getMaxTimestamp();
     this.currentTimestampMs = Math.max(0, Math.min(timestampMs, maxTs));
-    this.currentFrameIndex = this.findFrameIndexAtTimestamp(this.currentTimestampMs);
+    this.currentFrameIndex = this.findFrameIndexAtTimestamp(
+      this.currentTimestampMs,
+    );
 
     // If at end, mark as finished
     if (this.currentTimestampMs >= maxTs) {
@@ -177,7 +181,7 @@ export class MatchPlayer {
    */
   public stepFrame(): void {
     if (!this.debugMode) {
-      console.warn('MatchPlayer.stepFrame() only available in debugMode');
+      console.warn("MatchPlayer.stepFrame() only available in debugMode");
       return;
     }
 
@@ -195,7 +199,9 @@ export class MatchPlayer {
    * Get current playback snapshot.
    */
   public getSnapshot(): PlaybackSnapshot {
-    const eventsAtTimestamp = this.getEventsAtTimestamp(this.currentTimestampMs);
+    const eventsAtTimestamp = this.getEventsAtTimestamp(
+      this.currentTimestampMs,
+    );
     const maxTs = this.getMaxTimestamp();
     const progress = maxTs > 0 ? this.currentTimestampMs / maxTs : 0;
 
@@ -354,7 +360,8 @@ export class MatchPlayer {
     if (!traceSeed || !traceAlgo) {
       return {
         valid: false,
-        warning: 'Trace missing RNG metadata. Deterministic replay may not be reproducible.',
+        warning:
+          "Trace missing RNG metadata. Deterministic replay may not be reproducible.",
       };
     }
 
@@ -382,4 +389,3 @@ export class MatchPlayer {
     return this.rngManager?.getCallCount() ?? 0;
   }
 }
-

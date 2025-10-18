@@ -12,10 +12,10 @@
  * - Replay mode toggle (Live vs Deterministic)
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo } from "react";
 
-import { useMatchReplay } from '../../hooks/useMatchReplay';
-import { MatchPlayer, ReplayMode } from '../../systems/matchTrace/matchPlayer';
+import { useMatchReplay } from "../../hooks/useMatchReplay";
+import { MatchPlayer, ReplayMode } from "../../systems/matchTrace/matchPlayer";
 
 // ============================================================================
 // Component Props
@@ -35,7 +35,7 @@ export interface ReplayControlsProps {
 
 export const ReplayControls: React.FC<ReplayControlsProps> = ({
   matchPlayer,
-  className = '',
+  className = "",
   onTimeChange,
   showRNGStatus = true,
   showReplayMode = true,
@@ -94,12 +94,14 @@ export const ReplayControls: React.FC<ReplayControlsProps> = ({
         )}
 
         <div className="replay-controls__time">
-          <span className="replay-controls__time-current">{formatTime(state.currentTimeMs)}</span>
+          <span className="replay-controls__time-current">
+            {formatTime(state.currentTimeMs)}
+          </span>
           <span className="replay-controls__time-separator">/</span>
           <span className="replay-controls__time-end">
             {formatTime(
-              (matchPlayer.getEventsBefore(Number.POSITIVE_INFINITY).at(-1)?.timestampMs) ??
-                0,
+              matchPlayer.getEventsBefore(Number.POSITIVE_INFINITY).at(-1)
+                ?.timestampMs ?? 0,
             )}
           </span>
         </div>
@@ -112,7 +114,9 @@ export const ReplayControls: React.FC<ReplayControlsProps> = ({
           min="0"
           max="100"
           value={state.progress * 100}
-          onChange={(e) => actions.seekToProgress(parseFloat(e.target.value) / 100)}
+          onChange={(e) =>
+            actions.seekToProgress(parseFloat(e.target.value) / 100)
+          }
           className="replay-controls__seek-bar"
           title="Seek to position in match"
         />
@@ -141,10 +145,12 @@ export const ReplayControls: React.FC<ReplayControlsProps> = ({
       {showReplayMode && (
         <div className="replay-controls__mode">
           <fieldset className="replay-controls__mode-fieldset">
-            <legend className="replay-controls__mode-legend">Replay Mode:</legend>
+            <legend className="replay-controls__mode-legend">
+              Replay Mode:
+            </legend>
             <div className="replay-controls__mode-buttons">
               <button
-                className={`replay-controls__mode-button ${state.rngMode === ReplayMode.Live ? 'replay-controls__mode-button--active' : ''}`}
+                className={`replay-controls__mode-button ${state.rngMode === ReplayMode.Live ? "replay-controls__mode-button--active" : ""}`}
                 onClick={() => actions.setReplayMode(ReplayMode.Live)}
                 title="Live mode: normal playback"
                 type="button"
@@ -152,7 +158,7 @@ export const ReplayControls: React.FC<ReplayControlsProps> = ({
                 Live
               </button>
               <button
-                className={`replay-controls__mode-button ${state.rngMode === ReplayMode.Deterministic ? 'replay-controls__mode-button--active' : ''}`}
+                className={`replay-controls__mode-button ${state.rngMode === ReplayMode.Deterministic ? "replay-controls__mode-button--active" : ""}`}
                 onClick={() => actions.setReplayMode(ReplayMode.Deterministic)}
                 title="Deterministic mode: replays with RNG seed for reproducibility"
                 type="button"
@@ -166,10 +172,12 @@ export const ReplayControls: React.FC<ReplayControlsProps> = ({
 
       {/* RNG Status */}
       {showRNGStatus && state.rngMode === ReplayMode.Deterministic && (
-        <div className={`replay-controls__rng-status replay-controls__rng-status--${state.rngValid ? 'valid' : 'warning'}`}>
+        <div
+          className={`replay-controls__rng-status replay-controls__rng-status--${state.rngValid ? "valid" : "warning"}`}
+        >
           <div className="replay-controls__rng-header">
             <span className="replay-controls__rng-icon">
-              {state.rngValid ? '✓' : '⚠'}
+              {state.rngValid ? "✓" : "⚠"}
             </span>
             <span className="replay-controls__rng-title">RNG Status</span>
           </div>
@@ -177,17 +185,23 @@ export const ReplayControls: React.FC<ReplayControlsProps> = ({
             {state.rngSeed && (
               <div className="replay-controls__rng-item">
                 <span className="replay-controls__rng-label">Seed:</span>
-                <code className="replay-controls__rng-value">{state.rngSeed}</code>
+                <code className="replay-controls__rng-value">
+                  {state.rngSeed}
+                </code>
               </div>
             )}
             {state.rngAlgorithm && (
               <div className="replay-controls__rng-item">
                 <span className="replay-controls__rng-label">Algorithm:</span>
-                <code className="replay-controls__rng-value">{state.rngAlgorithm}</code>
+                <code className="replay-controls__rng-value">
+                  {state.rngAlgorithm}
+                </code>
               </div>
             )}
             {state.rngWarning && (
-              <div className="replay-controls__rng-warning">{state.rngWarning}</div>
+              <div className="replay-controls__rng-warning">
+                {state.rngWarning}
+              </div>
             )}
           </div>
         </div>
@@ -204,4 +218,4 @@ export const ReplayControls: React.FC<ReplayControlsProps> = ({
   );
 };
 
-ReplayControls.displayName = 'ReplayControls';
+ReplayControls.displayName = "ReplayControls";

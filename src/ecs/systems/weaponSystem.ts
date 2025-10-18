@@ -1,3 +1,4 @@
+import { emitLiveTraceEvent } from "../../systems/matchTrace/liveTraceEmitter";
 import type { WeaponType } from "../../types";
 import { createProjectile, type Projectile } from "../entities/Projectile";
 import type { Robot } from "../entities/Robot";
@@ -141,5 +142,13 @@ export function runWeaponSystem(world: WorldView): void {
     recordProjectile(world, projectile);
     shooter.stats.shotsFired += 1;
     shooter.aiState.lastFireTime = now;
+
+    emitLiveTraceEvent({
+      type: "fire",
+      attackerId: shooter.id,
+      projectileId: projectile.id,
+      position: cloneVector(projectile.position),
+      timestampMs: Math.round(now * 1000),
+    });
   });
 }

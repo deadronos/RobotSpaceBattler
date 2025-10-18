@@ -11,12 +11,12 @@
  * - Provide debug visualization
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo } from "react";
 
-import { useMatchTimeline } from '../../hooks/useMatchTimeline';
-import { EntityMapper } from '../../systems/matchTrace/entityMapper';
-import type { MatchTrace } from '../../systems/matchTrace/types';
-import styles from './MatchPlayer.module.css';
+import { useMatchTimeline } from "../../hooks/useMatchTimeline";
+import { EntityMapper } from "../../systems/matchTrace/entityMapper";
+import type { MatchTrace } from "../../systems/matchTrace/types";
+import styles from "./MatchPlayer.module.css";
 
 // ============================================================================
 // Component Props
@@ -28,7 +28,10 @@ export interface MatchPlayerProps {
   playbackRate?: number;
   debugMode?: boolean;
   onFinished?: () => void;
-  renderEntity?: (id: string, position: { x: number; y: number; z: number }) => React.ReactNode;
+  renderEntity?: (
+    id: string,
+    position: { x: number; y: number; z: number },
+  ) => React.ReactNode;
 }
 
 // ============================================================================
@@ -54,7 +57,11 @@ export const MatchPlayer: React.FC<MatchPlayerProps> = ({
   // Build entity states
   const entityMapper = useMemo(() => {
     const mapper = new EntityMapper();
-    mapper.updateFromEvents(trace.events, state.currentTimestampMs, state.frameIndex);
+    mapper.updateFromEvents(
+      trace.events,
+      state.currentTimestampMs,
+      state.frameIndex,
+    );
     return mapper;
   }, [trace.events, state.currentTimestampMs, state.frameIndex]);
 
@@ -77,16 +84,18 @@ export const MatchPlayer: React.FC<MatchPlayerProps> = ({
     }
 
     // If only one team has units, they won
-    const aliveTeams = Array.from(teamsWithAliveUnits.entries()).filter((e) => e[1] > 0);
+    const aliveTeams = Array.from(teamsWithAliveUnits.entries()).filter(
+      (e) => e[1] > 0,
+    );
     if (aliveTeams.length === 1) {
       return {
         winner: aliveTeams[0][0],
-        status: 'victory',
+        status: "victory",
       };
     }
 
     return {
-      status: 'draw',
+      status: "draw",
     };
   }, [state.isFinished, visibleEntities]);
 
@@ -101,13 +110,14 @@ export const MatchPlayer: React.FC<MatchPlayerProps> = ({
       {/* Match Status */}
       <div className={styles.status}>
         <p className={styles.statusText}>
-          <strong>Match Status:</strong>{' '}
+          <strong>Match Status:</strong>{" "}
           {state.isFinished
-            ? `Finished (${matchResult?.winner ? `Winner: ${matchResult.winner}` : 'Draw'})`
-            : 'In Progress'}
+            ? `Finished (${matchResult?.winner ? `Winner: ${matchResult.winner}` : "Draw"})`
+            : "In Progress"}
         </p>
         <p className={styles.statusText}>
-          <strong>Time:</strong> {state.currentTimestampMs.toFixed(0)}ms / {maxTimestamp.toFixed(0)}
+          <strong>Time:</strong> {state.currentTimestampMs.toFixed(0)}ms /{" "}
+          {maxTimestamp.toFixed(0)}
           ms
         </p>
         <p className={styles.statusText}>
@@ -151,12 +161,14 @@ export const MatchPlayer: React.FC<MatchPlayerProps> = ({
               <div key={entity.id} className={styles.entity}>
                 <div className={styles.entityId}>{entity.id}</div>
                 <div className={styles.entityInfo}>
-                  Position: ({entity.position.x.toFixed(2)}, {entity.position.y.toFixed(2)},{' '}
-                  {entity.position.z.toFixed(2)})
+                  Position: ({entity.position.x.toFixed(2)},{" "}
+                  {entity.position.y.toFixed(2)}, {entity.position.z.toFixed(2)}
+                  )
                 </div>
                 <div className={styles.entityInfo}>
-                  Team: {entity.teamId} | Health:{' '}
-                  {entity.currentHealth ?? 'unknown'}/{entity.maxHealth ?? 'unknown'}
+                  Team: {entity.teamId} | Health:{" "}
+                  {entity.currentHealth ?? "unknown"}/
+                  {entity.maxHealth ?? "unknown"}
                 </div>
                 {renderEntity && renderEntity(entity.id, entity.position)}
               </div>
@@ -171,16 +183,18 @@ export const MatchPlayer: React.FC<MatchPlayerProps> = ({
       {matchResult && (
         <div
           className={`${styles.result} ${
-            matchResult.status === 'victory' ? styles.resultVictory : styles.resultDraw
+            matchResult.status === "victory"
+              ? styles.resultVictory
+              : styles.resultDraw
           }`}
         >
-          {matchResult.status === 'victory'
+          {matchResult.status === "victory"
             ? `🎉 Team ${matchResult.winner} Wins!`
-            : '🤝 Match Ended in a Draw'}
+            : "🤝 Match Ended in a Draw"}
         </div>
       )}
     </div>
   );
 };
 
-MatchPlayer.displayName = 'MatchPlayer';
+MatchPlayer.displayName = "MatchPlayer";

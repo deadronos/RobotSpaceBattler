@@ -11,10 +11,10 @@
  * Output: Full-screen HUD overlay
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo } from "react";
 
-import type { MatchOutcome } from '../../systems/matchTrace/matchValidator';
-import styles from './MatchHUD.module.css';
+import type { MatchOutcome } from "../../systems/matchTrace/matchValidator";
+import styles from "./MatchHUD.module.css";
 
 // ============================================================================
 // Component Props
@@ -24,7 +24,13 @@ export interface MatchHUDProps {
   /** Current match time in milliseconds */
   timeMs: number;
   /** Array of entities (for counting alive by team) */
-  entities: Array<{ id: string; teamId: string; isAlive: boolean; currentHealth?: number; maxHealth?: number }>;
+  entities: Array<{
+    id: string;
+    teamId: string;
+    isAlive: boolean;
+    currentHealth?: number;
+    maxHealth?: number;
+  }>;
   /** Current match outcome status */
   matchOutcome: MatchOutcome | null;
   /** Match result message (e.g., "Team 1 Wins!") */
@@ -52,11 +58,19 @@ export const MatchHUD: React.FC<MatchHUDProps> = ({
 }) => {
   // Calculate team stats
   const teamStats = useMemo(() => {
-    const stats = new Map<string, { alive: number; total: number; totalHealth: number; maxHealth: number }>();
+    const stats = new Map<
+      string,
+      { alive: number; total: number; totalHealth: number; maxHealth: number }
+    >();
 
     entities.forEach((entity) => {
       if (!stats.has(entity.teamId)) {
-        stats.set(entity.teamId, { alive: 0, total: 0, totalHealth: 0, maxHealth: 0 });
+        stats.set(entity.teamId, {
+          alive: 0,
+          total: 0,
+          totalHealth: 0,
+          maxHealth: 0,
+        });
       }
 
       const teamStat = stats.get(entity.teamId)!;
@@ -82,9 +96,11 @@ export const MatchHUD: React.FC<MatchHUDProps> = ({
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     const ms_part = ms % 1000;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${Math.floor(ms_part / 10)
+    return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}.${Math.floor(
+      ms_part / 10,
+    )
       .toString()
-      .padStart(2, '0')}`;
+      .padStart(2, "0")}`;
   };
 
   return (
@@ -93,14 +109,19 @@ export const MatchHUD: React.FC<MatchHUDProps> = ({
       <div className={styles.timerSection}>
         <div className={styles.timeDisplay}>{formatTime(timeMs)}</div>
         <div className={styles.progressBar}>
-          <div className={`${styles.progressFill} ${styles[`progress-${Math.round(progress / 10) * 10}`]}`} />
+          <div
+            className={`${styles.progressFill} ${styles[`progress-${Math.round(progress / 10) * 10}`]}`}
+          />
         </div>
       </div>
 
       {/* Top-right: Team Stats */}
       <div className={styles.teamStats}>
         {teamStats.map(([teamId, stats]) => {
-          const healthPercent = stats.maxHealth > 0 ? (stats.totalHealth / stats.maxHealth) * 100 : 0;
+          const healthPercent =
+            stats.maxHealth > 0
+              ? (stats.totalHealth / stats.maxHealth) * 100
+              : 0;
           const healthLevel = Math.round(healthPercent / 10) * 10;
 
           return (
@@ -111,7 +132,9 @@ export const MatchHUD: React.FC<MatchHUDProps> = ({
               </div>
               {stats.maxHealth > 0 && (
                 <div className={styles.healthBar}>
-                  <div className={`${styles.healthFill} ${styles[`health-${healthLevel}`]}`} />
+                  <div
+                    className={`${styles.healthFill} ${styles[`health-${healthLevel}`]}`}
+                  />
                 </div>
               )}
             </div>
@@ -121,14 +144,22 @@ export const MatchHUD: React.FC<MatchHUDProps> = ({
 
       {/* Center: Match Status Message */}
       {message && (
-        <div className={`${styles.statusMessage} ${styles[`status-${matchOutcome}`]}`}>{message}</div>
+        <div
+          className={`${styles.statusMessage} ${styles[`status-${matchOutcome}`]}`}
+        >
+          {message}
+        </div>
       )}
 
       {/* Bottom-left: Debug Info */}
       <div className={styles.debugInfo}>
         <div className={styles.debugItem}>Entities: {entities.length}</div>
-        <div className={styles.debugItem}>Alive: {entities.filter((e) => e.isAlive).length}</div>
-        <div className={styles.debugItem}>Status: {matchOutcome || 'in-progress'}</div>
+        <div className={styles.debugItem}>
+          Alive: {entities.filter((e) => e.isAlive).length}
+        </div>
+        <div className={styles.debugItem}>
+          Status: {matchOutcome || "in-progress"}
+        </div>
       </div>
 
       {/* Bottom-center: Controls */}
@@ -141,4 +172,4 @@ export const MatchHUD: React.FC<MatchHUDProps> = ({
   );
 };
 
-MatchHUD.displayName = 'MatchHUD';
+MatchHUD.displayName = "MatchHUD";

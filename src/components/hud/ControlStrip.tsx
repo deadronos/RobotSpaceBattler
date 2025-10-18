@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import type {
   BattleHudControls,
   BattleHudPerformanceInfo,
   BattleHudStatusInfo,
 } from "../../hooks/useBattleHudData";
+import { useVisualQuality } from "../../hooks/useVisualQuality";
 import { useUiStore } from "../../store/uiStore";
+import { VisualQualityLevel } from "../../systems/matchTrace/types";
 
 export interface ControlStripProps {
   status: BattleHudStatusInfo;
@@ -31,6 +33,15 @@ export function ControlStrip({
   const overlaysActive = useOverlayDisabled();
   const [internalCinematic, setInternalCinematic] = useState(false);
   const cinematicActive = cinematicEnabled ?? internalCinematic;
+  const { qualityLevel, setQualityLevel } = useVisualQuality();
+  const qualityOptions = useMemo(
+    () => [
+      { label: "High", level: VisualQualityLevel.High },
+      { label: "Medium", level: VisualQualityLevel.Medium },
+      { label: "Low", level: VisualQualityLevel.Low },
+    ],
+    [],
+  );
   const pauseLabel =
     status.status === "paused" ? "Resume Battle" : "Pause Battle";
   const cinematicLabel = cinematicActive
@@ -55,6 +66,13 @@ export function ControlStrip({
     if (!overlaysActive) {
       controls.openSettings();
     }
+  };
+
+  const handleQualityClick = (level: VisualQualityLevel) => {
+    if (overlaysActive) {
+      return;
+    }
+    setQualityLevel(level);
   };
 
   return (
@@ -111,6 +129,29 @@ export function ControlStrip({
         >
           Settings
         </button>
+      </div>
+
+      <div
+        className="control-strip__quality"
+        role="group"
+        aria-label="Visual quality"
+      >
+        {qualityOptions.map((option) => (
+          <button
+            type="button"
+            key={option.level}
+            className={`control-strip__button control-strip__button--quality${
+              qualityLevel === option.level
+                ? " control-strip__button--quality-active"
+                : ""
+            }`}
+            onClick={() => handleQualityClick(option.level)}
+            disabled={overlaysActive}
+            aria-pressed={qualityLevel === option.level}
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
     </div>
   );

@@ -9,18 +9,18 @@
  * Used by MatchPlayer and useMatchSimulation to trigger victory state.
  */
 
-import type { EntityState } from './entityMapper';
-import type { MatchTrace } from './types';
+import type { EntityState } from "./entityMapper";
+import type { MatchTrace } from "./types";
 
 // ============================================================================
 // Match Result Types
 // ============================================================================
 
 export enum MatchOutcome {
-  InProgress = 'in-progress',
-  Victory = 'victory',
-  Draw = 'draw',
-  Timeout = 'timeout',
+  InProgress = "in-progress",
+  Victory = "victory",
+  Draw = "draw",
+  Timeout = "timeout",
 }
 
 export interface MatchResult {
@@ -59,7 +59,7 @@ export function validateMatchOutcome(
       outcome: MatchOutcome.Timeout,
       survivors: aliveEntities,
       timestamp: currentTimestampMs,
-      reason: 'Match time limit reached',
+      reason: "Match time limit reached",
     };
   }
 
@@ -69,7 +69,7 @@ export function validateMatchOutcome(
       outcome: MatchOutcome.Draw,
       survivors: [],
       timestamp: currentTimestampMs,
-      reason: 'All units eliminated',
+      reason: "All units eliminated",
     };
   }
 
@@ -159,13 +159,13 @@ export function formatMatchResult(result: MatchResult): string {
     case MatchOutcome.Victory:
       return `🎉 Team ${result.winnerId} Victory! (${result.survivors?.length ?? 0} survivors)`;
     case MatchOutcome.Draw:
-      return '🤝 Match Ended in Draw';
+      return "🤝 Match Ended in Draw";
     case MatchOutcome.Timeout:
-      return '⏱️ Match Time Limit Reached (Draw)';
+      return "⏱️ Match Time Limit Reached (Draw)";
     case MatchOutcome.InProgress:
       return `⚔️ Match In Progress (${result.survivors?.length ?? 0} units alive)`;
     default:
-      return '❓ Unknown Match State';
+      return "❓ Unknown Match State";
   }
 }
 
@@ -179,7 +179,10 @@ export function formatMatchResult(result: MatchResult): string {
  * @param aliveEntities — Current alive entities
  * @returns Winning team ID if match is finished, undefined otherwise
  */
-export function findWinningTeam(trace: MatchTrace, aliveEntities: EntityState[]): string | undefined {
+export function findWinningTeam(
+  trace: MatchTrace,
+  aliveEntities: EntityState[],
+): string | undefined {
   if (aliveEntities.length === 0) {
     return undefined;
   }

@@ -18,7 +18,7 @@ import type {
   MoveEvent,
   SpawnEvent,
   Unit,
-} from './types';
+} from "./types";
 
 // ============================================================================
 // Types & State
@@ -27,7 +27,7 @@ import type {
 export interface EntityState {
   id: string;
   teamId: string;
-  type: 'robot' | 'projectile';
+  type: "robot" | "projectile";
   spawnedAt: number; // timestampMs
   diedAt?: number; // timestampMs if dead
   currentHealth?: number;
@@ -88,12 +88,12 @@ export class EntityMapper {
    */
   private processEvent(event: MatchTraceEvent): void {
     switch (event.type) {
-      case 'spawn': {
+      case "spawn": {
         const spawnEvent = event as SpawnEvent;
         const entity: EntityState = {
-          id: spawnEvent.entityId || 'unknown',
-          teamId: spawnEvent.teamId || 'unknown',
-          type: 'robot',
+          id: spawnEvent.entityId || "unknown",
+          teamId: spawnEvent.teamId || "unknown",
+          type: "robot",
           spawnedAt: spawnEvent.timestampMs,
           isAlive: true,
           position: spawnEvent.position,
@@ -103,18 +103,18 @@ export class EntityMapper {
         break;
       }
 
-      case 'move': {
+      case "move": {
         const moveEvent = event as MoveEvent;
-        const entity = this.entities.get(moveEvent.entityId || 'unknown');
+        const entity = this.entities.get(moveEvent.entityId || "unknown");
         if (entity) {
           entity.position = moveEvent.position;
         }
         break;
       }
 
-      case 'damage': {
+      case "damage": {
         const damageEvent = event as DamageEvent;
-        const entity = this.entities.get(damageEvent.targetId || 'unknown');
+        const entity = this.entities.get(damageEvent.targetId || "unknown");
         if (entity) {
           entity.currentHealth = damageEvent.resultingHealth;
           entity.maxHealth = entity.maxHealth ?? damageEvent.resultingHealth;
@@ -122,9 +122,9 @@ export class EntityMapper {
         break;
       }
 
-      case 'death': {
+      case "death": {
         const deathEvent = event as DeathEvent;
-        const entity = this.entities.get(deathEvent.entityId || 'unknown');
+        const entity = this.entities.get(deathEvent.entityId || "unknown");
         if (entity) {
           entity.isAlive = false;
           entity.diedAt = deathEvent.timestampMs;
@@ -133,10 +133,10 @@ export class EntityMapper {
       }
 
       // Other event types don't change entity state (intentional fall-through)
-      case 'fire':
-      case 'hit':
-      case 'score':
-        // eslint-disable-next-line no-fallthrough
+      case "fire":
+      case "hit":
+      case "score":
+      // eslint-disable-next-line no-fallthrough
       default:
         // No-op for rendering purposes
         break;
@@ -168,7 +168,9 @@ export class EntityMapper {
    * Get entities by team ID.
    */
   public getEntitiesByTeam(teamId: string): EntityState[] {
-    return Array.from(this.entities.values()).filter((e) => e.teamId === teamId);
+    return Array.from(this.entities.values()).filter(
+      (e) => e.teamId === teamId,
+    );
   }
 
   /**
@@ -207,7 +209,7 @@ export function entityStateFromUnit(
   return {
     id: unit.id,
     teamId: unit.teamId,
-    type: 'robot',
+    type: "robot",
     spawnedAt,
     isAlive: true,
     position,

@@ -51,7 +51,14 @@ export interface Team {
 // MatchTrace Events (from specs/003 Event Stream)
 // ============================================================================
 
-export type EventType = 'spawn' | 'move' | 'fire' | 'hit' | 'damage' | 'death' | 'score';
+export type EventType =
+  | "spawn"
+  | "move"
+  | "fire"
+  | "hit"
+  | "damage"
+  | "death"
+  | "score";
 
 export interface BaseEvent {
   type: EventType;
@@ -61,27 +68,27 @@ export interface BaseEvent {
 }
 
 export interface SpawnEvent extends BaseEvent {
-  type: 'spawn';
+  type: "spawn";
   entityId: string;
   teamId: string;
   position: Position;
 }
 
 export interface MoveEvent extends BaseEvent {
-  type: 'move';
+  type: "move";
   entityId: string;
   position: Position;
 }
 
 export interface FireEvent extends BaseEvent {
-  type: 'fire';
+  type: "fire";
   attackerId: string;
   projectileId: string;
   position: Position;
 }
 
 export interface HitEvent extends BaseEvent {
-  type: 'hit';
+  type: "hit";
   projectileId: string;
   targetId: string;
   position: Position;
@@ -89,7 +96,7 @@ export interface HitEvent extends BaseEvent {
 }
 
 export interface DamageEvent extends BaseEvent {
-  type: 'damage';
+  type: "damage";
   targetId: string;
   attackerId: string;
   amount: number;
@@ -98,13 +105,13 @@ export interface DamageEvent extends BaseEvent {
 }
 
 export interface DeathEvent extends BaseEvent {
-  type: 'death';
+  type: "death";
   entityId: string;
   killedBy?: string;
 }
 
 export interface ScoreEvent extends BaseEvent {
-  type: 'score';
+  type: "score";
   teamId: string;
   amount: number;
   reason?: string;
@@ -141,9 +148,9 @@ export interface MatchTrace {
 // ============================================================================
 
 export enum VisualQualityLevel {
-  High = 'high',
-  Medium = 'medium',
-  Low = 'low',
+  High = "high",
+  Medium = "medium",
+  Low = "low",
 }
 
 export interface VisualQualityProfile {
@@ -173,7 +180,7 @@ export interface ReplayConfig {
 
 export interface RenderedEntity {
   id: string;
-  type: 'robot' | 'projectile';
+  type: "robot" | "projectile";
   teamId?: string;
   position: Position;
   velocity?: Position;
