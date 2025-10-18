@@ -244,6 +244,7 @@
 
 .hud-root__teams--dragging {
   cursor: grabbing;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -616,3 +617,86 @@
 .battle-ui--reduced-motion .control-strip__button:active {
   transform: none !important;
 }
+
+/* Quality Toggle Styles */
+.quality-toggle {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.quality-toggle__legend {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: inherit;
+  opacity: 0.85;
+  margin: 0;
+}
+
+.quality-toggle__options {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.quality-toggle__option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background-color 140ms ease, box-shadow 140ms ease;
+}
+
+.quality-toggle__option:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.quality-toggle__input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.quality-toggle__label {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  -webkit-user-select: none;
+  user-select: none;
+  color: inherit;
+  opacity: 0.7;
+  transition: opacity 140ms ease;
+}
+
+.quality-toggle__option--active {
+  background: linear-gradient(135deg, rgba(123, 163, 255, 0.25), rgba(119, 94, 255, 0.15));
+  box-shadow: inset 0 0 0 1px rgba(166, 205, 255, 0.4);
+}
+
+.quality-toggle__option--active .quality-toggle__label {
+  opacity: 1;
+  color: #a6cdff;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quality-toggle__option {
+    transition: none;
+  }
+
+  .quality-toggle__label {
+    transition: none;
+  }
+}
+

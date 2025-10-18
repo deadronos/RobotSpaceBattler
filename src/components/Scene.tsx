@@ -2,6 +2,7 @@ import { Html, OrbitControls } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber';
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 
+import { useVisualQuality } from '../hooks/useVisualQuality';
 import { useSimulationWorld } from '../ecs/world';
 import { useMatchSimulation } from '../hooks/useMatchSimulation';
 import { useCameraControls } from '../hooks/useCameraControls';
@@ -31,6 +32,7 @@ interface MatchSceneProps {
 /**
  * Inner component that runs the match simulation and renders entities.
  * Separated to use useFrame hook within Canvas context.
+ * T030-T031: Integrates useVisualQuality hook to apply quality profiles to rendering.
  */
 const MatchSceneInner: React.FC<MatchSceneProps> = ({
   matchTrace,
@@ -40,6 +42,7 @@ const MatchSceneInner: React.FC<MatchSceneProps> = ({
 }) => {
   const [projectiles, setProjectiles] = useState<ProjectileTrail[]>([]);
   const projectileTimerRef = useRef<number>();
+  const { qualityProfile } = useVisualQuality(); // T030-T031: Get quality profile for rendering
 
   // Initialize match simulation
   const simulationState = useMatchSimulation({
@@ -111,6 +114,7 @@ const MatchSceneInner: React.FC<MatchSceneProps> = ({
             scale={1.0}
             showHealthBar
             quality={visualQuality}
+            qualityProfile={qualityProfile}
           />
         ))}
 
@@ -125,6 +129,7 @@ const MatchSceneInner: React.FC<MatchSceneProps> = ({
             trailWidth={0.1}
             showImpact
             quality={visualQuality}
+            qualityProfile={qualityProfile}
           />
         ))}
 

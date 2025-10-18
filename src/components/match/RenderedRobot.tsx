@@ -1,11 +1,13 @@
 /**
- * RenderedRobot Component — 3D Robot Visualization (T016, US1)
+ * RenderedRobot Component — 3D Robot Visualization (T016, US1 / T030, US2)
  *
  * r3f component that renders a robot at an interpolated position with team colors.
  * Displays health bar, applies team material, handles rotation/orientation.
+ * Integrates visual quality profiles (T030) to adjust shader complexity, shadow quality,
+ * and material properties based on user-selected quality level.
  *
  * Input: EntityState from useMatchSimulation
- * Output: Three.js mesh with team color shader
+ * Output: Three.js mesh with team color shader, quality-adjusted materials
  */
 
 import { useFrame } from '@react-three/fiber';
@@ -13,6 +15,7 @@ import React, { useRef } from 'react';
 import { Group, Material, Mesh } from 'three';
 
 import type { EntityState } from '../../systems/matchTrace/entityMapper';
+import type { VisualQualityProfile } from '../../systems/matchTrace/types';
 
 // ============================================================================
 // Component Props
@@ -24,6 +27,7 @@ export interface RenderedRobotProps {
   scale?: number;
   showHealthBar?: boolean;
   quality?: 'high' | 'medium' | 'low';
+  qualityProfile?: VisualQualityProfile; // T030: Full quality profile for advanced shader control
 }
 
 // ============================================================================
@@ -47,10 +51,20 @@ export const RenderedRobot: React.FC<RenderedRobotProps> = ({
   scale = 1.0,
   showHealthBar = true,
   quality = 'medium',
+  qualityProfile,
 }: RenderedRobotProps) => {
   const groupRef = useRef<Group>(null);
   const meshRef = useRef<Mesh>(null);
   const healthBarRef = useRef<Mesh>(null);
+
+  // T030: Determine shader parameters based on quality profile
+  // Falls back to simple quality string if profile not provided
+  const shaderQuality = qualityProfile
+    ? (qualityProfile.level as 'high' | 'medium' | 'low')
+    : quality;
+
+  const shouldCastShadow = !qualityProfile || qualityProfile.shadowsEnabled;
+  const shouldReceiveShadow = !qualityProfile || qualityProfile.shadowsEnabled;
 
   // Convert hex color to RGB
   const colorToRgb = (hex: string): [number, number, number] => {
@@ -93,14 +107,14 @@ export const RenderedRobot: React.FC<RenderedRobotProps> = ({
   return (
     <group ref={groupRef} position={[entity.position.x, entity.position.y, entity.position.z]}>
       {/* Main Robot Body */}
-      <mesh ref={meshRef} scale={scale} castShadow receiveShadow>
+      <mesh ref={meshRef} scale={scale} castShadow={shouldCastShadow} receiveShadow={shouldReceiveShadow}>
         <boxGeometry args={[0.5, 1.0, 0.5]} />
         <meshStandardMaterial
           color={`rgb(${Math.floor(rgb[0] * 255)}, ${Math.floor(rgb[1] * 255)}, ${Math.floor(rgb[2] * 255)})`}
-          roughness={quality === 'high' ? 0.4 : 0.6}
-          metalness={quality === 'high' ? 0.6 : 0.3}
+          roughness={shaderQuality === 'high' ? 0.4 : 0.6}
+          metalness={shaderQuality === 'high' ? 0.6 : 0.3}
           emissive={`rgb(${Math.floor(rgb[0] * 50)}, ${Math.floor(rgb[1] * 50)}, ${Math.floor(rgb[2] * 50)})`}
-          wireframe={quality === 'low'}
+          wireframe={shaderQuality === 'low'}
         />
       </mesh>
 

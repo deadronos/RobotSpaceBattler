@@ -1,17 +1,21 @@
 /**
- * RenderedProjectile Component — Projectile Trail Visualization (T017, US1)
+ * RenderedProjectile Component — Projectile Trail Visualization (T017, US1 / T031, US2)
  *
  * r3f component that renders projectile trails and visual effects.
  * Displays projectile path, impact effects, and team-based color coding.
+ * Integrates visual quality profiles (T031) to adjust particle count and trail complexity.
  *
  * Input: Projectile position data from MatchTrace events
  * Output: Three.js mesh + trail particles
  */
 
+import { useFrame } from '@react-three/fiber';
 import React, { useRef } from 'react';
 import { Group, Mesh, Vector3 } from 'three';
 
-import { useFrame } from '@react-three/fiber';
+import type { VisualQualityProfile } from '../../systems/matchTrace/types';
+import { getTrailComplexity } from '../../systems/matchTrace/visualQualityProfile';
+
 
 // ============================================================================
 // Component Props
@@ -33,6 +37,7 @@ export interface RenderedProjectileProps {
   trailWidth?: number;
   showImpact?: boolean;
   quality?: 'high' | 'medium' | 'low';
+  qualityProfile?: VisualQualityProfile; // T031: Full quality profile for particle control
 }
 
 // ============================================================================
@@ -46,10 +51,22 @@ export const RenderedProjectile: React.FC<RenderedProjectileProps> = ({
   trailWidth = 0.05,
   showImpact = true,
   quality = 'medium',
+  qualityProfile,
 }: RenderedProjectileProps) => {
   const groupRef = useRef<Group>(null);
   const impactMeshRef = useRef<Mesh>(null);
   const createdAtRef = useRef<number>(Date.now());
+
+  // T031: Determine trail complexity from quality profile or fallback to simple quality string
+  const trailSegments = qualityProfile
+    ? getTrailComplexity(qualityProfile.level)
+    : quality === 'high'
+      ? 32
+      : quality === 'medium'
+        ? 16
+        : 4;
+
+  const particlesEnabled = !qualityProfile || qualityProfile.particlesEnabled;
 
   // Convert hex color to RGB
   const colorToRgb = (hex: string): [number, number, number] => {
@@ -91,7 +108,7 @@ export const RenderedProjectile: React.FC<RenderedProjectileProps> = ({
   ];
 
   // For higher quality, add intermediate points for curve
-  if (quality === 'high') {
+  if (trailSegments > 16) {
     const midX = (trail.startPos.x + trail.endPos.x) / 2;
     const midY = (trail.startPos.y + trail.endPos.y) / 2 + 0.2; // slight arc
     const midZ = (trail.startPos.z + trail.endPos.z) / 2;
@@ -125,8 +142,8 @@ export const RenderedProjectile: React.FC<RenderedProjectileProps> = ({
         <meshBasicMaterial color={lineColor} transparent opacity={opacity} />
       </mesh>
 
-      {/* Trail particles (high quality only) */}
-      {quality === 'high' && (
+      {/* Trail particles - render if particles are enabled (T031) */}
+      {particlesEnabled && trailSegments > 4 && (
         <group>
           {points.map((point, idx) => (
             <mesh key={idx} position={[point.x, point.y, point.z]} scale={0.08}>
