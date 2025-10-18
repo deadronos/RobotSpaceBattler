@@ -132,11 +132,11 @@ export class EntityMapper {
         break;
       }
 
-      // Other event types don't change entity state
-      case 'move':
+      // Other event types don't change entity state (intentional fall-through)
       case 'fire':
       case 'hit':
       case 'score':
+        // eslint-disable-next-line no-fallthrough
       default:
         // No-op for rendering purposes
         break;

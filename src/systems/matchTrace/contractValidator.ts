@@ -8,8 +8,9 @@
  * Schemas: specs/003-extend-placeholder-create/schemas/
  */
 
+ 
 import type { ErrorObject } from 'ajv';
-
+// eslint-disable-next-line import/no-extraneous-dependencies
 import Ajv from 'ajv';
 
 import { ContractValidationReport, ValidationError, ValidationResult } from './types';

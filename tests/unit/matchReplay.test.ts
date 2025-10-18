@@ -145,12 +145,10 @@ describe('RNG Manager — Deterministic Replay (T040, US3)', () => {
 
     it('should setSeed and reset properly', () => {
       const rng = new RNGManager(42);
-      rng.next();
-      rng.next();
-
       const seq1 = [rng.next(), rng.next(), rng.next()];
 
-      rng.setSeed(42); // Reset with same seed
+      // setSeed resets to beginning, so calling next() again should produce same sequence
+      rng.setSeed(42);
       const seq2 = [rng.next(), rng.next(), rng.next()];
 
       expect(seq1).toEqual(seq2);

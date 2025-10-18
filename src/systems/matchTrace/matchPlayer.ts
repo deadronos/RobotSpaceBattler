@@ -12,8 +12,8 @@
  * - Debug mode: frame-step mode with event inspection
  */
 
+import { RNG_ALGORITHM_ID,RNGManager } from './rngManager';
 import { MatchTrace, MatchTraceEvent } from './types';
-import { RNGManager, RNG_ALGORITHM_ID } from './rngManager';
 
 // ============================================================================
 // Types & Constants

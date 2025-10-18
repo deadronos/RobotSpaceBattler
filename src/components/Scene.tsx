@@ -2,17 +2,17 @@ import { Html, OrbitControls } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber';
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 
-import { useVisualQuality } from '../hooks/useVisualQuality';
 import { useSimulationWorld } from '../ecs/world';
-import { useMatchSimulation } from '../hooks/useMatchSimulation';
 import { useCameraControls } from '../hooks/useCameraControls';
+import { useMatchSimulation } from '../hooks/useMatchSimulation';
+import { useVisualQuality } from '../hooks/useVisualQuality';
 import { CameraUiIntegrator } from '../systems/CameraUiIntegrator';
+import type { MatchTrace } from '../systems/matchTrace/types';
 import { getRegisteredUiAdapter } from '../systems/uiAdapterRegistry';
-import { MatchPlayer } from './match/MatchPlayer';
-import { RenderedProjectile, extractProjectileTrails, type ProjectileTrail } from './match/RenderedProjectile';
-import { RenderedRobot, getTeamColor } from './match/RenderedRobot';
-import Simulation from './Simulation';
+import { extractProjectileTrails, type ProjectileTrail, RenderedProjectile } from './match/RenderedProjectile';
+import { getTeamColor, RenderedRobot } from './match/RenderedRobot';
 import styles from './Scene.module.css';
+import Simulation from './Simulation';
 
 // ============================================================================
 // Match Scene Component
@@ -20,7 +20,7 @@ import styles from './Scene.module.css';
 
 interface MatchSceneProps {
   /** Optional match trace for demo/testing. If not provided, uses live simulation */
-  matchTrace?: any; // MatchTrace type
+  matchTrace?: MatchTrace;
   /** Auto-play the match on mount */
   autoPlay?: boolean;
   /** Enable 3D match rendering */
