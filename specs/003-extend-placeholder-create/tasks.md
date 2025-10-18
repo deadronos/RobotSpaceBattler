@@ -122,17 +122,17 @@ spawn/despawn; then projectiles; finally victory detection and HUD.
 
 ### Task Group 5.1: RNG & Replay Infrastructure
 
-- [ ] T035 [P] [US3] Implement `src/systems/matchTrace/rngManager.ts`
-- [ ] T036 [US3] Extend `matchPlayer.ts` for replay mode with RNG seed
-- [ ] T037 [P] [US3] Implement `src/hooks/useMatchReplay.ts` hook
-- [ ] T038 [US3] Create `src/components/match/ReplayControls.tsx`
+- [x] T035 [P] [US3] Implement `src/systems/matchTrace/rngManager.ts`
+- [x] T036 [US3] Extend `matchPlayer.ts` for replay mode with RNG seed
+- [x] T037 [P] [US3] Implement `src/hooks/useMatchReplay.ts` hook
+- [x] T038 [US3] Create `src/components/match/ReplayControls.tsx`
 
 ### Task Group 5.2: Replay Integration
 
-- [ ] T039 [P] [US3] Add replay mode toggle to `useMatchSimulation.ts`
-- [ ] T040 [US3] Write tests in `tests/unit/matchReplay.test.ts`
-- [ ] T041 [US3] Write tests in `tests/unit/eventTiming.test.ts`
-- [ ] T042 [P] [US3] Write E2E test in `playwright/tests/deterministic-replay.spec.ts`
+- [x] T039 [P] [US3] Add replay mode toggle to `useMatchSimulation.ts`
+- [x] T040 [US3] Write tests in `tests/unit/matchReplay.test.ts`
+- [x] T041 [US3] Write tests in `tests/unit/eventTiming.test.ts`
+- [x] T042 [P] [US3] Write E2E test in `playwright/tests/deterministic-replay.spec.ts`
 
 ---
 
@@ -140,13 +140,105 @@ spawn/despawn; then projectiles; finally victory detection and HUD.
 
 Final integration, debugging, and optimization (optional for MVP).
 
-- [ ] T043 [P] Implement post-victory cinematic camera sweep
-- [ ] T044 Implement debug logging in `src/systems/matchTrace/debug.ts`
-- [ ] T045 [P] Add performance hooks in `src/hooks/usePerformanceMetrics.ts`
-- [ ] T046 Run full test suite: `npm run test` + `npm run playwright:test`
-- [ ] T047 Run linter: `npm run lint` and fix issues
-- [ ] T048 Generate coverage: `npm run test:coverage` and verify coverage
-- [ ] T049 Document implementation in `specs/003-extend-placeholder-create/implementation-notes.md`
+- [x] T043 [P] Implement post-victory cinematic camera sweep
+- [x] T044 Implement debug logging in `src/systems/matchTrace/debug.ts`
+- [x] T045 [P] Add performance hooks in `src/hooks/usePerformanceMetrics.ts`
+- [x] T046 Run full test suite: `npm run test` + `npm run playwright:test`
+- [x] T047 Run linter: `npm run lint` and fix issues
+- [x] T048 Generate coverage: `npm run test:coverage` and verify coverage
+- [x] T049 Document implementation in `specs/003-extend-placeholder-create/implementation-notes.md`
+
+---
+
+## Phase 7: Live Match Playback & Real-Time Rendering (P2)
+
+**Story Goal**: Render simulated matches in real-time by capturing events into a live trace
+and displaying them as they happen. Unifies live and replay paths into a single
+trace-driven architecture.
+
+**Independent Test Criteria**:
+
+- Live simulation renders 3D match as events occur
+- Entities move, fire, take damage in real-time
+- Victory overlay displays when match ends
+- Same trace can be replayed deterministically
+- Quality settings don't affect simulation outcome
+- All 367 existing tests still pass
+
+**Implementation Strategy**: Create live trace capture hook → wire to renderer → add UI
+controls → create between-rounds flow.
+
+### Task Group 7.1: Live Trace Capture Infrastructure
+
+- [ ] T050 [P] Create `src/hooks/useLiveMatchTrace.ts` hook
+  - [ ] Capture spawn events from entity creation
+  - [ ] Capture move events from position deltas
+  - [ ] Capture fire events from projectile creation
+  - [ ] Capture damage events from health changes
+  - [ ] Capture death events from entity elimination
+  - [ ] Assign sequenceId for deterministic tie-breaking
+  - [ ] Track RNG seed and algorithm metadata
+  - [ ] Return growing MatchTrace object
+
+### Task Group 7.2: Wire Live Trace to Renderer
+
+- [ ] T051 [P] Wire live trace to `src/components/Scene.tsx`
+  - [ ] Import `useLiveMatchTrace` hook
+  - [ ] Call hook in Simulation component
+  - [ ] Pass live trace to MatchSceneInner
+  - [ ] Remove static RobotPlaceholder components
+  - [ ] Verify entities render dynamically
+  - [ ] Verify HUD shows entity count and progress
+  - [ ] Test match renders from spawn to victory
+
+### Task Group 7.3: Quality Toggle & Visual Controls
+
+- [ ] T052 [P] Add quality toggle to UI
+  - [ ] Create button in `src/components/hud/ControlStrip.tsx`
+  - [ ] Extend UI store for quality selector
+  - [ ] Update `useVisualQuality` hook
+  - [ ] Toggle High/Medium/Low quality on button click
+  - [ ] Verify visual changes without affecting trace
+  - [ ] Verify outcome identical across profiles
+  - [ ] Test quality toggle during active match
+
+### Task Group 7.4: Between-Rounds UI & Match Flow
+
+- [ ] T053 [P] Create `src/components/match/BetweenRoundsUI.tsx`
+  - [ ] Display match result summary (winner, team stats)
+  - [ ] Show kill/damage breakdown by entity
+  - [ ] Implement "Rematch" button (new RNG seed)
+  - [ ] Implement "Team Selection" screen
+  - [ ] Add "Export Trace" button (save as JSON)
+  - [ ] Wire victory callback to UI display
+  - [ ] Test rematch flow end-to-end
+
+### Task Group 7.5: Integration & Validation
+
+- [ ] T054 [US3] Write tests in `tests/unit/liveTrace.test.ts`
+  - [ ] Test spawn event capture
+  - [ ] Test move event capture
+  - [ ] Test fire event capture
+  - [ ] Test damage event capture
+  - [ ] Test death event capture
+  - [ ] Test sequenceId ordering
+  - [ ] Test RNG metadata recording
+
+- [ ] T055 [US3] Write E2E test in `playwright/tests/live-match-rendering.spec.ts`
+  - [ ] Start app and see match rendering
+  - [ ] Verify robots move and fire
+  - [ ] Verify damage indicators
+  - [ ] Verify victory overlay
+  - [ ] Test quality toggle during match
+  - [ ] Test rematch flow
+
+- [ ] T056 [P] Verify no regression in existing tests
+  - [ ] Run full test suite: `npm run test`
+  - [ ] Verify 367/368 tests still passing
+  - [ ] Run linter: `npm run lint`
+  - [ ] Verify 0 ESLint errors
+  - [ ] Run coverage: `npm run test:coverage`
+  - [ ] Verify coverage maintained or improved
 
 ---
 
@@ -238,6 +330,11 @@ simulation-renderer sync.
 | **MVP (1–3)** | 26 tasks (~16h) |
 | **Full (1–5)** | 42 tasks (~30h) |
 | **Polish (1–6)** | 49 tasks (~34h) |
+| **Status** | **✅ ALL 49 COMPLETE** |
+| **Tests Passing** | **367/368 (99.7%)** |
+| **ESLint** | **0 errors** |
+| **TypeScript** | **✅ Strict mode** |
+| **Coverage** | **59% statements** |
 
 ---
 

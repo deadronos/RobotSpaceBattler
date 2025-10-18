@@ -119,11 +119,159 @@ This keeps the implementation component-first and co-located with other renderer
 Branch: `003-extend-placeholder-create`
 directories captured above]
 
+## Live Playback Architecture (Phase 7 Clarification)
+
+**Key Insight**: We do NOT need two separate rendering paths (live vs. replay). Instead,
+we unify on a single approach: **capture trace events as the simulation runs, then render
+from that live trace in real-time.**
+
+### Architecture: Unified Trace-Driven Rendering
+
+```plaintext
+┌─────────────────────────────────────────────────────────────┐
+│ ECS Simulation Loop (existing usePhysicsSync)              │
+│                                                               │
+│  ├─ spawnInitialTeams()                                      │
+│  ├─ updateBehaviors()                                        │
+│  ├─ applyMovement()                                          │
+│  ├─ runWeaponSystem()                                        │
+│  ├─ stepPhysics()                                            │
+│  ├─ handleProjectileHits()                                   │
+│  ├─ applyDamage() / eliminateRobot()                        │
+│  └─ evaluateVictory()                                        │
+└─────────────────────────────────────────────────────────────┘
+          ↓ (capture events during each step)
+┌─────────────────────────────────────────────────────────────┐
+│ Live Trace Builder Hook (NEW: useLiveMatchTrace)           │
+│                                                               │
+│  ├─ Listen to entity creation/destruction                   │
+│  ├─ Capture movement deltas (spawn, move events)            │
+│  ├─ Capture weapon fire (fire events)                       │
+│  ├─ Capture damage/death (damage, death events)             │
+│  └─ Maintain growing MatchTrace with timestamp + sequenceId │
+└─────────────────────────────────────────────────────────────┘
+          ↓ (current frame's events)
+┌─────────────────────────────────────────────────────────────┐
+│ Live Trace (in-memory event log)                            │
+│                                                               │
+│  {                                                            │
+│    rngSeed: 12345,                                           │
+│    rngAlgorithm: "xorshift32-v1",                           │
+│    events: [                                                 │
+│      { type: 'spawn', timestampMs: 0, ... },               │
+│      { type: 'move', timestampMs: 16, ... },               │
+│      { type: 'fire', timestampMs: 32, ... },               │
+│      { type: 'damage', timestampMs: 48, ... },             │
+│      ... (grows as simulation runs)                         │
+│    ]                                                         │
+│  }                                                            │
+└─────────────────────────────────────────────────────────────┘
+          ↓ (pass to renderer)
+┌─────────────────────────────────────────────────────────────┐
+│ Renderer (MatchSceneInner via Scene.tsx)                    │
+│                                                               │
+│  ├─ useMatchSimulation(currentLiveTrace)                    │
+│  ├─ useMatchTimeline() steps through events at current time │
+│  ├─ RenderedRobot[] interpolated to timeline timestamp      │
+│  ├─ RenderedProjectile[] rendered from fire events          │
+│  ├─ HUD overlay shows time, entity count, status            │
+│  └─ useVisualQuality() applies quality profiles             │
+└─────────────────────────────────────────────────────────────┘
+          ↓ (output)
+┌─────────────────────────────────────────────────────────────┐
+│ Screen: 3D match rendered in real-time                      │
+│                                                               │
+│  Robots move, fire, take damage → live rendered on screen   │
+│  Victory triggers when simulation completes                 │
+│  VictoryOverlay pops up with winner + stats                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Why This Works
+
+1. **Single Source of Truth**: The trace IS the simulation output. No redundant event
+   capture.
+2. **Deterministic Replay**: Trace captured during live run can be replayed exactly
+   (same RNG seed).
+3. **No Coordination Problem**: Renderer doesn't lag behind or race ahead—it follows
+   trace timestamp.
+4. **Quality Invariant**: Changing visual quality doesn't affect trace, so outcome
+   stays identical.
+5. **Backwards Compatible**: Existing replay system (MatchSceneInner + useMatchTimeline)
+   unchanged.
+
+### Implementation Phases
+
+#### Phase 5.1: Live Trace Capture (T050 - NEW)
+
+**Create hook**: `useLiveMatchTrace(world: SimulationWorld)`
+
+- Subscribe to entity spawns/deaths
+- Capture move events from position deltas
+- Capture weapon fire from projectile creation
+- Capture damage/death from health changes
+- Return live `MatchTrace` object that grows each frame
+
+#### Phase 5.2: Wire Live Trace to Renderer (T051 - NEW)
+
+**Modify**: `Scene.tsx` + `Simulation.tsx`
+
+- Pass live trace from `useLiveMatchTrace` to `MatchSceneInner`
+- Remove static `RobotPlaceholder` components
+- Render dynamic entities from trace
+
+#### Phase 5.3: Add Quality Toggle UI (T052 - NEW)
+
+**Modify**: `ControlStrip.tsx` + `useVisualQuality` store
+
+- Add button to toggle High/Medium/Low quality
+- Verify visual changes don't affect trace
+
+#### Phase 5.4: Create Between-Rounds UI (T053 - NEW)
+
+**Create component**: `BetweenRoundsUI.tsx`
+
+- Show match result summary
+- Add "Rematch" button (new RNG seed)
+- Add team selection screen for next match
+
+### Key Design Decisions
+
+| Decision | Rationale | Trade-off |
+|----------|-----------|-----------|
+| Capture during simulation | Events already computed; simpler at source | Requires instrumenting ECS |
+| Use existing MatchSceneInner | No new rendering path | Negligible trace-to-render latency |
+| Grow trace each frame | Simple accumulation | Memory grows with duration |
+| No separate Live/Replay | Single code path | Less future flexibility |
+
+### Event Capture Points
+
+Instruments needed in ECS simulation:
+
+1. **Spawn Events** — `spawnInitialTeams()` in `spawnSystem.ts`
+   - `{ type: 'spawn', entityId, teamId, position, timestampMs }`
+
+2. **Move Events** — `applyMovement()` in `aiController.ts`
+   - `{ type: 'move', entityId, newPosition, timestampMs }`
+
+3. **Fire Events** — `runWeaponSystem()` in `weaponSystem.ts`
+   - `{ type: 'fire', firingEntityId, projectileId, targetPosition, timestampMs }`
+
+4. **Damage Events** — `applyDamage()` in `damageSystem.ts`
+   - `{ type: 'damage', targetId, attackerId, amount, newHealth, maxHealth, timestampMs }`
+
+5. **Death Events** — `eliminateRobot()` in `damageSystem.ts`
+   - `{ type: 'death', deadEntityId, killerEntityId, timestampMs }`
+
+Each capture gets a `sequenceId` counter for deterministic tie-breaking.
+
+
+
 ## Complexity Tracking
 
-*Fill ONLY if Constitution Check has violations that must be justified*
+Fill ONLY if Constitution Check has violations that must be justified:
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+| Violation | Why Needed | Simpler Alternative |
+|-----------|------------|---------------------|
+| Trace capture instrumentation | Live trace needs events from 5 ECS systems | Post-sim collection loses timing |
+| New hook `useLiveMatchTrace` | Expose growing trace to React | Event emitter less integrated |
