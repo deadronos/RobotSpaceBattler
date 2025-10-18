@@ -57,22 +57,22 @@ spawn/despawn; then projectiles; finally victory detection and HUD.
 ### Task Group 3.2: Entity Spawning & Visual Representation
 
 - [x] T015 [P] [US1] Create `src/systems/matchTrace/entityMapper.ts`
-- [ ] T016 [P] [US1] Implement `src/components/match/RenderedRobot.tsx`
-- [ ] T017 [US1] Create `src/components/match/RenderedProjectile.tsx`
+- [x] T016 [P] [US1] Implement `src/components/match/RenderedRobot.tsx`
+- [x] T017 [US1] Create `src/components/match/RenderedProjectile.tsx`
 - [x] T018 [P] [US1] Extend `src/components/match/MatchPlayer.tsx`
-- [ ] T019 [US1] Implement asset fallback in `src/systems/matchTrace/assetLoader.ts`
+- [x] T019 [US1] Implement asset fallback in `src/systems/matchTrace/assetLoader.ts`
 
 ### Task Group 3.3: Victory & Match End State
 
 - [x] T020 [P] [US1] Create `src/systems/matchTrace/matchValidator.ts`
-- [ ] T021 [US1] Implement `src/components/match/MatchHUD.tsx`
-- [ ] T022 [US1] Implement `src/components/match/MatchCinematic.tsx` stub
+- [x] T021 [US1] Implement `src/components/match/MatchHUD.tsx`
+- [x] T022 [US1] Implement `src/components/match/MatchCinematic.tsx` stub
 
 ### Task Group 3.4: Integration & Match Execution
 
 - [x] T023 [P] [US1] Create `src/hooks/useMatchSimulation.ts` orchestrator
-- [ ] T024 [US1] Integrate components into `src/components/Scene.tsx`
-- [ ] T025 [US1] Write tests in `tests/unit/matchPlayer.test.ts`
+- [x] T024 [US1] Integrate components into `src/components/Scene.tsx`
+- [x] T025 [US1] Write tests in `tests/unit/matchPlayer.test.ts`
 - [ ] T026 [US1] Write tests in `tests/unit/entityMapper.test.ts`
 
 ---
