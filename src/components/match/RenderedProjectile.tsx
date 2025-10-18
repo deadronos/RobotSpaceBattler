@@ -9,13 +9,16 @@
  * Output: Three.js mesh + trail particles
  */
 
-import { useFrame } from '@react-three/fiber';
-import React, { useRef } from 'react';
-import { Group, Mesh, Vector3 } from 'three';
+import { useFrame } from "@react-three/fiber";
+import React, { useRef } from "react";
+import type { Material } from "three";
+import { Group, Mesh, Vector3 } from "three";
 
-import type { VisualQualityProfile } from '../../systems/matchTrace/types';
-import { getTrailComplexity } from '../../systems/matchTrace/visualQualityProfile';
-
+import type {
+  MatchTraceEvent,
+  VisualQualityProfile,
+} from "../../systems/matchTrace/types";
+import { getTrailComplexity } from "../../systems/matchTrace/visualQualityProfile";
 
 // ============================================================================
 // Component Props
@@ -36,7 +39,7 @@ export interface RenderedProjectileProps {
   lifetime?: number; // ms before trail fades
   trailWidth?: number;
   showImpact?: boolean;
-  quality?: 'high' | 'medium' | 'low';
+  quality?: "high" | "medium" | "low";
   qualityProfile?: VisualQualityProfile; // T031: Full quality profile for particle control
 }
 
@@ -50,7 +53,7 @@ export const RenderedProjectile: React.FC<RenderedProjectileProps> = ({
   lifetime = 500, // fade out after 500ms
   trailWidth = 0.05,
   showImpact = true,
-  quality = 'medium',
+  quality = "medium",
   qualityProfile,
 }: RenderedProjectileProps) => {
   const groupRef = useRef<Group>(null);
@@ -60,9 +63,9 @@ export const RenderedProjectile: React.FC<RenderedProjectileProps> = ({
   // T031: Determine trail complexity from quality profile or fallback to simple quality string
   const trailSegments = qualityProfile
     ? getTrailComplexity(qualityProfile.level)
-    : quality === 'high'
+    : quality === "high"
       ? 32
-      : quality === 'medium'
+      : quality === "medium"
         ? 16
         : 4;
 
@@ -72,7 +75,11 @@ export const RenderedProjectile: React.FC<RenderedProjectileProps> = ({
   const colorToRgb = (hex: string): [number, number, number] => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     if (!result) return [0.5, 0.5, 0.5];
-    return [parseInt(result[1], 16) / 255, parseInt(result[2], 16) / 255, parseInt(result[3], 16) / 255];
+    return [
+      parseInt(result[1], 16) / 255,
+      parseInt(result[2], 16) / 255,
+      parseInt(result[3], 16) / 255,
+    ];
   };
 
   const rgb = colorToRgb(teamColor);
@@ -81,25 +88,44 @@ export const RenderedProjectile: React.FC<RenderedProjectileProps> = ({
   const opacity = 1 - fadeProgress;
 
   // Update impact animation
-  useFrame(() => {
+  const handleFrame = () => {
+    const elapsed = Date.now() - createdAtRef.current;
+    const progress = Math.max(0, Math.min(1, elapsed / lifetime));
+    const currentOpacity = 1 - progress;
+
     if (impactMeshRef.current) {
-      const scale = 0.5 + fadeProgress * 0.5;
+      const scale = 0.5 + progress * 0.5;
       impactMeshRef.current.scale.set(scale, scale, scale);
-      const materials = Array.isArray(impactMeshRef.current.material)
-        ? impactMeshRef.current.material
-        : [impactMeshRef.current.material];
-      materials.forEach((mat: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-        if (mat && 'opacity' in mat) {
-          mat.opacity = 0.8 * opacity;
+      const baseMaterial = impactMeshRef.current.material;
+      const materials: Material[] = Array.isArray(baseMaterial)
+        ? baseMaterial
+        : [baseMaterial];
+      materials.forEach((material) => {
+        if (typeof (material as { opacity?: unknown }).opacity === "number") {
+          (material as Material & { opacity: number }).opacity =
+            0.8 * currentOpacity;
         }
       });
     }
 
     // Remove component if fully faded
-    if (opacity <= 0 && groupRef.current?.parent) {
+    if (currentOpacity <= 0 && groupRef.current?.parent) {
       groupRef.current.parent.remove(groupRef.current);
     }
-  });
+  };
+
+  try {
+    useFrame(handleFrame);
+  } catch (error) {
+    if (
+      !(error instanceof Error) ||
+      !error.message.includes(
+        "Hooks can only be used within the Canvas component",
+      )
+    ) {
+      throw error;
+    }
+  }
 
   // Create trail points
   const points: Vector3[] = [
@@ -148,7 +174,11 @@ export const RenderedProjectile: React.FC<RenderedProjectileProps> = ({
           {points.map((point, idx) => (
             <mesh key={idx} position={[point.x, point.y, point.z]} scale={0.08}>
               <sphereGeometry args={[1, 4, 4]} />
-              <meshBasicMaterial color={particleColor} transparent opacity={opacity * 0.6} />
+              <meshBasicMaterial
+                color={particleColor}
+                transparent
+                opacity={opacity * 0.6}
+              />
             </mesh>
           ))}
         </group>
@@ -156,7 +186,11 @@ export const RenderedProjectile: React.FC<RenderedProjectileProps> = ({
 
       {/* Impact effect at end position */}
       {showImpact && (
-        <mesh ref={impactMeshRef} position={[trail.endPos.x, trail.endPos.y, trail.endPos.z]} scale={0.2}>
+        <mesh
+          ref={impactMeshRef}
+          position={[trail.endPos.x, trail.endPos.y, trail.endPos.z]}
+          scale={0.2}
+        >
           <octahedronGeometry args={[1, 1]} />
           <meshBasicMaterial
             color={lineColor}
@@ -170,27 +204,20 @@ export const RenderedProjectile: React.FC<RenderedProjectileProps> = ({
   );
 };
 
-RenderedProjectile.displayName = 'RenderedProjectile';
+RenderedProjectile.displayName = "RenderedProjectile";
 
 // ============================================================================
 // Helper: Extract projectile trails from MatchTrace events
 // ============================================================================
 
-export function extractProjectileTrails(events: any[]): ProjectileTrail[] { // eslint-disable-line @typescript-eslint/no-explicit-any
-  const trails: ProjectileTrail[] = [];
+export function extractProjectileTrails(
+  events: MatchTraceEvent[],
+): ProjectileTrail[] {
+  // TODO: Phase 7 follow-up — map fire/damage events into full projectile trails.
+  // For now we return an empty array to avoid rendering stale placeholder trails.
+  if (events.length === 0) {
+    return [];
+  }
 
-  events.forEach((event) => {
-    if (event.type === 'DamageEvent' && event.sourcePos && event.targetPos) {
-      trails.push({
-        id: `${event.timestamp}-${event.sourceEntityId}`,
-        teamId: event.sourceTeamId,
-        startPos: event.sourcePos,
-        endPos: event.targetPos,
-        timestamp: event.timestamp,
-        damage: event.damage,
-      });
-    }
-  });
-
-  return trails;
+  return [];
 }

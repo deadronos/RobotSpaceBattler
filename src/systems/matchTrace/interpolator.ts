@@ -12,7 +12,7 @@
  * - Cache and update interpolation state efficiently
  */
 
-import type { MatchTraceEvent, MoveEvent, Position, SpawnEvent } from './types';
+import type { MatchTraceEvent, MoveEvent, Position, SpawnEvent } from "./types";
 
 // ============================================================================
 // Types
@@ -57,16 +57,16 @@ export function buildInterpolationState(
   // Scan events in order
   for (const event of events) {
     // Check if event has entityId property (spawn, move, death)
-    const hasEntityId = 'entityId' in event;
+    const hasEntityId = "entityId" in event;
     if (hasEntityId && (event as { entityId: string }).entityId === entityId) {
-      if (event.type === 'spawn') {
+      if (event.type === "spawn") {
         const spawnEvent = event as SpawnEvent;
         isAlive = true;
         lastSpawnTime = spawnEvent.timestampMs;
-      } else if (event.type === 'death') {
+      } else if (event.type === "death") {
         isAlive = false;
         lastDeathTime = event.timestampMs;
-      } else if (event.type === 'move') {
+      } else if (event.type === "move") {
         lastMoveEvent = event as MoveEvent;
       }
     }
@@ -95,11 +95,11 @@ export function getNextMoveEvent(
   afterTimestamp: number,
 ): MoveEvent | undefined {
   for (const event of allEvents) {
-    const hasEntityId = 'entityId' in event;
+    const hasEntityId = "entityId" in event;
     if (
       hasEntityId &&
       (event as { entityId: string }).entityId === entityId &&
-      event.type === 'move' &&
+      event.type === "move" &&
       event.timestampMs > afterTimestamp
     ) {
       return event as MoveEvent;
@@ -155,7 +155,10 @@ export function interpolateEntity(
   // If no move event yet, use spawn position
   if (!state.lastMoveEvent) {
     const spawnEvent = eventsBefore.find(
-      (e) => 'entityId' in e && (e as { entityId: string }).entityId === entityId && e.type === 'spawn',
+      (e) =>
+        "entityId" in e &&
+        (e as { entityId: string }).entityId === entityId &&
+        e.type === "spawn",
     ) as SpawnEvent | undefined;
     if (spawnEvent) {
       return {
@@ -174,7 +177,11 @@ export function interpolateEntity(
   }
 
   // Find next move event for interpolation target
-  const nextMove = getNextMoveEvent(allEvents, entityId, state.lastMoveEvent.timestampMs);
+  const nextMove = getNextMoveEvent(
+    allEvents,
+    entityId,
+    state.lastMoveEvent.timestampMs,
+  );
 
   if (!nextMove) {
     // No next move, use last position
@@ -227,7 +234,7 @@ export function interpolateAllEntities(
   if (!idsToInterpolate) {
     const idSet = new Set<string>();
     for (const event of allEvents) {
-      if ('entityId' in event) {
+      if ("entityId" in event) {
         idSet.add((event as { entityId: string }).entityId);
       }
     }
@@ -236,7 +243,12 @@ export function interpolateAllEntities(
 
   const result = new Map<string, InterpolatedEntity>();
   for (const id of idsToInterpolate) {
-    const interpolated = interpolateEntity(allEvents, eventsBefore, id, currentTimestamp);
+    const interpolated = interpolateEntity(
+      allEvents,
+      eventsBefore,
+      id,
+      currentTimestamp,
+    );
     result.set(id, interpolated);
   }
 

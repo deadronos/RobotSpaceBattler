@@ -11,13 +11,13 @@
  * 4. Cache result for reuse
  */
 
-import { BoxGeometry, CylinderGeometry, SphereGeometry } from 'three';
+import { BoxGeometry, CylinderGeometry, SphereGeometry } from "three";
 
 // ============================================================================
 // Asset Types
 // ============================================================================
 
-export type AssetType = 'robot' | 'projectile' | 'effect' | 'environment';
+export type AssetType = "robot" | "projectile" | "effect" | "environment";
 
 export interface LoadedAsset {
   id: string;
@@ -48,7 +48,9 @@ class AssetLoader {
     const startTime = performance.now();
 
     // Try to load from asset bundle (placeholder for now)
-    const asset = await this.tryLoadModel(id).catch(() => this.getFallbackAsset(id, type));
+    const asset = await this.tryLoadModel(id).catch(() =>
+      this.getFallbackAsset(id, type),
+    );
 
     const loadTime = performance.now() - startTime;
     asset.loadTime = loadTime;
@@ -80,22 +82,22 @@ class AssetLoader {
     let geometry: BoxGeometry | SphereGeometry | CylinderGeometry;
 
     switch (type) {
-      case 'robot':
+      case "robot":
         // Simple box for robot
         geometry = new BoxGeometry(0.5, 1.0, 0.5);
         break;
 
-      case 'projectile':
+      case "projectile":
         // Sphere for projectile
         geometry = new SphereGeometry(0.1, 8, 8);
         break;
 
-      case 'effect':
+      case "effect":
         // Octahedron-like effect (using sphere simplified)
         geometry = new SphereGeometry(0.3, 4, 4);
         break;
 
-      case 'environment':
+      case "environment":
         // Default plane/box for environment
         geometry = new BoxGeometry(10, 1, 10);
         break;
@@ -136,7 +138,10 @@ class AssetLoader {
   /**
    * Get cache statistics for debugging.
    */
-  getStats(): { cacheSize: number; assets: Array<{ id: string; loadTime: number; isFallback: boolean }> } {
+  getStats(): {
+    cacheSize: number;
+    assets: Array<{ id: string; loadTime: number; isFallback: boolean }>;
+  } {
     const assets = Array.from(this.cache.values()).map((asset) => ({
       id: asset.id,
       loadTime: asset.loadTime,

@@ -9,13 +9,13 @@
  *   <QualityToggle />
  */
 
-import { useVisualQuality } from '../../hooks/useVisualQuality';
-import { VisualQualityLevel } from '../../systems/matchTrace/types';
+import { useVisualQuality } from "../../hooks/useVisualQuality";
+import { VisualQualityLevel } from "../../systems/matchTrace/types";
 
 const QUALITY_OPTIONS: Array<{ level: VisualQualityLevel; label: string }> = [
-  { level: VisualQualityLevel.High, label: 'High' },
-  { level: VisualQualityLevel.Medium, label: 'Medium' },
-  { level: VisualQualityLevel.Low, label: 'Low' },
+  { level: VisualQualityLevel.High, label: "High" },
+  { level: VisualQualityLevel.Medium, label: "Medium" },
+  { level: VisualQualityLevel.Low, label: "Low" },
 ];
 
 export function QualityToggle() {
@@ -33,7 +33,7 @@ export function QualityToggle() {
           <label
             key={level}
             className={`quality-toggle__option ${
-              qualityLevel === level ? 'quality-toggle__option--active' : ''
+              qualityLevel === level ? "quality-toggle__option--active" : ""
             }`}
           >
             <input

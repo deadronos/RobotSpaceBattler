@@ -1,29 +1,72 @@
-import React from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 
 import { useSimulationWorld } from "../ecs/world";
+import { useLiveMatchTrace } from "../hooks/useLiveMatchTrace";
+import { useVisualQuality } from "../hooks/useVisualQuality";
 import type { FrameSubscription } from "../systems/physicsSync";
 import { usePhysicsSync } from "../systems/physicsSync";
-import RobotPlaceholder from "./RobotPlaceholder";
+import { MatchSceneInner } from "./match/MatchSceneInner";
 
 type SimulationProps = {
   /** Optional override for frame subscription (testing). */
   useFrameHook?: FrameSubscription;
 };
 
-export default function Simulation({ useFrameHook }: SimulationProps) {
+export default function Simulation({
+  useFrameHook: frameSubscription,
+}: SimulationProps) {
   const world = useSimulationWorld();
 
-  usePhysicsSync({ world, useFrameHook });
+  const frameSubscribersRef = useRef<
+    Array<(state: unknown, delta: number) => void>
+  >([]);
+
+  const sharedFrameHook = useMemo<FrameSubscription | undefined>(() => {
+    if (!frameSubscription) {
+      return undefined;
+    }
+
+    return (callback) => {
+      frameSubscribersRef.current.push(callback);
+      return () => {
+        frameSubscribersRef.current = frameSubscribersRef.current.filter(
+          (existing) => existing !== callback,
+        );
+      };
+    };
+  }, [frameSubscription]);
+
+  useEffect(() => {
+    if (!frameSubscription) {
+      return undefined;
+    }
+
+    const forwarder = (state: unknown, delta: number) => {
+      frameSubscribersRef.current.forEach((callback) => {
+        callback(state, delta);
+      });
+    };
+
+    const unsubscribe = frameSubscription(forwarder);
+
+    return () => {
+      frameSubscribersRef.current = [];
+      if (typeof unsubscribe === "function") {
+        unsubscribe();
+      }
+    };
+  }, [frameSubscription]);
+
+  usePhysicsSync({ world, useFrameHook: sharedFrameHook });
+  const trace = useLiveMatchTrace({ world, useFrameHook: sharedFrameHook });
+  const { qualityLevel } = useVisualQuality();
 
   return (
-    <>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[100, 100]} />
-        <meshStandardMaterial color="#081029" />
-      </mesh>
-
-      <RobotPlaceholder position={[0, 1, 0]} team="red" />
-      <RobotPlaceholder position={[2, 1, 0]} team="blue" />
-    </>
+    <MatchSceneInner
+      matchTrace={trace}
+      autoPlay
+      renderMatch={frameSubscription === undefined}
+      visualQuality={qualityLevel}
+    />
   );
 }

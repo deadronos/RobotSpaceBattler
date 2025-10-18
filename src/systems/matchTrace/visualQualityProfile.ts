@@ -14,8 +14,8 @@
  * Output: VisualQualityProfile configuration for renderer
  */
 
-import type { VisualQualityLevel, VisualQualityProfile } from './types';
-import { VisualQualityLevel as QLvl } from './types';
+import type { VisualQualityLevel, VisualQualityProfile } from "./types";
+import { VisualQualityLevel as QLvl } from "./types";
 
 // ============================================================================
 // Quality Profile Factory
@@ -27,7 +27,9 @@ import { VisualQualityLevel as QLvl } from './types';
  * @param level - Quality level (high, medium, low)
  * @returns Configured VisualQualityProfile with all settings
  */
-export function createQualityProfile(level: VisualQualityLevel): VisualQualityProfile {
+export function createQualityProfile(
+  level: VisualQualityLevel,
+): VisualQualityProfile {
   switch (level) {
     case QLvl.High:
       return {
@@ -73,9 +75,8 @@ export function createQualityProfile(level: VisualQualityLevel): VisualQualityPr
 export const DEFAULT_QUALITY_LEVEL: VisualQualityLevel = QLvl.Medium;
 
 /** Default quality profile (Medium mode) */
-export const DEFAULT_QUALITY_PROFILE: VisualQualityProfile = createQualityProfile(
-  DEFAULT_QUALITY_LEVEL,
-);
+export const DEFAULT_QUALITY_PROFILE: VisualQualityProfile =
+  createQualityProfile(DEFAULT_QUALITY_LEVEL);
 
 // ============================================================================
 // Quality Helper Functions
@@ -169,16 +170,16 @@ export function getTrailComplexity(level: VisualQualityLevel): number {
  */
 export function isFeatureEnabled(
   profile: VisualQualityProfile,
-  feature: 'shadows' | 'textures' | 'particles' | 'postProcessing',
+  feature: "shadows" | "textures" | "particles" | "postProcessing",
 ): boolean {
   switch (feature) {
-    case 'shadows':
+    case "shadows":
       return profile.shadowsEnabled;
-    case 'textures':
+    case "textures":
       return profile.texturesEnabled;
-    case 'particles':
+    case "particles":
       return profile.particlesEnabled;
-    case 'postProcessing':
+    case "postProcessing":
       return profile.postProcessingEnabled;
     default:
       return false;
@@ -195,6 +196,8 @@ export function isFeatureEnabled(
  * @param value - Value to check
  * @returns true if valid level, false otherwise
  */
-export function isValidQualityLevel(value: unknown): value is VisualQualityLevel {
+export function isValidQualityLevel(
+  value: unknown,
+): value is VisualQualityLevel {
   return value === QLvl.High || value === QLvl.Medium || value === QLvl.Low;
 }

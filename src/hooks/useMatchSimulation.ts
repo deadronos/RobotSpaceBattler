@@ -13,17 +13,17 @@
  * Used by Scene.tsx to render automated matches in 3D view.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
-import type { EntityState } from '../systems/matchTrace/entityMapper';
-import { EntityMapper } from '../systems/matchTrace/entityMapper';
-import { MatchPlayer, ReplayMode } from '../systems/matchTrace/matchPlayer';
+import type { EntityState } from "../systems/matchTrace/entityMapper";
+import { EntityMapper } from "../systems/matchTrace/entityMapper";
+import { MatchPlayer, ReplayMode } from "../systems/matchTrace/matchPlayer";
 import {
   isTerminal,
   MatchOutcome,
   validateMatchOutcome,
-} from '../systems/matchTrace/matchValidator';
-import type { MatchTrace } from '../systems/matchTrace/types';
+} from "../systems/matchTrace/matchValidator";
+import type { MatchTrace } from "../systems/matchTrace/types";
 
 // ============================================================================
 // Hook Configuration & State
@@ -63,7 +63,9 @@ export interface MatchSimulationState {
 // Hook Implementation
 // ============================================================================
 
-export function useMatchSimulation(config: UseMatchSimulationConfig): MatchSimulationState {
+export function useMatchSimulation(
+  config: UseMatchSimulationConfig,
+): MatchSimulationState {
   const {
     trace,
     autoPlay = false,
@@ -94,7 +96,7 @@ export function useMatchSimulation(config: UseMatchSimulationConfig): MatchSimul
       entities: [],
       aliveEntities: [],
       matchOutcome: MatchOutcome.InProgress,
-      matchMessage: 'Match starting...',
+      matchMessage: "Match starting...",
     };
   });
 
@@ -146,7 +148,11 @@ export function useMatchSimulation(config: UseMatchSimulationConfig): MatchSimul
       const snapshot = player.getSnapshot();
 
       // Update entity state from events
-      mapper.updateFromEvents(trace.events, snapshot.currentTimestampMs, snapshot.currentFrameIndex);
+      mapper.updateFromEvents(
+        trace.events,
+        snapshot.currentTimestampMs,
+        snapshot.currentFrameIndex,
+      );
 
       // Note: interpolateAllEntities used for future frame interpolation feature
       // For now, we use EntityMapper state which is sufficient for victory detection
@@ -161,14 +167,22 @@ export function useMatchSimulation(config: UseMatchSimulationConfig): MatchSimul
       }
 
       // Check match outcome
-      const result = validateMatchOutcome(aliveEntities, maxDurationMs, snapshot.currentTimestampMs);
+      const result = validateMatchOutcome(
+        aliveEntities,
+        maxDurationMs,
+        snapshot.currentTimestampMs,
+      );
       const outcomeChanged = lastOutcomeRef.current !== result.outcome;
 
       // Fire callbacks on outcome change
       if (outcomeChanged && !callbacksFiredRef.current.has(result.outcome)) {
         callbacksFiredRef.current.add(result.outcome);
 
-        if (result.outcome === MatchOutcome.Victory && onVictory && result.winnerId) {
+        if (
+          result.outcome === MatchOutcome.Victory &&
+          onVictory &&
+          result.winnerId
+        ) {
           onVictory(result.winnerId, result.survivors || []);
         }
 
@@ -181,7 +195,7 @@ export function useMatchSimulation(config: UseMatchSimulationConfig): MatchSimul
         }
 
         if (onMatchEnd && isTerminal(result.outcome)) {
-          onMatchEnd(result.outcome, result.reason || '');
+          onMatchEnd(result.outcome, result.reason || "");
         }
       }
 
@@ -189,19 +203,19 @@ export function useMatchSimulation(config: UseMatchSimulationConfig): MatchSimul
 
       // Update React state
       setState({
-        isPlaying: snapshot.state !== 'finished',
-        isFinished: snapshot.state === 'finished',
+        isPlaying: snapshot.state !== "finished",
+        isFinished: snapshot.state === "finished",
         progress: snapshot.progress,
         currentTimestampMs: snapshot.currentTimestampMs,
         entities,
         aliveEntities,
         matchOutcome: result.outcome,
         winnerId: result.winnerId,
-        matchMessage: result.reason || '',
+        matchMessage: result.reason || "",
       });
 
       // Continue loop if match is playing
-      if (snapshot.state !== 'finished') {
+      if (snapshot.state !== "finished") {
         frameId = requestAnimationFrame(loop);
       }
     };
@@ -213,7 +227,15 @@ export function useMatchSimulation(config: UseMatchSimulationConfig): MatchSimul
         cancelAnimationFrame(frameId);
       }
     };
-  }, [state.isPlaying, trace, maxDurationMs, onVictory, onDraw, onTimeout, onMatchEnd]);
+  }, [
+    state.isPlaying,
+    trace,
+    maxDurationMs,
+    onVictory,
+    onDraw,
+    onTimeout,
+    onMatchEnd,
+  ]);
 
   return state;
 }

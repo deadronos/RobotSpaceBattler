@@ -8,12 +8,15 @@
  * Schemas: specs/003-extend-placeholder-create/schemas/
  */
 
- 
-import type { ErrorObject } from 'ajv';
+import type { ErrorObject } from "ajv";
 // eslint-disable-next-line import/no-extraneous-dependencies
-import Ajv from 'ajv';
+import Ajv from "ajv";
 
-import { ContractValidationReport, ValidationError, ValidationResult } from './types';
+import {
+  ContractValidationReport,
+  ValidationError,
+  ValidationResult,
+} from "./types";
 
 const ajv = new Ajv();
 
@@ -22,49 +25,49 @@ const ajv = new Ajv();
 // ============================================================================
 
 const TEAM_SCHEMA = {
-  $schema: 'http://json-schema.org/draft-07/schema#',
-  title: 'Team',
-  type: 'object',
-  required: ['id', 'name', 'units', 'spawnPoints'],
+  $schema: "http://json-schema.org/draft-07/schema#",
+  title: "Team",
+  type: "object",
+  required: ["id", "name", "units", "spawnPoints"],
   properties: {
-    id: { type: 'string' },
-    name: { type: 'string' },
-    metadata: { type: 'object' },
+    id: { type: "string" },
+    name: { type: "string" },
+    metadata: { type: "object" },
     units: {
-      type: 'array',
+      type: "array",
       items: {
         anyOf: [
-          { type: 'string' },
+          { type: "string" },
           {
-            type: 'object',
-            required: ['id', 'modelRef', 'teamId', 'maxHealth'],
+            type: "object",
+            required: ["id", "modelRef", "teamId", "maxHealth"],
             properties: {
-              id: { type: 'string' },
-              modelRef: { type: 'string' },
-              teamId: { type: 'string' },
-              maxHealth: { type: 'number' },
-              currentHealth: { type: 'number' },
-              weapons: { type: 'array' },
-              isCaptain: { type: 'boolean' },
+              id: { type: "string" },
+              modelRef: { type: "string" },
+              teamId: { type: "string" },
+              maxHealth: { type: "number" },
+              currentHealth: { type: "number" },
+              weapons: { type: "array" },
+              isCaptain: { type: "boolean" },
             },
           },
         ],
       },
     },
     spawnPoints: {
-      type: 'array',
+      type: "array",
       items: {
-        type: 'object',
-        required: ['spawnPointId', 'position'],
+        type: "object",
+        required: ["spawnPointId", "position"],
         properties: {
-          spawnPointId: { type: 'string' },
+          spawnPointId: { type: "string" },
           position: {
-            type: 'object',
-            required: ['x', 'y', 'z'],
+            type: "object",
+            required: ["x", "y", "z"],
             properties: {
-              x: { type: 'number' },
-              y: { type: 'number' },
-              z: { type: 'number' },
+              x: { type: "number" },
+              y: { type: "number" },
+              z: { type: "number" },
             },
           },
         },
@@ -75,61 +78,61 @@ const TEAM_SCHEMA = {
 };
 
 const MATCHTRACE_SCHEMA = {
-  $schema: 'http://json-schema.org/draft-07/schema#',
-  title: 'MatchTrace',
-  type: 'object',
-  required: ['events'],
+  $schema: "http://json-schema.org/draft-07/schema#",
+  title: "MatchTrace",
+  type: "object",
+  required: ["events"],
   properties: {
     meta: {
-      type: 'object',
+      type: "object",
       properties: {
-        rngSeed: { type: 'integer' },
-        rngAlgorithm: { type: 'string' },
+        rngSeed: { type: "integer" },
+        rngAlgorithm: { type: "string" },
       },
       additionalProperties: true,
     },
-    rngSeed: { type: 'integer' },
-    rngAlgorithm: { type: 'string' },
+    rngSeed: { type: "integer" },
+    rngAlgorithm: { type: "string" },
     events: {
-      type: 'array',
+      type: "array",
       items: {
-        type: 'object',
-        required: ['type', 'timestampMs'],
+        type: "object",
+        required: ["type", "timestampMs"],
         properties: {
           type: {
-            type: 'string',
-            enum: ['spawn', 'move', 'fire', 'hit', 'damage', 'death', 'score'],
+            type: "string",
+            enum: ["spawn", "move", "fire", "hit", "damage", "death", "score"],
           },
-          timestampMs: { type: 'integer' },
-          frameIndex: { type: 'integer' },
-          sequenceId: { type: 'integer' },
-          entityId: { type: 'string' },
-          attackerId: { type: 'string' },
-          targetId: { type: 'string' },
-          teamId: { type: 'string' },
+          timestampMs: { type: "integer" },
+          frameIndex: { type: "integer" },
+          sequenceId: { type: "integer" },
+          entityId: { type: "string" },
+          attackerId: { type: "string" },
+          targetId: { type: "string" },
+          teamId: { type: "string" },
           position: {
-            type: 'object',
+            type: "object",
             properties: {
-              x: { type: 'number' },
-              y: { type: 'number' },
-              z: { type: 'number' },
+              x: { type: "number" },
+              y: { type: "number" },
+              z: { type: "number" },
             },
-            required: ['x', 'y', 'z'],
+            required: ["x", "y", "z"],
           },
-          projectileId: { type: 'string' },
+          projectileId: { type: "string" },
           collisionNormal: {
-            type: 'object',
+            type: "object",
             properties: {
-              x: { type: 'number' },
-              y: { type: 'number' },
-              z: { type: 'number' },
+              x: { type: "number" },
+              y: { type: "number" },
+              z: { type: "number" },
             },
           },
-          amount: { type: 'number' },
-          resultingHealth: { type: 'number' },
-          sourceEventId: { type: 'string' },
-          reason: { type: 'string' },
-          killedBy: { type: 'string' },
+          amount: { type: "number" },
+          resultingHealth: { type: "number" },
+          sourceEventId: { type: "string" },
+          reason: { type: "string" },
+          killedBy: { type: "string" },
         },
         additionalProperties: true,
       },
@@ -151,16 +154,26 @@ const validateMatchTrace = ajv.compile(MATCHTRACE_SCHEMA);
 /**
  * Convert ajv validation errors to our ValidationError format
  */
-function formatErrors(errors: ErrorObject[] | null | undefined): ValidationError[] {
+function formatErrors(
+  errors: ErrorObject[] | null | undefined,
+): ValidationError[] {
   if (!errors || errors.length === 0) {
     return [];
   }
 
-  return errors.map((err) => ({
-    path: err.instancePath || err.schemaPath || 'root',
-    message: err.message || 'Unknown validation error',
-    value: err.data,
-  }));
+  return errors.map((err) => {
+    const errorRecord = err as unknown as Record<string, unknown>;
+    const instancePath =
+      typeof errorRecord.instancePath === "string"
+        ? (errorRecord.instancePath as string)
+        : undefined;
+
+    return {
+      path: instancePath || err.dataPath || err.schemaPath || "root",
+      message: err.message || "Unknown validation error",
+      value: err.data,
+    };
+  });
 }
 
 /**
@@ -215,8 +228,12 @@ export function validateAllContracts(
   team?: unknown,
   trace?: unknown,
 ): ContractValidationReport {
-  const teamResult = team ? validateTeamContract(team) : { valid: true, errors: [] };
-  const traceResult = trace ? validateMatchTraceContract(trace) : { valid: true, errors: [] };
+  const teamResult = team
+    ? validateTeamContract(team)
+    : { valid: true, errors: [] };
+  const traceResult = trace
+    ? validateMatchTraceContract(trace)
+    : { valid: true, errors: [] };
 
   const overallValid = teamResult.valid && traceResult.valid;
 
@@ -235,11 +252,14 @@ export function validateAllContracts(
  * @param context - Human-readable context for the error message
  * @throws Error if validation failed
  */
-export function assertContractValid(result: ValidationResult, context: string): void {
+export function assertContractValid(
+  result: ValidationResult,
+  context: string,
+): void {
   if (!result.valid) {
     const errorList = result.errors
       .map((err) => `  - ${err.path}: ${err.message}`)
-      .join('\n');
+      .join("\n");
     throw new Error(`Contract validation failed (${context}):\n${errorList}`);
   }
 }

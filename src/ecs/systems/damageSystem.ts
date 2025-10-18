@@ -1,3 +1,4 @@
+import { emitLiveTraceEvent } from "../../systems/matchTrace/liveTraceEmitter";
 import { shouldDespawn } from "../entities/Projectile";
 import {
   recordDamageDealt,
@@ -48,7 +49,22 @@ export function applyDamage(
     }
   }
 
+  emitLiveTraceEvent({
+    type: "damage",
+    targetId,
+    attackerId,
+    amount,
+    resultingHealth: target.health,
+    timestampMs: Math.round(world.simulation.simulationTime * 1000),
+  });
+
   if (target.health === 0) {
+    emitLiveTraceEvent({
+      type: "death",
+      entityId: targetId,
+      killedBy: attackerId,
+      timestampMs: Math.round(world.simulation.simulationTime * 1000),
+    });
     eliminateRobot(world, targetId);
   }
 }

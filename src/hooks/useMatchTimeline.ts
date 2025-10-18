@@ -11,11 +11,11 @@
  * - Handle pause/play/seek controls
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { interpolateAllEntities } from '../systems/matchTrace/interpolator';
-import { MatchPlayer, PlaybackState } from '../systems/matchTrace/matchPlayer';
-import type { MatchTrace, MatchTraceEvent } from '../systems/matchTrace/types';
+import { interpolateAllEntities } from "../systems/matchTrace/interpolator";
+import { MatchPlayer, PlaybackState } from "../systems/matchTrace/matchPlayer";
+import type { MatchTrace, MatchTraceEvent } from "../systems/matchTrace/types";
 
 // ============================================================================
 // Types
@@ -204,7 +204,14 @@ export function useInterpolatedEntities(
   entityIds?: string[],
 ) {
   return useState(() => {
-    const eventsBefore = trace.events.filter((e) => e.timestampMs <= currentTimestamp);
-    return interpolateAllEntities(trace.events, eventsBefore, currentTimestamp, entityIds);
+    const eventsBefore = trace.events.filter(
+      (e) => e.timestampMs <= currentTimestamp,
+    );
+    return interpolateAllEntities(
+      trace.events,
+      eventsBefore,
+      currentTimestamp,
+      entityIds,
+    );
   })[0];
 }

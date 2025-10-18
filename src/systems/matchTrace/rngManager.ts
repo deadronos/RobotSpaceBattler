@@ -16,7 +16,7 @@
 // Constants & Algorithm Identification
 // ============================================================================
 
-export const RNG_ALGORITHM_ID = 'xorshift32-v1';
+export const RNG_ALGORITHM_ID = "xorshift32-v1";
 export const RNG_ALGORITHM_VERSION = 1;
 
 // ============================================================================
@@ -55,7 +55,7 @@ export class RNGManager {
     if (this.seed === 0) {
       this.seed = 1;
       console.warn(
-        'RNGManager: seed was 0, reset to 1. xorshift32 requires non-zero seed.',
+        "RNGManager: seed was 0, reset to 1. xorshift32 requires non-zero seed.",
       );
     }
 
@@ -220,7 +220,7 @@ export function initializeGlobalRNG(seed: number): RNGManager {
 export function getGlobalRNG(): RNGManager {
   if (!globalRNG) {
     throw new Error(
-      'Global RNG not initialized. Call initializeGlobalRNG(seed) first.',
+      "Global RNG not initialized. Call initializeGlobalRNG(seed) first.",
     );
   }
   return globalRNG;

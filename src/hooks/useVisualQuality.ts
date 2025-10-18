@@ -13,14 +13,18 @@
  *   setQualityLevel('high');
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from "react";
 
-import type { VisualQualityLevel, VisualQualityProfile } from '../systems/matchTrace/types';
+import { useUiStore } from "../store/uiStore";
+import type {
+  VisualQualityLevel,
+  VisualQualityProfile,
+} from "../systems/matchTrace/types";
 import {
   createQualityProfile,
   DEFAULT_QUALITY_LEVEL,
   isValidQualityLevel,
-} from '../systems/matchTrace/visualQualityProfile';
+} from "../systems/matchTrace/visualQualityProfile";
 
 // ============================================================================
 // Hook Interface
@@ -52,18 +56,12 @@ export interface UseVisualQualityReturn {
  * @returns Quality state and control functions
  */
 export function useVisualQuality(): UseVisualQualityReturn {
-  // Initialize from localStorage if available, otherwise use default
-  const [qualityLevel, setQualityLevelState] = useState<VisualQualityLevel>(() => {
-    try {
-      const stored = localStorage.getItem('visual-quality-level');
-      if (stored && isValidQualityLevel(stored)) {
-        return stored as VisualQualityLevel;
-      }
-    } catch {
-      // localStorage not available, continue
-    }
-    return DEFAULT_QUALITY_LEVEL;
-  });
+  const qualityLevel = useUiStore(
+    (state) => state.visualQualityLevel ?? DEFAULT_QUALITY_LEVEL,
+  );
+  const setQualityLevelState = useUiStore(
+    (state) => state.setVisualQualityLevel,
+  );
 
   // Create profile from current level (memoized to prevent unnecessary re-renders)
   const qualityProfile = useMemo(
@@ -72,31 +70,29 @@ export function useVisualQuality(): UseVisualQualityReturn {
   );
 
   // Wrapped setter that also persists to localStorage
-  const setQualityLevel = useCallback((level: VisualQualityLevel) => {
-    if (!isValidQualityLevel(level)) {
-      console.warn(`[useVisualQuality] Invalid quality level: ${level}`);
-      return;
-    }
+  const setQualityLevel = useCallback(
+    (level: VisualQualityLevel) => {
+      if (!isValidQualityLevel(level)) {
+        console.warn(`[useVisualQuality] Invalid quality level: ${level}`);
+        return;
+      }
 
-    setQualityLevelState(level);
-
-    // Persist to localStorage
-    try {
-      localStorage.setItem('visual-quality-level', level);
-    } catch {
-      // localStorage not available, continue without persisting
-    }
-  }, []);
+      setQualityLevelState(level);
+    },
+    [setQualityLevelState],
+  );
 
   // Simple getter for current level
-  const getQualityLevel = useCallback((): VisualQualityLevel => qualityLevel, [
-    qualityLevel,
-  ]);
+  const getQualityLevel = useCallback(
+    (): VisualQualityLevel => qualityLevel,
+    [qualityLevel],
+  );
 
   // Simple getter for current profile
-  const getQualityProfile = useCallback((): VisualQualityProfile => qualityProfile, [
-    qualityProfile,
-  ]);
+  const getQualityProfile = useCallback(
+    (): VisualQualityProfile => qualityProfile,
+    [qualityProfile],
+  );
 
   return {
     qualityLevel,

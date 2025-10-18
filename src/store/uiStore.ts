@@ -2,6 +2,11 @@ import { useStore } from "zustand";
 import { useStoreWithEqualityFn } from "zustand/traditional";
 import { createStore, type StoreApi } from "zustand/vanilla";
 
+import type { VisualQualityLevel } from "../systems/matchTrace/types";
+import {
+  DEFAULT_QUALITY_LEVEL,
+  isValidQualityLevel,
+} from "../systems/matchTrace/visualQualityProfile";
 import type { BattleUiPreferences } from "../types/ui";
 
 export interface UiState {
@@ -18,6 +23,7 @@ export interface UiState {
   hudTranslucency: number; // 0..1 alpha for translucent panels
   hudPanelPosition: "left-right" | "stacked";
   userPreferences: BattleUiPreferences;
+  visualQualityLevel: VisualQualityLevel;
 }
 
 export interface UiActions {
@@ -43,6 +49,7 @@ export interface UiActions {
   setReducedMotion: (enabled: boolean) => void;
   setMinimalUi: (enabled: boolean) => void;
   setFollowModeShowsPerRobot: (enabled: boolean) => void;
+  setVisualQualityLevel: (level: VisualQualityLevel) => void;
 }
 
 export type UiStore = UiState & UiActions;
@@ -52,6 +59,25 @@ const DEFAULT_PREFERENCES: BattleUiPreferences = {
   minimalUi: false,
   followModeShowsPerRobot: true,
 };
+
+const QUALITY_STORAGE_KEY = "visual-quality-level";
+
+function readInitialQualityLevel(): VisualQualityLevel {
+  if (typeof window === "undefined") {
+    return DEFAULT_QUALITY_LEVEL;
+  }
+
+  try {
+    const stored = window.localStorage.getItem(QUALITY_STORAGE_KEY);
+    if (stored && isValidQualityLevel(stored)) {
+      return stored as VisualQualityLevel;
+    }
+  } catch {
+    // localStorage not accessible; fall back to default
+  }
+
+  return DEFAULT_QUALITY_LEVEL;
+}
 
 const DEFAULT_STATE: UiState = {
   statsOpen: false,
@@ -66,6 +92,7 @@ const DEFAULT_STATE: UiState = {
   hudTranslucency: 0.5,
   hudPanelPosition: "left-right",
   userPreferences: { ...DEFAULT_PREFERENCES },
+  visualQualityLevel: readInitialQualityLevel(),
 };
 
 type UiStateOverrides = Partial<
@@ -103,6 +130,11 @@ function normalizeState(overrides: UiStateOverrides = {}): UiState {
     overrides.isHudVisible ??
     overrides.hudVisible ??
     DEFAULT_STATE.isHudVisible;
+  const qualityOverride = overrides.visualQualityLevel;
+  const visualQualityLevel =
+    qualityOverride && isValidQualityLevel(qualityOverride)
+      ? (qualityOverride as VisualQualityLevel)
+      : DEFAULT_STATE.visualQualityLevel;
   const preferenceOverrides: Partial<BattleUiPreferences> =
     overrides.userPreferences ?? {};
   const userPreferences: BattleUiPreferences = {
@@ -135,6 +167,7 @@ function normalizeState(overrides: UiStateOverrides = {}): UiState {
     hudPanelPosition:
       overrides.hudPanelPosition ?? DEFAULT_STATE.hudPanelPosition,
     userPreferences,
+    visualQualityLevel,
   };
 }
 
@@ -161,6 +194,24 @@ export const createUiStore = (
       set({ hudPanelPosition: pos }),
     setVictoryOverlayVisible: (visible) =>
       set({ victoryOverlayVisible: !!visible }),
+    setVisualQualityLevel: (level: VisualQualityLevel) =>
+      set(() => {
+        const nextLevel = isValidQualityLevel(level)
+          ? (level as VisualQualityLevel)
+          : DEFAULT_QUALITY_LEVEL;
+
+        if (typeof window !== "undefined") {
+          try {
+            window.localStorage.setItem(QUALITY_STORAGE_KEY, nextLevel);
+          } catch {
+            // ignore persistence failures
+          }
+        }
+
+        return {
+          visualQualityLevel: nextLevel,
+        };
+      }),
     openStats: () => set(withStatsOpen(true)),
     closeStats: () => set(withStatsOpen(false)),
     setStatsOpen: (open) => set(withStatsOpen(open)),
