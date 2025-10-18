@@ -80,6 +80,9 @@ const MatchSceneRenderer: React.FC<MatchSceneRendererProps> = ({
 }) => {
   const [projectiles, setProjectiles] = useState<ProjectileTrail[]>([]);
   const projectileTimerRef = useRef<number | undefined>(undefined);
+  // Keep the last projectiles in a ref to avoid setting state with the same
+  // array on every frame which can cause render loops.
+  const lastProjectilesRef = useRef<ProjectileTrail[]>([]);
   const {
     entities,
     aliveEntities,
@@ -91,12 +94,14 @@ const MatchSceneRenderer: React.FC<MatchSceneRendererProps> = ({
   useEffect(() => {
     const trails = extractProjectileTrails(matchTrace.events || []);
     setProjectiles(trails);
+    lastProjectilesRef.current = trails;
 
     if (projectileTimerRef.current !== undefined) {
       clearTimeout(projectileTimerRef.current);
     }
     projectileTimerRef.current = window.setTimeout(() => {
       setProjectiles([]);
+      lastProjectilesRef.current = [];
     }, 2000);
 
     return () => {
@@ -104,14 +109,25 @@ const MatchSceneRenderer: React.FC<MatchSceneRendererProps> = ({
         clearTimeout(projectileTimerRef.current);
       }
     };
-  }, [matchTrace, currentTimestampMs]);
+  // Only run this effect when the trace itself changes. `currentTimestampMs`
+  // updates every tick and should not re-run this initialization effect —
+  // per-frame updates are handled in `handleFrame` below.
+  }, [matchTrace]);
 
   const handleFrame = useCallback(() => {
     const trails = extractProjectileTrails(matchTrace.events || []);
     const recentTrails = trails.filter(
       (trail) => currentTimestampMs - trail.timestamp < 1000,
     );
-    setProjectiles(recentTrails);
+    // Avoid unnecessary state updates every frame by comparing to last value.
+    const prev = lastProjectilesRef.current;
+    const changed =
+      prev.length !== recentTrails.length ||
+      prev.some((p, i) => p.id !== recentTrails[i]?.id || p.timestamp !== recentTrails[i]?.timestamp);
+    if (changed) {
+      lastProjectilesRef.current = recentTrails;
+      setProjectiles(recentTrails);
+    }
   }, [matchTrace, currentTimestampMs]);
 
   try {

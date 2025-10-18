@@ -154,7 +154,7 @@ const validateMatchTrace = ajv.compile(MATCHTRACE_SCHEMA);
 /**
  * Convert ajv validation errors to our ValidationError format
  */
-function formatErrors(
+export function formatErrors(
   errors: ErrorObject[] | null | undefined,
 ): ValidationError[] {
   if (!errors || errors.length === 0) {
@@ -167,9 +167,19 @@ function formatErrors(
       typeof errorRecord.instancePath === "string"
         ? (errorRecord.instancePath as string)
         : undefined;
+    // ajv v6 used `dataPath`; newer versions use `instancePath`. Read both
+    // from the runtime object via the cast to avoid TypeScript errors.
+    const dataPath =
+      typeof (errorRecord as Record<string, unknown>)['dataPath'] === 'string'
+        ? ((errorRecord as Record<string, unknown>)['dataPath'] as string)
+        : undefined;
+    const schemaPath =
+      typeof errorRecord.schemaPath === "string"
+        ? (errorRecord.schemaPath as string)
+        : undefined;
 
     return {
-      path: instancePath || err.dataPath || err.schemaPath || "root",
+      path: instancePath || dataPath || schemaPath || "root",
       message: err.message || "Unknown validation error",
       value: err.data,
     };
