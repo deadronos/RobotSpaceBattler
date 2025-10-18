@@ -11,9 +11,9 @@
 
 Initialize project structure, dependencies, and build tooling.
 
-- [ ] T001 Set up feature branches and directory structure
-- [ ] T002 Verify Vitest, ajv, TypeScript in `package.json`, `tsconfig.json`
-- [ ] T003 Create documentation placeholders in `specs/003-extend-placeholder-create/`
+- [x] T001 Set up feature branches and directory structure
+- [x] T002 Verify Vitest, ajv, TypeScript in `package.json`, `tsconfig.json`
+- [x] T003 Create documentation placeholders in `specs/003-extend-placeholder-create/`
 
 ---
 
@@ -21,13 +21,13 @@ Initialize project structure, dependencies, and build tooling.
 
 Implement contract validator infrastructure (blocks all user stories).
 
-- [ ] T004 [P] Create `specs/003-extend-placeholder-create/schemas/team.schema.json`
-- [ ] T005 [P] Create `specs/003-extend-placeholder-create/schemas/matchtrace.schema.json`
-- [ ] T006 Create `tests/contract-validator.spec.ts` test harness using Vitest + ajv
-- [ ] T007 [P] Create `src/systems/matchTrace/contractValidator.ts` wrapper
-- [ ] T008 Implement `src/systems/matchTrace/types.ts` TypeScript interfaces
-- [ ] T009 Add contract validation tests for FR-009-A acceptance criteria
-- [ ] T010 Run contract validator tests and confirm all pass
+- [x] T004 [P] Create `specs/003-extend-placeholder-create/schemas/team.schema.json`
+- [x] T005 [P] Create `specs/003-extend-placeholder-create/schemas/matchtrace.schema.json`
+- [x] T006 Create `tests/contract-validator.spec.ts` test harness using Vitest + ajv
+- [x] T007 [P] Create `src/systems/matchTrace/contractValidator.ts` wrapper
+- [x] T008 Implement `src/systems/matchTrace/types.ts` TypeScript interfaces
+- [x] T009 Add contract validation tests for FR-009-A acceptance criteria
+- [x] T010 Run contract validator tests and confirm all pass
 
 ---
 
@@ -49,17 +49,17 @@ spawn/despawn; then projectiles; finally victory detection and HUD.
 
 ### Task Group 3.1: Match Timeline & Synchronization
 
-- [ ] T011 [P] [US1] Create `src/systems/matchTrace/matchPlayer.ts`
-- [ ] T012 [P] [US1] Implement `src/systems/matchTrace/interpolator.ts`
-- [ ] T013 [US1] Add frame-step debug mode to `matchPlayer.ts`
-- [ ] T014 [P] [US1] Create `src/hooks/useMatchTimeline.ts` hook
+- [x] T011 [P] [US1] Create `src/systems/matchTrace/matchPlayer.ts`
+- [x] T012 [P] [US1] Implement `src/systems/matchTrace/interpolator.ts`
+- [x] T013 [US1] Add frame-step debug mode to `matchPlayer.ts`
+- [x] T014 [P] [US1] Create `src/hooks/useMatchTimeline.ts` hook
 
 ### Task Group 3.2: Entity Spawning & Visual Representation
 
-- [ ] T015 [P] [US1] Create `src/systems/matchTrace/entityMapper.ts`
+- [x] T015 [P] [US1] Create `src/systems/matchTrace/entityMapper.ts`
 - [ ] T016 [P] [US1] Implement `src/components/match/RenderedRobot.tsx`
 - [ ] T017 [US1] Create `src/components/match/RenderedProjectile.tsx`
-- [ ] T018 [P] [US1] Extend `src/components/match/MatchPlayer.tsx`
+- [x] T018 [P] [US1] Extend `src/components/match/MatchPlayer.tsx`
 - [ ] T019 [US1] Implement asset fallback in `src/systems/matchTrace/assetLoader.ts`
 
 ### Task Group 3.3: Victory & Match End State
