@@ -13,6 +13,7 @@
  */
 
 import { MatchTrace, MatchTraceEvent } from './types';
+import { RNGManager, RNG_ALGORITHM_ID } from './rngManager';
 
 // ============================================================================
 // Types & Constants
@@ -25,12 +26,18 @@ export enum PlaybackState {
   Finished = 'finished',
 }
 
+export enum ReplayMode {
+  Live = 'live', // Normal trace playback without RNG seeding
+  Deterministic = 'deterministic', // Replay with RNG seed for exact reproduction
+}
+
 export interface MatchPlayerConfig {
   trace: MatchTrace;
   playbackRate?: number; // 1.0 = real-time, 2.0 = 2x speed
   autoPlay?: boolean;
   debugMode?: boolean; // frame-step mode
   rngSeed?: number;
+  replayMode?: ReplayMode; // T036: Add replay mode support
 }
 
 export interface PlaybackSnapshot {
@@ -53,6 +60,8 @@ export class MatchPlayer {
   private state: PlaybackState = PlaybackState.Idle;
   private debugMode: boolean = false;
   private rngSeed: number;
+  private replayMode: ReplayMode = ReplayMode.Live;
+  private rngManager: RNGManager | null = null; // T036: RNG manager for deterministic replay
 
   // Event index cache (for efficient event lookup)
   private eventsByTimestamp: Map<number, MatchTraceEvent[]> = new Map();
@@ -62,9 +71,15 @@ export class MatchPlayer {
     this.playbackRate = config.playbackRate ?? 1.0;
     this.debugMode = config.debugMode ?? false;
     this.rngSeed = config.rngSeed ?? this.trace.rngSeed ?? 0;
+    this.replayMode = config.replayMode ?? ReplayMode.Live;
 
     // Build event index by timestamp
     this.buildEventIndex();
+
+    // Initialize RNG manager if in deterministic replay mode (T036)
+    if (this.replayMode === ReplayMode.Deterministic) {
+      this.initializeRNG();
+    }
 
     // Auto-play if requested
     if (config.autoPlay) {
@@ -273,4 +288,98 @@ export class MatchPlayer {
   public getDebugInfo(): string {
     return `[MatchPlayer] State: ${this.state}, Time: ${this.currentTimestampMs.toFixed(2)}ms, Frame: ${this.currentFrameIndex}/${this.trace.events.length}, Rate: ${this.playbackRate}x`;
   }
+
+  // ========================================================================
+  // Replay & RNG Methods (T036)
+  // ========================================================================
+
+  /**
+   * Initialize RNG manager for deterministic replay.
+   * Creates new RNG instance with trace seed if available, otherwise uses provided rngSeed.
+   */
+  private initializeRNG(): void {
+    const seed = this.trace.rngSeed ?? this.rngSeed;
+    this.rngManager = new RNGManager(seed);
+  }
+
+  /**
+   * Get RNG manager instance for deterministic operations.
+   * Returns null if not in deterministic replay mode.
+   */
+  public getRNGManager(): RNGManager | null {
+    return this.rngManager;
+  }
+
+  /**
+   * Switch replay mode and reinitialize RNG if needed.
+   */
+  public setReplayMode(mode: ReplayMode): void {
+    this.replayMode = mode;
+    if (mode === ReplayMode.Deterministic && !this.rngManager) {
+      this.initializeRNG();
+    } else if (mode === ReplayMode.Live) {
+      this.rngManager = null;
+    }
+  }
+
+  /**
+   * Get current replay mode.
+   */
+  public getReplayMode(): ReplayMode {
+    return this.replayMode;
+  }
+
+  /**
+   * Reset RNG to initial seed (for replay restart).
+   */
+  public resetRNG(): void {
+    if (this.rngManager) {
+      this.rngManager.reset();
+    }
+  }
+
+  /**
+   * Validate that trace has proper RNG metadata for deterministic replay.
+   * Returns validation report with seed and algorithm info.
+   */
+  public validateRNGMetadata(): {
+    valid: boolean;
+    rngSeed?: number;
+    rngAlgorithm?: string;
+    warning?: string;
+  } {
+    const traceSeed = this.trace.rngSeed;
+    const traceAlgo = this.trace.rngAlgorithm;
+
+    if (!traceSeed || !traceAlgo) {
+      return {
+        valid: false,
+        warning: 'Trace missing RNG metadata. Deterministic replay may not be reproducible.',
+      };
+    }
+
+    // Check if algorithm matches our implementation
+    if (traceAlgo !== RNG_ALGORITHM_ID) {
+      return {
+        valid: false,
+        rngSeed: traceSeed,
+        rngAlgorithm: traceAlgo,
+        warning: `RNG algorithm mismatch: trace uses "${traceAlgo}", we use "${RNG_ALGORITHM_ID}". Replay may diverge.`,
+      };
+    }
+
+    return {
+      valid: true,
+      rngSeed: traceSeed,
+      rngAlgorithm: traceAlgo,
+    };
+  }
+
+  /**
+   * Get RNG call count (for debugging).
+   */
+  public getRNGCallCount(): number {
+    return this.rngManager?.getCallCount() ?? 0;
+  }
 }
+

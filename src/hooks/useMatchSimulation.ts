@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import type { EntityState } from '../systems/matchTrace/entityMapper';
 import { EntityMapper } from '../systems/matchTrace/entityMapper';
-import { MatchPlayer } from '../systems/matchTrace/matchPlayer';
+import { MatchPlayer, ReplayMode } from '../systems/matchTrace/matchPlayer';
 import {
   isTerminal,
   MatchOutcome,
@@ -35,6 +35,7 @@ export interface UseMatchSimulationConfig {
   playbackRate?: number;
   debugMode?: boolean;
   maxDurationMs?: number; // Timeout after this duration
+  replayMode?: ReplayMode; // T039: Add replay mode support for deterministic replay
   onVictory?: (winnerId: string, survivors: EntityState[]) => void;
   onDraw?: () => void;
   onTimeout?: () => void;
@@ -69,6 +70,7 @@ export function useMatchSimulation(config: UseMatchSimulationConfig): MatchSimul
     playbackRate = 1.0,
     debugMode = false,
     maxDurationMs = 60000, // 60s default timeout
+    replayMode = ReplayMode.Live, // T039: Default to live mode
     onVictory,
     onDraw,
     onTimeout,
@@ -103,6 +105,7 @@ export function useMatchSimulation(config: UseMatchSimulationConfig): MatchSimul
       playbackRate,
       debugMode,
       autoPlay: false, // We control playback via state
+      replayMode, // T039: Pass replay mode to MatchPlayer
     });
 
     mapperRef.current = new EntityMapper();
@@ -120,7 +123,7 @@ export function useMatchSimulation(config: UseMatchSimulationConfig): MatchSimul
       playerRef.current = null;
       mapperRef.current = null;
     };
-  }, [trace, debugMode, autoPlay, playbackRate]);
+  }, [trace, debugMode, autoPlay, playbackRate, replayMode]); // T039: Add replayMode to deps
 
   // Main animation frame loop
   useEffect(() => {
