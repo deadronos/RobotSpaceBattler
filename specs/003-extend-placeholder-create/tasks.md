@@ -73,7 +73,7 @@ spawn/despawn; then projectiles; finally victory detection and HUD.
 - [x] T023 [P] [US1] Create `src/hooks/useMatchSimulation.ts` orchestrator
 - [x] T024 [US1] Integrate components into `src/components/Scene.tsx`
 - [x] T025 [US1] Write tests in `tests/unit/matchPlayer.test.ts`
-- [ ] T026 [US1] Write tests in `tests/unit/entityMapper.test.ts`
+- [x] T026 [US1] Write tests in `tests/unit/entityMapper.test.ts`
 
 ---
 
@@ -91,20 +91,20 @@ spawn/despawn; then projectiles; finally victory detection and HUD.
 
 ### Task Group 4.1: Quality Profile Definition
 
-- [ ] T027 [P] [US2] Create `src/systems/matchTrace/visualQualityProfile.ts`
-- [ ] T028 [US2] Implement `src/hooks/useVisualQuality.ts` hook
-- [ ] T029 [P] [US2] Create `src/components/match/QualityToggle.tsx`
+- [x] T027 [P] [US2] Create `src/systems/matchTrace/visualQualityProfile.ts`
+- [x] T028 [US2] Implement `src/hooks/useVisualQuality.ts` hook
+- [x] T029 [P] [US2] Create `src/components/match/QualityToggle.tsx`
 
 ### Task Group 4.2: Rendering Integration
 
-- [ ] T030 [P] [US2] Extend `RenderedRobot.tsx` with quality parameters
-- [ ] T031 [P] [US2] Extend `RenderedProjectile.tsx` with quality parameters
-- [ ] T032 [US2] Update `matchPlayer.ts` to pass quality profile
+- [x] T030 [P] [US2] Extend `RenderedRobot.tsx` with quality parameters
+- [x] T031 [P] [US2] Extend `RenderedProjectile.tsx` with quality parameters
+- [x] T032 [US2] Update `matchPlayer.ts` to pass quality profile
 
 ### Task Group 4.3: Testing
 
-- [ ] T033 [US2] Write tests in `tests/unit/visualQualityProfile.test.ts`
-- [ ] T034 [P] [US2] Write E2E test in `playwright/tests/quality-toggle.spec.ts`
+- [x] T033 [US2] Write tests in `tests/unit/visualQualityProfile.test.ts`
+- [x] T034 [P] [US2] Write E2E test in `playwright/tests/quality-toggle.spec.ts`
 
 ---
 
