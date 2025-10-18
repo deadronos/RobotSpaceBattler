@@ -248,12 +248,21 @@ controls → create between-rounds flow.
 
 1. **Phase 1** (Setup) → all phases depend on project structure
 2. **Phase 2** (Contract Validation) → blocks all user stories
+3. **Phase 3** (US1: Run Match) → Phase 7 depends on US1 rendering
+
+### Phase 7 Dependencies
+
+- **Depends on**: Phase 1, 2, 3 (rendering infrastructure)
+- **Enables**: Phase 6 polish features (cinematic, metrics)
+- **Parallelizable with**: Phase 4 (Quality), Phase 5 (Replay) — but Phase 7 enhances
+  both by unifying live + replay paths
 
 ### Independent User Stories
 
 - **US1** (Run Match) → starts after Phase 2
-- **US2** (Quality Options) → depends on US1, can run in parallel
-- **US3** (Replay) → depends on US1, can run in parallel
+- **US2** (Quality Options) → depends on US1, enhanced by Phase 7
+- **US3** (Replay) → depends on US1, unifies with live path in Phase 7
+- **Phase 7** (Live Rendering) → depends on US1, integrates US2 + US3
 
 ### Parallelizable Tasks (marked [P])
 
@@ -264,6 +273,7 @@ controls → create between-rounds flow.
 - **Phase 4**: T027, T029, T030, T031, T034 (quality profiles)
 - **Phase 5**: T035, T037, T039, T042 (replay infrastructure)
 - **Phase 6**: T043, T045 (debugging/monitoring)
+- **Phase 7**: T050, T051, T052, T053, T056 (live trace + UI)
 
 ### Sequential Within Stories
 
@@ -286,18 +296,32 @@ controls → create between-rounds flow.
 **MVP Result**: Fully functional automated 3D match with deterministic
 simulation-renderer sync.
 
+### Enhanced MVP (Add Live Rendering)
+
+**Phase 1 + 2 + 3 + 7**: Setup → Contracts → Run Match → Live Rendering
+
+- Setup and contracts: ~4 hours
+- Run a match (US1): ~12 hours
+- Live playback (Phase 7): ~6 hours
+- **Total effort**: ~22 hours
+
+**Enhanced MVP Result**: Live-rendered matches with real-time trace capture and
+proper between-rounds flow.
+
 ### Full Feature Implementation
 
-**Phase 1–5**: Add visual quality + replay
+**Phase 1–7**: All user stories + live rendering
 
-- Add quality tuning (US2): ~6 hours
-- Add deterministic replay (US3): ~8 hours
-- **Total effort**: ~30 hours
+- Phases 1–3 (MVP): ~16 hours
+- Phase 4 (Quality profiles): ~6 hours
+- Phase 5 (Deterministic replay): ~8 hours
+- Phase 7 (Live rendering): ~6 hours
+- **Total effort**: ~36 hours
 
-### With Polish (Phase 6)
+### With Polish (Add Phase 6)
 
 - Cinematic camera, monitoring, documentation: ~4 hours
-- **Total end-to-end**: ~34 hours
+- **Total end-to-end**: ~40 hours
 
 ---
 
@@ -319,18 +343,21 @@ simulation-renderer sync.
 
 | Metric | Value |
 |--------|-------|
-| Total Tasks | 49 |
+| Total Tasks | 56 |
 | Phase 1 (Setup) | 3 |
 | Phase 2 (Contracts) | 7 |
 | Phase 3 (US1) | 16 |
 | Phase 4 (US2) | 8 |
 | Phase 5 (US3) | 8 |
 | Phase 6 (Polish) | 7 |
-| **Parallelizable** | **16** |
+| Phase 7 (Live Rendering) | 7 |
+| **Parallelizable** | **21** |
 | **MVP (1–3)** | 26 tasks (~16h) |
-| **Full (1–5)** | 42 tasks (~30h) |
-| **Polish (1–6)** | 49 tasks (~34h) |
-| **Status** | **✅ ALL 49 COMPLETE** |
+| **Enhanced MVP (1–3, 7)** | 33 tasks (~22h) |
+| **Full (1–7)** | 49 tasks (~36h) |
+| **Full + Polish (1–7, 6)** | 56 tasks (~40h) |
+| **Status** | **✅ PHASES 1–6 COMPLETE (49/49)** |
+| **Phase 7** | **⏳ PLANNED (T050–T056)** |
 | **Tests Passing** | **367/368 (99.7%)** |
 | **ESLint** | **0 errors** |
 | **TypeScript** | **✅ Strict mode** |
