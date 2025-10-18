@@ -64,13 +64,13 @@ spawn/despawn; then projectiles; finally victory detection and HUD.
 
 ### Task Group 3.3: Victory & Match End State
 
-- [ ] T020 [P] [US1] Create `src/systems/matchTrace/matchValidator.ts`
+- [x] T020 [P] [US1] Create `src/systems/matchTrace/matchValidator.ts`
 - [ ] T021 [US1] Implement `src/components/match/MatchHUD.tsx`
 - [ ] T022 [US1] Implement `src/components/match/MatchCinematic.tsx` stub
 
 ### Task Group 3.4: Integration & Match Execution
 
-- [ ] T023 [P] [US1] Create `src/hooks/useMatchSimulation.ts` orchestrator
+- [x] T023 [P] [US1] Create `src/hooks/useMatchSimulation.ts` orchestrator
 - [ ] T024 [US1] Integrate components into `src/components/Scene.tsx`
 - [ ] T025 [US1] Write tests in `tests/unit/matchPlayer.test.ts`
 - [ ] T026 [US1] Write tests in `tests/unit/entityMapper.test.ts`
