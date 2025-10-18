@@ -15,6 +15,8 @@
 
 - Q: Should the simulation record randomness so replays are exact? → A: B (Record & expose RNG seed (single integer) with each MatchTrace; replay uses the seed for exact deterministic simulation)
 
+- Q: How should RNG identity be captured to ensure cross-implementation deterministic replay? → A: B (Record `rngSeed` and an `rngAlgorithm` identifier string in MatchTrace metadata, e.g. `{"rngSeed":12345, "rngAlgorithm":"xorshift32-v1"}`)
+
 - Q: What ordering rule should MatchTrace enforce when multiple events share the same `timestampMs`? → A: B (Stable ordering by `timestampMs`, then `sequenceId` assigned by the simulation to break ties)
 
 - Q: What implementation and test format should the FR-009-A contract validator use? → A: B (TypeScript validator using JSON Schema (ajv) + Vitest tests to integrate with the repo and provide strong typing and automated assertions)
@@ -352,6 +354,10 @@ frameworks or file formats.
 		- `rngSeed` (integer, optional): global RNG seed used by the simulation
 			for this match; including this at trace start allows exact deterministic
 			replay when the same RNG algorithm and seed are used.
+		- `rngAlgorithm` (string, optional): identifier for the RNG algorithm and
+			version used (e.g., `"xorshift32-v1"`). Including this alongside the
+			seed allows cross-implementation compatibility or explicit replay
+			warnings when the algorithm is unsupported.
 - **Team**: Collection of robot entity definitions with attributes
 	(id, modelRef, teamId, initialPosition, health).
 - **RenderedEntity**: Visual representation of a simulation entity; maps to a

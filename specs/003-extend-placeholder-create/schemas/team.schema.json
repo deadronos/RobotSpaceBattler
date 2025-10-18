@@ -10,19 +10,21 @@
     "units": {
       "type": "array",
       "items": {
-        "type": "object",
-        "required": ["id", "modelRef", "teamId", "maxHealth"],
-        "properties": {
-          "id": { "type": "string" },
-          "modelRef": { "type": "string" },
-          "teamId": { "type": "string" },
-          "maxHealth": { "type": "number" },
-          "weapons": {
-            "type": "array",
-            "items": { "type": "object" }
-          },
-          "isCaptain": { "type": "boolean" }
-        }
+        "anyOf": [
+          { "type": "string" },
+          {
+            "type": "object",
+            "required": ["id", "modelRef", "teamId", "maxHealth"],
+            "properties": {
+              "id": { "type": "string" },
+              "modelRef": { "type": "string" },
+              "teamId": { "type": "string" },
+              "maxHealth": { "type": "number" },
+              "weapons": { "type": "array", "items": { "type": "object" } },
+              "isCaptain": { "type": "boolean" }
+            }
+          }
+        ]
       }
     },
     "spawnPoints": {
@@ -34,7 +36,7 @@
           "spawnPointId": { "type": "string" },
           "position": {
             "type": "object",
-            "required": ["x","y","z"],
+            "required": ["x", "y", "z"],
             "properties": {
               "x": { "type": "number" },
               "y": { "type": "number" },

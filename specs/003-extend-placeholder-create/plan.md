@@ -17,21 +17,28 @@
   the iteration process.
 -->
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: TypeScript 5.x targeting ES2022 (project already configured with TS config)
+**Primary Dependencies**: React 18+, react-three-fiber (r3f), drei utilities, vite, ajv (for JSON Schema validation), vitest (existing test harness)
+**Storage**: In-memory runtime structures; optional local JSON export for MatchTrace (no DB required)
+**Testing**: Vitest + Testing Library for unit/component tests; JSON Schema (ajv) for contract validation
+**Target Platform**: Modern Chromium-based browsers (development baseline: Chrome/Edge 120+ as per constitution)
+**Project Type**: Web single-page application (frontend-focused feature integrated into existing `src/`)
+**Performance Goals**: Renderer should target 60 fps on demo machines for the default visual profile; provide lower-fidelity profiles to maintain simulation correctness when rendering drops below real-time
+**Constraints**: Keep rendering components lightweight (follow r3f best practices); no backend changes; no persistent storage; deterministic simulation seed must be recordable and pluggable
+**Scale/Scope**: Single-match demo scenarios; not intended for large-scale concurrent matches
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Applicable gates and preliminary assessment (must be justified in PR):
+
+- Principle II (Test-First): ALL production-facing behavior for this feature will be accompanied by tests: contract validator (Vitest + ajv), unit tests for simulation mapping utilities, and component tests for HUD and fallback behavior.
+- Principle IV (r3f Best Practices): Rendering will be separated from simulation logic. Render components will be pure consumers of trace/state; heavy work (snapshot parsing, interpolation) will be done in utilities or workers where needed.
+- Principle I & III (Component-first, Size limits): New code will be split into small components under `src/components/` and `src/systems/` with files kept under ~300 LOC.
+- Principle V (Observability & Performance): Add debug logging guarded by flags and basic metrics for render fps and trace playback timing; performance goals documented above.
+
+No violations identified at plan time. Any future deviation (e.g., adding a new top-level package) must be documented in the Complexity Tracking table.
 
 ## Project Structure
 
@@ -91,7 +98,25 @@ ios/ or android/
 └── [platform-specific structure: feature modules, UI flows, platform tests]
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
+**Structure Decision**: Feature will live inside the existing frontend `src/` layout. Concrete paths:
+
+- `src/systems/matchTrace/` — utilities for loading and parsing MatchTrace, interpolation, RNG seed handling, and contract validator helper
+- `src/components/match/` — small presentational components: `MatchPlayer`, `MatchHUD`, `MatchCinematic`
+- `specs/003-extend-placeholder-create/schemas/` — JSON Schemas: `team.schema.json`, `matchtrace.schema.json`
+- `tests/contract-validator.spec.ts` — Vitest test harness referenced in the spec
+
+This keeps the implementation component-first and co-located with other renderer/simulation code.
+
+## Generated artifacts (from this plan run)
+
+- `specs/003-extend-placeholder-create/research.md` — Phase 0 decisions and rationale
+- `specs/003-extend-placeholder-create/data-model.md` — canonical entities and fields
+- `specs/003-extend-placeholder-create/schemas/team.schema.json`
+- `specs/003-extend-placeholder-create/schemas/matchtrace.schema.json`
+- `specs/003-extend-placeholder-create/quickstart.md`
+- `tests/contract-validator.spec.ts` — Vitest test harness validating example payloads against schemas
+
+Branch: `003-extend-placeholder-create`
 directories captured above]
 
 ## Complexity Tracking

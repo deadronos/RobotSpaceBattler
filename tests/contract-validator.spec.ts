@@ -14,10 +14,7 @@ describe('Contract Validator - specs/003-extend-placeholder-create', () => {
     const validate = ajv.compile(teamSchema as any);
     const example = JSON.parse(fs.readFileSync(path.join(examplesDir, 'team.example.json'), 'utf8'));
     const valid = validate(example);
-    if (!valid) {
-      // eslint-disable-next-line no-console
-      console.error('Validation errors:', validate.errors);
-    }
+    if (!valid) console.error('Validation errors:', validate.errors);
     expect(valid).toBe(true);
   });
 
@@ -27,10 +24,7 @@ describe('Contract Validator - specs/003-extend-placeholder-create', () => {
     const validate = ajv.compile(schema as any);
     const example = JSON.parse(fs.readFileSync(path.join(examplesDir, 'matchtrace.example.json'), 'utf8'));
     const valid = validate(example);
-    if (!valid) {
-      // eslint-disable-next-line no-console
-      console.error('Validation errors:', validate.errors);
-    }
+    if (!valid) console.error('Validation errors:', validate.errors);
     expect(valid).toBe(true);
   });
 });

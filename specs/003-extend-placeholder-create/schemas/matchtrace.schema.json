@@ -2,17 +2,25 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "MatchTrace",
   "type": "object",
-  "required": ["rngSeed","events"],
+  "required": ["events"],
   "properties": {
+    "meta": {
+      "type": "object",
+      "properties": {
+        "rngSeed": { "type": "integer" },
+        "rngAlgorithm": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
     "rngSeed": { "type": "integer" },
-    "metadata": { "type": "object" },
+    "rngAlgorithm": { "type": "string" },
     "events": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["type","timestampMs","sequenceId"],
+        "required": ["type", "timestampMs"],
         "properties": {
-          "type": { "type": "string", "enum": ["spawn","move","fire","hit","damage","death","score"] },
+          "type": { "type": "string", "enum": ["spawn", "move", "fire", "hit", "damage", "death", "score"] },
           "timestampMs": { "type": "integer" },
           "frameIndex": { "type": "integer" },
           "sequenceId": { "type": "integer" },
@@ -22,7 +30,7 @@
           "position": {
             "type": "object",
             "properties": { "x": { "type": "number" }, "y": { "type": "number" }, "z": { "type": "number" } },
-            "required": ["x","y","z"]
+            "required": ["x", "y", "z"]
           },
           "projectileId": { "type": "string" },
           "collisionNormal": {
@@ -37,5 +45,5 @@
       }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": true
 }

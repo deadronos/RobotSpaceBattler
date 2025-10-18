@@ -1,5 +1,6 @@
 {
   "rngSeed": 12345,
+  "rngAlgorithm": "xorshift32-v1",
   "events": [
     { "type": "spawn", "timestampMs": 0, "sequenceId": 1, "entityId": "alpha-1", "position": { "x": -5, "y":0, "z":0 } },
     { "type": "fire", "timestampMs": 1000, "sequenceId": 2, "attackerId": "alpha-1", "projectileId": "p-1" },
