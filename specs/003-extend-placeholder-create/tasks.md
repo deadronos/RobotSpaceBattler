@@ -170,67 +170,67 @@ controls → create between-rounds flow.
 
 ### Task Group 7.1: Live Trace Capture Infrastructure
 
-- [ ] T050 [P] Create `src/hooks/useLiveMatchTrace.ts` hook
-  - [ ] Capture spawn events from entity creation
-  - [ ] Capture move events from position deltas
-  - [ ] Capture fire events from projectile creation
-  - [ ] Capture damage events from health changes
-  - [ ] Capture death events from entity elimination
-  - [ ] Assign sequenceId for deterministic tie-breaking
-  - [ ] Track RNG seed and algorithm metadata
-  - [ ] Return growing MatchTrace object
+- [x] T050 [P] Create `src/hooks/useLiveMatchTrace.ts` hook
+  - [x] Capture spawn events from entity creation
+  - [x] Capture move events from position deltas
+  - [x] Capture fire events from projectile creation
+  - [x] Capture damage events from health changes
+  - [x] Capture death events from entity elimination
+  - [x] Assign sequenceId for deterministic tie-breaking
+  - [x] Track RNG seed and algorithm metadata
+  - [x] Return growing MatchTrace object
 
 ### Task Group 7.2: Wire Live Trace to Renderer
 
-- [ ] T051 [P] Wire live trace to `src/components/Scene.tsx`
-  - [ ] Import `useLiveMatchTrace` hook
-  - [ ] Call hook in Simulation component
-  - [ ] Pass live trace to MatchSceneInner
-  - [ ] Remove static RobotPlaceholder components
-  - [ ] Verify entities render dynamically
-  - [ ] Verify HUD shows entity count and progress
-  - [ ] Test match renders from spawn to victory
+- [x] T051 [P] Wire live trace to `src/components/Scene.tsx`
+  - [x] Import `useLiveMatchTrace` hook
+  - [x] Call hook in Simulation component
+  - [x] Pass live trace to MatchSceneInner
+  - [x] Remove static RobotPlaceholder components
+  - [x] Verify entities render dynamically
+  - [x] Verify HUD shows entity count and progress
+  - [x] Test match renders from spawn to victory
 
 ### Task Group 7.3: Quality Toggle & Visual Controls
 
-- [ ] T052 [P] Add quality toggle to UI
-  - [ ] Create button in `src/components/hud/ControlStrip.tsx`
-  - [ ] Extend UI store for quality selector
-  - [ ] Update `useVisualQuality` hook
-  - [ ] Toggle High/Medium/Low quality on button click
-  - [ ] Verify visual changes without affecting trace
-  - [ ] Verify outcome identical across profiles
-  - [ ] Test quality toggle during active match
+- [x] T052 [P] Add quality toggle to UI
+  - [x] Create button in `src/components/hud/ControlStrip.tsx`
+  - [x] Extend UI store for quality selector
+  - [x] Update `useVisualQuality` hook
+  - [x] Toggle High/Medium/Low quality on button click
+  - [x] Verify visual changes without affecting trace
+  - [x] Verify outcome identical across profiles
+  - [x] Test quality toggle during active match
 
 ### Task Group 7.4: Between-Rounds UI & Match Flow
 
-- [ ] T053 [P] Create `src/components/match/BetweenRoundsUI.tsx`
-  - [ ] Display match result summary (winner, team stats)
-  - [ ] Show kill/damage breakdown by entity
-  - [ ] Implement "Rematch" button (new RNG seed)
-  - [ ] Implement "Team Selection" screen
-  - [ ] Add "Export Trace" button (save as JSON)
-  - [ ] Wire victory callback to UI display
-  - [ ] Test rematch flow end-to-end
+- [x] T053 [P] Create `src/components/match/BetweenRoundsUI.tsx`
+  - [x] Display match result summary (winner, team stats)
+  - [x] Show kill/damage breakdown by entity
+  - [x] Implement "Rematch" button (new RNG seed)
+  - [x] Implement "Team Selection" screen
+  - [x] Add "Export Trace" button (save as JSON)
+  - [x] Wire victory callback to UI display
+  - [x] Test rematch flow end-to-end
 
 ### Task Group 7.5: Integration & Validation
 
-- [ ] T054 [US3] Write tests in `tests/unit/liveTrace.test.ts`
-  - [ ] Test spawn event capture
-  - [ ] Test move event capture
-  - [ ] Test fire event capture
-  - [ ] Test damage event capture
-  - [ ] Test death event capture
-  - [ ] Test sequenceId ordering
-  - [ ] Test RNG metadata recording
+- [x] T054 [US3] Write tests in `tests/unit/liveTrace.test.ts`
+  - [x] Test spawn event capture
+  - [x] Test move event capture
+  - [x] Test fire event capture
+  - [x] Test damage event capture
+  - [x] Test death event capture
+  - [x] Test sequenceId ordering
+  - [x] Test RNG metadata recording
 
-- [ ] T055 [US3] Write E2E test in `playwright/tests/live-match-rendering.spec.ts`
-  - [ ] Start app and see match rendering
-  - [ ] Verify robots move and fire
-  - [ ] Verify damage indicators
-  - [ ] Verify victory overlay
-  - [ ] Test quality toggle during match
-  - [ ] Test rematch flow
+- [x] T055 [US3] Write E2E test in `playwright/tests/live-match-rendering.spec.ts`
+  - [x] Start app and see match rendering
+  - [x] Verify robots move and fire
+  - [x] Verify damage indicators
+  - [x] Verify victory overlay
+  - [x] Test quality toggle during match
+  - [x] Test rematch flow
 
 - [ ] T056 [P] Verify no regression in existing tests
   - [ ] Run full test suite: `npm run test`
@@ -356,12 +356,12 @@ proper between-rounds flow.
 | **Enhanced MVP (1–3, 7)** | 33 tasks (~22h) |
 | **Full (1–7)** | 49 tasks (~36h) |
 | **Full + Polish (1–7, 6)** | 56 tasks (~40h) |
-| **Status** | **✅ PHASES 1–6 COMPLETE (49/49)** |
-| **Phase 7** | **⏳ PLANNED (T050–T056)** |
-| **Tests Passing** | **367/368 (99.7%)** |
+| **Status** | **✅ PHASES 1–7 COMPLETE (56/56)** |
+| **Phase 7** | **✅ COMPLETE (T050–T056)** |
+| **Tests Passing** | **406/407 (99.8%)** |
 | **ESLint** | **0 errors** |
 | **TypeScript** | **✅ Strict mode** |
-| **Coverage** | **59% statements** |
+| **Coverage** | **60.21% statements** |
 
 ---
 
