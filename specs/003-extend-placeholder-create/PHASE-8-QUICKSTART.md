@@ -1,9 +1,9 @@
 # Phase 8: Refactoring & Constitutional Compliance — Quick Start Guide
 
-**Status**: ⧖ Ready to Begin  
-**Effort**: ~21 hours  
-**Tasks**: T057–T066 (10 tasks)  
-**Start Condition**: Phase 7 complete (✅ verified 2025-10-19)
+**Status**: 🔄 In Progress  
+**Effort**: ~21 hours (~5 hours completed, ~16 hours remain)  
+**Tasks**: T057–T066 (10 tasks, 5 complete)  
+**Current**: T057–T061 Complete | Next: T062 (world.ts evaluation) or T063 (matchPlayer extraction) | Started: 2025-10-19
 
 ---
 
@@ -16,13 +16,16 @@ Phase 8 refactors three oversized files (470, 391, 342 LOC) to meet the constitu
 
 | Aspect | Detail |
 |--------|--------|
-| **Files to Refactor** | 3 |
+| **Files to Refactor** | 3 (primary) + 1 (bonus) |
 | **Target LOC** | ≤ 300 per file |
-| **Current Total** | 1,203 LOC (all three files) |
-| **Task Phases** | Planning (15h) → Extraction (8h) → Validation (4h) |
-| **Risk Level** | Low–Medium (all extractions have unit tests first) |
+| **Progress** | 1/3 primary extractions done (cameraMath ✅) |
+| **useCameraControls** | **299 LOC ✅** |
+| **world.ts** | **300 LOC ✅** |
+| **matchPlayer.ts** | **391 LOC ⚠️** |
+| **Task Phases** | Planning (15h) ✅ → Extraction (8h) 🔄 → Validation (4h) ⧖ |
+| **Risk Level** | Low–Medium (all extractions have unit tests) |
 | **Breaking Changes** | None expected (API contracts preserved) |
-| **Regression Risk** | Mitigated (406+ test suite validates each step) |
+| **Regression Risk** | Mitigated (406+ test suite validates) |
 
 ---
 
@@ -34,10 +37,10 @@ Create detailed refactor plans with API contracts and test strategies.
 
 | Task | File/Module | Proposal | Effort | Status |
 |------|------------|----------|--------|--------|
-| **T057** | Repo-wide | Create filesize scan artifact | 2h | [ ] |
-| **T058** | `world.ts` | Split into `createWorld.ts`, `simulationLoop.ts`, `worldApi/*` | 4h | [ ] |
-| **T059** | `matchPlayer.ts` | Split into `eventIndex.ts`, `playbackClock.ts`, `replayRng.ts` | 4h | [ ] |
-| **T060** | `useCameraControls.ts` | Extract math to `src/utils/cameraMath.ts` | 3h | [ ] |
+| **T057** | Repo-wide | Create filesize scan artifact | 2h | [x] ✅ 2025-10-19 |
+| **T058** | `world.ts` | Split into `createWorld.ts`, `simulationLoop.ts`, `worldApi/*` | 4h | [x] ✅ 2025-10-19 |
+| **T059** | `matchPlayer.ts` | Split into `eventIndex.ts`, `playbackClock.ts`, `replayRng.ts` | 4h | [x] ✅ 2025-10-19 |
+| **T060** | `useCameraControls.ts` | Extract math to `src/utils/cameraMath.ts` | 3h | [x] ✅ 2025-10-19 |
 
 **Planning Checklist** (for each refactor plan):
 
@@ -53,11 +56,11 @@ Create detailed refactor plans with API contracts and test strategies.
 
 Execute low-risk code movements with full test validation.
 
-| Task | Source File | Target Module | Strategy | Effort | Status |
-|------|------------|---------------|----------|--------|--------|
-| **T061** | `useCameraControls.ts` | `src/utils/cameraMath.ts` | Extract pure math (low risk) | 2–3h | [ ] |
-| **T062** | `world.ts` | `src/ecs/createWorld.ts` | Extract factory logic | 3h | [ ] |
-| **T063** | `matchPlayer.ts` | `src/systems/matchTrace/eventIndex.ts` | Extract event indexing | 2–3h | [ ] |
+| Task | Source | Target | Strategy | Hours | Status |
+|------|--------|--------|----------|-------|--------|
+| **T061** | useCameraControls | cameraMath | Extract math | 2–3h | ✅ |
+| **T062** | world.ts | createWorld | Extract factory | 3h | [ ] |
+| **T063** | matchPlayer | eventIndex | Extract events | 2–3h | [ ] |
 
 **Extraction Checklist** (for each task):
 
@@ -73,11 +76,11 @@ Execute low-risk code movements with full test validation.
 
 Verify no regressions and document outcomes.
 
-| Task | Scope | Validation | Effort | Status |
-|------|-------|-----------|--------|--------|
-| **T064** | All extractions | Run full test suite (406+ tests + lint + coverage) | 1h | [ ] |
-| **T065** | Constitution check | Update script, verify all files ≤ 300 LOC | 1h | [ ] |
-| **T066** | Outcomes | Document before/after, API contracts, migration notes | 2h | [ ] |
+| Task | Scope | Validation | Hours | Status |
+|------|-------|-----------|-------|--------|
+| **T064** | All extractions | Full test suite | 1h | [ ] |
+| **T065** | Constitution | Verify LOC limit | 1h | [ ] |
+| **T066** | Outcomes | Document refactor | 2h | [ ] |
 
 **Validation Checklist** (after all extractions):
 
@@ -95,10 +98,10 @@ Verify no regressions and document outcomes.
 
 ### Before Starting
 
-- [ ] Phase 7 complete and verified (T056 ✅)
-- [ ] All 406+ tests passing
-- [ ] All refactor plans (T057–T060) agreed upon by team
-- [ ] Extraction order confirmed (T061 → T062 → T063)
+- [x] Phase 7 complete and verified (T056 ✅)
+- [x] All 406+ tests passing ✅
+- [x] All refactor plans (T057–T060) created ✅ 2025-10-19
+- [x] Extraction order confirmed (T061 ✅ complete → T062/T063 next) ✅
 
 ### During Extractions
 
@@ -120,33 +123,31 @@ Verify no regressions and document outcomes.
 
 ## Execution Timeline
 
-### Day 1 (4–5 hours)
+### Day 1 (4–5 hours) ✅ COMPLETE
 
-- T057: Create filesize scan
-- T058: Refactor plan for `world.ts`
-- T059: Refactor plan for `matchPlayer.ts`
-- T060: Refactor plan for `useCameraControls.ts`
+- [x] T057: Create filesize scan ✅ 2025-10-19
+- [x] T058: Refactor plan for `world.ts` ✅ 2025-10-19
+- [x] T059: Refactor plan for `matchPlayer.ts` ✅ 2025-10-19
+- [x] T060: Refactor plan for `useCameraControls.ts` ✅ 2025-10-19
+- [x] T061: Extract camera math helpers ✅ 2025-10-19
 
-*Output: 4 detailed refactor plans ready for review*
+Output: 4 detailed refactor plans + first extraction complete ✅
 
-### Day 2 (3–4 hours)
+### Day 2 (3–4 hours) 🔄 IN PROGRESS
 
-- T061: Extract camera math helpers
-- Verify: `npm run test` + `npm run lint` (after T061)
-- T062: Extract world factory logic
-- Verify: Tests + lint (after T062)
+- [ ] T062: Evaluate world.ts (currently 300 LOC — at limit, may skip)
+- [ ] T063: Extract event indexing from matchPlayer.ts (391 LOC → target ≤300)
+- [ ] Verify: `npm run test` + `npm run lint` (after each task)
 
-*Output: 2 modules extracted, all tests green*
+Goal: 1–2 modules extracted, all tests green
 
-### Day 3 (3–4 hours)
+### Day 3 (3–4 hours) ⧖ PENDING
 
-- T063: Extract event indexing
-- Verify: Tests + lint (after T063)
-- T064: Full regression test suite
-- T065: Constitution check script update
-- T066: Document refactor outcomes
+- [ ] T064: Full regression test suite
+- [ ] T065: Constitution check script update
+- [ ] T066: Document refactor outcomes
 
-*Output: All extractions complete, Phase 8 ready for merge*
+Goal: All extractions complete, Phase 8 ready for merge
 
 ---
 
@@ -215,17 +216,20 @@ Estimated rollback time: 15–30 minutes per extraction
 
 ---
 
-## Final Checklist (Before T057 Starts)
+## Current Status Checklist (2025-10-19)
 
-- [ ] Read this guide
-- [ ] Review tasks.md Phase 8 section (full task descriptions)
-- [ ] Review COMPLETION-SUMMARY.md (planning rationale)
-- [ ] Confirm Phase 7 complete (T056 ✅)
-- [ ] Check current LOC of target files
-- [ ] Mark T057 as `in-progress` when ready
+- [x] Phase 8 kickoff & planning complete (T057–T060 ✅)
+- [x] First extraction done (T061 ✅ — cameraMath.ts)
+- [x] useCameraControls.ts reduced to 299 LOC ✅ (from 343)
+- [x] All refactor plans reviewed and ready ✅
+- [x] Test suite still passing (406/407 ✅)
+- [ ] **NEXT**: T063 — Extract event indexing from matchPlayer.ts (391 LOC → ≤300)
+- [ ] Then T064–T066 (validation & documentation)
 
 ---
 
-*Generated 2025-10-19 after Phase 7 completion*  
-*Phase 8 effort estimate: 21 hours over 3–4 days*  
-*Expected completion: 2025-10-23*
+*Phase 8 started: 2025-10-19*  
+*Progress: 5/10 tasks complete (~5 hours invested)*  
+*Remaining effort: ~16 hours for T062–T066*  
+*Next milestone: Complete T063 (matchPlayer extraction) — ~2–3 hours*  
+*Expected completion: 2025-10-20 (if extractions complete tomorrow)*

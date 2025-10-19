@@ -262,38 +262,42 @@ modular separation of concerns.
 
 ### Task Group 8.1: Refactor Planning & Analysis
 
-- [ ] T057 [P] Create `specs/003-extend-placeholder-create/filesize-scan.txt` with
+- [x] T057 [P] Create `specs/003-extend-placeholder-create/filesize-scan.txt` with
   complete repo scan output identifying all oversized files and their current LOC
-  (2h)
+  (2h) ✅ 2025-10-19
 
-- [ ] T058 [P] Create `specs/003-extend-placeholder-create/refactor-plan-world.md`:
+- [x] T058 [P] Create `specs/003-extend-placeholder-create/refactor-plan-world.md`:
   propose splitting `src/ecs/world.ts` (470 LOC) into `createWorld.ts`,
   `simulationLoop.ts`, and `worldApi/*` modules. Include intended public APIs,
-  dependency graph, and first extraction task (4h)
+  dependency graph, and first extraction task (4h) ✅ 2025-10-19
 
-- [ ] T059 [P] Create `specs/003-extend-placeholder-create/refactor-plan-matchPlayer.md`:
+- [x] T059 [P] Create `specs/003-extend-placeholder-create/refactor-plan-matchPlayer.md`:
   propose splitting `src/systems/matchTrace/matchPlayer.ts` (391 LOC) into
   `eventIndex.ts`, `playbackClock.ts`, and `replayRng.ts`. Include intended
-  public APIs, dependency graph, and first extraction task (4h)
+  public APIs, dependency graph, and first extraction task (4h) ✅ 2025-10-19
 
-- [ ] T060 [P] Create `specs/003-extend-placeholder-create/refactor-plan-cameraControls.md`:
+- [x] T060 [P] Create `specs/003-extend-placeholder-create/refactor-plan-cameraControls.md`:
   propose extracting pure math helpers from `src/hooks/useCameraControls.ts`
   (342 LOC) into `src/utils/cameraMath.ts`, plus optional `useSpherical.ts` for
-  state normalization. Include intended public APIs and first extraction task (3h)
+  state normalization. Include intended public APIs and first extraction task (3h) ✅ 2025-10-19
 
 ### Task Group 8.2: Low-Risk Extractions
 
-- [ ] T061 [P] Implement initial extraction: move camera math helpers into
+- [x] T061 [P] Implement initial extraction: move camera math helpers into
   `src/utils/cameraMath.ts`, add unit tests `tests/unit/utils/cameraMath.test.ts`,
-  update `useCameraControls.ts` imports, and verify all tests pass (2–3h)
+  update `useCameraControls.ts` imports, and verify all tests pass (2–3h) ✅ 2025-10-19
+  - **Result**: cameraMath.ts created (128 LOC), useCameraControls.ts reduced to 299 LOC ✅
+  - **Tests**: 406/407 passing, no regressions ✅
 
 - [ ] T062 Implement `src/ecs/createWorld.ts` extraction: move factory logic from
   `world.ts`, add unit tests `tests/unit/ecs/createWorld.test.ts`, and verify
   public API preserved (3h)
+  - **Current state**: world.ts at 300 LOC (just at limit, evaluate for skip)
 
 - [ ] T063 Implement `src/systems/matchTrace/eventIndex.ts` extraction: move event
   indexing logic from `matchPlayer.ts`, add unit tests
   `tests/unit/systems/eventIndex.test.ts`, and verify integration (2–3h)
+  - **Current state**: matchPlayer.ts at 391 LOC (91 lines over limit, priority target)
 
 ### Task Group 8.3: Validation & Integration
 
@@ -448,12 +452,15 @@ proper between-rounds flow.
 | **Full + Polish (1–7, 6)** | 56 tasks (~40h) |
 | **Full + Refactoring (1–8)** | 66 tasks (~61h) |
 | **Status** | **✅ PHASES 1–7 COMPLETE (56/56)** |
-| **Phase 8** | **⧖ PLANNED (10 tasks, ~21h)** |
-| **T056 Regression Test** | **✅ VERIFIED (406/407 passing)** |
+| **Phase 8** | **🔄 IN PROGRESS (5/10 complete, ~5h invested, ~16h remain)** |
+| **Phase 8 Progress** | **T057–T061 ✅ (planning + extraction)** |
+| **useCameraControls** | **299 LOC ✅** |
+| **world.ts** | **300 LOC ✅** |
+| **matchPlayer.ts** | **391 LOC ⚠️** |
 | **Tests Passing** | **406/407 (99.8%)** |
 | **ESLint** | **0 errors** |
 | **TypeScript** | **✅ Strict mode** |
-| **Coverage** | **60.21% statements** |
+| **Coverage** | **60.21%** |
 
 ---
 
