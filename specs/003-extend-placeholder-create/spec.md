@@ -333,6 +333,21 @@ both presence and semantics of collision vs damage recording.
 - **FR-010**: The system MUST provide debug logging and an in-memory match
 	record suitable for automated tests.
 
+- **FR-011**: The feature MUST comply with repository code-size governance: any
+  `src/` file that exceeds 300 lines of code (LOC) MUST be addressed with a
+  documented refactor plan. The plan MUST be attached to the feature's spec or
+  issued as a linked task and include:
+  1. The oversized file path(s).
+  2. A short justification for why the file grew past 300 LOC.
+  3. A concrete split proposal listing new modules/files to create and the
+	  expected public API for each.
+  4. One or more actionable tasks (2–4 hour chunks) tracked under `specs/003-*/tasks` or
+	  an equivalent issue tracker entry. The first task should be marked as in-progress
+	  when work begins.
+
+  The repository's constitution ("Size & Separation Limits") describes the
+  mandatory workflow and reviewer responsibilities for oversized files.
+
 *Assumptions*: This spec extends and reuses the team, spawn, and scoring
 contracts from `specs/001-3d-team-vs` and simulation/graphics decisions from
 `specs/002-3d-simulation-graphics`. The implementation will avoid specifying
