@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 
+import { clamp, wrapAngle, toCartesian, buildRightVector, buildForwardVector } from "../utils/cameraMath";
 import type { ArenaEntity } from "../ecs/entities/Arena";
 import type { Vector3 } from "../types";
 
@@ -45,7 +46,6 @@ export interface CameraControlsResult {
   zoom: (delta: number) => void;
 }
 
-const TWO_PI = Math.PI * 2;
 const DEFAULT_TARGET: Vector3 = { x: 0, y: 5, z: 0 };
 const ROTATE_SPEED = 0.005;
 const PAN_SPEED = 0.05;
@@ -56,55 +56,6 @@ const KEY_ZOOM_SPEED = 30;
 const KEY_STRAFE_SPEED = 30;
 const MIN_POLAR = 0.2;
 const MAX_POLAR = Math.PI / 2 - 0.1;
-
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(max, Math.max(min, value));
-
-const wrapAngle = (angle: number) => {
-  let wrapped = angle % TWO_PI;
-  if (wrapped < 0) {
-    wrapped += TWO_PI;
-  }
-  return wrapped;
-};
-
-const toCartesian = (
-  target: Vector3,
-  spherical: SphericalCoordinates,
-  arena: ArenaEntity,
-  minDistance: number,
-) => {
-  const sinPolar = Math.sin(spherical.polar);
-  const cosPolar = Math.cos(spherical.polar);
-  const sinAzimuth = Math.sin(spherical.azimuth);
-  const cosAzimuth = Math.cos(spherical.azimuth);
-
-  const radius = Math.max(spherical.distance, minDistance);
-
-  const position: Vector3 = {
-    x: target.x + radius * sinPolar * sinAzimuth,
-    y: target.y + radius * cosPolar,
-    z: target.z + radius * sinPolar * cosAzimuth,
-  };
-
-  return {
-    x: clamp(position.x, arena.boundaries.min.x, arena.boundaries.max.x),
-    y: Math.max(target.y + 5, position.y),
-    z: clamp(position.z, arena.boundaries.min.z, arena.boundaries.max.z),
-  };
-};
-
-const buildRightVector = (azimuth: number) => ({
-  x: Math.sin(azimuth - Math.PI / 2),
-  y: 0,
-  z: Math.cos(azimuth - Math.PI / 2),
-});
-
-const buildForwardVector = (azimuth: number) => ({
-  x: Math.sin(azimuth),
-  y: 0,
-  z: Math.cos(azimuth),
-});
 
 export function useCameraControls({
   arena,

@@ -7,7 +7,6 @@ import {
   buildForwardVector,
 } from "../../../src/utils/cameraMath";
 import type { Vector3 } from "../../../src/types";
-import type { ArenaEntity } from "../../../src/ecs/entities/Arena";
 
 describe("cameraMath", () => {
   describe("clamp", () => {
@@ -43,16 +42,16 @@ describe("cameraMath", () => {
     const TWO_PI = Math.PI * 2;
 
     it("should return angle if already in 0-2π range", () => {
-      expect(wrapAngle(Math.PI / 2)).toBeCloseTo(Math.PI / 2);
+      expect(wrapAngle(Math.PI / 2)).toBeCloseTo(Math.PI / 2, 5);
     });
 
     it("should wrap angles > 2π to 0-2π range", () => {
-      expect(wrapAngle(Math.PI * 3)).toBeCloseTo(Math.PI);
+      expect(wrapAngle(Math.PI * 3)).toBeCloseTo(Math.PI, 5);
     });
 
     it("should wrap negative angles to 0-2π range", () => {
       const result = wrapAngle(-Math.PI / 2);
-      expect(result).toBeCloseTo(Math.PI * 1.5);
+      expect(result).toBeCloseTo(Math.PI * 1.5, 5);
     });
 
     it("should handle 0", () => {
@@ -70,17 +69,38 @@ describe("cameraMath", () => {
 
     it("should handle very negative angles", () => {
       const result = wrapAngle(-Math.PI * 5);
-      expect(result).toBeCloseTo(Math.PI);
+      expect(result).toBeCloseTo(Math.PI, 5);
     });
   });
 
   describe("toCartesian", () => {
-    const mockArena: ArenaEntity = {
+    const mockArena = {
       id: "arena-1",
-      type: "Arena",
+      dimensions: { x: 100, y: 100, z: 100 },
+      spawnZoneRadius: 10,
+      obstacles: [],
+      lightingConfig: {
+        ambientColor: "#0a0a1a",
+        ambientIntensity: 0.4,
+        directionalColor: "#ffffff",
+        directionalIntensity: 0.8,
+        shadowsEnabled: true,
+      },
       boundaries: {
         min: { x: -50, y: 0, z: -50 },
         max: { x: 50, y: 100, z: 50 },
+      },
+      spawnZones: {
+        red: {
+          center: { x: -30, y: 0, z: 0 },
+          radius: 10,
+          spawnPoints: [{ x: -30, y: 0, z: 0 }],
+        },
+        blue: {
+          center: { x: 30, y: 0, z: 0 },
+          radius: 10,
+          spawnPoints: [{ x: 30, y: 0, z: 0 }],
+        },
       },
     };
 
@@ -89,14 +109,16 @@ describe("cameraMath", () => {
       const spherical = {
         azimuth: 0,
         polar: Math.PI / 2,
-        distance: 10,
+        distance: 15,
       };
 
       const result = toCartesian(target, spherical, mockArena, 12);
 
-      // At azimuth=0, polar=π/2, distance=10: should be roughly (0, 0, 10)
-      expect(result.x).toBeCloseTo(0, { absolute: 0.1 });
-      expect(result.z).toBeCloseTo(10, { absolute: 0.1 });
+      // At azimuth=0, polar=π/2, distance=15 (above minDistance):
+      // x = 0 + 15 * sin(π/2) * sin(0) = 0
+      // z = 0 + 15 * sin(π/2) * cos(0) = 15
+      expect(result.x).toBeCloseTo(0, 1);
+      expect(result.z).toBeCloseTo(15, 1);
     });
 
     it("should clamp x/z coordinates within arena boundaries", () => {
@@ -149,13 +171,15 @@ describe("cameraMath", () => {
       const spherical = {
         azimuth: Math.PI / 2,
         polar: Math.PI / 2,
-        distance: 10,
+        distance: 15,
       };
 
       const result = toCartesian(target, spherical, mockArena, 12);
 
-      // At azimuth=π/2, polar=π/2, distance=10: should be roughly (-10, 0, 0) or similar
-      expect(Math.abs(result.x) + Math.abs(result.z)).toBeCloseTo(10, { absolute: 0.1 });
+      // At azimuth=π/2, polar=π/2, distance=15:
+      // x = 0 + 15 * sin(π/2) * sin(π/2) = 15
+      // z = 0 + 15 * sin(π/2) * cos(π/2) = 0
+      expect(Math.abs(result.x) + Math.abs(result.z)).toBeCloseTo(15, 1);
     });
   });
 
@@ -163,19 +187,19 @@ describe("cameraMath", () => {
     it("should build right vector at azimuth 0", () => {
       const right = buildRightVector(0);
 
-      // At azimuth=0, right should point in negative z direction
-      expect(right.x).toBeCloseTo(0, { absolute: 0.001 });
+      // At azimuth=0: right = (sin(-π/2), 0, cos(-π/2)) = (-1, 0, ~0)
+      expect(right.x).toBeCloseTo(-1, 3);
       expect(right.y).toBe(0);
-      expect(right.z).toBeCloseTo(-1, { absolute: 0.001 });
+      expect(right.z).toBeCloseTo(0, 3);
     });
 
     it("should build right vector at azimuth π/2", () => {
       const right = buildRightVector(Math.PI / 2);
 
-      // At azimuth=π/2, right should point in positive x direction
-      expect(right.x).toBeCloseTo(1, { absolute: 0.001 });
+      // At azimuth=π/2: right = (sin(π/2 - π/2), 0, cos(π/2 - π/2)) = (sin(0), 0, cos(0)) = (0, 0, 1)
+      expect(right.x).toBeCloseTo(0, 3);
       expect(right.y).toBe(0);
-      expect(right.z).toBeCloseTo(0, { absolute: 0.001 });
+      expect(right.z).toBeCloseTo(1, 3);
     });
 
     it("should always have y = 0 (no vertical component)", () => {
@@ -189,7 +213,18 @@ describe("cameraMath", () => {
       for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 8) {
         const right = buildRightVector(angle);
         const magnitude = Math.sqrt(right.x ** 2 + right.y ** 2 + right.z ** 2);
-        expect(magnitude).toBeCloseTo(1, { absolute: 0.001 });
+        expect(magnitude).toBeCloseTo(1, 3);
+      }
+    });
+
+    it("should be perpendicular to forward vector", () => {
+      for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 8) {
+        const right = buildRightVector(angle);
+        const forward = buildForwardVector(angle);
+
+        // Dot product should be approximately 0
+        const dotProduct = right.x * forward.x + right.y * forward.y + right.z * forward.z;
+        expect(dotProduct).toBeCloseTo(0, 3);
       }
     });
   });
@@ -199,18 +234,18 @@ describe("cameraMath", () => {
       const forward = buildForwardVector(0);
 
       // At azimuth=0, forward should point in positive z direction
-      expect(forward.x).toBeCloseTo(0, { absolute: 0.001 });
+      expect(forward.x).toBeCloseTo(0, 3);
       expect(forward.y).toBe(0);
-      expect(forward.z).toBeCloseTo(1, { absolute: 0.001 });
+      expect(forward.z).toBeCloseTo(1, 3);
     });
 
     it("should build forward vector at azimuth π/2", () => {
       const forward = buildForwardVector(Math.PI / 2);
 
-      // At azimuth=π/2, forward should point in negative x direction
-      expect(forward.x).toBeCloseTo(-1, { absolute: 0.001 });
+      // At azimuth=π/2: forward = (sin(π/2), 0, cos(π/2)) = (1, 0, ~0)
+      expect(forward.x).toBeCloseTo(1, 3);
       expect(forward.y).toBe(0);
-      expect(forward.z).toBeCloseTo(0, { absolute: 0.001 });
+      expect(forward.z).toBeCloseTo(0, 3);
     });
 
     it("should always have y = 0 (no vertical component)", () => {
@@ -228,7 +263,7 @@ describe("cameraMath", () => {
             forward.y ** 2 +
             forward.z ** 2,
         );
-        expect(magnitude).toBeCloseTo(1, { absolute: 0.001 });
+        expect(magnitude).toBeCloseTo(1, 3);
       }
     });
 
@@ -239,7 +274,7 @@ describe("cameraMath", () => {
 
         // Dot product should be approximately 0
         const dotProduct = right.x * forward.x + right.y * forward.y + right.z * forward.z;
-        expect(dotProduct).toBeCloseTo(0, { absolute: 0.001 });
+        expect(dotProduct).toBeCloseTo(0, 3);
       }
     });
   });
