@@ -1,8 +1,14 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 
-import { clamp, wrapAngle, toCartesian, buildRightVector, buildForwardVector } from "../utils/cameraMath";
 import type { ArenaEntity } from "../ecs/entities/Arena";
 import type { Vector3 } from "../types";
+import {
+  buildForwardVector,
+  buildRightVector,
+  clamp,
+  toCartesian,
+  wrapAngle,
+} from "../utils/cameraMath";
 
 interface SphericalCoordinates {
   azimuth: number;

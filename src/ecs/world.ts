@@ -1,4 +1,3 @@
-import { World as MiniplexWorld } from "miniplex";
 import {
   createContext,
   createElement,
@@ -9,81 +8,75 @@ import {
 } from "react";
 
 import type { Team, Vector3, WeaponType } from "../types";
+import {
+  applyTeamComposition as applyTeamCompositionAPI,
+} from "./api/configAPI";
+import {
+  eliminateRobot as eliminateRobotAPI,
+  inflictDamage as inflictDamageAPI,
+} from "./api/damageAPI";
+import {
+  calculateDistance as calculateDistanceAPI,
+  getArenaConfig as getArenaConfigAPI,
+  getProjectiles as getProjectilesAPI,
+  getRobotById as getRobotByIdAPI,
+  getSimulationState as getSimulationStateAPI,
+} from "./api/queryAPI";
+import {
+  closeSettingsOverlay as closeSettingsOverlayInternal,
+  closeStatsOverlay as closeStatsOverlayInternal,
+  getPerformanceOverlayState as getPerformanceOverlayStateInternal,
+  openSettingsOverlay as openSettingsOverlayInternal,
+  openStatsOverlay as openStatsOverlayInternal,
+  pauseAutoRestart as pauseAutoRestartInternal,
+  recordFrameMetrics as recordFrameMetricsAPI,
+  resetAutoRestartCountdown as resetAutoRestartCountdownInternal,
+  resumeAutoRestart as resumeAutoRestartInternal,
+  setAutoScalingEnabled as setAutoScalingEnabledAPI,
+} from "./api/uiIntegration";
 import { type ArenaEntity, createDefaultArena } from "./entities/Arena";
-import { createProjectile, type Projectile } from "./entities/Projectile";
-import type { Robot } from "./entities/Robot";
+import { type Projectile } from "./entities/Projectile";
 import {
   createInitialSimulationState,
-  setPendingTeamConfig,
   type SimulationState,
-  tickSimulation,
 } from "./entities/SimulationState";
+import { type TeamEntity } from "./entities/Team";
+import { createECSCollections } from "./factories/createCollections";
 import {
-  createInitialTeam,
-  resetTeamForRestart,
-  type TeamEntity,
-} from "./entities/Team";
+  createPhysicsProjectile as createPhysicsProjectileImpl,
+} from "./factories/createProjectile";
+import { createTeams } from "./factories/createTeams";
 import {
-  applyMovement,
-  getAliveRobots,
-  propagateCaptainTargets,
-  updateBehaviors,
-} from "./simulation/aiController";
+  syncTeams,
+} from "./management/battleStateManagement";
+import {
+  applyPhysicsImpulse as applyPhysicsImpulseInternal,
+  getPhysicsSnapshot as getPhysicsSnapshotExternal,
+  setPhysicsBodyPosition as setPhysicsBodyPositionInternal,
+} from "./management/physicsManagement";
+import {
+  setRobotHealth as setRobotHealthInternal,
+  setRobotKills as setRobotKillsInternal,
+  setRobotPosition as setRobotPositionInternal,
+} from "./management/robotManagement";
+import { stepSimulation as stepSimulationImpl } from "./simulation/battleStep";
 import {
   createPerformanceController,
-  getOverlayState,
   type PerformanceController,
-  recordFrameMetrics as recordFrameMetricsInternal,
-  setAutoScalingEnabled as setAutoScalingEnabledInternal,
 } from "./simulation/performance";
 import {
-  applyRobotImpulse,
   createPhysicsState,
-  getPhysicsSnapshot as getPhysicsSnapshotInternal,
-  setRobotBodyPosition,
-  spawnProjectileBody,
-  stepPhysics,
 } from "./simulation/physics";
 import { refreshTeamStats } from "./simulation/teamStats";
-import {
-  closeSettings,
-  closeStats,
-  evaluateVictory,
-  openSettings,
-  openStats,
-  pauseAutoRestart as pauseCountdown,
-  resetCountdown,
-  resumeAutoRestart as resumeCountdown,
-  tickVictoryCountdown,
-} from "./simulation/victory";
-import type { ECSCollections, WorldView } from "./simulation/worldTypes";
+import type { WorldView } from "./simulation/worldTypes";
 import { reassignCaptain } from "./systems/ai/captainAI";
-import {
-  applyDamage,
-  cleanupProjectiles,
-  eliminateRobot as eliminateRobotInternal,
-  handleProjectileHits,
-} from "./systems/damageSystem";
 import { spawnInitialTeams } from "./systems/spawnSystem";
-import { capturePostBattleStats } from "./systems/statsSystem";
-import { getWeaponData, runWeaponSystem } from "./systems/weaponSystem";
-import { cloneVector } from "./utils/vector";
 
 export interface SimulationWorld extends WorldView {
   performance: PerformanceController;
 }
 
-const TEAM_LIST: Team[] = ["red", "blue"];
-
 const SimulationWorldContext = createContext<SimulationWorld | null>(null);
-
-function createECSCollections(): ECSCollections {
-  return {
-    robots: new MiniplexWorld<Robot>(),
-    projectiles: new MiniplexWorld<Projectile>(),
-    teams: new MiniplexWorld<TeamEntity>(),
-  };
-}
 
 type SimulationWorldProviderProps = {
   value: SimulationWorld;
@@ -112,34 +105,6 @@ export function useSimulationWorld(): SimulationWorld {
   return world;
 }
 
-function createTeams(arena: ArenaEntity): Record<Team, TeamEntity> {
-  return {
-    red: createInitialTeam("red", arena.spawnZones.red),
-    blue: createInitialTeam("blue", arena.spawnZones.blue),
-  };
-}
-
-function syncTeams(world: SimulationWorld): void {
-  world.ecs.teams.clear();
-  (Object.values(world.teams) as TeamEntity[]).forEach((team) => {
-    world.ecs.teams.add(team);
-  });
-}
-
-function resetBattle(world: SimulationWorld): void {
-  world.entities = [];
-  world.projectiles = [];
-  world.physics = createPhysicsState();
-  world.ecs.robots.clear();
-  world.ecs.projectiles.clear();
-  TEAM_LIST.forEach((team) => {
-    world.teams[team] = resetTeamForRestart(world.teams[team]);
-  });
-  syncTeams(world);
-  spawnInitialTeams(world, TEAM_LIST);
-  refreshTeamStats(world, TEAM_LIST);
-}
-
 export function initializeSimulation(): SimulationWorld {
   const arena = createDefaultArena();
   const teams = createTeams(arena);
@@ -157,8 +122,8 @@ export function initializeSimulation(): SimulationWorld {
     performance: createPerformanceController(),
     ecs,
   };
-  spawnInitialTeams(world, TEAM_LIST);
-  refreshTeamStats(world, TEAM_LIST);
+  spawnInitialTeams(world, ["red", "blue"]);
+  refreshTeamStats(world, ["red", "blue"]);
   syncTeams(world);
   return world;
 }
@@ -174,82 +139,18 @@ function createPhysicsProjectile(
     damage?: number;
   },
 ): string {
-  const id =
-    config.id ?? `proj-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  const weapon = getWeaponData(config.weaponType);
-  const projectile = createProjectile({
-    id,
-    ownerId: config.ownerId,
-    weaponType: config.weaponType,
-    position: cloneVector(config.position),
-    velocity: cloneVector(config.velocity),
-    damage: config.damage ?? weapon.baseDamage,
-    distanceTraveled: 0,
-    maxDistance: weapon.effectiveRange * 2,
-    spawnTime: world.simulation.simulationTime,
-    maxLifetime: 5,
-  });
-  world.projectiles.push(projectile);
-  world.ecs.projectiles.add(projectile);
-  spawnProjectileBody(world.physics, projectile);
-  return id;
+  return createPhysicsProjectileImpl(world, config);
 }
 
 export function stepSimulation(
   world: SimulationWorld,
   deltaTime: number,
 ): void {
-  const scaledDelta = deltaTime * world.simulation.timeScale;
-  world.simulation = tickSimulation(world.simulation, deltaTime);
-
-  getAliveRobots(world).forEach((robot) => {
-    robot.stats.timeAlive += scaledDelta;
-  });
-
-  updateBehaviors(world);
-  propagateCaptainTargets(world);
-  applyMovement(world, scaledDelta);
-  runWeaponSystem(world);
-
-  const physicsResult = stepPhysics({
-    state: world.physics,
-    robots: world.entities,
-    projectiles: world.projectiles,
-    arena: world.arena,
-    deltaTime: scaledDelta,
-  });
-
-  handleProjectileHits(world, physicsResult.hits);
-  cleanupProjectiles(world, physicsResult.despawnedProjectiles);
-  refreshTeamStats(world, TEAM_LIST);
-
-  world.simulation = evaluateVictory({
-    robots: world.entities,
-    teams: world.teams,
-    simulation: world.simulation,
-  });
-  // Capture a persistent snapshot of per-robot and per-team metrics when victory is detected
-  world.simulation = capturePostBattleStats({
-    robots: world.entities,
-    teams: world.teams,
-    simulation: world.simulation,
-  });
-  world.simulation = tickVictoryCountdown(
-    {
-      robots: world.entities,
-      teams: world.teams,
-      simulation: world.simulation,
-    },
-    deltaTime,
-    () => {
-      resetBattle(world);
-      // post-battle stats are captured immediately after victory is evaluated; no-op here.
-    },
-  );
+  stepSimulationImpl(world, deltaTime);
 }
 
 export function getProjectiles(world: SimulationWorld): Projectile[] {
-  return world.projectiles;
+  return getProjectilesAPI(world);
 }
 
 export function inflictDamage(
@@ -257,111 +158,75 @@ export function inflictDamage(
   robotId: string,
   amount: number,
 ): void {
-  applyDamage(world, robotId, amount);
+  inflictDamageAPI(world, robotId, amount);
 }
 
 export function eliminateRobot(world: SimulationWorld, robotId: string): void {
-  eliminateRobotInternal(world, robotId);
+  eliminateRobotAPI(world, robotId);
 }
 
 export function calculateDistance(a: Vector3, b: Vector3): number {
-  const dx = a.x - b.x;
-  const dy = a.y - b.y;
-  const dz = a.z - b.z;
-  return Math.hypot(dx, dy, dz);
+  return calculateDistanceAPI(a, b);
 }
 
 export { getDamageMultiplier } from "./systems/weaponSystem";
 
 export function getSimulationState(world: SimulationWorld): SimulationState {
-  return world.simulation;
+  return getSimulationStateAPI(world);
 }
 
 export function pauseAutoRestart(world: SimulationWorld): void {
-  world.simulation = pauseCountdown({
-    robots: world.entities,
-    teams: world.teams,
-    simulation: world.simulation,
-  });
+  pauseAutoRestartInternal(world);
 }
 
 export function resumeAutoRestart(world: SimulationWorld): void {
-  world.simulation = resumeCountdown({
-    robots: world.entities,
-    teams: world.teams,
-    simulation: world.simulation,
-  });
+  resumeAutoRestartInternal(world);
 }
 
 export function resetAutoRestartCountdown(world: SimulationWorld): void {
-  world.simulation = resetCountdown({
-    robots: world.entities,
-    teams: world.teams,
-    simulation: world.simulation,
-  });
+  resetAutoRestartCountdownInternal(world);
 }
 
 export function openStatsOverlay(world: SimulationWorld): void {
-  world.simulation = openStats({
-    robots: world.entities,
-    teams: world.teams,
-    simulation: world.simulation,
-  });
+  openStatsOverlayInternal(world);
 }
 
 export function closeStatsOverlay(world: SimulationWorld): void {
-  world.simulation = closeStats({
-    robots: world.entities,
-    teams: world.teams,
-    simulation: world.simulation,
-  });
+  closeStatsOverlayInternal(world);
 }
 
 export function openSettingsOverlay(world: SimulationWorld): void {
-  world.simulation = openSettings({
-    robots: world.entities,
-    teams: world.teams,
-    simulation: world.simulation,
-  });
+  openSettingsOverlayInternal(world);
 }
 
 export function closeSettingsOverlay(world: SimulationWorld): void {
-  world.simulation = closeSettings({
-    robots: world.entities,
-    teams: world.teams,
-    simulation: world.simulation,
-  });
+  closeSettingsOverlayInternal(world);
 }
 
 export function applyTeamComposition(
   world: SimulationWorld,
   config: Record<Team, unknown>,
 ): void {
-  world.simulation = setPendingTeamConfig(world.simulation, config);
+  applyTeamCompositionAPI(world, config);
 }
 
 export function getArenaConfig(world: SimulationWorld): ArenaEntity {
-  return world.arena;
+  return getArenaConfigAPI(world);
 }
 
 export function recordFrameMetrics(world: SimulationWorld, fps: number): void {
-  world.simulation = recordFrameMetricsInternal(
-    world.performance,
-    world.simulation,
-    world.arena,
-    fps,
-  );
+  recordFrameMetricsAPI(world, fps);
 }
 
 export function setAutoScalingEnabled(
   world: SimulationWorld,
   enabled: boolean,
 ): void {
-  setAutoScalingEnabledInternal(world.performance, enabled);
+  setAutoScalingEnabledAPI(world, enabled);
 }
 
 export function getPerformanceOverlayState(world: SimulationWorld) {
-  return getOverlayState(world.performance);
+  return getPerformanceOverlayStateInternal(world);
 }
 
 export function setPhysicsBodyPosition(
@@ -369,12 +234,7 @@ export function setPhysicsBodyPosition(
   robotId: string,
   position: Vector3,
 ): void {
-  const robot = world.entities.find((entity) => entity.id === robotId);
-  if (!robot) {
-    return;
-  }
-  robot.position = cloneVector(position);
-  setRobotBodyPosition(world.physics, robot, position);
+  setPhysicsBodyPositionInternal(world, robotId, position);
 }
 
 export function applyPhysicsImpulse(
@@ -382,11 +242,7 @@ export function applyPhysicsImpulse(
   robotId: string,
   impulse: Vector3,
 ): void {
-  const robot = world.entities.find((entity) => entity.id === robotId);
-  if (!robot) {
-    return;
-  }
-  applyRobotImpulse(world.physics, robot, impulse);
+  applyPhysicsImpulseInternal(world, robotId, impulse);
 }
 
 export function spawnPhysicsProjectile(
@@ -404,19 +260,11 @@ export function spawnPhysicsProjectile(
 }
 
 export function getPhysicsSnapshot(world: SimulationWorld) {
-  return getPhysicsSnapshotInternal(world.physics);
+  return getPhysicsSnapshotExternal(world);
 }
 
 export function getRobotById(world: SimulationWorld, robotId: string) {
-  return world.entities.find((robot) => robot.id === robotId);
-}
-
-function findRobot(world: SimulationWorld, robotId: string) {
-  return world.entities.find((robot) => robot.id === robotId);
-}
-
-function refreshTeam(world: SimulationWorld, team: Team): void {
-  refreshTeamStats(world, [team]);
+  return getRobotByIdAPI(world, robotId);
 }
 
 export function setRobotHealth(
@@ -424,16 +272,7 @@ export function setRobotHealth(
   robotId: string,
   health: number,
 ): void {
-  const robot = findRobot(world, robotId);
-  if (!robot) {
-    return;
-  }
-  const clamped = Math.max(0, Math.min(robot.maxHealth, health));
-  robot.health = clamped;
-  if (clamped <= 0) {
-    robot.isCaptain = false;
-  }
-  refreshTeam(world, robot.team);
+  setRobotHealthInternal(world, robotId, health);
 }
 
 export function setRobotKills(
@@ -441,11 +280,7 @@ export function setRobotKills(
   robotId: string,
   kills: number,
 ): void {
-  const robot = findRobot(world, robotId);
-  if (!robot) {
-    return;
-  }
-  robot.stats.kills = Math.max(0, kills);
+  setRobotKillsInternal(world, robotId, kills);
 }
 
 export function setRobotPosition(
@@ -453,12 +288,7 @@ export function setRobotPosition(
   robotId: string,
   position: Vector3,
 ): void {
-  const robot = findRobot(world, robotId);
-  if (!robot) {
-    return;
-  }
-  robot.position = cloneVector(position);
-  setRobotBodyPosition(world.physics, robot, robot.position);
+  setRobotPositionInternal(world, robotId, position);
 }
 
 export function triggerCaptainReelection(
@@ -466,5 +296,5 @@ export function triggerCaptainReelection(
   team: Team,
 ): void {
   reassignCaptain(world, team);
-  refreshTeam(world, team);
+  refreshTeamStats(world, [team]);
 }
