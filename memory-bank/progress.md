@@ -18,3 +18,9 @@ Milestones
 
 - Deterministic simulation + test harness — complete
 - Playwright E2E coverage of boot and core flows — partial
+
+How to run (quick)
+
+- Dev: `npm run dev` — start Vite local server and open the arena
+- Tests: `npm run test` — run Vitest unit tests
+- E2E: `npm run playwright:test` — run Playwright suites (install playwright first)
