@@ -3,7 +3,8 @@
 **Feature**: Extend 001 & 002 — 3D Team Fight Match with Graphics Integration  
 **Branch**: `003-extend-placeholder-create`  
 **Generated**: 2025-10-18  
-**Total Tasks**: 49 | **Phases**: 6
+**Updated**: 2025-10-19  
+**Total Tasks**: 66 | **Phases**: 8
 
 ---
 
@@ -232,13 +233,85 @@ controls → create between-rounds flow.
   - [x] Test quality toggle during match
   - [x] Test rematch flow
 
-- [ ] T056 [P] Verify no regression in existing tests
-  - [ ] Run full test suite: `npm run test`
-  - [ ] Verify 367/368 tests still passing
-  - [ ] Run linter: `npm run lint`
-  - [ ] Verify 0 ESLint errors
-  - [ ] Run coverage: `npm run test:coverage`
-  - [ ] Verify coverage maintained or improved
+- [x] T056 [P] Verify no regression in existing tests
+  - [x] Run full test suite: `npm run test`
+  - [x] Verify 406/407 tests passing (1 skipped)
+  - [x] Run linter: `npm run lint`
+  - [x] Verify 0 ESLint errors (deprecation warning only)
+  - [x] Run coverage: `npm run test:coverage` (60.21% statements)
+  - [x] Verify coverage maintained or improved
+
+---
+
+## Phase 8: Refactoring & Constitutional Compliance (P2)
+
+**Story Goal**: Refactor oversized files to meet constitutional 300 LOC limit and improve
+modular separation of concerns.
+
+**Independent Test Criteria**:
+
+- All src files reduced to ≤ 300 LOC
+- Public API contracts preserved during refactoring
+- Unit tests added for extracted modules
+- Existing tests continue to pass
+- All 406+ tests still passing
+- No regression in coverage
+
+**Implementation Strategy**: Create refactor plans first → execute low-risk extractions
+→ verify tests pass → integrate into build pipeline.
+
+### Task Group 8.1: Refactor Planning & Analysis
+
+- [ ] T057 [P] Create `specs/003-extend-placeholder-create/filesize-scan.txt` with
+  complete repo scan output identifying all oversized files and their current LOC
+  (2h)
+
+- [ ] T058 [P] Create `specs/003-extend-placeholder-create/refactor-plan-world.md`:
+  propose splitting `src/ecs/world.ts` (470 LOC) into `createWorld.ts`,
+  `simulationLoop.ts`, and `worldApi/*` modules. Include intended public APIs,
+  dependency graph, and first extraction task (4h)
+
+- [ ] T059 [P] Create `specs/003-extend-placeholder-create/refactor-plan-matchPlayer.md`:
+  propose splitting `src/systems/matchTrace/matchPlayer.ts` (391 LOC) into
+  `eventIndex.ts`, `playbackClock.ts`, and `replayRng.ts`. Include intended
+  public APIs, dependency graph, and first extraction task (4h)
+
+- [ ] T060 [P] Create `specs/003-extend-placeholder-create/refactor-plan-cameraControls.md`:
+  propose extracting pure math helpers from `src/hooks/useCameraControls.ts`
+  (342 LOC) into `src/utils/cameraMath.ts`, plus optional `useSpherical.ts` for
+  state normalization. Include intended public APIs and first extraction task (3h)
+
+### Task Group 8.2: Low-Risk Extractions
+
+- [ ] T061 [P] Implement initial extraction: move camera math helpers into
+  `src/utils/cameraMath.ts`, add unit tests `tests/unit/utils/cameraMath.test.ts`,
+  update `useCameraControls.ts` imports, and verify all tests pass (2–3h)
+
+- [ ] T062 Implement `src/ecs/createWorld.ts` extraction: move factory logic from
+  `world.ts`, add unit tests `tests/unit/ecs/createWorld.test.ts`, and verify
+  public API preserved (3h)
+
+- [ ] T063 Implement `src/systems/matchTrace/eventIndex.ts` extraction: move event
+  indexing logic from `matchPlayer.ts`, add unit tests
+  `tests/unit/systems/eventIndex.test.ts`, and verify integration (2–3h)
+
+### Task Group 8.3: Validation & Integration
+
+- [ ] T064 [P] Run full regression test suite after Phase 8 extractions
+  - [ ] Run `npm run test` and verify 406+ tests still passing
+  - [ ] Run `npm run lint` and verify 0 errors
+  - [ ] Run `npm run test:coverage` and verify coverage ≥ 60%
+  - [ ] Verify no TypeScript errors in strict mode
+
+- [ ] T065 Update constitution check script to include refactored files and
+  confirm all files now ≤ 300 LOC (1h)
+
+- [ ] T066 Document refactoring outcomes in
+  `specs/003-extend-placeholder-create/refactor-summary.md` including:
+  - [ ] Before/after LOC breakdown by file
+  - [ ] API contracts preserved
+  - [ ] Test coverage impact
+  - [ ] Migration notes for future developers (2h)
 
 ---
 
@@ -249,6 +322,7 @@ controls → create between-rounds flow.
 1. **Phase 1** (Setup) → all phases depend on project structure
 2. **Phase 2** (Contract Validation) → blocks all user stories
 3. **Phase 3** (US1: Run Match) → Phase 7 depends on US1 rendering
+4. **Phase 7** (Live Rendering) → Phase 8 depends on stable rendering pipeline
 
 ### Phase 7 Dependencies
 
@@ -256,6 +330,13 @@ controls → create between-rounds flow.
 - **Enables**: Phase 6 polish features (cinematic, metrics)
 - **Parallelizable with**: Phase 4 (Quality), Phase 5 (Replay) — but Phase 7 enhances
   both by unifying live + replay paths
+
+### Phase 8 Dependencies
+
+- **Depends on**: Phase 1, 2, 3, 7 (stable rendering + test infrastructure)
+- **Enables**: Constitutional compliance and modular architecture
+- **Sequential after**: Phase 7 (requires stable test baseline)
+- **Parallel planning**: T057–T060 refactor plans can start immediately
 
 ### Independent User Stories
 
@@ -274,12 +355,15 @@ controls → create between-rounds flow.
 - **Phase 5**: T035, T037, T039, T042 (replay infrastructure)
 - **Phase 6**: T043, T045 (debugging/monitoring)
 - **Phase 7**: T050, T051, T052, T053, T056 (live trace + UI)
+- **Phase 8**: T057, T058, T059, T060, T061, T064 (refactor plans + low-risk extractions)
 
 ### Sequential Within Stories
 
 - **US1**: Complete T011–T014 (timing) before T015–T022 (entities, victory)
 - **US2**: Complete T027–T028 before T029–T033 (HUD + rendering)
 - **US3**: Complete T035–T036 before T037–T042 (controls + validation)
+- **Phase 8**: Complete T057–T060 (planning) before T061–T063 (extractions);
+  then T064–T066 (validation + documentation)
 
 ---
 
@@ -323,6 +407,11 @@ proper between-rounds flow.
 - Cinematic camera, monitoring, documentation: ~4 hours
 - **Total end-to-end**: ~40 hours
 
+### With Constitutional Compliance (Add Phase 8)
+
+- Phase 8 (Refactoring & compliance): ~21 hours
+- **Total including refactoring**: ~61 hours
+
 ---
 
 ## Task Format Validation
@@ -343,7 +432,7 @@ proper between-rounds flow.
 
 | Metric | Value |
 |--------|-------|
-| Total Tasks | 56 |
+| Total Tasks | 66 |
 | Phase 1 (Setup) | 3 |
 | Phase 2 (Contracts) | 7 |
 | Phase 3 (US1) | 16 |
@@ -351,13 +440,16 @@ proper between-rounds flow.
 | Phase 5 (US3) | 8 |
 | Phase 6 (Polish) | 7 |
 | Phase 7 (Live Rendering) | 7 |
-| **Parallelizable** | **21** |
+| Phase 8 (Refactoring) | 10 |
+| **Parallelizable** | **28** |
 | **MVP (1–3)** | 26 tasks (~16h) |
 | **Enhanced MVP (1–3, 7)** | 33 tasks (~22h) |
 | **Full (1–7)** | 49 tasks (~36h) |
 | **Full + Polish (1–7, 6)** | 56 tasks (~40h) |
+| **Full + Refactoring (1–8)** | 66 tasks (~61h) |
 | **Status** | **✅ PHASES 1–7 COMPLETE (56/56)** |
-| **Phase 7** | **✅ COMPLETE (T050–T056)** |
+| **Phase 8** | **⧖ PLANNED (10 tasks, ~21h)** |
+| **T056 Regression Test** | **✅ VERIFIED (406/407 passing)** |
 | **Tests Passing** | **406/407 (99.8%)** |
 | **ESLint** | **0 errors** |
 | **TypeScript** | **✅ Strict mode** |
@@ -380,42 +472,23 @@ Generated by speckit.tasks workflow for RobotSpaceBattler feature `003-extend-pl
 
 ---
 
-## FR-011: Refactor tasks for oversized files (>300 LOC)
+## FR-011 Status: Refactor Tasks for Oversized Files (>300 LOC) — TRACKED IN PHASE 8
 
-The repository scan identified several `src/` files that exceed the constitutional
-limit of 300 LOC and require refactor plans + tracked tasks. The first-pass
-refactor tasks below create the scan artifact and start low-risk extractions.
+Tasks T057–T066 are now formally tracked in **Phase 8: Refactoring & Constitutional Compliance** (see above).
 
-- Target files identified:
-  - `src/ecs/world.ts` (470 LOC)
-  - `src/systems/matchTrace/matchPlayer.ts` (391 LOC)
-  - `src/hooks/useCameraControls.ts` (342 LOC)
+Target files exceed constitutional 300 LOC limit:
 
-- [ ] T057 Create `specs/003-extend-placeholder-create/filesize-scan.txt` with the
-  repo scan output and attach it to this spec (2h)
+- `src/ecs/world.ts` (470 LOC) → refactor plan T058, extraction T062
+- `src/systems/matchTrace/matchPlayer.ts` (391 LOC) → refactor plan T059, extraction T063
+- `src/hooks/useCameraControls.ts` (342 LOC) → refactor plan T060, extraction T061
 
-- [ ] T058 Create `specs/003-extend-placeholder-create/refactor-plan-world.md`:
-  propose splitting `src/ecs/world.ts` into `createWorld.ts`, `simulationLoop.ts`,
-  and `worldApi/*`. Include intended public APIs and one initial extraction
-  task (4h)
+**Refactoring Approach**:
 
-- [ ] T059 Create `specs/003-extend-placeholder-create/refactor-plan-matchPlayer.md`:
-  propose splitting `src/systems/matchTrace/matchPlayer.ts` into `eventIndex.ts`,
-  `playbackClock.ts`, and `replayRng.ts`. Include intended public APIs and the
-  first extraction task (4h)
+- Create detailed refactor plans (T057–T060) with API contracts and test strategy
+- Execute low-risk, high-impact extractions first (T061–T063)
+- Validate with full regression test suite (T064)
+- Update constitution checks and document outcomes (T065–T066)
+- Each extraction includes unit tests before code moves to preserve public API
+- All tests must pass before merging refactored code
 
-- [ ] T060 Create `specs/003-extend-placeholder-create/refactor-plan-cameraControls.md`:
-  propose extracting pure math helpers from `src/hooks/useCameraControls.ts` into
-  `src/utils/cameraMath.ts`, plus optional `useSpherical.ts` for state normalization.
-  Include intended public APIs and the first extraction task (3h)
-
-- [ ] T061 Implement initial low-risk extraction: move camera math helpers into
-  `src/utils/cameraMath.ts`, add unit tests `tests/unit/cameraMath.test.ts`, and
-  update `useCameraControls.ts` imports (2–3h)
-
-Notes:
-- Each refactor plan must include a small unit test for the extracted logic before
-  moving orchestration code. Prefer thin re-exports in the original file to
-  preserve public API during migration.
-- Mark the first actionable task `in_progress` when work begins and mark as
-  `completed` when merged.
+**Phase 8 starts after Phase 7 completion. Estimated total effort: ~21 hours.**
