@@ -13,18 +13,18 @@
  */
 
 import { RNG_ALGORITHM_ID, RNGManager } from "./rngManager";
+import { EventIndex } from "./eventIndex";
+import {
+  PlaybackClock,
+  PlaybackState,
+} from "./playbackClock";
 import { MatchTrace, MatchTraceEvent } from "./types";
 
 // ============================================================================
 // Types & Constants
 // ============================================================================
 
-export enum PlaybackState {
-  Idle = "idle",
-  Playing = "playing",
-  Paused = "paused",
-  Finished = "finished",
-}
+export { PlaybackState }; // Re-export for public API
 
 export enum ReplayMode {
   Live = "live", // Normal trace playback without RNG seeding
@@ -54,27 +54,37 @@ export interface PlaybackSnapshot {
 
 export class MatchPlayer {
   private trace: MatchTrace;
-  private playbackRate: number = 1.0;
-  private currentTimestampMs: number = 0;
-  private currentFrameIndex: number = 0;
-  private state: PlaybackState = PlaybackState.Idle;
   private debugMode: boolean = false;
   private rngSeed: number;
   private replayMode: ReplayMode = ReplayMode.Live;
   private rngManager: RNGManager | null = null; // T036: RNG manager for deterministic replay
 
-  // Event index cache (for efficient event lookup)
-  private eventsByTimestamp: Map<number, MatchTraceEvent[]> = new Map();
+  // Extracted components (T063)
+  private eventIndex: EventIndex;
+  private clock: PlaybackClock;
+
+  // Public state properties (exposed for backward compatibility & API access)
+  public currentTimestampMs: number = 0;
+  public currentFrameIndex: number = 0;
+  public state: PlaybackState = PlaybackState.Idle;
+  private playbackRate: number = 1.0;
 
   constructor(config: MatchPlayerConfig) {
     this.trace = config.trace;
-    this.playbackRate = config.playbackRate ?? 1.0;
     this.debugMode = config.debugMode ?? false;
     this.rngSeed = config.rngSeed ?? this.trace.rngSeed ?? 0;
     this.replayMode = config.replayMode ?? ReplayMode.Live;
 
-    // Build event index by timestamp
-    this.buildEventIndex();
+    // Build event index using EventIndex class (T063)
+    this.eventIndex = new EventIndex(this.trace.events);
+
+    // Initialize playback clock (T063)
+    const maxTs = this.eventIndex.getMaxTimestamp();
+    const maxFrames = this.eventIndex.getEventCount();
+    this.clock = new PlaybackClock(maxTs, maxFrames);
+    if (config.playbackRate) {
+      this.clock.setPlaybackRate(config.playbackRate);
+    }
 
     // Initialize RNG manager if in deterministic replay mode (T036)
     if (this.replayMode === ReplayMode.Deterministic) {
@@ -88,111 +98,79 @@ export class MatchPlayer {
   }
 
   /**
-   * Build efficient lookup map of events by timestamp.
-   * Multiple events can occur at the same timestamp (use sequenceId for ordering).
+   * Get events at the exact current timestamp (for triggering events).
+   * (T063: delegated to EventIndex)
    */
-  private buildEventIndex(): void {
-    this.eventsByTimestamp.clear();
-    for (const event of this.trace.events) {
-      const ts = event.timestampMs;
-      if (!this.eventsByTimestamp.has(ts)) {
-        this.eventsByTimestamp.set(ts, []);
-      }
-      this.eventsByTimestamp.get(ts)!.push(event);
-    }
+  private getEventsAtTimestamp(ts: number): MatchTraceEvent[] { return this.eventIndex.getEventsAtTimestamp(ts); }
+
+  /**
+   * Find frame (event index) that corresponds to a timestamp.
+   * (T063: delegated to EventIndex)
+   */
+  private findFrameIndexAtTimestamp(ts: number): number { return this.eventIndex.findFrameIndexAtTimestamp(ts); }
+
+  /**
+   * Get maximum timestamp in trace.
+   * (T063: delegated to EventIndex)
+   */
+  private getMaxTimestamp(): number { return this.eventIndex.getMaxTimestamp(); }
+
+  /**
+   * Sync internal state from clock after any clock operation.
+   * Private helper to reduce duplication across play/pause/step/seek operations.
+   */
+  private syncStateFromClock(): void {
+    this.currentTimestampMs = this.clock.getCurrentTimestamp();
+    this.currentFrameIndex = this.findFrameIndexAtTimestamp(this.currentTimestampMs);
+    this.state = this.clock.getState();
   }
 
   /**
    * Start playback from current position.
    */
   public play(): void {
-    if (this.state !== PlaybackState.Finished) {
-      this.state = PlaybackState.Playing;
-    }
+    this.clock.play();
+    this.state = this.clock.getState();
   }
 
   /**
    * Pause playback.
    */
   public pause(): void {
-    if (this.state === PlaybackState.Playing) {
-      this.state = PlaybackState.Paused;
-    }
+    this.clock.pause();
+    this.state = this.clock.getState();
   }
 
   /**
    * Stop and reset to beginning.
    */
   public stop(): void {
-    this.currentTimestampMs = 0;
-    this.currentFrameIndex = 0;
-    this.state = PlaybackState.Idle;
+    this.clock.stop();
+    this.syncStateFromClock();
   }
 
   /**
-   * Advance playback by delta milliseconds (in real time).
-   * Converts to trace-time using playbackRate.
-   *
-   * @param deltaMs - Real-world time elapsed since last step (ms)
+   * Advance playback by delta time and update frame index.
    */
   public step(deltaMs: number): void {
-    if (this.state !== PlaybackState.Playing) {
-      return;
-    }
-
-    // Convert real-time delta to trace-time using playback rate
-    const traceTimeDelta = deltaMs * this.playbackRate;
-    this.currentTimestampMs += traceTimeDelta;
-
-    // Clamp to trace duration
-    const maxTimestamp = this.getMaxTimestamp();
-    if (this.currentTimestampMs >= maxTimestamp) {
-      this.currentTimestampMs = maxTimestamp;
-      this.state = PlaybackState.Finished;
-    }
-
-    // Update frame index based on current timestamp
-    this.currentFrameIndex = this.findFrameIndexAtTimestamp(
-      this.currentTimestampMs,
-    );
+    this.clock.advance(deltaMs);
+    this.syncStateFromClock();
   }
 
   /**
-   * Seek to a specific timestamp (in trace time, not real time).
-   *
-   * @param timestampMs - Target timestamp in match trace
+   * Seek to a specific timestamp.
    */
-  public seek(timestampMs: number): void {
-    const maxTs = this.getMaxTimestamp();
-    this.currentTimestampMs = Math.max(0, Math.min(timestampMs, maxTs));
-    this.currentFrameIndex = this.findFrameIndexAtTimestamp(
-      this.currentTimestampMs,
-    );
-
-    // If at end, mark as finished
-    if (this.currentTimestampMs >= maxTs) {
-      this.state = PlaybackState.Finished;
-    }
+  public seek(targetTimestampMs: number): void {
+    this.clock.seek(targetTimestampMs);
+    this.syncStateFromClock();
   }
 
   /**
-   * Frame-step mode: advance to next event in sequence.
-   * Only usable in debugMode.
+   * Manually advance one frame (debug mode).
    */
-  public stepFrame(): void {
-    if (!this.debugMode) {
-      console.warn("MatchPlayer.stepFrame() only available in debugMode");
-      return;
-    }
-
-    if (this.currentFrameIndex >= this.trace.events.length - 1) {
-      this.state = PlaybackState.Finished;
-      return;
-    }
-
-    const nextEvent = this.trace.events[this.currentFrameIndex + 1];
-    this.currentTimestampMs = nextEvent.timestampMs;
-    this.currentFrameIndex += 1;
+  public stepFrame(maxFrames: number = 1): void {
+    this.clock.stepFrame(maxFrames);
+    this.syncStateFromClock();
   }
 
   /**
@@ -216,48 +194,10 @@ export class MatchPlayer {
 
   /**
    * Get all events at or before a given timestamp.
-   * Useful for reconstructing entity state at that point in time.
+   * (T063: delegated to EventIndex)
    */
   public getEventsBefore(timestampMs: number): MatchTraceEvent[] {
-    const result: MatchTraceEvent[] = [];
-    for (const event of this.trace.events) {
-      if (event.timestampMs <= timestampMs) {
-        result.push(event);
-      }
-    }
-    return result;
-  }
-
-  /**
-   * Get events at the exact current timestamp (for triggering events).
-   */
-  private getEventsAtTimestamp(timestampMs: number): MatchTraceEvent[] {
-    return this.eventsByTimestamp.get(timestampMs) || [];
-  }
-
-  /**
-   * Find frame (event index) that corresponds to a timestamp.
-   */
-  private findFrameIndexAtTimestamp(timestampMs: number): number {
-    let index = 0;
-    for (let i = 0; i < this.trace.events.length; i++) {
-      if (this.trace.events[i].timestampMs <= timestampMs) {
-        index = i;
-      } else {
-        break;
-      }
-    }
-    return index;
-  }
-
-  /**
-   * Get maximum timestamp in trace.
-   */
-  private getMaxTimestamp(): number {
-    if (this.trace.events.length === 0) {
-      return 0;
-    }
-    return this.trace.events[this.trace.events.length - 1].timestampMs;
+    return this.eventIndex.getEventsBefore(timestampMs);
   }
 
   // ========================================================================
@@ -266,23 +206,13 @@ export class MatchPlayer {
 
   public setPlaybackRate(rate: number): void {
     this.playbackRate = Math.max(0.1, rate);
+    this.clock.setPlaybackRate(this.playbackRate);
   }
 
-  public getPlaybackRate(): number {
-    return this.playbackRate;
-  }
-
-  public getRNGSeed(): number {
-    return this.rngSeed;
-  }
-
-  public getState(): PlaybackState {
-    return this.state;
-  }
-
-  public isFinished(): boolean {
-    return this.state === PlaybackState.Finished;
-  }
+  public getPlaybackRate(): number { return this.clock.getPlaybackRate(); }
+  public getRNGSeed(): number { return this.rngSeed; }
+  public getState(): PlaybackState { return this.state; }
+  public isFinished(): boolean { return this.state === PlaybackState.Finished; }
 
   public getTraceMetadata(): { rngSeed?: number; rngAlgorithm?: string } {
     return {
@@ -299,26 +229,14 @@ export class MatchPlayer {
   // Replay & RNG Methods (T036)
   // ========================================================================
 
-  /**
-   * Initialize RNG manager for deterministic replay.
-   * Creates new RNG instance with trace seed if available, otherwise uses provided rngSeed.
-   */
   private initializeRNG(): void {
     const seed = this.trace.rngSeed ?? this.rngSeed;
     this.rngManager = new RNGManager(seed);
   }
 
-  /**
-   * Get RNG manager instance for deterministic operations.
-   * Returns null if not in deterministic replay mode.
-   */
-  public getRNGManager(): RNGManager | null {
-    return this.rngManager;
-  }
+  public getRNGManager(): RNGManager | null { return this.rngManager; }
+  public getReplayMode(): ReplayMode { return this.replayMode; }
 
-  /**
-   * Switch replay mode and reinitialize RNG if needed.
-   */
   public setReplayMode(mode: ReplayMode): void {
     this.replayMode = mode;
     if (mode === ReplayMode.Deterministic && !this.rngManager) {
@@ -328,26 +246,14 @@ export class MatchPlayer {
     }
   }
 
-  /**
-   * Get current replay mode.
-   */
-  public getReplayMode(): ReplayMode {
-    return this.replayMode;
-  }
-
-  /**
-   * Reset RNG to initial seed (for replay restart).
-   */
   public resetRNG(): void {
     if (this.rngManager) {
       this.rngManager.reset();
     }
   }
 
-  /**
-   * Validate that trace has proper RNG metadata for deterministic replay.
-   * Returns validation report with seed and algorithm info.
-   */
+  public getRNGCallCount(): number { return this.rngManager?.getCallCount() ?? 0; }
+
   public validateRNGMetadata(): {
     valid: boolean;
     rngSeed?: number;
@@ -360,12 +266,10 @@ export class MatchPlayer {
     if (!traceSeed || !traceAlgo) {
       return {
         valid: false,
-        warning:
-          "Trace missing RNG metadata. Deterministic replay may not be reproducible.",
+        warning: "Trace missing RNG metadata. Deterministic replay may not be reproducible.",
       };
     }
 
-    // Check if algorithm matches our implementation
     if (traceAlgo !== RNG_ALGORITHM_ID) {
       return {
         valid: false,
@@ -380,12 +284,5 @@ export class MatchPlayer {
       rngSeed: traceSeed,
       rngAlgorithm: traceAlgo,
     };
-  }
-
-  /**
-   * Get RNG call count (for debugging).
-   */
-  public getRNGCallCount(): number {
-    return this.rngManager?.getCallCount() ?? 0;
   }
 }
