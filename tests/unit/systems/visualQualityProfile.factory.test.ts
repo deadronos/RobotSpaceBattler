@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 
-import { VisualQualityLevel } from '../../../../src/systems/matchTrace/types';
+import { VisualQualityLevel } from '../../../src/systems/matchTrace/types';
 import {
   createQualityProfile,
   DEFAULT_QUALITY_LEVEL,
   DEFAULT_QUALITY_PROFILE,
-} from '../../../../src/systems/matchTrace/visualQualityProfile';
+} from '../../../src/systems/matchTrace/visualQualityProfile';
 
 describe('visualQualityProfile - factory', () => {
   it('should create a HIGH quality profile with all features enabled', () => {

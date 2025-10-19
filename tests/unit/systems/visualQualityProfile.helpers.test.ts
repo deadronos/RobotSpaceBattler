@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 
-import { VisualQualityLevel } from '../../../../src/systems/matchTrace/types';
+import { VisualQualityLevel } from '../../../src/systems/matchTrace/types';
 import {
   getParticleIntensity,
   getShadowMapSize,
   getTextureScale,
   getTrailComplexity,
-} from '../../../../src/systems/matchTrace/visualQualityProfile';
+} from '../../../src/systems/matchTrace/visualQualityProfile';
 
 describe('visualQualityProfile - helpers', () => {
   it('particle intensity ranges', () => {
