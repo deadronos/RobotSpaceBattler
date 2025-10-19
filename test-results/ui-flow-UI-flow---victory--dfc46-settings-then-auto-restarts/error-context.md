@@ -1,0 +1,105 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic "Battle status" [ref=e5]:
+      - generic [ref=e6]:
+        - banner [ref=e7]:
+          - generic [ref=e8]:
+            - heading "Battle Status" [level=1] [ref=e9]
+            - text: Red Team Wins
+          - button "Open HUD settings" [ref=e11]:
+            - img [ref=e12]
+        - group "Battle timers" [ref=e15]:
+          - generic "Elapsed time" [ref=e16]: "Elapsed: 00s"
+          - status [ref=e17]: Restarts in 04s
+    - generic "Battle controls" [ref=e18]:
+      - toolbar "Battle controls" [ref=e20]:
+        - generic [ref=e22]: 60 fps
+        - generic [ref=e23]:
+          - button "Pause Battle" [disabled] [ref=e24]
+          - button "Enable Cinematic" [disabled] [ref=e25]
+          - button "Hide HUD" [ref=e26]
+          - button "Settings" [disabled] [ref=e27]
+    - generic "Team status" [ref=e28]:
+      - generic [ref=e29]:
+        - heading "Team Overview" [level=2] [ref=e30]
+        - text: Drag to reposition
+      - generic [ref=e31]:
+        - article "Red Team status" [ref=e32]:
+          - generic [ref=e33]:
+            - heading "Red Team" [level=3] [ref=e34]
+            - status [ref=e35]: "Captain: red-0 (Alive)"
+          - generic [ref=e36]:
+            - generic [ref=e37]:
+              - term [ref=e38]: Alive
+              - definition [ref=e39]: "10"
+            - generic [ref=e40]:
+              - term [ref=e41]: Eliminated
+              - definition [ref=e42]: "0"
+          - list "Weapon distribution" [ref=e43]:
+            - listitem [ref=e44]: "laser: 4"
+            - listitem [ref=e45]: "gun: 3"
+            - listitem [ref=e46]: "rocket: 3"
+        - article "Blue Team status" [ref=e47]:
+          - generic [ref=e48]:
+            - heading "Blue Team" [level=3] [ref=e49]
+            - status [ref=e50]: "Captain: blue-0 (Alive)"
+          - generic [ref=e51]:
+            - generic [ref=e52]:
+              - term [ref=e53]: Alive
+              - definition [ref=e54]: "10"
+            - generic [ref=e55]:
+              - term [ref=e56]: Eliminated
+              - definition [ref=e57]: "0"
+          - list "Weapon distribution" [ref=e58]:
+            - listitem [ref=e59]: "laser: 3"
+            - listitem [ref=e60]: "gun: 4"
+            - listitem [ref=e61]: "rocket: 3"
+  - dialog "Victory Overlay" [ref=e62]:
+    - banner [ref=e63]:
+      - heading "red Wins" [level=2] [ref=e64]
+      - paragraph [ref=e65]: Auto-restart paused
+    - generic [ref=e66]:
+      - button "Stats" [active] [ref=e67]
+      - button "Settings" [ref=e68]
+      - button "Restart Now" [ref=e69]
+      - button "Pause Countdown" [ref=e70]
+    - generic "Team summaries"
+  - dialog "red Victory Stats" [ref=e71]:
+    - banner [ref=e72]:
+      - heading "red Victory Stats" [level=2] [ref=e73]
+      - paragraph [ref=e74]: Review post-battle performance metrics for each team and robot.
+    - region "team statistics" [ref=e75]:
+      - generic [ref=e76]:
+        - heading "Team Summary" [level=3] [ref=e77]
+        - button "Export Stats" [ref=e78]
+      - table [ref=e79]:
+        - rowgroup [ref=e80]:
+          - row "Team Kills Damage Dealt Damage Taken Average Health Remaining" [ref=e81]:
+            - columnheader "Team" [ref=e82]
+            - columnheader "Kills" [ref=e83]
+            - columnheader "Damage Dealt" [ref=e84]
+            - columnheader "Damage Taken" [ref=e85]
+            - columnheader "Average Health Remaining" [ref=e86]
+        - rowgroup
+    - region "robot statistics" [ref=e87]:
+      - generic [ref=e88]:
+        - heading "Robot Performance" [level=3] [ref=e89]
+        - button "Sort by Damage" [ref=e90]
+      - table [ref=e91]:
+        - rowgroup [ref=e92]:
+          - row "Robot Team Weapon Kills Damage Dealt Damage Taken Time Alive Leader" [ref=e93]:
+            - columnheader "Robot" [ref=e94]
+            - columnheader "Team" [ref=e95]
+            - columnheader "Weapon" [ref=e96]
+            - columnheader "Kills" [ref=e97]
+            - columnheader "Damage Dealt" [ref=e98]
+            - columnheader "Damage Taken" [ref=e99]
+            - columnheader "Time Alive" [ref=e100]
+            - columnheader "Leader" [ref=e101]
+        - rowgroup
+    - contentinfo [ref=e102]:
+      - button "Close" [ref=e103]
+```
