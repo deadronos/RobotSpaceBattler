@@ -10,6 +10,9 @@
 2. Fill Technical Context (scan for NEEDS CLARIFICATION)
    → Detect Project Type from file system structure or context (web=frontend+backend, mobile=app+api)
    → Set Structure Decision based on project type
+2.a Run repository file-size scan for `src/` and identify files >300 LOC
+   → If any found: attach findings to the plan and create a refactor plan per FR-011
+   → Create tracked tasks for at least the first refactor step (2–4 hour chunk)
 3. Fill the Constitution Check section based on the content of the constitution document.
 4. Evaluate Constitution Check section below
    → If violations exist: Document in Complexity Tracking
@@ -86,6 +89,14 @@ Deliver the full spec-defined player UI and match flow for the 3D team-vs-team a
   - AI systems decomposed: individualAI.ts (~200 LOC), captainAI.ts (~180 LOC), adaptiveStrategy.ts (~150 LOC)
   - Performance manager: ~200 LOC with separate quality scaling and time dilation modules
 - ⚠️ Risk areas requiring monitoring: Weapon balance system, Physics integration
+
+**FR-011 / File-size enforcement**:
+- As part of the plan execution the implementer MUST run an automated file-size scan
+   (for example using `wc -l` or a linting rule) across `src/` and include the
+   results in the plan artifacts. Any `src/` file identified with >300 LOC MUST have
+   a short refactor plan attached (see Constitution III) and one or more tracked
+   tasks created. This behavior implements FR-011 from the feature spec and ensures
+   the repository sizing constraint is enforced during design and implementation.
 
 **React/r3f Best Practices**:
 - ✅ Rendering separated from simulation: r3f components consume ECS state via hooks
@@ -382,6 +393,31 @@ Ensure the existing scaffold (`src/main.tsx`, `src/App.tsx`, `src/index.css`, mi
 - `App.tsx` exports a React component with `#status` placeholder (will be replaced during T022).
 
 Scaffolding is a prerequisite for Gate 0 tests; do not remove or regress it while implementing the new UI flows.
+
+## FR-011 File-size enforcement (plan artifact)
+
+In addition to the steps above, the plan MUST include an explicit file-size
+scan and tracked refactor tasks for any `src/` file exceeding 300 LOC. This is
+required by FR-011 and the Constitution (Size & Separation Limits). Minimum
+plan artifacts to produce when oversized files are detected:
+
+- `filesize-scan.txt` — raw output of the scan showing file paths and line counts.
+- `refactor-plan-<file>.md` — a one-page refactor plan for each oversized file
+   describing proposed module splits, the public API for extracted modules, and
+   which unit tests will be added before migration.
+- `tasks.md` updates — add one or more tracked tasks (2–4 hour chunks) per file
+   to this feature's `tasks.md`, with the first task marked `in_progress` when work
+   starts.
+
+Recommended scan command (bash):
+
+```bash
+find src -type f \( -name '*.ts' -o -name '*.tsx' \) -print0 | xargs -0 wc -l | awk '$1 > 300 { print $0 }' > specs/003-extend-placeholder-create/filesize-scan.txt
+```
+
+Follow the constitution guidance: prefer extracting pure helpers and utilities
+first (low risk), add tests for extracted code, and use a thin re-exporting facade
+in the original file during migration to keep call-sites stable.
 
 ## Phase 3+: Future Implementation
 *These phases are beyond the scope of the /plan command*
