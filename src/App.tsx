@@ -2,9 +2,9 @@ import React, { useEffect, useMemo, useState } from "react";
 
 import HudRoot from "./components/hud/HudRoot";
 import SettingsDrawer from "./components/overlays/SettingsDrawer";
-import StatsModal from "./components/overlays/StatsModal";
 import VictoryOverlay from "./components/overlays/VictoryOverlay";
 import Scene from "./components/Scene";
+import StatsModal from "./components/ui/StatsModal";
 import { setVictoryState } from "./ecs/entities/SimulationState";
 import {
   openSettingsOverlay,
@@ -41,7 +41,6 @@ export default function App() {
   useUiBridgeSystem();
 
   const { remainingSeconds, pause, resume, restartNow } = useVictoryCountdown();
-  const statsOpen = useUIStore((s) => s.statsOpen);
   const world = useSimulationWorld();
   const sim = world.simulation;
   const [testTriggered, setTestTriggered] = useState(false);
@@ -148,16 +147,7 @@ export default function App() {
         }}
       />
 
-      <StatsModal
-        open={statsOpen}
-        winnerName={winnerName}
-        teamSummaries={[]}
-        robotStats={[]}
-        sort={{ column: "kills", direction: "desc" }}
-        onClose={() => useUIStore.getState().closeStats()}
-        onSortChange={() => {}}
-        onExport={() => {}}
-      />
+      <StatsModal />
 
       <SettingsDrawer />
 

@@ -15,14 +15,14 @@ import {
   setAutoScalingEnabled as setAutoScalingEnabledImpl,
 } from "../simulation/performance";
 import {
-  closeSettings as closeSettingsImpl,
-  closeStats as closeStatsImpl,
-  openSettings as openSettingsImpl,
-  openStats as openStatsImpl,
-  pauseAutoRestart as pauseCountdownImpl,
-  resetCountdown as resetCountdownImpl,
-  resumeAutoRestart as resumeCountdownImpl,
-} from "../simulation/victory";
+  closeVictorySettings as closeSettingsImpl,
+  closeVictoryStats as closeStatsImpl,
+  openVictorySettings as openSettingsImpl,
+  openVictoryStats as openStatsImpl,
+  pauseVictoryCountdown as pauseCountdownImpl,
+  resetVictoryCountdown as resetCountdownImpl,
+  resumeVictoryCountdown as resumeCountdownImpl,
+} from "../systems/victorySystem";
 import type { SimulationWorld } from "../world";
 
 /**

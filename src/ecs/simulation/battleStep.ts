@@ -11,9 +11,9 @@ import { resetBattle } from "../management/battleStateManagement";
 import { applyMovement, getAliveRobots, propagateCaptainTargets, updateBehaviors } from "../simulation/aiController";
 import { stepPhysics } from "../simulation/physics";
 import { refreshTeamStats } from "../simulation/teamStats";
-import { evaluateVictory, tickVictoryCountdown } from "../simulation/victory";
 import { cleanupProjectiles, handleProjectileHits } from "../systems/damageSystem";
 import { capturePostBattleStats } from "../systems/statsSystem";
+import { advanceVictoryCountdown,evaluateVictoryState } from "../systems/victorySystem";
 import { runWeaponSystem } from "../systems/weaponSystem";
 import type { SimulationWorld } from "../world";
 
@@ -60,7 +60,7 @@ export function stepSimulation(
   cleanupProjectiles(world, physicsResult.despawnedProjectiles);
   refreshTeamStats(world, TEAM_LIST);
 
-  world.simulation = evaluateVictory({
+  world.simulation = evaluateVictoryState({
     robots: world.entities,
     teams: world.teams,
     simulation: world.simulation,
@@ -71,7 +71,7 @@ export function stepSimulation(
     teams: world.teams,
     simulation: world.simulation,
   });
-  world.simulation = tickVictoryCountdown(
+  world.simulation = advanceVictoryCountdown(
     {
       robots: world.entities,
       teams: world.teams,
