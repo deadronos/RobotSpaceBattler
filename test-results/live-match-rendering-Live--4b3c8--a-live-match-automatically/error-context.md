@@ -12,7 +12,7 @@
           - button "Open HUD settings" [ref=e11] [cursor=pointer]:
             - img [ref=e12]
         - group "Battle timers" [ref=e15]:
-          - generic "Elapsed time" [ref=e16]: "Elapsed: 28s"
+          - generic "Elapsed time" [ref=e16]: "Elapsed: 01s"
     - generic "Battle controls" [ref=e17]:
       - toolbar "Battle controls" [ref=e19]:
         - generic [ref=e21]: 60 fps
@@ -33,33 +33,33 @@
         - article "Red Team status" [ref=e36]:
           - generic [ref=e37]:
             - heading "Red Team" [level=3] [ref=e38]
-            - status [ref=e39]: "Captain: red-9 (Alive)"
+            - status [ref=e39]: "Captain: red-0 (Alive)"
           - generic [ref=e40]:
             - generic [ref=e41]:
               - term [ref=e42]: Alive
-              - definition [ref=e43]: "1"
+              - definition [ref=e43]: "10"
             - generic [ref=e44]:
               - term [ref=e45]: Eliminated
-              - definition [ref=e46]: "9"
+              - definition [ref=e46]: "0"
           - list "Weapon distribution" [ref=e47]:
-            - listitem [ref=e48]: "laser: 0"
-            - listitem [ref=e49]: "gun: 0"
-            - listitem [ref=e50]: "rocket: 1"
+            - listitem [ref=e48]: "laser: 4"
+            - listitem [ref=e49]: "gun: 3"
+            - listitem [ref=e50]: "rocket: 3"
         - article "Blue Team status" [ref=e51]:
           - generic [ref=e52]:
             - heading "Blue Team" [level=3] [ref=e53]
-            - status [ref=e54]: "Captain: blue-8 (Alive)"
+            - status [ref=e54]: "Captain: blue-0 (Alive)"
           - generic [ref=e55]:
             - generic [ref=e56]:
               - term [ref=e57]: Alive
-              - definition [ref=e58]: "2"
+              - definition [ref=e58]: "10"
             - generic [ref=e59]:
               - term [ref=e60]: Eliminated
-              - definition [ref=e61]: "8"
+              - definition [ref=e61]: "0"
           - list "Weapon distribution" [ref=e62]:
-            - listitem [ref=e63]: "laser: 1"
-            - listitem [ref=e64]: "gun: 0"
-            - listitem [ref=e65]: "rocket: 1"
+            - listitem [ref=e63]: "laser: 3"
+            - listitem [ref=e64]: "gun: 4"
+            - listitem [ref=e65]: "rocket: 3"
   - generic [ref=e66]:
     - generic:
       - generic:
