@@ -25,67 +25,51 @@ Implement contract validator infrastructure (blocks all user stories).
 - [x] T004 [P] Create `specs/003-extend-placeholder-create/schemas/team.schema.json`
 - [x] T005 [P] Create `specs/003-extend-placeholder-create/schemas/matchtrace.schema.json`
 - [x] T006 Create `tests/contract-validator.spec.ts` test harness using Vitest + ajv
-- [x] T007 [P] Create `src/systems/matchTrace/contractValidator.ts` wrapper
-- [x] T008 Implement `src/systems/matchTrace/types.ts` TypeScript interfaces
-- [x] T009 Add contract validation tests for FR-009-A acceptance criteria
-- [x] T010 Run contract validator tests and confirm all pass
-
----
 
 ## Phase 3: User Story 1 — Run a 3D Team Fight Match (P1)
 
 **Story Goal**: Execute fully automated 3D match from spawn to victory.
 
 **Independent Test Criteria**:
-
 - Complete match runs spawn to victory in dev scene
 - Two teams spawn with 3D models and move correctly
 - Projectiles fire and collisions are visible
-- Winning team identified by simulation
 - Match result recorded in-memory
 - Visual rendering completes without crash
 
 **Implementation Strategy**: Build synchronization and rendering loop first; then entity
-spawn/despawn; then projectiles; finally victory detection and HUD.
 
 ### Task Group 3.1: Match Timeline & Synchronization
 
 - [x] T011 [P] [US1] Create `src/systems/matchTrace/matchPlayer.ts`
-- [x] T012 [P] [US1] Implement `src/systems/matchTrace/interpolator.ts`
 - [x] T013 [US1] Add frame-step debug mode to `matchPlayer.ts`
 - [x] T014 [P] [US1] Create `src/hooks/useMatchTimeline.ts` hook
 
 ### Task Group 3.2: Entity Spawning & Visual Representation
 
 - [x] T015 [P] [US1] Create `src/systems/matchTrace/entityMapper.ts`
-- [x] T016 [P] [US1] Implement `src/components/match/RenderedRobot.tsx`
 - [x] T017 [US1] Create `src/components/match/RenderedProjectile.tsx`
 - [x] T018 [P] [US1] Extend `src/components/match/MatchPlayer.tsx`
 - [x] T019 [US1] Implement asset fallback in `src/systems/matchTrace/assetLoader.ts`
 
 ### Task Group 3.3: Victory & Match End State
-
 - [x] T020 [P] [US1] Create `src/systems/matchTrace/matchValidator.ts`
 - [x] T021 [US1] Implement `src/components/match/MatchHUD.tsx`
 - [x] T022 [US1] Implement `src/components/match/MatchCinematic.tsx` stub
 
-### Task Group 3.4: Integration & Match Execution
 
 - [x] T023 [P] [US1] Create `src/hooks/useMatchSimulation.ts` orchestrator
 - [x] T024 [US1] Integrate components into `src/components/Scene.tsx`
 - [x] T025 [US1] Write tests in `tests/unit/matchPlayer.test.ts`
 - [x] T026 [US1] Write tests in `tests/unit/entityMapper.test.ts`
 
----
 
 ## Phase 4: User Story 2 — Visual Quality & Graphics Options (P2)
 
 **Story Goal**: Toggle visual quality settings (High/Medium/Low) without simulation impact.
 
-**Independent Test Criteria**:
 
 - Visual quality profile can be set before/during match
-- High mode shows enhanced effects (shadows, textures, particles)
 - Low/Performance mode uses simplified materials
 - Simulation outcome identical across profiles
 - Frame rate adapts without breaking rendering

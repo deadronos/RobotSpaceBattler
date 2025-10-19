@@ -152,7 +152,6 @@ export function stepSimulation(
 export function getProjectiles(world: SimulationWorld): Projectile[] {
   return getProjectilesAPI(world);
 }
-
 export function inflictDamage(
   world: SimulationWorld,
   robotId: string,
