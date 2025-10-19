@@ -1,3 +1,9 @@
+/*
+ CONSTITUTION-EXEMPT: Playwright E2E spec — live-match rendering covers an
+ extended rendering/visual verification scenario across frames. Exempted under
+ policy because Playwright integration tests are inherently longer.
+*/
+
 /**
  * Live Match Rendering E2E Tests (T055, US3, Phase 7)
  *

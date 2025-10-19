@@ -1,3 +1,9 @@
+/*
+ CONSTITUTION-EXEMPT: Playwright E2E spec — deterministic replay covers a long
+ scenario requiring multiple steps and assertions. Exempted because E2E specs
+ are naturally longer; see PR justification.
+*/
+
 /**
  * E2E Tests for Deterministic Replay (T042, US3)
  *
