@@ -6,8 +6,8 @@
 //  - GITHUB_REPOSITORY (owner/repo)
 //  - CHANGED_FILES_LIST (newline-separated list of changed file paths) -- if empty, script scans default dirs
 
-const fs = require('fs').promises;
-const path = require('path');
+import { promises as fs } from 'fs';
+import path from 'path';
 
 const THRESHOLD = 300;
 const EXT_RE = /\.(js|jsx|ts|tsx)$/i;

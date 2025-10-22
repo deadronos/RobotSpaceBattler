@@ -42,6 +42,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "ajv": "^8.16.2",
     "@gltf-transform/cli": "^4.2.1",
     "@gltf-transform/core": "^4.2.1",
     "@gltf-transform/extensions": "^4.2.1",
@@ -78,7 +79,7 @@
     "jsdom": "^27.0.0",
     "lint-staged": "^16.2.3",
     "pixelmatch": "^7.1.0",
-    "playwright": "^1.55.1",
+    "playwright": "^1.56.1",
     "pngjs": "^7.0.0",
     "prettier": "^3.6.2",
     "rollup-plugin-visualizer": "^6.0.4",

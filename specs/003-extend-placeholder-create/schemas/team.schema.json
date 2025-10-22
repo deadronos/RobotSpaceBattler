@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Team",
+  "type": "object",
+  "required": ["id", "name", "units", "spawnPoints"],
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "metadata": { "type": "object" },
+    "units": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          { "type": "string" },
+          {
+            "type": "object",
+            "required": ["id", "modelRef", "teamId", "maxHealth"],
+            "properties": {
+              "id": { "type": "string" },
+              "modelRef": { "type": "string" },
+              "teamId": { "type": "string" },
+              "maxHealth": { "type": "number" },
+              "weapons": { "type": "array", "items": { "type": "object" } },
+              "isCaptain": { "type": "boolean" }
+            }
+          }
+        ]
+      }
+    },
+    "spawnPoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["spawnPointId", "position"],
+        "properties": {
+          "spawnPointId": { "type": "string" },
+          "position": {
+            "type": "object",
+            "required": ["x", "y", "z"],
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" },
+              "z": { "type": "number" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

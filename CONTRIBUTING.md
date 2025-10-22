@@ -59,3 +59,33 @@ Start here:
 6. Run `/implement` to apply the tasks; then run tests and validate.
 
 If preferred, reference the `README.md` Spec Kit section for more details.
+
+## ES Modules (Node scripts)
+
+This repository uses ES modules by default (see `package.json` -> `type: "module"`).
+
+- All `.js` files that are executed by Node (including CI scripts) must use ESM syntax (`import` / `export`).
+- Do not use `require()` or `module.exports` in `.js` files. If a file must remain CommonJS, name it with a `.cjs` extension.
+
+Quick examples:
+
+- Bad (CommonJS in `.js`):
+
+```js
+const fs = require('fs').promises;
+```
+
+- Good (ESM):
+
+```js
+import { promises as fs } from 'fs';
+```
+
+For CI and automation scripts:
+
+- Ensure any Node-invoked script uses ESM or is explicitly `.cjs`.
+- When adding or changing CI scripts, run workflows locally when possible and
+  confirm they run on Node 20 in CI.
+
+Automated tools (bots/agents) that modify repository scripts must follow this
+policy. See `AGENTS.md` for agent-specific responsibilities.
