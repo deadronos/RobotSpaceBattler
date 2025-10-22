@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 
 import BattleHud from "./components/hud/BattleHud";
-import SettingsPanel from "./components/hud/SettingsPanel";
 import StatusPanel from "./components/hud/StatusPanel";
 import TeamOverview from "./components/hud/TeamOverview";
+import ToolsMenu from "./components/hud/ToolsMenu";
 import Scene from "./components/Scene";
 import { useSimulationStore } from "./state/simulationStore";
 
@@ -79,9 +79,12 @@ function App() {
 
   return (
     <div style={containerStyle}>
-      <header style={{ gridArea: "status", padding: "24px" }}>
-        <div style={panelTitleStyle}>Battle Status</div>
-        <StatusPanel />
+      <header style={{ gridArea: "status", padding: "24px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <div style={panelTitleStyle}>Battle Status</div>
+          <StatusPanel />
+        </div>
+        <ToolsMenu />
       </header>
 
       <section style={sceneWrapperStyle}>
@@ -91,9 +94,6 @@ function App() {
             <>
               <div style={topRowStyle}>
                 <BattleHud />
-              </div>
-              <div style={bottomRowStyle}>
-                <SettingsPanel />
               </div>
             </>
           )}

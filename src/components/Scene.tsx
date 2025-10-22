@@ -66,9 +66,9 @@ function Scene() {
           maxDistance={70}
         />
         <CinematicCamera />
+        <StatsGl />
       </Canvas>
       {showHud && <div style={overlayStyle}>Battle HUD Active</div>}
-      <StatsGl />
     </div>
   );
 }
