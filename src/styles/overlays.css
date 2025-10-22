@@ -1,4 +1,0 @@
-/* Minimal overlay styles */
-.victory-overlay { position: fixed; inset: 10% 10%; background: rgba(0,0,0,0.8); color: #fff; padding: 16px; border-radius: 8px; z-index: 999; }
-.settings-drawer { position: fixed; right: 0; top: 0; bottom: 0; width: 320px; background: #222; color: #fff; padding: 12px; z-index: 1000; }
-.stats-modal { position: fixed; left: 10%; right: 10%; top: 10%; bottom: 10%; background: #fff; color: #000; overflow: auto; z-index: 998; padding: 12px; }
