@@ -23,15 +23,15 @@
    - [x] Remove direct ECS mutation; render-only responsibilities remain.
 
 ## Phase 3 – AI Module Refactor
-1. **Carve out targeting helpers**
-   - Move `findClosestEnemy`, `pickCaptainTarget` into `src/simulation/ai/targeting.ts` with deterministic tie-breakers from Spec 001.
-2. **State machine clarification**
-   - Define `RobotBehaviorMode` enum and transition table in `src/simulation/ai/behaviorState.ts`.
-   - Export pure `nextBehaviorState(robotSnapshot, context)` function with RNG injection for deterministic replay per Spec 003.
-3. **Pathing & formation coordination**
-   - Extract movement vector calculations into `src/simulation/ai/pathing.ts` reusing captain alignment rules.
-4. **Update tests**
-   - Add Vitest suites covering captain reassignment, mode transitions, and deterministic outputs.
+1. [x] **Carve out targeting helpers**
+   - [x] Move `findClosestEnemy`, `pickCaptainTarget` into `src/simulation/ai/targeting.ts` with deterministic tie-breakers from Spec 001.
+2. [x] **State machine clarification**
+   - [x] Define `RobotBehaviorMode` enum and transition table in `src/simulation/ai/behaviorState.ts`.
+   - [x] Export pure `nextBehaviorState(robotSnapshot, context)` function with RNG injection for deterministic replay per Spec 003.
+3. [x] **Pathing & formation coordination**
+   - [x] Extract movement vector calculations into `src/simulation/ai/pathing.ts` reusing captain alignment rules.
+4. [x] **Update tests**
+   - [x] Add Vitest suites covering captain reassignment, mode transitions, and deterministic outputs.
 
 ## Phase 4 – Combat Systems Separation
 1. **Weapon firing controller**
