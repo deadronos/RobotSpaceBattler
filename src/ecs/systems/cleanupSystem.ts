@@ -1,10 +1,21 @@
 import { applyCaptaincy } from "../../lib/captainElection";
-import { useSimulationStore } from "../../state/simulationStore";
 import { BattleWorld, RobotEntity, TeamId } from "../world";
 
-const ROBOTS_PER_TEAM = 10;
+export interface CleanupTeamStats {
+  active: number;
+  eliminations: number;
+  captainId: string | null;
+  totalKills: number;
+}
 
-export function cleanupSystem(world: BattleWorld): void {
+export interface CleanupSystemOptions {
+  totalRobotsPerTeam: Record<TeamId, number>;
+}
+
+export function cleanupSystem(
+  world: BattleWorld,
+  { totalRobotsPerTeam }: CleanupSystemOptions,
+): Record<TeamId, CleanupTeamStats> {
   const { world: miniplexWorld } = world;
   const robots = [...world.robots.entities];
 
@@ -28,14 +39,21 @@ export function cleanupSystem(world: BattleWorld): void {
     killTotals[robot.team] += robot.kills;
   });
 
+  const stats: Record<TeamId, CleanupTeamStats> = {
+    red: { active: 0, eliminations: 0, captainId: null, totalKills: 0 },
+    blue: { active: 0, eliminations: 0, captainId: null, totalKills: 0 },
+  };
+
   (Object.keys(survivors) as TeamId[]).forEach((team) => {
     applyCaptaincy(team, survivors[team]);
     const active = survivors[team].length;
-    useSimulationStore.getState().updateTeamStats(team, {
+    stats[team] = {
       active,
-      eliminations: Math.max(0, ROBOTS_PER_TEAM - active),
+      eliminations: Math.max(0, (totalRobotsPerTeam[team] ?? 0) - active),
       captainId: survivors[team].find((robot) => robot.isCaptain)?.id ?? null,
       totalKills: killTotals[team],
-    });
+    };
   });
+
+  return stats;
 }

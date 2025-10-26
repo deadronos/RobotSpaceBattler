@@ -12,26 +12,26 @@
    - Isolate initial fetch logic into `src/runtime/bootstrap/loadInitialMatch.ts`; ensure errors propagate through React Query/Suspense boundary.
 
 ## Phase 2 – Simulation Runtime Extraction
-1. **Create `src/runtime/useMatchRuntime.ts`**
-   - Manage ECS world init, clock stepping, pause/resume, and disposal.
-   - Emit MatchTrace events via `onEvent` callbacks using the Spec 003 schema.
-2. **Split supporting modules**
-   - Add `src/runtime/world/setupWorld.ts` for entity/component registration.
-   - Add `src/runtime/state/matchStateMachine.ts` encapsulating paused/running/victory transitions.
-3. **Update `Simulation.tsx`**
-   - Consume `useMatchRuntime` for lifecycle.
-   - Remove direct ECS mutation; render-only responsibilities remain.
+1. [x] **Create `src/runtime/useMatchRuntime.ts`**
+   - [x] Manage ECS world init, clock stepping, pause/resume, and disposal.
+   - [x] Emit MatchTrace events via `onEvent` callbacks using the Spec 003 schema.
+2. [x] **Split supporting modules**
+   - [x] Add `src/runtime/world/setupWorld.ts` for entity/component registration.
+   - [x] Add `src/runtime/state/matchStateMachine.ts` encapsulating paused/running/victory transitions.
+3. [x] **Update `Simulation.tsx`**
+   - [x] Consume `useMatchRuntime` for lifecycle.
+   - [x] Remove direct ECS mutation; render-only responsibilities remain.
 
 ## Phase 3 – AI Module Refactor
-1. **Carve out targeting helpers**
-   - Move `findClosestEnemy`, `pickCaptainTarget` into `src/simulation/ai/targeting.ts` with deterministic tie-breakers from Spec 001.
-2. **State machine clarification**
-   - Define `RobotBehaviorMode` enum and transition table in `src/simulation/ai/behaviorState.ts`.
-   - Export pure `nextBehaviorState(robotSnapshot, context)` function with RNG injection for deterministic replay per Spec 003.
-3. **Pathing & formation coordination**
-   - Extract movement vector calculations into `src/simulation/ai/pathing.ts` reusing captain alignment rules.
-4. **Update tests**
-   - Add Vitest suites covering captain reassignment, mode transitions, and deterministic outputs.
+1. [x] **Carve out targeting helpers**
+   - [x] Move `findClosestEnemy`, `pickCaptainTarget` into `src/simulation/ai/targeting.ts` with deterministic tie-breakers from Spec 001.
+2. [x] **State machine clarification**
+   - [x] Define `RobotBehaviorMode` enum and transition table in `src/simulation/ai/behaviorState.ts`.
+   - [x] Export pure `nextBehaviorState(robotSnapshot, context)` function with RNG injection for deterministic replay per Spec 003.
+3. [x] **Pathing & formation coordination**
+   - [x] Extract movement vector calculations into `src/simulation/ai/pathing.ts` reusing captain alignment rules.
+4. [x] **Update tests**
+   - [x] Add Vitest suites covering captain reassignment, mode transitions, and deterministic outputs.
 
 ## Phase 4 – Combat Systems Separation
 1. **Weapon firing controller**

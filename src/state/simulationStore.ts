@@ -2,8 +2,9 @@ import { create } from "zustand";
 
 import { BattleWorld, TeamId } from "../ecs/world";
 import { InitialMatchPayload } from "../runtime/bootstrap/loadInitialMatch";
+import type { MatchRuntimePhase } from "../runtime/state/matchStateMachine";
 
-export type SimulationPhase = "initializing" | "running" | "paused" | "victory";
+export type SimulationPhase = MatchRuntimePhase;
 interface SimulationStore {
   phase: SimulationPhase;
   battleWorld: BattleWorld | null;
@@ -73,7 +74,7 @@ export const useSimulationStore = create<SimulationStore>((set) => ({
       }
 
       return {
-        phase: "running",
+        phase: "initializing",
         elapsedMs: 0,
         winner: null,
         restartTimer: null,
