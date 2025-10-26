@@ -5,7 +5,7 @@ import * as THREE from "three";
 
 import { BattleWorld, ProjectileEntity } from "../ecs/world";
 import { getWeaponStats } from "../lib/weapons";
-import { useSimulationStore } from "../state/simulationStore";
+import { useHudStore } from "../state/ui/hudStore";
 
 interface ProjectilesProps {
   worldRef: React.MutableRefObject<BattleWorld | null>;
@@ -14,7 +14,7 @@ interface ProjectilesProps {
 function ProjectileActor({ projectile }: { projectile: ProjectileEntity }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const stats = getWeaponStats(projectile.weapon);
-  const reducedMotion = useSimulationStore((state) => state.reducedMotion);
+  const reducedMotion = useHudStore((state) => state.reducedMotion);
 
   useFrame(() => {
     if (!meshRef.current) {

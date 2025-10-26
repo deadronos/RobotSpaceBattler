@@ -4,7 +4,7 @@ import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { Suspense } from "react";
 
 import CinematicCamera from "../render/CinematicCamera";
-import { useSimulationStore } from "../state/simulationStore";
+import { useHudStore } from "../state/ui/hudStore";
 import Simulation from "./Simulation";
 
 const overlayStyle: React.CSSProperties = {
@@ -18,9 +18,9 @@ const overlayStyle: React.CSSProperties = {
 };
 
 function Scene() {
-  const showHud = useSimulationStore((state) => state.showHud);
-  const qualityProfile = useSimulationStore((state) => state.qualityProfile);
-  const reducedMotion = useSimulationStore((state) => state.reducedMotion);
+  const showHud = useHudStore((state) => state.showHud);
+  const qualityProfile = useHudStore((state) => state.qualityProfile);
+  const reducedMotion = useHudStore((state) => state.reducedMotion);
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
