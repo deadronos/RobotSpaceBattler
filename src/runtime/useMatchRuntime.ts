@@ -50,7 +50,7 @@ export function useMatchRuntime({
   );
 
   const worldRef = useRef<BattleWorld | null>(null);
-  const stateMachineRef = useRef<MatchStateMachine>();
+  const stateMachineRef = useRef<MatchStateMachine | null>(null);
   const sequenceRef = useRef(0);
   const teamRobotCountsRef = useRef<Record<TeamId, number>>({
     red: 0,

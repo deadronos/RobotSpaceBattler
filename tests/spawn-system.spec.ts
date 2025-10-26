@@ -14,7 +14,7 @@ function countByTeam<T extends { team: "red" | "blue" }>(entities: T[]) {
 describe("spawn system", () => {
   it("spawns 10 robots per team with captains assigned", () => {
     const battleWorld = createBattleWorld();
-    spawnTeams(battleWorld, 1234);
+    spawnTeams(battleWorld, { seed: 1234 });
 
     const robots = battleWorld.robots.entities;
     const counts = countByTeam(robots);
