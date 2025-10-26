@@ -1,14 +1,12 @@
 import { useCallback, useState } from "react";
 
-import {
-  QualityProfile,
-  useSimulationStore,
-} from "../../state/simulationStore";
+import { QualityProfile, useHudStore } from "../../state/ui/hudStore";
 
 const menuButtonStyle: React.CSSProperties = {
   pointerEvents: "auto",
   appearance: "none",
-  background: "linear-gradient(180deg, rgba(20, 30, 66, 0.86) 0%, rgba(6, 9, 20, 0.92) 100%)",
+  background:
+    "linear-gradient(180deg, rgba(20, 30, 66, 0.86) 0%, rgba(6, 9, 20, 0.92) 100%)",
   border: "1px solid rgba(104, 137, 255, 0.3)",
   borderRadius: "12px",
   padding: "8px 12px",
@@ -24,7 +22,8 @@ const menuButtonStyle: React.CSSProperties = {
 const menuButtonHoverStyle: React.CSSProperties = {
   ...menuButtonStyle,
   borderColor: "rgba(104, 137, 255, 0.6)",
-  background: "linear-gradient(180deg, rgba(40, 50, 100, 0.9) 0%, rgba(16, 19, 50, 0.95) 100%)",
+  background:
+    "linear-gradient(180deg, rgba(40, 50, 100, 0.9) 0%, rgba(16, 19, 50, 0.95) 100%)",
 };
 
 const panelStyle: React.CSSProperties = {
@@ -35,7 +34,8 @@ const panelStyle: React.CSSProperties = {
   marginTop: "8px",
   padding: "16px",
   borderRadius: "12px",
-  background: "linear-gradient(180deg, rgba(20, 30, 66, 0.94) 0%, rgba(6, 9, 20, 0.96) 100%)",
+  background:
+    "linear-gradient(180deg, rgba(20, 30, 66, 0.94) 0%, rgba(6, 9, 20, 0.96) 100%)",
   border: "1px solid rgba(104, 137, 255, 0.4)",
   boxShadow: "0 20px 36px rgba(3, 6, 18, 0.6)",
   minWidth: "240px",
@@ -121,16 +121,12 @@ const toggleDotStyle = (active: boolean): React.CSSProperties => ({
 function ToolsMenu() {
   const [isOpen, setIsOpen] = useState(false);
 
-  const qualityProfile = useSimulationStore((state) => state.qualityProfile);
-  const setQualityProfile = useSimulationStore(
-    (state) => state.setQualityProfile,
-  );
-  const reducedMotion = useSimulationStore((state) => state.reducedMotion);
-  const toggleReducedMotion = useSimulationStore(
-    (state) => state.toggleReducedMotion,
-  );
-  const showHud = useSimulationStore((state) => state.showHud);
-  const toggleHud = useSimulationStore((state) => state.toggleHud);
+  const qualityProfile = useHudStore((state) => state.qualityProfile);
+  const setQualityProfile = useHudStore((state) => state.setQualityProfile);
+  const reducedMotion = useHudStore((state) => state.reducedMotion);
+  const toggleReducedMotion = useHudStore((state) => state.toggleReducedMotion);
+  const showHud = useHudStore((state) => state.showHud);
+  const toggleHud = useHudStore((state) => state.toggleHud);
 
   const handleQualityChange = useCallback(
     (profile: QualityProfile) => () => {
@@ -158,16 +154,18 @@ function ToolsMenu() {
           <div style={sectionStyle}>
             <div style={sectionTitleStyle}>Quality</div>
             <div style={buttonRowStyle}>
-              {(["High", "Medium", "Low"] as QualityProfile[]).map((profile) => (
-                <button
-                  key={profile}
-                  type="button"
-                  style={qualityButtonStyle(qualityProfile === profile)}
-                  onClick={handleQualityChange(profile)}
-                >
-                  {profile}
-                </button>
-              ))}
+              {(["High", "Medium", "Low"] as QualityProfile[]).map(
+                (profile) => (
+                  <button
+                    key={profile}
+                    type="button"
+                    style={qualityButtonStyle(qualityProfile === profile)}
+                    onClick={handleQualityChange(profile)}
+                  >
+                    {profile}
+                  </button>
+                ),
+              )}
             </div>
           </div>
 
@@ -185,7 +183,13 @@ function ToolsMenu() {
             </div>
           </div>
 
-          <div style={{ borderTop: "1px solid rgba(115, 147, 255, 0.2)", paddingTop: "12px", marginTop: "12px" }}>
+          <div
+            style={{
+              borderTop: "1px solid rgba(115, 147, 255, 0.2)",
+              paddingTop: "12px",
+              marginTop: "12px",
+            }}
+          >
             <div style={toggleRowStyle}>
               <span>Show HUD</span>
               <button

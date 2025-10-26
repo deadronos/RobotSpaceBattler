@@ -1,16 +1,6 @@
-import { useSimulationStore } from "../../state/simulationStore";
 import { BattleWorld, TeamId } from "../world";
 
-const AUTO_RESTART_MS = 5000;
-
-export function updateVictorySystem(world: BattleWorld): void {
-  const store = useSimulationStore.getState();
-  const { phase } = store;
-
-  if (phase === "victory") {
-    return;
-  }
-
+export function checkVictory(world: BattleWorld): TeamId | null {
   const robots = world.robots.entities;
   const aliveByTeam: Record<TeamId, number> = { red: 0, blue: 0 };
 
@@ -20,17 +10,13 @@ export function updateVictorySystem(world: BattleWorld): void {
     }
   });
 
-  let winner: TeamId | null = null;
-
   if (aliveByTeam.red === 0 && aliveByTeam.blue > 0) {
-    winner = "blue";
-  } else if (aliveByTeam.blue === 0 && aliveByTeam.red > 0) {
-    winner = "red";
+    return "blue";
   }
 
-  if (winner) {
-    store.setWinner(winner);
-    store.setPhase("victory");
-    store.setRestartTimer(AUTO_RESTART_MS);
+  if (aliveByTeam.blue === 0 && aliveByTeam.red > 0) {
+    return "red";
   }
+
+  return null;
 }

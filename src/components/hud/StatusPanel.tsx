@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 
 import { useSimulationStore } from "../../state/simulationStore";
+import { useHudStore } from "../../state/ui/hudStore";
 
 const containerStyle: React.CSSProperties = {
   display: "flex",
@@ -45,7 +46,7 @@ function formatTime(ms: number): string {
 function StatusPanel() {
   const elapsedMs = useSimulationStore((state) => state.elapsedMs);
   const phase = useSimulationStore((state) => state.phase);
-  const qualityProfile = useSimulationStore((state) => state.qualityProfile);
+  const qualityProfile = useHudStore((state) => state.qualityProfile);
 
   const phaseBadge = useMemo(() => {
     if (phase === "paused") {

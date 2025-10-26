@@ -2,6 +2,7 @@ import { useMemo } from "react";
 
 import { TEAM_CONFIGS } from "../../lib/teamConfig";
 import { useSimulationStore } from "../../state/simulationStore";
+import { useHudStore } from "../../state/ui/hudStore";
 
 const cardStyle: React.CSSProperties = {
   pointerEvents: "auto",
@@ -63,10 +64,10 @@ function BattleHud() {
   const elapsedMs = useSimulationStore((state) => state.elapsedMs);
   const pause = useSimulationStore((state) => state.pause);
   const resume = useSimulationStore((state) => state.resume);
-  const toggleHud = useSimulationStore((state) => state.toggleHud);
-  const toggleCinematic = useSimulationStore((state) => state.toggleCinematic);
-  const showHud = useSimulationStore((state) => state.showHud);
-  const cinematicMode = useSimulationStore((state) => state.cinematicMode);
+  const toggleHud = useHudStore((state) => state.toggleHud);
+  const cameraMode = useHudStore((state) => state.cameraMode);
+  const setCameraMode = useHudStore((state) => state.setCameraMode);
+  const showHud = useHudStore((state) => state.showHud);
   const winner = useSimulationStore((state) => state.winner);
   const restartTimer = useSimulationStore((state) => state.restartTimer);
 
@@ -108,6 +109,12 @@ function BattleHud() {
     return "Battle in progress";
   }, [phase, restartTimer, winner]);
 
+  const cinematicMode = cameraMode === "cinematic";
+
+  const handleCameraToggle = () => {
+    setCameraMode(cinematicMode ? "default" : "cinematic");
+  };
+
   return (
     <div style={cardStyle}>
       <div style={statusStyle} id="status">
@@ -124,7 +131,7 @@ function BattleHud() {
         <button
           type="button"
           style={secondaryButtonStyle}
-          onClick={toggleCinematic}
+          onClick={handleCameraToggle}
         >
           {cinematicMode ? "Disable Cinematic" : "Enable Cinematic"}
         </button>

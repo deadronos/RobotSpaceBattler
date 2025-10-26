@@ -1,9 +1,6 @@
 import { useCallback } from "react";
 
-import {
-  QualityProfile,
-  useSimulationStore,
-} from "../../state/simulationStore";
+import { QualityProfile, useHudStore } from "../../state/ui/hudStore";
 
 const containerStyle: React.CSSProperties = {
   pointerEvents: "auto",
@@ -75,14 +72,10 @@ const toggleDotStyle = (active: boolean): React.CSSProperties => ({
 });
 
 function SettingsPanel() {
-  const qualityProfile = useSimulationStore((state) => state.qualityProfile);
-  const setQualityProfile = useSimulationStore(
-    (state) => state.setQualityProfile,
-  );
-  const reducedMotion = useSimulationStore((state) => state.reducedMotion);
-  const toggleReducedMotion = useSimulationStore(
-    (state) => state.toggleReducedMotion,
-  );
+  const qualityProfile = useHudStore((state) => state.qualityProfile);
+  const setQualityProfile = useHudStore((state) => state.setQualityProfile);
+  const reducedMotion = useHudStore((state) => state.reducedMotion);
+  const toggleReducedMotion = useHudStore((state) => state.toggleReducedMotion);
 
   const handleQualityChange = useCallback(
     (profile: QualityProfile) => () => {

@@ -5,14 +5,22 @@ import { createRng } from "../utils/random";
 import { addVec3 } from "../utils/vector";
 import { BattleWorld, RobotEntity, TeamId, toVec3, WeaponType } from "../world";
 
-const robotCountPerTeam = 10;
+const DEFAULT_ROBOTS_PER_TEAM = 10;
 const formationSpacing = 2.4;
 const rows = 2;
 
-function formationOffset(index: number): { x: number; z: number } {
-  const row = Math.floor(index / (robotCountPerTeam / rows));
-  const column = index % (robotCountPerTeam / rows);
-  const centeredColumn = column - (robotCountPerTeam / rows - 1) / 2;
+function formationOffset(
+  index: number,
+  robotsPerTeam: number,
+): { x: number; z: number } {
+  if (robotsPerTeam <= 0) {
+    return { x: 0, z: 0 };
+  }
+
+  const columns = Math.max(1, Math.ceil(robotsPerTeam / rows));
+  const row = Math.floor(index / columns);
+  const column = index % columns;
+  const centeredColumn = column - (columns - 1) / 2;
   return {
     x: centeredColumn * formationSpacing,
     z: row * formationSpacing,
@@ -57,17 +65,35 @@ function pickWeapon(index: number): WeaponType {
   return weapons[index % weapons.length];
 }
 
-export function spawnTeams(world: BattleWorld, seed = 1337): void {
+export interface SpawnTeamsOptions {
+  seed?: number;
+  teamRobotCounts?: Partial<Record<TeamId, number>>;
+  onSpawn?: (robot: RobotEntity) => void;
+}
+
+export function spawnTeams(
+  world: BattleWorld,
+  options: SpawnTeamsOptions = {},
+): Record<TeamId, RobotEntity[]> {
+  const { seed = 1337, teamRobotCounts = {}, onSpawn } = options;
   const rng = createRng(seed);
+
+  const teams: Record<TeamId, RobotEntity[]> = { red: [], blue: [] };
 
   (["red", "blue"] as TeamId[]).forEach((team) => {
     const robots: RobotEntity[] = [];
+    const robotCount = teamRobotCounts[team] ?? DEFAULT_ROBOTS_PER_TEAM;
 
-    for (let index = 0; index < robotCountPerTeam; index += 1) {
+    if (robotCount <= 0) {
+      teams[team] = robots;
+      return;
+    }
+
+    for (let index = 0; index < robotCount; index += 1) {
       const weapon = pickWeapon(index);
       const weaponStats = getWeaponStats(weapon);
       const offset = 0.2 + rng() * weaponStats.fireRate;
-      const displacement = formationOffset(index);
+      const displacement = formationOffset(index, robotCount);
       const robot = buildRobot({
         team,
         spawnIndex: index,
@@ -77,8 +103,12 @@ export function spawnTeams(world: BattleWorld, seed = 1337): void {
       });
       world.world.add(robot);
       robots.push(robot);
+      onSpawn?.(robot);
     }
 
     applyCaptaincy(team, robots);
+    teams[team] = robots;
   });
+
+  return teams;
 }

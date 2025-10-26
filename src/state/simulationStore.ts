@@ -1,20 +1,17 @@
 import { create } from "zustand";
 
 import { BattleWorld, TeamId } from "../ecs/world";
+import { InitialMatchPayload } from "../runtime/bootstrap/loadInitialMatch";
+import type { MatchRuntimePhase } from "../runtime/state/matchStateMachine";
 
-export type SimulationPhase = "initializing" | "running" | "paused" | "victory";
-export type QualityProfile = "High" | "Medium" | "Low";
-
+export type SimulationPhase = MatchRuntimePhase;
 interface SimulationStore {
   phase: SimulationPhase;
-  showHud: boolean;
-  cinematicMode: boolean;
-  qualityProfile: QualityProfile;
-  reducedMotion: boolean;
   battleWorld: BattleWorld | null;
   elapsedMs: number;
   winner: TeamId | null;
   restartTimer: number | null;
+  initialMatch: InitialMatchPayload | null;
   teamStats: Record<
     TeamId,
     {
@@ -38,30 +35,25 @@ interface SimulationStore {
       totalKills: number;
     },
   ) => void;
-  toggleHud: () => void;
-  toggleCinematic: () => void;
-  toggleReducedMotion: () => void;
-  setQualityProfile: (profile: QualityProfile) => void;
-  initialize: () => void;
+  initialize: (match?: InitialMatchPayload) => void;
   pause: () => void;
   resume: () => void;
   reset: () => void;
 }
 
+const createInitialTeamStats = () => ({
+  red: { active: 0, eliminations: 0, captainId: null, totalKills: 0 },
+  blue: { active: 0, eliminations: 0, captainId: null, totalKills: 0 },
+});
+
 export const useSimulationStore = create<SimulationStore>((set) => ({
   phase: "initializing",
-  showHud: true,
-  cinematicMode: false,
-  qualityProfile: "High",
-  reducedMotion: false,
   battleWorld: null,
   elapsedMs: 0,
   winner: null,
   restartTimer: null,
-  teamStats: {
-    red: { active: 0, eliminations: 0, captainId: null, totalKills: 0 },
-    blue: { active: 0, eliminations: 0, captainId: null, totalKills: 0 },
-  },
+  initialMatch: null,
+  teamStats: createInitialTeamStats(),
   setBattleWorld: (world) => set({ battleWorld: world }),
   setPhase: (phase) => set({ phase }),
   setWinner: (winner) => set({ winner }),
@@ -74,35 +66,32 @@ export const useSimulationStore = create<SimulationStore>((set) => ({
         [team]: stats,
       },
     })),
-  toggleHud: () => set((state) => ({ showHud: !state.showHud })),
-  toggleCinematic: () =>
-    set((state) => ({ cinematicMode: !state.cinematicMode })),
-  toggleReducedMotion: () =>
-    set((state) => ({ reducedMotion: !state.reducedMotion })),
-  setQualityProfile: (profile) => set({ qualityProfile: profile }),
-  initialize: () =>
-    set({
-      phase: "running",
-      elapsedMs: 0,
-      winner: null,
-      restartTimer: null,
-      teamStats: {
-        red: { active: 0, eliminations: 0, captainId: null, totalKills: 0 },
-        blue: { active: 0, eliminations: 0, captainId: null, totalKills: 0 },
-      },
+  initialize: (match) =>
+    set((state) => {
+      const nextMatch = match ?? state.initialMatch;
+      if (!nextMatch) {
+        throw new Error("Initial match payload is required for initialization");
+      }
+
+      return {
+        phase: "initializing",
+        elapsedMs: 0,
+        winner: null,
+        restartTimer: null,
+        initialMatch: nextMatch,
+        teamStats: createInitialTeamStats(),
+      };
     }),
   pause: () => set({ phase: "paused" }),
   resume: () => set({ phase: "running" }),
   reset: () =>
-    set({
+    set((state) => ({
       phase: "initializing",
       elapsedMs: 0,
       winner: null,
       restartTimer: null,
       battleWorld: null,
-      teamStats: {
-        red: { active: 0, eliminations: 0, captainId: null, totalKills: 0 },
-        blue: { active: 0, eliminations: 0, captainId: null, totalKills: 0 },
-      },
-    }),
+      initialMatch: state.initialMatch,
+      teamStats: createInitialTeamStats(),
+    })),
 }));

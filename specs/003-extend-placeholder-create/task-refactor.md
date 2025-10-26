@@ -1,26 +1,26 @@
 # Refactor Task Breakdown: Core Match Runtime
 
 ## Phase 1 – Application Shell & HUD State
-1. **Extract layout primitives**
-   - Create `src/ui/layout/AppLayout.tsx` with grid + sidebar structure.
-   - Move HUD containers into `src/ui/hud/HudShell.tsx`; expose props for visibility flags.
-   - Replace inline styles in `App.tsx` with imports from `AppLayout`.
-2. **Centralize UI state**
-   - Introduce `src/state/ui/hudStore.ts` (Zustand/Recoil) to manage HUD visibility, camera mode, and quality settings with latency telemetry hooks per Spec 002.
-   - Update `App.tsx` and existing HUD toggles to read/write via the store.
-3. **Data loading boundary**
+1. [x] **Extract layout primitives**
+   - [x] Create `src/ui/layout/AppLayout.tsx` with grid + sidebar structure.
+   - [x] Move HUD containers into `src/ui/hud/HudShell.tsx`; expose props for visibility flags.
+   - [x] Replace inline styles in `App.tsx` with imports from `AppLayout`.
+2. [x] **Centralize UI state**
+   - [x] Introduce `src/state/ui/hudStore.ts` (Zustand/Recoil) to manage HUD visibility, camera mode, and quality settings with latency telemetry hooks per Spec 002.
+   - [x] Update `App.tsx` and existing HUD toggles to read/write via the store.
+3. [x] **Data loading boundary**
    - Isolate initial fetch logic into `src/runtime/bootstrap/loadInitialMatch.ts`; ensure errors propagate through React Query/Suspense boundary.
 
 ## Phase 2 – Simulation Runtime Extraction
-1. **Create `src/runtime/useMatchRuntime.ts`**
-   - Manage ECS world init, clock stepping, pause/resume, and disposal.
-   - Emit MatchTrace events via `onEvent` callbacks using the Spec 003 schema.
-2. **Split supporting modules**
-   - Add `src/runtime/world/setupWorld.ts` for entity/component registration.
-   - Add `src/runtime/state/matchStateMachine.ts` encapsulating paused/running/victory transitions.
-3. **Update `Simulation.tsx`**
-   - Consume `useMatchRuntime` for lifecycle.
-   - Remove direct ECS mutation; render-only responsibilities remain.
+1. [x] **Create `src/runtime/useMatchRuntime.ts`**
+   - [x] Manage ECS world init, clock stepping, pause/resume, and disposal.
+   - [x] Emit MatchTrace events via `onEvent` callbacks using the Spec 003 schema.
+2. [x] **Split supporting modules**
+   - [x] Add `src/runtime/world/setupWorld.ts` for entity/component registration.
+   - [x] Add `src/runtime/state/matchStateMachine.ts` encapsulating paused/running/victory transitions.
+3. [x] **Update `Simulation.tsx`**
+   - [x] Consume `useMatchRuntime` for lifecycle.
+   - [x] Remove direct ECS mutation; render-only responsibilities remain.
 
 ## Phase 3 – AI Module Refactor
 1. **Carve out targeting helpers**
