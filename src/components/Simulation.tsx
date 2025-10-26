@@ -24,26 +24,38 @@ function Simulation() {
   const setRestartTimer = useSimulationStore((state) => state.setRestartTimer);
   const resetStore = useSimulationStore((state) => state.reset);
   const initializeStore = useSimulationStore((state) => state.initialize);
+  const hasInitialMatch = useSimulationStore(
+    (state) => state.initialMatch !== null,
+  );
 
   const worldRef = useRef<BattleWorld | null>(null);
 
   const setupWorld = useCallback(() => {
+    const { initialMatch } = useSimulationStore.getState();
+    if (!initialMatch) {
+      throw new Error("Cannot setup world before initial match data loads");
+    }
+
     const battleWorld = createBattleWorld();
     worldRef.current = battleWorld;
     setBattleWorld(battleWorld);
-    spawnTeams(battleWorld);
+    spawnTeams(battleWorld, initialMatch.seed);
     cleanupSystem(battleWorld);
     initializeStore();
   }, [initializeStore, setBattleWorld]);
 
   useEffect(() => {
+    if (!hasInitialMatch) {
+      return;
+    }
+
     setupWorld();
 
     return () => {
       setBattleWorld(null);
       worldRef.current = null;
     };
-  }, [setBattleWorld, setupWorld]);
+  }, [hasInitialMatch, setBattleWorld, setupWorld]);
 
   useFrame((_, delta) => {
     const world = worldRef.current;

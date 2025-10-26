@@ -26,3 +26,14 @@ a {
 button {
   font: inherit;
 }
+
+.app-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9aaaf6;
+}

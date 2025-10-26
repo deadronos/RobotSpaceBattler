@@ -1,16 +1,16 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { memo, useRef } from "react";
 
-import { useSimulationStore } from "../state/simulationStore";
+import { useHudStore } from "../state/ui/hudStore";
 
 function CinematicCamera() {
-  const cinematicMode = useSimulationStore((state) => state.cinematicMode);
-  const reducedMotion = useSimulationStore((state) => state.reducedMotion);
+  const cameraMode = useHudStore((state) => state.cameraMode);
+  const reducedMotion = useHudStore((state) => state.reducedMotion);
   const { camera } = useThree();
   const timeRef = useRef(0);
 
   useFrame((_, delta) => {
-    if (!cinematicMode || reducedMotion) {
+    if (cameraMode !== "cinematic" || reducedMotion) {
       return;
     }
 
