@@ -1,4 +1,4 @@
-import { Vec3 } from "../ecs/world";
+import { TeamId, Vec3 } from "../ecs/world";
 
 export type MatchTraceEventType =
   | "spawn"
@@ -16,6 +16,7 @@ export type MatchTraceEventBase = {
   entityId?: string;
   attackerId?: string;
   targetId?: string;
+  teamId?: TeamId;
   position?: Vec3;
   projectileId?: string;
   collisionNormal?: Vec3;

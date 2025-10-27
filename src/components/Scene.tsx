@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { Suspense } from "react";
 
+import AdaptiveQualityController from "../render/AdaptiveQualityController";
 import CinematicCamera from "../render/CinematicCamera";
 import { useHudStore } from "../state/ui/hudStore";
 import Simulation from "./Simulation";
@@ -21,6 +22,7 @@ function Scene() {
   const showHud = useHudStore((state) => state.showHud);
   const qualityProfile = useHudStore((state) => state.qualityProfile);
   const reducedMotion = useHudStore((state) => state.reducedMotion);
+  const showDebugStats = useHudStore((state) => state.showDebugStats);
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
@@ -48,6 +50,7 @@ function Scene() {
             intensity={0.6}
           />
           <Simulation />
+          <AdaptiveQualityController />
           {!reducedMotion && (
             <EffectComposer multisampling={qualityProfile === "High" ? 4 : 0}>
               <Bloom
@@ -66,7 +69,7 @@ function Scene() {
           maxDistance={70}
         />
         <CinematicCamera />
-        <StatsGl />
+        {showDebugStats && <StatsGl />}
       </Canvas>
       {showHud && <div style={overlayStyle}>Battle HUD Active</div>}
     </div>

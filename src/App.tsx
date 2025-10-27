@@ -6,6 +6,7 @@ import StatusPanel from "./components/hud/StatusPanel";
 import TeamOverview from "./components/hud/TeamOverview";
 import ToolsMenu from "./components/hud/ToolsMenu";
 import Scene from "./components/Scene";
+import VictoryOverlay from "./components/victory/VictoryOverlay";
 import { loadInitialMatch } from "./runtime/bootstrap/loadInitialMatch";
 import { useSimulationStore } from "./state/simulationStore";
 import { useHudStore } from "./state/ui/hudStore";
@@ -20,6 +21,7 @@ function App() {
   });
 
   const initialize = useSimulationStore((state) => state.initialize);
+  const phase = useSimulationStore((state) => state.phase);
   const showHud = useHudStore((state) => state.showHud);
 
   useEffect(() => {
@@ -38,7 +40,11 @@ function App() {
         </>
       }
       scene={
-        <HudShell showHud={showHud} topOverlay={<BattleHud />}>
+        <HudShell
+          showHud={showHud}
+          topOverlay={<BattleHud />}
+          bottomOverlay={phase === "victory" ? <VictoryOverlay /> : undefined}
+        >
           <Scene />
         </HudShell>
       }

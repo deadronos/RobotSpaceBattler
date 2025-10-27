@@ -24,6 +24,8 @@ export function updateMovementSystem(
       robot,
       robot.ai.mode as RobotBehaviorMode,
       target,
+      undefined,
+      { formationAnchor: robot.ai.anchorPosition ?? undefined },
     );
 
     robot.velocity = velocity;

@@ -11,6 +11,7 @@ import {
 } from "../ecs/systems/weaponSystem";
 import { BattleWorld, TeamId } from "../ecs/world";
 import { useSimulationStore } from "../state/simulationStore";
+import { useTelemetryStore } from "../state/telemetryStore";
 import { MatchTraceEvent, MatchTraceEventInput } from "./matchTrace";
 import {
   createMatchStateMachine,
@@ -83,11 +84,22 @@ export function useMatchRuntime({
   const emitTraceEvent = useCallback(
     (event: MatchTraceEventInput) => {
       if (!onEvent) {
+        sequenceRef.current += 1;
+        const nextEvent: MatchTraceEvent = {
+          ...event,
+          sequenceId: sequenceRef.current,
+        };
+        useTelemetryStore.getState().recordEvent(nextEvent);
         return;
       }
 
       sequenceRef.current += 1;
-      onEvent({ ...event, sequenceId: sequenceRef.current });
+      const nextEvent: MatchTraceEvent = {
+        ...event,
+        sequenceId: sequenceRef.current,
+      };
+      onEvent(nextEvent);
+      useTelemetryStore.getState().recordEvent(nextEvent);
     },
     [onEvent],
   );
@@ -104,6 +116,7 @@ export function useMatchRuntime({
 
     stateMachine.reset();
     sequenceRef.current = 0;
+    useTelemetryStore.getState().reset(initialMatch.matchId);
 
     const { world, robotsByTeam } = setupWorld({
       initialMatch,
@@ -181,10 +194,17 @@ export function useMatchRuntime({
     const snapshot = stateMachine.getSnapshot();
 
     if (snapshot.phase === "running") {
+      const timestampMs = snapshot.elapsedMs;
       updateAiSystem(world);
       updateMovementSystem(world, deltaSeconds);
-      updateWeaponSystem(world, deltaSeconds);
-      updateProjectileSystem(world, deltaSeconds);
+      updateWeaponSystem(world, deltaSeconds, {
+        emitEvent: emitTraceEvent,
+        timestampMs,
+      });
+      updateProjectileSystem(world, deltaSeconds, {
+        emitEvent: emitTraceEvent,
+        timestampMs,
+      });
 
       const teamStats = cleanupSystem(world, {
         totalRobotsPerTeam: teamRobotCountsRef.current,
@@ -202,6 +222,9 @@ export function useMatchRuntime({
           entityId: winner,
           teamId: winner,
         });
+        useTelemetryStore
+          .getState()
+          .finalizeLiveRobots(snapshot.elapsedMs);
         stateMachine.declareVictory(winner);
       }
     } else if (snapshot.phase === "victory") {

@@ -12,6 +12,8 @@ export interface Vec3 {
 export interface RobotAIState {
   mode: "seek" | "engage" | "retreat";
   targetId?: string;
+  anchorPosition?: Vec3 | null;
+  directive?: "offense" | "defense" | "balanced";
 }
 
 export interface RobotEntity {

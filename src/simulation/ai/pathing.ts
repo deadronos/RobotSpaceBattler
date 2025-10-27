@@ -44,15 +44,21 @@ function directionTowards(origin: Vec3, target: Vec3): Vec3 {
   return normalize(subVec3(target, origin));
 }
 
+interface MovementOptions {
+  formationAnchor?: Vec3 | null;
+}
+
 export function planRobotMovement(
   robot: PathingSnapshot,
   mode: RobotBehaviorMode,
   target: TargetSnapshot | undefined,
   config: PathingConfig = DEFAULT_PATHING,
+  options: MovementOptions = {},
 ): MovementPlan {
   const spawnCenter = TEAM_CONFIGS[robot.team].spawnCenter;
   let desiredVelocity = scaleVec3(robot.velocity, config.velocityDamping);
   let orientation = robot.orientation;
+  const formationAnchor = options.formationAnchor ?? null;
 
   if (target) {
     const targetDirection = directionTowards(robot.position, target.position);
@@ -77,12 +83,25 @@ export function planRobotMovement(
     } else {
       desiredVelocity = scaleVec3(targetDirection, config.baseSpeed);
     }
+
+    if (formationAnchor && mode !== RobotBehaviorMode.Retreat) {
+      const anchorDirection = directionTowards(
+        robot.position,
+        formationAnchor,
+      );
+      desiredVelocity = scaleVec3(anchorDirection, config.baseSpeed);
+      orientation = Math.atan2(
+        formationAnchor.x - robot.position.x,
+        formationAnchor.z - robot.position.z,
+      );
+    }
   } else {
-    const anchorDirection = directionTowards(robot.position, spawnCenter);
+    const anchorTarget = formationAnchor ?? spawnCenter;
+    const anchorDirection = directionTowards(robot.position, anchorTarget);
     desiredVelocity = scaleVec3(anchorDirection, config.anchorSpeed);
     orientation = Math.atan2(
-      spawnCenter.x - robot.position.x,
-      spawnCenter.z - robot.position.z,
+      anchorTarget.x - robot.position.x,
+      anchorTarget.z - robot.position.z,
     );
   }
 

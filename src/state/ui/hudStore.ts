@@ -15,18 +15,28 @@ export interface HudLatencyEvent {
   timestamp: number;
 }
 
+export type QualityMode = "manual" | "auto";
+
 export type HudLatencyListener = (event: HudLatencyEvent) => void;
 
 type HudStoreState = {
   showHud: boolean;
   cameraMode: CameraMode;
   qualityProfile: QualityProfile;
+  qualityMode: QualityMode;
   reducedMotion: boolean;
+  frameTimeMs: number;
+  showDebugStats: boolean;
   registerLatencyListener: (listener: HudLatencyListener) => () => void;
   toggleHud: () => void;
   setCameraMode: (mode: CameraMode) => void;
   setQualityProfile: (profile: QualityProfile) => void;
   toggleReducedMotion: () => void;
+  setQualityMode: (mode: QualityMode) => void;
+  applyAutoQuality: (profile: QualityProfile) => void;
+  setReducedMotion: (value: boolean) => void;
+  setFrameTimeMs: (ms: number) => void;
+  toggleDebugStats: () => void;
 };
 
 const latencyListeners = new Set<HudLatencyListener>();
@@ -52,7 +62,10 @@ export const useHudStore = create<HudStoreState>((set) => ({
   showHud: true,
   cameraMode: "default",
   qualityProfile: "High",
+  qualityMode: "manual",
   reducedMotion: false,
+  frameTimeMs: 0,
+  showDebugStats: false,
   registerLatencyListener: (listener) => {
     latencyListeners.add(listener);
     return () => latencyListeners.delete(listener);
@@ -69,7 +82,7 @@ export const useHudStore = create<HudStoreState>((set) => ({
   },
   setQualityProfile: (profile) => {
     const startedAt = now();
-    set({ qualityProfile: profile });
+    set({ qualityProfile: profile, qualityMode: "manual" });
     emitLatency("setQualityProfile", startedAt);
   },
   toggleReducedMotion: () => {
@@ -77,6 +90,16 @@ export const useHudStore = create<HudStoreState>((set) => ({
     set((state) => ({ reducedMotion: !state.reducedMotion }));
     emitLatency("toggleReducedMotion", startedAt);
   },
+  setQualityMode: (mode) => set({ qualityMode: mode }),
+  applyAutoQuality: (profile) =>
+    set((state) =>
+      state.qualityProfile === profile && state.qualityMode === "auto"
+        ? state
+        : { qualityProfile: profile, qualityMode: "auto" },
+    ),
+  setReducedMotion: (value) => set({ reducedMotion: value }),
+  setFrameTimeMs: (ms) => set({ frameTimeMs: ms }),
+  toggleDebugStats: () => set((state) => ({ showDebugStats: !state.showDebugStats })),
 }));
 
 export const hudLatencyListeners = latencyListeners;

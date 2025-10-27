@@ -1,6 +1,10 @@
 import { useCallback, useState } from "react";
 
-import { QualityProfile, useHudStore } from "../../state/ui/hudStore";
+import {
+  QualityMode,
+  QualityProfile,
+  useHudStore,
+} from "../../state/ui/hudStore";
 
 const menuButtonStyle: React.CSSProperties = {
   pointerEvents: "auto",
@@ -122,11 +126,16 @@ function ToolsMenu() {
   const [isOpen, setIsOpen] = useState(false);
 
   const qualityProfile = useHudStore((state) => state.qualityProfile);
+  const qualityMode = useHudStore((state) => state.qualityMode);
   const setQualityProfile = useHudStore((state) => state.setQualityProfile);
   const reducedMotion = useHudStore((state) => state.reducedMotion);
   const toggleReducedMotion = useHudStore((state) => state.toggleReducedMotion);
   const showHud = useHudStore((state) => state.showHud);
   const toggleHud = useHudStore((state) => state.toggleHud);
+  const setQualityMode = useHudStore((state) => state.setQualityMode);
+  const showDebugStats = useHudStore((state) => state.showDebugStats);
+  const toggleDebugStats = useHudStore((state) => state.toggleDebugStats);
+  const frameTimeMs = useHudStore((state) => state.frameTimeMs);
 
   const handleQualityChange = useCallback(
     (profile: QualityProfile) => () => {
@@ -134,6 +143,13 @@ function ToolsMenu() {
     },
     [setQualityProfile],
   );
+
+  const handleAutoQualityToggle = useCallback(() => {
+    setQualityMode(qualityMode === "auto" ? "manual" : "auto");
+  }, [qualityMode, setQualityMode]);
+
+  const fps =
+    frameTimeMs > 0 ? Math.round((1000 / frameTimeMs) * 10) / 10 : null;
 
   return (
     <div style={{ position: "relative" }}>
@@ -160,6 +176,7 @@ function ToolsMenu() {
                     key={profile}
                     type="button"
                     style={qualityButtonStyle(qualityProfile === profile)}
+                    disabled={qualityMode === "auto"}
                     onClick={handleQualityChange(profile)}
                   >
                     {profile}
@@ -167,6 +184,25 @@ function ToolsMenu() {
                 ),
               )}
             </div>
+          </div>
+
+          <div style={sectionStyle}>
+            <div style={toggleRowStyle}>
+              <span>Auto Quality Scaling</span>
+              <button
+                type="button"
+                style={toggleStyle}
+                onClick={handleAutoQualityToggle}
+                aria-pressed={qualityMode === "auto"}
+              >
+                <span style={toggleDotStyle(qualityMode === "auto")} />
+              </button>
+            </div>
+            {fps && (
+              <div style={{ fontSize: "11px", color: "#8ea0ff", marginTop: "4px" }}>
+                Avg FPS: {fps.toFixed(1)} · Current profile {qualityProfile}
+              </div>
+            )}
           </div>
 
           <div style={sectionStyle}>
@@ -199,6 +235,17 @@ function ToolsMenu() {
                 aria-pressed={showHud}
               >
                 <span style={toggleDotStyle(showHud)} />
+              </button>
+            </div>
+            <div style={{ ...toggleRowStyle, marginTop: "8px" }}>
+              <span>Debug Stats</span>
+              <button
+                type="button"
+                style={toggleStyle}
+                onClick={toggleDebugStats}
+                aria-pressed={showDebugStats}
+              >
+                <span style={toggleDotStyle(showDebugStats)} />
               </button>
             </div>
           </div>
