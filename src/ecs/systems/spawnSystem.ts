@@ -1,32 +1,12 @@
 import { applyCaptaincy } from "../../lib/captainElection";
 import { TEAM_CONFIGS } from "../../lib/teamConfig";
 import { getWeaponStats } from "../../lib/weapons";
+import { getGridFormationOffset } from "../../lib/formation";
 import { createRng } from "../utils/random";
 import { addVec3 } from "../utils/vector";
 import { BattleWorld, RobotEntity, TeamId, toVec3, WeaponType } from "../world";
 
 const DEFAULT_ROBOTS_PER_TEAM = 10;
-const formationSpacing = 2.4;
-const rows = 2;
-
-function formationOffset(
-  index: number,
-  robotsPerTeam: number,
-): { x: number; z: number } {
-  if (robotsPerTeam <= 0) {
-    return { x: 0, z: 0 };
-  }
-
-  const columns = Math.max(1, Math.ceil(robotsPerTeam / rows));
-  const row = Math.floor(index / columns);
-  const column = index % columns;
-  const centeredColumn = column - (columns - 1) / 2;
-  return {
-    x: centeredColumn * formationSpacing,
-    z: row * formationSpacing,
-  };
-}
-
 function buildRobot(props: {
   team: TeamId;
   spawnIndex: number;
@@ -52,7 +32,7 @@ function buildRobot(props: {
     fireRate: getWeaponStats(weapon).fireRate,
     health: 100,
     maxHealth: 100,
-    ai: { mode: "seek" },
+    ai: { mode: "seek", strafeSign: 1 },
     kills: 0,
     isCaptain: false,
     spawnIndex,
@@ -93,7 +73,7 @@ export function spawnTeams(
       const weapon = pickWeapon(index);
       const weaponStats = getWeaponStats(weapon);
       const offset = 0.2 + rng() * weaponStats.fireRate;
-      const displacement = formationOffset(index, robotCount);
+      const displacement = getGridFormationOffset(index, robotCount);
       const robot = buildRobot({
         team,
         spawnIndex: index,

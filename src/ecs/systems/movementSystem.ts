@@ -1,8 +1,5 @@
 import { RobotBehaviorMode } from "../../simulation/ai/behaviorState";
-import {
-  integrateMovement,
-  planRobotMovement,
-} from "../../simulation/ai/pathing";
+import { planRobotMovement } from "../../simulation/ai/pathing";
 import { BattleWorld, RobotEntity } from "../world";
 
 export function updateMovementSystem(
@@ -10,6 +7,24 @@ export function updateMovementSystem(
   deltaSeconds: number,
 ): void {
   const robots = world.robots.entities;
+  const aliveRobots = robots.filter(
+    (candidate) => candidate.health > 0,
+  );
+  const neighborPositions: Record<string, { x: number; y: number; z: number }[]> =
+    {};
+
+  aliveRobots.forEach((robot) => {
+    neighborPositions[robot.id] = aliveRobots
+      .filter(
+        (candidate) =>
+          candidate.team === robot.team && candidate.id !== robot.id,
+      )
+      .map((candidate) => ({
+        x: candidate.position.x,
+        y: candidate.position.y,
+        z: candidate.position.z,
+      }));
+  });
 
   robots.forEach((robot: RobotEntity) => {
     if (robot.health <= 0) {
@@ -25,15 +40,14 @@ export function updateMovementSystem(
       robot.ai.mode as RobotBehaviorMode,
       target,
       undefined,
-      { formationAnchor: robot.ai.anchorPosition ?? undefined },
+      {
+        formationAnchor: robot.ai.anchorPosition ?? undefined,
+        neighbors: neighborPositions[robot.id] ?? [],
+        strafeSign: robot.ai.strafeSign ?? 1,
+      },
     );
 
     robot.velocity = velocity;
     robot.orientation = orientation;
-    robot.position = integrateMovement(
-      robot.position,
-      robot.velocity,
-      deltaSeconds,
-    );
   });
 }

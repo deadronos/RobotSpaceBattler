@@ -1,6 +1,7 @@
 import {
   addVec3,
   distance,
+  lengthSq,
   normalize,
   scaleVec3,
   subVec3,
@@ -46,6 +47,59 @@ function directionTowards(origin: Vec3, target: Vec3): Vec3 {
 
 interface MovementOptions {
   formationAnchor?: Vec3 | null;
+  neighbors?: Vec3[];
+  strafeSign?: 1 | -1;
+}
+
+const SEPARATION_RADIUS = 1.5;
+const SEPARATION_WEIGHT = 0.6;
+const STRAFE_DISTANCE_THRESHOLD = 2.25;
+const STRAFE_WEIGHT = 0.45;
+
+function computeSeparationDirection(
+  position: Vec3,
+  neighbors: Vec3[],
+  radius: number,
+): Vec3 {
+  if (neighbors.length === 0) {
+    return { x: 0, y: 0, z: 0 };
+  }
+
+  let steering = { x: 0, y: 0, z: 0 };
+  let count = 0;
+  const radiusSq = radius * radius;
+
+  neighbors.forEach((neighbor) => {
+    const offset = subVec3(position, neighbor);
+    const distSq = lengthSq(offset);
+
+    if (distSq > 0 && distSq < radiusSq) {
+      const dist = Math.sqrt(distSq);
+      const strength = (radius - dist) / radius;
+      const direction = scaleVec3(offset, 1 / dist);
+      steering = addVec3(steering, scaleVec3(direction, strength));
+      count += 1;
+    }
+  });
+
+  if (count === 0) {
+    return { x: 0, y: 0, z: 0 };
+  }
+
+  const averaged = scaleVec3(steering, 1 / count);
+  return normalize(averaged);
+}
+
+function perpendicularXZ(direction: Vec3, sign: 1 | -1): Vec3 {
+  if (lengthSq(direction) === 0) {
+    return { x: 0, y: 0, z: 0 };
+  }
+
+  return normalize({
+    x: direction.z * sign,
+    y: 0,
+    z: -direction.x * sign,
+  });
 }
 
 export function planRobotMovement(
@@ -59,6 +113,8 @@ export function planRobotMovement(
   let desiredVelocity = scaleVec3(robot.velocity, config.velocityDamping);
   let orientation = robot.orientation;
   const formationAnchor = options.formationAnchor ?? null;
+  const neighbors = options.neighbors ?? [];
+  const strafeSign = options.strafeSign ?? 1;
 
   if (target) {
     const targetDirection = directionTowards(robot.position, target.position);
@@ -89,11 +145,32 @@ export function planRobotMovement(
         robot.position,
         formationAnchor,
       );
-      desiredVelocity = scaleVec3(anchorDirection, config.baseSpeed);
-      orientation = Math.atan2(
-        formationAnchor.x - robot.position.x,
-        formationAnchor.z - robot.position.z,
-      );
+      const anchorDistance = distance(robot.position, formationAnchor);
+
+      if (anchorDistance > STRAFE_DISTANCE_THRESHOLD) {
+        desiredVelocity = scaleVec3(anchorDirection, config.baseSpeed);
+        orientation = Math.atan2(
+          formationAnchor.x - robot.position.x,
+          formationAnchor.z - robot.position.z,
+        );
+      } else {
+        const strafeDirection = perpendicularXZ(targetDirection, strafeSign);
+        if (lengthSq(strafeDirection) > 0) {
+          const combined = normalize(
+            addVec3(
+              scaleVec3(targetDirection, 1 - STRAFE_WEIGHT),
+              scaleVec3(strafeDirection, STRAFE_WEIGHT),
+            ),
+          );
+          desiredVelocity = scaleVec3(combined, config.baseSpeed);
+        } else {
+          desiredVelocity = scaleVec3(targetDirection, config.baseSpeed);
+        }
+        orientation = Math.atan2(
+          target.position.x - robot.position.x,
+          target.position.z - robot.position.z,
+        );
+      }
     }
   } else {
     const anchorTarget = formationAnchor ?? spawnCenter;
@@ -103,6 +180,29 @@ export function planRobotMovement(
       anchorTarget.x - robot.position.x,
       anchorTarget.z - robot.position.z,
     );
+  }
+
+  if (neighbors.length > 0) {
+    const separationDirection = computeSeparationDirection(
+      robot.position,
+      neighbors,
+      SEPARATION_RADIUS,
+    );
+
+    if (lengthSq(separationDirection) > 0) {
+      const separationVelocity = scaleVec3(
+        separationDirection,
+        config.baseSpeed * SEPARATION_WEIGHT,
+      );
+      desiredVelocity = addVec3(desiredVelocity, separationVelocity);
+
+      if (!target) {
+        orientation = Math.atan2(
+          desiredVelocity.x,
+          desiredVelocity.z,
+        );
+      }
+    }
   }
 
   return {

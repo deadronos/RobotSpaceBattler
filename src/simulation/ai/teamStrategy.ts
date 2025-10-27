@@ -1,11 +1,18 @@
 import { addVec3, normalize, scaleVec3, subVec3 } from "../../ecs/utils/vector";
 import { RobotEntity, TeamId, Vec3 } from "../../ecs/world";
 import { TEAM_CONFIGS } from "../../lib/teamConfig";
+import { getRingFormationOffset } from "../../lib/formation";
 
 export type TeamDirective = "offense" | "defense" | "balanced";
 
 const ADVANTAGE_THRESHOLD = 2;
 const FORMATION_RING_RADIUS = 5.5;
+const DEFAULT_RING_SLOTS = 6;
+
+export interface FormationSlot {
+  index: number;
+  count: number;
+}
 
 export function buildTeamDirectives(
   robots: RobotEntity[],
@@ -64,15 +71,17 @@ export function computeEnemyCentroid(
 export function buildFormationAnchor(
   robot: RobotEntity,
   target: RobotEntity,
+  slot: FormationSlot = {
+    index: robot.spawnIndex % DEFAULT_RING_SLOTS,
+    count: DEFAULT_RING_SLOTS,
+  },
 ): Vec3 {
-  const slot = robot.spawnIndex % 6;
-  const angle = (slot / 6) * Math.PI * 2;
-  const offset = {
-    x: Math.cos(angle) * FORMATION_RING_RADIUS,
-    y: 0,
-    z: Math.sin(angle) * FORMATION_RING_RADIUS,
-  };
-  return addVec3(target.position, offset);
+  const offset = getRingFormationOffset(
+    slot.index,
+    slot.count,
+    FORMATION_RING_RADIUS,
+  );
+  return addVec3(target.position, { x: offset.x, y: 0, z: offset.z });
 }
 
 export function findCoverPoint(

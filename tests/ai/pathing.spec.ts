@@ -19,7 +19,7 @@ function createRobot(overrides: Partial<RobotEntity> = {}): RobotEntity {
     fireRate: 1,
     health: 100,
     maxHealth: 100,
-    ai: { mode: 'seek', targetId: undefined },
+    ai: { mode: 'seek', targetId: undefined, strafeSign: 1 },
     kills: 0,
     isCaptain: false,
     spawnIndex: 0,
@@ -67,5 +67,51 @@ describe('planRobotMovement', () => {
 
     const nextPosition = integrateMovement(robot.position, plan.velocity, 0.5);
     expect(nextPosition.x).toBeLessThan(robot.position.x);
+  });
+
+  it('pushes away from nearby allies when anchored', () => {
+    const robot = createRobot({
+      position: { x: 0, y: 0, z: 0 },
+      velocity: { x: 0, y: 0, z: 0 },
+    });
+
+    const plan = planRobotMovement(
+      robot,
+      RobotBehaviorMode.Seek,
+      undefined,
+      undefined,
+      {
+        formationAnchor: { x: 0, y: 0, z: 0 },
+        neighbors: [{ x: 0.5, y: 0, z: 0 }],
+      },
+    );
+
+    expect(plan.velocity.x).toBeLessThan(0);
+  });
+
+  it('strafes around the target when settled near the anchor', () => {
+    const robot = createRobot({
+      position: { x: 0, y: 0, z: 0 },
+      velocity: { x: 0, y: 0, z: 0 },
+    });
+    const target = createRobot({
+      id: 'enemy',
+      team: 'blue',
+      position: { x: 0, y: 0, z: 10 },
+    });
+
+    const plan = planRobotMovement(
+      robot,
+      RobotBehaviorMode.Seek,
+      target,
+      undefined,
+      {
+        formationAnchor: { x: 0, y: 0, z: 0 },
+        strafeSign: 1,
+      },
+    );
+
+    expect(plan.velocity.x).toBeGreaterThan(0);
+    expect(plan.velocity.z).toBeGreaterThan(0);
   });
 });

@@ -8,6 +8,7 @@ import {
   findCoverPoint,
 } from '../../src/simulation/ai/teamStrategy';
 import { computeTeamAnchors } from '../../src/simulation/ai/captainCoordinator';
+import { TEAM_CONFIGS } from '../../src/lib/teamConfig';
 
 function createRobot(overrides: Partial<RobotEntity> = {}): RobotEntity {
   const base: RobotEntity = {
@@ -22,7 +23,12 @@ function createRobot(overrides: Partial<RobotEntity> = {}): RobotEntity {
     fireRate: 1,
     health: 100,
     maxHealth: 100,
-    ai: { mode: 'seek', directive: 'balanced', anchorPosition: null },
+    ai: {
+      mode: 'seek',
+      directive: 'balanced',
+      anchorPosition: null,
+      strafeSign: 1,
+    },
     kills: 0,
     isCaptain: false,
     spawnIndex: 0,
@@ -101,5 +107,44 @@ describe('teamStrategy', () => {
 
     const anchors = computeTeamAnchors([captain, ally, target]);
     expect(anchors.ally.anchorPosition).toBeTruthy();
+  });
+
+  it('assigns spaced anchors for balanced directives', () => {
+    const spawnCenter = TEAM_CONFIGS.red.spawnCenter;
+    const robots = [
+      createRobot({
+        id: 'r0',
+        team: 'red',
+        spawnIndex: 0,
+        position: spawnCenter,
+      }),
+      createRobot({
+        id: 'r1',
+        team: 'red',
+        spawnIndex: 1,
+        position: spawnCenter,
+      }),
+      createRobot({
+        id: 'b1',
+        team: 'blue',
+        spawnIndex: 0,
+        position: toVec3(30, 0, 0),
+      }),
+    ];
+
+    const anchors = computeTeamAnchors(robots);
+    const r0 = anchors.r0.anchorPosition;
+    const r1 = anchors.r1.anchorPosition;
+    expect(r0).toBeTruthy();
+    expect(r1).toBeTruthy();
+    const centroid = computeEnemyCentroid('red', robots);
+    expect(centroid).toBeTruthy();
+    const r0Radius = Math.hypot(
+      (r0?.x ?? 0) - (centroid?.x ?? 0),
+      (r0?.z ?? 0) - (centroid?.z ?? 0),
+    );
+    expect(r0Radius).toBeGreaterThan(1);
+    expect(anchors.r0.strafeSign).toBe(1);
+    expect(anchors.r1.strafeSign).toBe(-1);
   });
 });

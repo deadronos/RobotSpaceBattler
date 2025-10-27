@@ -44,10 +44,14 @@ export function updateAiSystem(
     const targetDistance = target
       ? distance(robot.position, target.position)
       : null;
-    const spawnCenter = TEAM_CONFIGS[robot.team].spawnCenter;
-    const anchorDistance = distance(robot.position, spawnCenter);
-    const directive = directives[robot.team];
     const anchorDirective = anchors[robot.id];
+    const anchorPosition =
+      anchorDirective?.anchorPosition ?? enemyCentroids[robot.team];
+    const anchorReference =
+      anchorPosition ?? TEAM_CONFIGS[robot.team].spawnCenter;
+    const anchorDistance = distance(robot.position, anchorReference);
+    const directive = directives[robot.team];
+    const strafeSign = anchorDirective?.strafeSign ?? robot.ai.strafeSign ?? 1;
 
     const nextMode = nextBehaviorState(
       {
@@ -66,7 +70,8 @@ export function updateAiSystem(
       mode: nextMode,
       targetId: target?.id,
       directive,
-      anchorPosition: anchorDirective?.anchorPosition ?? enemyCentroids[robot.team],
+      anchorPosition,
+      strafeSign,
     };
   });
 }

@@ -14,6 +14,7 @@ export interface RobotAIState {
   targetId?: string;
   anchorPosition?: Vec3 | null;
   directive?: "offense" | "defense" | "balanced";
+  strafeSign?: 1 | -1;
 }
 
 export interface RobotEntity {
