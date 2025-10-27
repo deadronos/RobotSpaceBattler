@@ -89,7 +89,7 @@ const ensureRobot = (
   return robots[id];
 };
 
-export const useTelemetryStore = create<TelemetryState>((set, get) => ({
+export const useTelemetryStore = create<TelemetryState>((set) => ({
   matchId: null,
   lastEventTimestampMs: 0,
   robots: {},

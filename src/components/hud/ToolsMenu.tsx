@@ -1,10 +1,6 @@
 import { useCallback, useState } from "react";
 
-import {
-  QualityMode,
-  QualityProfile,
-  useHudStore,
-} from "../../state/ui/hudStore";
+import { QualityProfile, useHudStore } from "../../state/ui/hudStore";
 
 const menuButtonStyle: React.CSSProperties = {
   pointerEvents: "auto",

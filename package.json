@@ -18,7 +18,8 @@
     "playwright:install": "playwright install",
     "playwright:test": "playwright test",
     "check:source-size": "node ./scripts/check_source_size.js",
-    "check:pr-constitution": "node ./scripts/check_pr_constitution_check.js"
+    "check:pr-constitution": "node ./scripts/check_pr_constitution_check.js",
+    "typecheck": "tsc --noEmit"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx,js,jsx}": [

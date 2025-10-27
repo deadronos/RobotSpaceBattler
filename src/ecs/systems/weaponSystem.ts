@@ -1,5 +1,5 @@
-import type { MatchTraceEventInput } from "../../runtime/matchTrace";
 import { getDamageMultiplier, getWeaponStats } from "../../lib/weapons";
+import type { MatchTraceEventInput } from "../../runtime/matchTrace";
 import { addVec3, normalize, scaleVec3, subVec3 } from "../utils/vector";
 import { BattleWorld, ProjectileEntity, RobotEntity } from "../world";
 

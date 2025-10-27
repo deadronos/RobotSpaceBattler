@@ -14,24 +14,28 @@ describe('telemetryStore', () => {
     store.recordEvent({
       type: 'spawn',
       timestampMs: 0,
+      sequenceId: 1,
       entityId: 'red-1',
       teamId: 'red',
     });
     store.recordEvent({
       type: 'spawn',
       timestampMs: 0,
+      sequenceId: 2,
       entityId: 'blue-1',
       teamId: 'blue',
     });
     store.recordEvent({
       type: 'fire',
       timestampMs: 100,
+      sequenceId: 3,
       entityId: 'red-1',
       teamId: 'red',
     });
     store.recordEvent({
       type: 'damage',
       timestampMs: 200,
+      sequenceId: 4,
       attackerId: 'red-1',
       targetId: 'blue-1',
       teamId: 'red',
@@ -40,6 +44,7 @@ describe('telemetryStore', () => {
     store.recordEvent({
       type: 'death',
       timestampMs: 300,
+      sequenceId: 5,
       entityId: 'blue-1',
       attackerId: 'red-1',
       teamId: 'blue',
