@@ -28,6 +28,7 @@ const topRowStyle: CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   gap: "16px",
+  pointerEvents: "auto",
 };
 
 const bottomRowStyle: CSSProperties = {
@@ -35,6 +36,7 @@ const bottomRowStyle: CSSProperties = {
   justifyContent: "space-between",
   alignItems: "flex-end",
   gap: "16px",
+  pointerEvents: "auto",
 };
 
 function HudShell({

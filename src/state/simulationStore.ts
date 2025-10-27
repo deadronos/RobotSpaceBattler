@@ -55,7 +55,10 @@ export const useSimulationStore = create<SimulationStore>((set) => ({
   initialMatch: null,
   teamStats: createInitialTeamStats(),
   setBattleWorld: (world) => set({ battleWorld: world }),
-  setPhase: (phase) => set({ phase }),
+  setPhase: (phase) => {
+    console.log("setPhase called with:", phase);
+    set({ phase });
+  },
   setWinner: (winner) => set({ winner }),
   setRestartTimer: (ms) => set({ restartTimer: ms }),
   setElapsedMs: (ms) => set({ elapsedMs: ms }),
