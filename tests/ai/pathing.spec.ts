@@ -114,4 +114,29 @@ describe('planRobotMovement', () => {
     expect(plan.velocity.x).toBeGreaterThan(0);
     expect(plan.velocity.z).toBeGreaterThan(0);
   });
+
+  it('shifts sideways when an ally blocks line of sight to the target', () => {
+    const robot = createRobot({
+      ai: { mode: 'engage', targetId: 'enemy', strafeSign: 1 },
+    });
+    const target = createRobot({
+      id: 'enemy',
+      team: 'blue',
+      position: { x: 0, y: 0, z: 8 },
+    });
+
+    const plan = planRobotMovement(
+      robot,
+      RobotBehaviorMode.Engage,
+      target,
+      undefined,
+      {
+        neighbors: [{ x: 0.25, y: 0, z: 3 }],
+        strafeSign: 1,
+      },
+    );
+
+    expect(Math.abs(plan.velocity.x)).toBeGreaterThan(0);
+    expect(plan.velocity.z).toBeGreaterThanOrEqual(0);
+  });
 });
