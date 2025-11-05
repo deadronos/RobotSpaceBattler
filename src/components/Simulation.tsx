@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { MutableRefObject, useEffect, useRef, useState } from 'react';
 
 import { BattleWorld } from '../ecs/world';
 import { TEAM_CONFIGS } from '../lib/teamConfig';
@@ -16,6 +16,8 @@ interface SimulationProps {
   onRunnerReady?: (runner: BattleRunner) => void;
 }
 
+const FRAME_SAMPLE_INTERVAL = 1 / 30;
+
 function vecToArray(position: { x: number; y: number; z: number }): [number, number, number] {
   return [position.x, position.y, position.z];
 }
@@ -26,32 +28,43 @@ export function Simulation({
   telemetry,
   onRunnerReady,
 }: SimulationProps) {
-  const [, setVersion] = useState(0);
   const runnerRef = useRef<BattleRunner | null>(null);
-  const accumulator = useRef(0);
-
-  const runner = useMemo(
-    () =>
-      createBattleRunner(battleWorld, {
-        seed: battleWorld.state.seed,
-        matchMachine,
-        telemetry,
-      }),
-    [battleWorld, matchMachine, telemetry],
-  );
 
   useEffect(() => {
+    const runner = createBattleRunner(battleWorld, {
+      seed: battleWorld.state.seed,
+      matchMachine,
+      telemetry,
+    });
+
     runnerRef.current = runner;
     onRunnerReady?.(runner);
+
     return () => {
       runnerRef.current = null;
     };
-  }, [runner, onRunnerReady]);
+  }, [battleWorld, matchMachine, telemetry, onRunnerReady]);
+
+  return (
+    <Scene>
+      <SimulationContent battleWorld={battleWorld} runnerRef={runnerRef} />
+    </Scene>
+  );
+}
+
+interface SimulationContentProps {
+  battleWorld: BattleWorld;
+  runnerRef: MutableRefObject<BattleRunner | null>;
+}
+
+function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
+  const [, setVersion] = useState(0);
+  const accumulator = useRef(0);
 
   useFrame((_, delta) => {
     runnerRef.current?.step(delta);
     accumulator.current += delta;
-    if (accumulator.current >= 1 / 30) {
+    if (accumulator.current >= FRAME_SAMPLE_INTERVAL) {
       accumulator.current = 0;
       setVersion((value) => value + 1);
     }
@@ -61,7 +74,7 @@ export function Simulation({
   const projectiles = battleWorld.projectiles.entities;
 
   return (
-    <Scene>
+    <>
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[200, 200, 32, 32]} />
         <meshStandardMaterial color="#1b1f3b" />
@@ -79,6 +92,6 @@ export function Simulation({
           <meshStandardMaterial color="#ffd966" emissive="#ffdd88" emissiveIntensity={1.6} />
         </mesh>
       ))}
-    </Scene>
+    </>
   );
 }
