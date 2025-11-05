@@ -19,15 +19,19 @@ function createRobot(overrides: Partial<RobotEntity> = {}): RobotEntity {
     velocity: toVec3(0, 0, 0),
     orientation: 0,
     weapon: 'laser',
+    speed: 0,
     fireCooldown: 0,
     fireRate: 1,
     health: 100,
     maxHealth: 100,
     ai: {
       mode: 'seek',
+      targetId: undefined,
       directive: 'balanced',
       anchorPosition: null,
+      anchorDistance: null,
       strafeSign: 1,
+      targetDistance: null,
     },
     kills: 0,
     isCaptain: false,
@@ -40,7 +44,7 @@ function createRobot(overrides: Partial<RobotEntity> = {}): RobotEntity {
     ...overrides,
     position: overrides.position ?? { ...base.position },
     velocity: overrides.velocity ?? { ...base.velocity },
-    ai: { ...base.ai, ...overrides.ai },
+    ai: { ...base.ai, ...(overrides.ai ?? {}) },
   };
 }
 

@@ -2,6 +2,17 @@ import { applyCaptaincy, electCaptain } from "../src/lib/captainElection";
 import { RobotEntity, toVec3 } from "../src/ecs/world";
 
 function createRobot(partial: Partial<RobotEntity>): RobotEntity {
+  const aiState: RobotEntity['ai'] = {
+    mode: 'seek',
+    targetId: undefined,
+    directive: 'balanced',
+    anchorPosition: null,
+    anchorDistance: null,
+    strafeSign: 1,
+    targetDistance: null,
+    ...(partial.ai ?? {}),
+  };
+
   return {
     id: partial.id ?? "robot",
     kind: "robot",
@@ -10,11 +21,12 @@ function createRobot(partial: Partial<RobotEntity>): RobotEntity {
     velocity: partial.velocity ?? toVec3(0, 0, 0),
     orientation: partial.orientation ?? 0,
     weapon: partial.weapon ?? "laser",
+    speed: partial.speed ?? 0,
     fireCooldown: partial.fireCooldown ?? 0,
     fireRate: partial.fireRate ?? 1,
     health: partial.health ?? 100,
     maxHealth: partial.maxHealth ?? 100,
-    ai: partial.ai ?? { mode: "seek" },
+    ai: aiState,
     kills: partial.kills ?? 0,
     isCaptain: partial.isCaptain ?? false,
     spawnIndex: partial.spawnIndex ?? 0,

@@ -60,3 +60,24 @@ export function projectOntoPlane(vector: Vec3): Vec3 {
 export function perpendicularVec3(vector: Vec3): Vec3 {
   return { x: -vector.z, y: 0, z: vector.x };
 }
+
+export function addInPlaceVec3(target: Vec3, delta: Vec3): Vec3 {
+  target.x += delta.x;
+  target.y += delta.y;
+  target.z += delta.z;
+  return target;
+}
+
+export function scaleInPlaceVec3(target: Vec3, scalar: number): Vec3 {
+  target.x *= scalar;
+  target.y *= scalar;
+  target.z *= scalar;
+  return target;
+}
+
+export function clampVec3(target: Vec3, min: Vec3, max: Vec3): Vec3 {
+  target.x = Math.min(Math.max(target.x, min.x), max.x);
+  target.y = Math.min(Math.max(target.y, min.y), max.y);
+  target.z = Math.min(Math.max(target.z, min.z), max.z);
+  return target;
+}

@@ -7,7 +7,7 @@ import {
   Vec3,
   vec3,
 } from '../lib/math/vec3';
-import { TEAM_CONFIGS,TeamConfig, TeamId } from '../lib/teamConfig';
+import { TEAM_CONFIGS, TeamConfig, TeamId } from '../lib/teamConfig';
 
 export type { TeamId } from '../lib/teamConfig';
 
@@ -20,6 +20,7 @@ export interface RobotAIState {
   anchorPosition?: Vec3 | null;
   anchorDistance?: number | null;
   strafeSign?: 1 | -1;
+  targetDistance?: number | null;
 }
 
 export interface RobotEntity {
@@ -29,6 +30,7 @@ export interface RobotEntity {
   position: Vec3;
   velocity: Vec3;
   orientation: number;
+  speed: number;
   weapon: WeaponType;
   fireCooldown: number;
   fireRate: number;
@@ -45,11 +47,17 @@ export interface ProjectileEntity {
   id: string;
   kind: 'projectile';
   team: TeamId;
+  shooterId: string;
+  weapon: WeaponType;
   position: Vec3;
   velocity: Vec3;
   damage: number;
   maxLifetime: number;
   spawnTime: number;
+  distanceTraveled: number;
+  maxDistance: number;
+  speed: number;
+  targetId?: string;
 }
 
 export type BattleEntity = RobotEntity | ProjectileEntity;
@@ -58,11 +66,19 @@ export interface Store<T extends BattleEntity> {
   entities: T[];
 }
 
+export interface BattleWorldState {
+  elapsedMs: number;
+  nextProjectileId: number;
+  seed: number;
+}
+
 export interface BattleWorld {
   world: World<BattleEntity>;
   robots: Store<RobotEntity>;
   projectiles: Store<ProjectileEntity>;
   teams: Record<TeamId, TeamConfig>;
+  state: BattleWorldState;
+  clear: () => void;
   getRobotsByTeam(team: TeamId): RobotEntity[];
 }
 
@@ -84,9 +100,13 @@ function createEntityStore<T extends BattleEntity>(
 ): Store<T> {
   return {
     get entities() {
-      return world.entities.filter(predicate) as T[];
+      return Array.from(world.entities).filter(predicate) as T[];
     },
   };
+}
+
+function clearWorldEntities(world: World<BattleEntity>): void {
+  Array.from(world.entities).forEach((entity) => world.remove(entity));
 }
 
 export function createBattleWorld(): BattleWorld {
@@ -94,14 +114,30 @@ export function createBattleWorld(): BattleWorld {
   const robots = createEntityStore(world, isRobotEntity);
   const projectiles = createEntityStore(world, isProjectileEntity);
 
+  const state: BattleWorldState = {
+    elapsedMs: 0,
+    nextProjectileId: 0,
+    seed: Date.now(),
+  };
+
   return {
     world,
     robots,
     projectiles,
     teams: TEAM_CONFIGS,
+    state,
+    clear: () => {
+      clearWorldEntities(world);
+      state.nextProjectileId = 0;
+    },
     getRobotsByTeam: (team: TeamId) =>
       robots.entities.filter((entity) => entity.team === team),
   };
+}
+
+export function resetBattleWorld(world: BattleWorld): void {
+  world.clear();
+  world.state.elapsedMs = 0;
 }
 
 export function clonePosition(entity: RobotEntity): Vec3 {

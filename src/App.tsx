@@ -1,25 +1,160 @@
-import { Suspense, useMemo } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Simulation } from './components/Simulation';
 import { createBattleWorld } from './ecs/world';
+import { TEAM_CONFIGS } from './lib/teamConfig';
+import { BattleRunner } from './runtime/simulation/battleRunner';
+import { createTelemetryPort } from './runtime/simulation/telemetryAdapter';
+import {
+  createMatchStateMachine,
+  MatchStateSnapshot,
+} from './runtime/state/matchStateMachine';
+import { useTelemetryStore } from './state/telemetryStore';
 
-const STATUS_TEXT = 'Initializing space match...';
-
-function useBattleWorld() {
-  return useMemo(() => createBattleWorld(), []);
+function formatStatus({
+  phase,
+  winner,
+  restartTimerMs,
+}: MatchStateSnapshot): string {
+  switch (phase) {
+    case 'running':
+      return 'Battle in progress';
+    case 'paused':
+      return 'Simulation paused';
+    case 'victory': {
+      const countdown = restartTimerMs != null ? Math.ceil(restartTimerMs / 1000) : null;
+      return `Victory: ${winner ?? 'unknown'}${countdown != null ? ` · restart in ${countdown}s` : ''}`;
+    }
+    default:
+      return 'Initializing space match...';
+  }
 }
 
 export default function App() {
-  const battleWorld = useBattleWorld();
+  const battleWorld = useMemo(() => createBattleWorld(), []);
+  const telemetryPort = useMemo(() => createTelemetryPort(), []);
+  const [matchSnapshot, setMatchSnapshot] = useState<MatchStateSnapshot>({
+    phase: 'initializing',
+    elapsedMs: 0,
+    restartTimerMs: null,
+    winner: null,
+  });
+
+  const matchMachine = useMemo(
+    () =>
+      createMatchStateMachine({
+        autoRestartDelayMs: 5000,
+        onChange: (snapshot) => setMatchSnapshot(snapshot),
+      }),
+    [],
+  );
+
+  useEffect(() => {
+    setMatchSnapshot(matchMachine.getSnapshot());
+  }, [matchMachine]);
+
+  const runnerRef = useRef<BattleRunner | null>(null);
+  const telemetryEvents = useTelemetryStore((state) => state.events);
+
+  const aliveCounts = useMemo(() => {
+    void telemetryEvents;
+    const counts = { red: 0, blue: 0 };
+    battleWorld.robots.entities.forEach((robot) => {
+      if (robot.health > 0) {
+        counts[robot.team] += 1;
+      }
+    });
+    return counts;
+  }, [battleWorld, telemetryEvents]);
+
+  const handleRunnerReady = useCallback((runner: BattleRunner) => {
+    runnerRef.current = runner;
+  }, []);
+
+  const handlePauseResume = useCallback(() => {
+    const snapshot = matchMachine.getSnapshot();
+    if (snapshot.phase === 'running') {
+      matchMachine.pause();
+    } else if (snapshot.phase === 'paused') {
+      matchMachine.resume();
+    }
+  }, [matchMachine]);
+
+  const handleReset = useCallback(() => {
+    runnerRef.current?.reset();
+  }, []);
+
+  const statusText = formatStatus(matchSnapshot);
+  const pauseLabel = matchSnapshot.phase === 'paused' ? 'Resume' : 'Pause';
+
+  const winnerLabel =
+    matchSnapshot.phase === 'victory' && matchSnapshot.winner
+      ? TEAM_CONFIGS[matchSnapshot.winner].label
+      : null;
+
+  const restartSeconds =
+    matchSnapshot.phase === 'victory' && matchSnapshot.restartTimerMs != null
+      ? Math.ceil(matchSnapshot.restartTimerMs / 1000)
+      : null;
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div id="status" className="match-status" role="status">
-        {STATUS_TEXT}
+        {statusText}
       </div>
       <Suspense fallback={<div className="match-status">Loading arena...</div>}>
-        <Simulation battleWorld={battleWorld} />
+        <Simulation
+          battleWorld={battleWorld}
+          matchMachine={matchMachine}
+          telemetry={telemetryPort}
+          onRunnerReady={handleRunnerReady}
+        />
       </Suspense>
+      <div
+        style={{
+          position: 'absolute',
+          top: 16,
+          right: 16,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 4,
+          alignItems: 'flex-end',
+        }}
+      >
+        <div style={{ fontWeight: 600, fontSize: 14 }}>Alive</div>
+        <div>{`${TEAM_CONFIGS.red.label}: ${aliveCounts.red}`}</div>
+        <div>{`${TEAM_CONFIGS.blue.label}: ${aliveCounts.blue}`}</div>
+      </div>
+      {matchSnapshot.phase === 'victory' && winnerLabel ? (
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            padding: '24px 32px',
+            borderRadius: 12,
+            background: 'rgba(12, 14, 32, 0.85)',
+            color: '#f7f8ff',
+            textAlign: 'center',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.45)',
+          }}
+        >
+          <h2 style={{ margin: 0, fontSize: 22 }}>{winnerLabel} Triumphs!</h2>
+          {restartSeconds != null ? (
+            <p style={{ margin: '12px 0 0 0' }}>{`Restarting in ${restartSeconds}s`}</p>
+          ) : null}
+          <button
+            type="button"
+            style={{ marginTop: 16 }}
+            onClick={() => {
+              // Placeholder for stats modal trigger
+            }}
+          >
+            View Battle Stats
+          </button>
+        </div>
+      ) : null}
       <div
         style={{
           position: 'absolute',
@@ -30,8 +165,12 @@ export default function App() {
           gap: 12,
         }}
       >
-        <button type="button">Pause</button>
-        <button type="button">Reset</button>
+        <button type="button" onClick={handlePauseResume}>
+          {pauseLabel}
+        </button>
+        <button type="button" onClick={handleReset}>
+          Reset
+        </button>
       </div>
     </div>
   );
