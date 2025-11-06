@@ -8,14 +8,18 @@ import {
   scaleVec3,
   subtractVec3,
   Vec3,
+  vec3,
 } from '../../lib/math/vec3';
 import { TEAM_CONFIGS } from '../../lib/teamConfig';
 import { RobotBehaviorMode } from './behaviorState';
+import { ARENA_WALLS, ARENA_PILLARS, ROBOT_RADIUS } from '../environment/arenaGeometry';
 
 const SEEK_SPEED = 6;
 const RETREAT_SPEED = 7;
 const STRAFE_SPEED = 4;
 const SEPARATION_DISTANCE = 1.5;
+const AVOIDANCE_RADIUS = 3.0;
+const AVOIDANCE_STRENGTH = 1.2;
 
 export interface MovementPlan {
   velocity: Vec3;
@@ -131,6 +135,54 @@ export function planRobotMovement(
   } else {
     const direction = computeForwardDirection(robot.position, spawnCenter);
     desiredVelocity = scaleVec3(direction, SEEK_SPEED * 0.5);
+  }
+
+  // Wall and pillar avoidance: push away from nearby static geometry
+  function computeAvoidance(pos: Vec3): Vec3 {
+    let avoid = vec3(0, 0, 0);
+
+    // Walls are axis-aligned rectangles; compute closest point on wall AABB
+    for (const wall of ARENA_WALLS) {
+      const minX = wall.x - wall.halfWidth - ROBOT_RADIUS;
+      const maxX = wall.x + wall.halfWidth + ROBOT_RADIUS;
+      const minZ = wall.z - wall.halfDepth - ROBOT_RADIUS;
+      const maxZ = wall.z + wall.halfDepth + ROBOT_RADIUS;
+
+      const closestX = Math.max(minX, Math.min(pos.x, maxX));
+      const closestZ = Math.max(minZ, Math.min(pos.z, maxZ));
+      const dx = pos.x - closestX;
+      const dz = pos.z - closestZ;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+      if (dist < AVOIDANCE_RADIUS) {
+        const strength = (AVOIDANCE_RADIUS - Math.max(dist, 0)) / AVOIDANCE_RADIUS;
+        let pushDir: Vec3;
+        if (dist > 1e-6) {
+          pushDir = normalizeVec3({ x: dx, y: 0, z: dz });
+        } else {
+          // We're effectively intersecting the expanded wall box; push away from wall center
+          pushDir = normalizeVec3({ x: pos.x - wall.x, y: 0, z: pos.z - wall.z });
+        }
+        avoid = addVec3(avoid, scaleVec3(pushDir, strength));
+      }
+    }
+
+    for (const pillar of ARENA_PILLARS) {
+      const dx = pos.x - pillar.x;
+      const dz = pos.z - pillar.z;
+      const dist = Math.sqrt(dx * dx + dz * dz) - (pillar.radius + ROBOT_RADIUS);
+        if (dist < AVOIDANCE_RADIUS) {
+          const strength = (AVOIDANCE_RADIUS - Math.max(dist, 0)) / AVOIDANCE_RADIUS;
+          const push = normalizeVec3({ x: dx, y: 0, z: dz });
+          avoid = addVec3(avoid, scaleVec3(push, strength));
+        }
+    }
+
+    return avoid;
+  }
+
+  const avoidance = computeAvoidance(robot.position);
+  if (lengthVec3(avoidance) > 0) {
+    desiredVelocity = addVec3(desiredVelocity, scaleVec3(normalizeVec3(avoidance), SEEK_SPEED * AVOIDANCE_STRENGTH));
   }
 
   desiredVelocity = applySeparation(desiredVelocity, robot, context?.neighbors);

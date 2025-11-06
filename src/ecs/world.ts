@@ -29,6 +29,9 @@ export interface RobotAIState {
   visibleEnemyIds?: string[];
   enemyMemory?: Record<string, EnemyMemoryEntry>;
   searchPosition?: Vec3 | null;
+  // Roaming support: a temporary search/roam target and expiry timestamp (ms)
+  roamTarget?: Vec3 | null;
+  roamUntil?: number | null;
 }
 
 export interface RobotEntity {
