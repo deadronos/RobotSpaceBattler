@@ -13,6 +13,11 @@ export type { TeamId } from '../lib/teamConfig';
 
 export type WeaponType = 'laser' | 'gun' | 'rocket';
 
+export interface EnemyMemoryEntry {
+  position: Vec3;
+  timestamp: number;
+}
+
 export interface RobotAIState {
   mode: 'seek' | 'engage' | 'retreat';
   targetId?: string;
@@ -21,6 +26,12 @@ export interface RobotAIState {
   anchorDistance?: number | null;
   strafeSign?: 1 | -1;
   targetDistance?: number | null;
+  visibleEnemyIds?: string[];
+  enemyMemory?: Record<string, EnemyMemoryEntry>;
+  searchPosition?: Vec3 | null;
+  // Roaming support: a temporary search/roam target and expiry timestamp (ms)
+  roamTarget?: Vec3 | null;
+  roamUntil?: number | null;
 }
 
 export interface RobotEntity {

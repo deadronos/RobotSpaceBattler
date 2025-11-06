@@ -43,8 +43,10 @@ function filterEnemies(seeker: RobotEntity, robots: RobotEntity[]): RobotEntity[
 export function findClosestEnemy(
   seeker: RobotEntity,
   robots: RobotEntity[],
+  candidates?: RobotEntity[],
 ): RobotEntity | undefined {
-  const enemies = filterEnemies(seeker, robots);
+  const pool = candidates ?? robots;
+  const enemies = filterEnemies(seeker, pool);
   const ranked = rankCandidates(seeker, enemies);
   ranked.sort(sortByPriority);
   return ranked[0]?.entity;
@@ -63,7 +65,7 @@ function sortCaptainTargets(
   }
 
   if (a.spawnDistanceSq !== b.spawnDistanceSq) {
-    return a.spawnDistanceSq - b.spawnDistanceSq;
+    return b.spawnDistanceSq - a.spawnDistanceSq;
   }
 
   return a.entity.id.localeCompare(b.entity.id);
@@ -85,8 +87,10 @@ function rankCaptainCandidates(
 export function pickCaptainTarget(
   captain: RobotEntity,
   robots: RobotEntity[],
+  candidates?: RobotEntity[],
 ): RobotEntity | undefined {
-  const enemies = filterEnemies(captain, robots);
+  const pool = candidates ?? robots;
+  const enemies = filterEnemies(captain, pool);
   const captains = enemies.filter((robot) => robot.isCaptain);
 
   if (captains.length > 0) {

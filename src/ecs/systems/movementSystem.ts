@@ -4,43 +4,18 @@ import {
   lengthVec3,
   scaleInPlaceVec3,
   scaleVec3,
-  vec3,
   Vec3,
 } from '../../lib/math/vec3';
+import {
+  ARENA_BOUNDS,
+  ARENA_PILLARS,
+  ARENA_WALLS,
+  ROBOT_RADIUS,
+} from '../../simulation/environment/arenaGeometry';
 import { BattleWorld } from '../world';
 
-const MIN_BOUNDS = vec3(-48, 0, -48);
-const MAX_BOUNDS = vec3(48, 0, 48);
 const FRICTION = 0.92;
-const ROBOT_RADIUS = 1.0;
-
-// Wall definitions matching SpaceStation.tsx
-const WALLS = [
-  // Outer perimeter
-  { x: 0, z: -50, halfWidth: 50, halfDepth: 1 },
-  { x: 0, z: 50, halfWidth: 50, halfDepth: 1 },
-  { x: 50, z: 0, halfWidth: 1, halfDepth: 50 },
-  { x: -50, z: 0, halfWidth: 1, halfDepth: 50 },
-  // Internal corridors
-  { x: 0, z: -20, halfWidth: 20, halfDepth: 0.75 },
-  { x: 0, z: 20, halfWidth: 20, halfDepth: 0.75 },
-  { x: -20, z: 0, halfWidth: 0.75, halfDepth: 15 },
-  { x: 20, z: 0, halfWidth: 0.75, halfDepth: 15 },
-  // Central obstacle
-  { x: 0, z: 0, halfWidth: 3, halfDepth: 3 },
-  // Corner structures
-  { x: -35, z: -35, halfWidth: 3, halfDepth: 3 },
-  { x: 35, z: -35, halfWidth: 3, halfDepth: 3 },
-  { x: -35, z: 35, halfWidth: 3, halfDepth: 3 },
-  { x: 35, z: 35, halfWidth: 3, halfDepth: 3 },
-];
-
-const PILLARS = [
-  { x: -30, z: -30, radius: 1.2 },
-  { x: 30, z: -30, radius: 1.2 },
-  { x: -30, z: 30, radius: 1.2 },
-  { x: 30, z: 30, radius: 1.2 },
-];
+const { min: MIN_BOUNDS, max: MAX_BOUNDS } = ARENA_BOUNDS;
 
 function checkBoxCollision(
   pos: Vec3,
@@ -72,7 +47,7 @@ function checkCircleCollision(
 
 function resolveCollision(pos: Vec3): void {
   // Check walls
-  for (const wall of WALLS) {
+  for (const wall of ARENA_WALLS) {
     if (checkBoxCollision(pos, wall.x, wall.z, wall.halfWidth, wall.halfDepth, ROBOT_RADIUS)) {
       // Push robot out of wall
       const closestX = Math.max(
@@ -95,7 +70,7 @@ function resolveCollision(pos: Vec3): void {
   }
 
   // Check pillars
-  for (const pillar of PILLARS) {
+  for (const pillar of ARENA_PILLARS) {
     if (checkCircleCollision(pos, pillar.x, pillar.z, pillar.radius, ROBOT_RADIUS)) {
       const dx = pos.x - pillar.x;
       const dz = pos.z - pillar.z;
