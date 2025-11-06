@@ -26,9 +26,9 @@ export interface RobotAIState {
   anchorDistance?: number | null;
   strafeSign?: 1 | -1;
   targetDistance?: number | null;
-  visibleEnemyIds: string[];
-  enemyMemory: Record<string, EnemyMemoryEntry>;
-  searchPosition: Vec3 | null;
+  visibleEnemyIds?: string[];
+  enemyMemory?: Record<string, EnemyMemoryEntry>;
+  searchPosition?: Vec3 | null;
 }
 
 export interface RobotEntity {

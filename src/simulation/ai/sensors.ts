@@ -1,4 +1,4 @@
-import { RobotEntity, EnemyMemoryEntry } from '../../ecs/world';
+import { EnemyMemoryEntry,RobotEntity } from '../../ecs/world';
 import {
   cloneVec3,
   distanceSquaredVec3,
@@ -67,6 +67,9 @@ export function updateRobotSensors(
     }
   }
 
+  if (!robot.ai.enemyMemory) {
+    robot.ai.enemyMemory = {};
+  }
   const memory = robot.ai.enemyMemory;
   pruneMemory(memory, timestampMs - MEMORY_DURATION_MS);
 
@@ -89,8 +92,11 @@ export function updateRobotSensors(
 export function getLatestEnemyMemory(
   robot: RobotEntity,
 ): [string, EnemyMemoryEntry] | null {
+  const memory = robot.ai.enemyMemory;
+  if (!memory) return null;
+
   let latest: [string, EnemyMemoryEntry] | null = null;
-  for (const [id, entry] of Object.entries(robot.ai.enemyMemory)) {
+  for (const [id, entry] of Object.entries(memory)) {
     if (!latest || entry.timestamp > latest[1].timestamp) {
       latest = [id, entry];
     }
