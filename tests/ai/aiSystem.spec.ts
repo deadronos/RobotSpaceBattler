@@ -10,6 +10,7 @@ function createRobot(overrides: Partial<RobotEntity> = {}): RobotEntity {
     position: toVec3(0, 0, 0),
     velocity: toVec3(0, 0, 0),
     orientation: 0,
+    speed: 0,
     weapon: 'laser',
     fireCooldown: 0,
     fireRate: 1,

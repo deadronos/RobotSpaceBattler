@@ -11,8 +11,8 @@ import {
   vec3,
 } from '../../lib/math/vec3';
 import { TEAM_CONFIGS } from '../../lib/teamConfig';
+import { ARENA_PILLARS, ARENA_WALLS, ROBOT_RADIUS } from '../environment/arenaGeometry';
 import { RobotBehaviorMode } from './behaviorState';
-import { ARENA_WALLS, ARENA_PILLARS, ROBOT_RADIUS } from '../environment/arenaGeometry';
 
 const SEEK_SPEED = 6;
 const RETREAT_SPEED = 7;

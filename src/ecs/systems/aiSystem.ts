@@ -8,8 +8,8 @@ import {
   updateRobotSensors,
 } from '../../simulation/ai/sensors';
 import { findClosestEnemy, pickCaptainTarget } from '../../simulation/ai/targeting';
-import { BattleWorld, RobotEntity } from '../world';
 import { ARENA_BOUNDS } from '../../simulation/environment/arenaGeometry';
+import { BattleWorld, RobotEntity } from '../world';
 
 function buildNeighbors(robot: RobotEntity, allies: RobotEntity[]): Vec3[] {
   return allies
