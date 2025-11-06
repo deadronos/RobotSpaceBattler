@@ -31,8 +31,8 @@ function createSpawnGrid(center: Vec3, columns: number, rows: number, spacing: n
   return spawnPoints;
 }
 
-const RED_CENTER = vec3(-12, 0, 0);
-const BLUE_CENTER = vec3(12, 0, 0);
+const RED_CENTER = vec3(-40, 0, 0);
+const BLUE_CENTER = vec3(40, 0, 0);
 
 export const TEAM_CONFIGS: Record<TeamId, TeamConfig> = {
   red: {
@@ -40,7 +40,7 @@ export const TEAM_CONFIGS: Record<TeamId, TeamConfig> = {
     label: 'Crimson Fleet',
     color: '#ff4d5a',
     spawnCenter: RED_CENTER,
-    spawnPoints: createSpawnGrid(vec3(-14, 0, -6), 5, 2, 3),
+    spawnPoints: createSpawnGrid(vec3(-40, 0, -6), 5, 2, 3),
     orientation: 0,
   },
   blue: {
@@ -48,7 +48,7 @@ export const TEAM_CONFIGS: Record<TeamId, TeamConfig> = {
     label: 'Azure Vanguard',
     color: '#4da6ff',
     spawnCenter: BLUE_CENTER,
-    spawnPoints: createSpawnGrid(vec3(14, 0, -6), 5, 2, 3),
+    spawnPoints: createSpawnGrid(vec3(40, 0, -6), 5, 2, 3),
     orientation: Math.PI,
   },
 };

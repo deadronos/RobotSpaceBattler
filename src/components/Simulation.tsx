@@ -8,6 +8,7 @@ import { TelemetryPort } from '../runtime/simulation/ports';
 import { MatchStateMachine } from '../runtime/state/matchStateMachine';
 import { RobotPlaceholder } from './RobotPlaceholder';
 import { Scene } from './Scene';
+import { SpaceStation } from './SpaceStation';
 
 interface SimulationProps {
   battleWorld: BattleWorld;
@@ -75,10 +76,7 @@ function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
 
   return (
     <>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[200, 200, 32, 32]} />
-        <meshStandardMaterial color="#1b1f3b" />
-      </mesh>
+      <SpaceStation />
       {robots.map((robot) => (
         <RobotPlaceholder
           key={robot.id}
