@@ -1,4 +1,4 @@
-import { cloneVec3, distanceVec3, lengthVec3, Vec3, vec3 } from '../../lib/math/vec3';
+import { distanceVec3, lengthVec3 } from '../../lib/math/vec3';
 import { nextBehaviorState, RobotBehaviorMode } from '../../simulation/ai/behaviorState';
 import { computeTeamAnchors } from '../../simulation/ai/captainCoordinator';
 import { MovementContext, planRobotMovement } from '../../simulation/ai/pathing';
@@ -8,15 +8,9 @@ import {
   updateRobotSensors,
 } from '../../simulation/ai/sensors';
 import { findClosestEnemy, pickCaptainTarget } from '../../simulation/ai/targeting';
-import { ARENA_BOUNDS } from '../../simulation/environment/arenaGeometry';
 import { BattleWorld, RobotEntity } from '../world';
-
-function buildNeighbors(robot: RobotEntity, allies: RobotEntity[]): Vec3[] {
-  return allies
-    .filter((ally) => ally.id !== robot.id)
-    .filter((ally) => distanceVec3(ally.position, robot.position) < 2.5)
-    .map((ally) => cloneVec3(ally.position));
-}
+import { buildNeighbors } from './aiNeighbors';
+import { refreshRoamTarget } from './roaming';
 
 export function updateAISystem(battleWorld: BattleWorld, rng: () => number): void {
   const robots = battleWorld.robots.entities;
@@ -63,30 +57,10 @@ export function updateAISystem(battleWorld: BattleWorld, rng: () => number): voi
         robot.ai.searchPosition = predictSearchAnchor(memoryEntry);
         robot.ai.targetId = latestMemory?.[0];
       } else {
-        // Memory stale — clear pursuit and consider roaming
+        // Memory stale - clear pursuit and consider roaming
         robot.ai.searchPosition = null;
         robot.ai.targetId = undefined;
-
-        const now = battleWorld.state.elapsedMs;
-        const roamUntil = robot.ai.roamUntil ?? 0;
-        if (!robot.ai.roamTarget || (roamUntil && roamUntil <= now)) {
-          // pick a random roam point within arena bounds with a small margin
-          const margin = 6;
-          const minX = ARENA_BOUNDS.min.x + margin;
-          const maxX = ARENA_BOUNDS.max.x - margin;
-          const minZ = ARENA_BOUNDS.min.z + margin;
-          const maxZ = ARENA_BOUNDS.max.z - margin;
-          const rx = minX + rng() * (maxX - minX);
-          const rz = minZ + rng() * (maxZ - minZ);
-          const roamPoint = vec3(rx, 0, rz);
-          robot.ai.roamTarget = roamPoint;
-          // set searchPosition to roam target so pathing will go there
-          robot.ai.searchPosition = roamPoint;
-          robot.ai.roamUntil = now + 3000 + Math.floor(rng() * 4000);
-        } else if (robot.ai.roamTarget) {
-          // continue towards existing roam target
-          robot.ai.searchPosition = robot.ai.roamTarget;
-        }
+        refreshRoamTarget(robot.ai, battleWorld.state.elapsedMs, rng);
       }
     }
 
