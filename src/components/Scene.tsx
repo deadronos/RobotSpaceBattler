@@ -16,7 +16,7 @@ export function Scene({ children }: SceneProps) {
       gl={{ antialias: true }}
     >
       <color attach="background" args={['#020310']} />
-      <ambientLight intensity={0.45} color="#4a517a" />
+      <ambientLight intensity={0.6} color="#4a517a" />
       <hemisphereLight
         groundColor="#0a0b18"
         intensity={0.4}
@@ -25,7 +25,7 @@ export function Scene({ children }: SceneProps) {
       />
       <directionalLight
         position={[25, 32, 18]}
-        intensity={1.1}
+        intensity={1.5}
         color="#f3f0ff"
         castShadow
         shadow-mapSize-width={2048}
@@ -40,7 +40,7 @@ export function Scene({ children }: SceneProps) {
       />
       <directionalLight
         position={[-28, 26, -24]}
-        intensity={0.75}
+        intensity={1.1}
         color="#c8d7ff"
         castShadow
         shadow-mapSize-width={1024}
