@@ -13,7 +13,13 @@ export function SpaceStation() {
       <RigidBody type="fixed" colliders="cuboid">
         <mesh position={[0, -1, 0]} receiveShadow castShadow>
           <boxGeometry args={[100, 0.5, 100]} />
-          <meshStandardMaterial color="#1a1d2e" metalness={0.4} roughness={0.6} />
+          <meshStandardMaterial
+            color="#262b46"
+            emissive="#04060f"
+            emissiveIntensity={0.3}
+            metalness={0.35}
+            roughness={0.55}
+          />
         </mesh>
       </RigidBody>
 
@@ -30,30 +36,7 @@ export function SpaceStation() {
       <Pillar position={[30, 1.5, 30]} />
 
       {/* Lighting */}
-      <pointLight
-        position={[0, 12, 0]}
-        intensity={0.6}
-        color="#7ca5ff"
-        distance={70}
-        decay={1.5}
-        castShadow
-      />
-      <pointLight
-        position={[-25, 6, -25]}
-        intensity={0.35}
-        color="#ff9966"
-        distance={45}
-        decay={2}
-        castShadow
-      />
-      <pointLight
-        position={[25, 6, 25]}
-        intensity={0.35}
-        color="#ff9966"
-        distance={45}
-        decay={2}
-        castShadow
-      />
+      <ArenaLightRig />
     </>
   );
 }
@@ -88,7 +71,7 @@ function WallGroup() {
         <RigidBody key={i} type="fixed" colliders="cuboid">
           <mesh position={wall.pos} receiveShadow castShadow>
             <boxGeometry args={wall.dim} />
-            <meshStandardMaterial color="#2a3550" metalness={0.6} roughness={0.4} />
+            <meshStandardMaterial color="#313c60" metalness={0.55} roughness={0.45} />
           </mesh>
         </RigidBody>
       ))}
@@ -169,13 +152,79 @@ function LampPanels() {
           </mesh>
           <pointLight
             position={[0, 0, 1.3]}
-            intensity={1.4}
-            distance={28}
-            decay={2}
+            intensity={1.65}
+            distance={32}
+            decay={1.9}
             color={panel.color}
             castShadow
           />
         </group>
+      ))}
+    </>
+  );
+}
+
+function ArenaLightRig() {
+  const corridorLightPositions = useMemo(
+    () => [
+      [-25, 7, 0],
+      [25, 7, 0],
+      [0, 7, -25],
+      [0, 7, 25],
+    ],
+    [],
+  );
+
+  const hoverBeaconPositions = useMemo(
+    () => [
+      [-18, 4, -18],
+      [18, 4, 18],
+      [-18, 4, 18],
+      [18, 4, -18],
+    ],
+    [],
+  );
+
+  return (
+    <>
+      <pointLight
+        position={[0, 16, 0]}
+        intensity={1.2}
+        color="#a5c6ff"
+        distance={95}
+        decay={1.4}
+        castShadow
+      />
+      <spotLight
+        position={[0, 22, 0]}
+        angle={0.75}
+        penumbra={0.45}
+        intensity={1.15}
+        color="#ffe8c7"
+        castShadow
+        distance={120}
+      />
+      {corridorLightPositions.map((position, index) => (
+        <pointLight
+          key={`corridor-light-${index}`}
+          position={position as [number, number, number]}
+          intensity={0.6}
+          color="#8ad5ff"
+          distance={45}
+          decay={1.8}
+          castShadow
+        />
+      ))}
+      {hoverBeaconPositions.map((position, index) => (
+        <pointLight
+          key={`hover-beacon-${index}`}
+          position={position as [number, number, number]}
+          intensity={0.55}
+          color="#ffd59a"
+          distance={35}
+          decay={1.6}
+          castShadow
+        />
       ))}
     </>
   );
