@@ -1,0 +1,1 @@
+export { computeTeamAnchors } from './teamStrategy';

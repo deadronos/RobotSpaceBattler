@@ -1,0 +1,10 @@
+{
+  "rngSeed": 12345,
+  "rngAlgorithm": "xorshift32-v1",
+  "events": [
+    { "type": "spawn", "timestampMs": 0, "sequenceId": 1, "entityId": "alpha-1", "position": { "x": -5, "y":0, "z":0 } },
+    { "type": "fire", "timestampMs": 1000, "sequenceId": 2, "attackerId": "alpha-1", "projectileId": "p-1" },
+    { "type": "hit", "timestampMs": 1016, "sequenceId": 3, "attackerId": "alpha-1", "targetId": "beta-1", "position": { "x": 0, "y":0, "z":0 } },
+    { "type": "damage", "timestampMs": 1016, "sequenceId": 4, "targetId": "beta-1", "amount": 25, "resultingHealth": 75, "sourceEventId": "3" }
+  ]
+}
