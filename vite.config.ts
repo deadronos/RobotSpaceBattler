@@ -11,6 +11,8 @@ import { visualizer } from 'rollup-plugin-visualizer'
 import { setupPlugins as responsiveSetupPlugins } from '@responsive-image/vite-plugin'
 
 export default defineConfig({
+  // Build base for GitHub Pages (repo published at /RobotSpaceBattler/)
+  base: '/RobotSpaceBattler/',
   plugins: [
     react(),
     svgr(),
