@@ -13,7 +13,7 @@ export function SpaceStation() {
       <RigidBody type="fixed" colliders="cuboid">
         <mesh position={[0, -1, 0]} receiveShadow castShadow>
           <boxGeometry args={[100, 0.5, 100]} />
-          <meshStandardMaterial
+          <meshPhysicalMaterial
             color="#262b46"
             emissive="#04060f"
             emissiveIntensity={0.3}
@@ -71,7 +71,7 @@ function WallGroup() {
         <RigidBody key={i} type="fixed" colliders="cuboid">
           <mesh position={wall.pos} receiveShadow castShadow>
             <boxGeometry args={wall.dim} />
-            <meshStandardMaterial color="#313c60" metalness={0.55} roughness={0.45} />
+            <meshPhysicalMaterial color="#313c60" metalness={0.55} roughness={0.45} />
           </mesh>
         </RigidBody>
       ))}
@@ -88,7 +88,7 @@ function Pillar({ position }: PillarProps) {
     <RigidBody type="fixed" colliders="hull">
       <mesh position={position} receiveShadow castShadow>
         <cylinderGeometry args={[1.2, 1.2, 3, 6]} />
-        <meshStandardMaterial color="#3a4560" metalness={0.5} roughness={0.5} />
+        <meshPhysicalMaterial color="#3a4560" metalness={0.5} roughness={0.5} />
       </mesh>
     </RigidBody>
   );
@@ -205,7 +205,7 @@ function ArenaLightRig() {
         position={[0, 22, 0]}
         angle={0.75}
         penumbra={0.45}
-        intensity={1.15}
+        intensity={1.25}
         color="#ffe8c7"
         // Keep a single large spotlight casting shadows for dramatic lighting
         castShadow
