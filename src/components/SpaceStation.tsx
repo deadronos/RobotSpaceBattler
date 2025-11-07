@@ -156,7 +156,11 @@ function LampPanels() {
             distance={32}
             decay={1.9}
             color={panel.color}
-            castShadow
+            // These lamp panel lights are decorative — disable shadows to avoid
+            // exceeding the GPU's texture unit limits (many shadow maps increase
+            // fragment shader sampler count). Keep them visually bright without
+            // casting shadows to reduce GPU resource usage.
+            castShadow={false}
           />
         </group>
       ))}
@@ -193,6 +197,8 @@ function ArenaLightRig() {
         color="#a5c6ff"
         distance={95}
         decay={1.4}
+        // Keep main high-level ambient point light casting shadows for depth
+        // while avoiding many smaller shadow-casting lights elsewhere.
         castShadow
       />
       <spotLight
@@ -201,6 +207,7 @@ function ArenaLightRig() {
         penumbra={0.45}
         intensity={1.15}
         color="#ffe8c7"
+        // Keep a single large spotlight casting shadows for dramatic lighting
         castShadow
         distance={120}
       />
@@ -212,7 +219,9 @@ function ArenaLightRig() {
           color="#8ad5ff"
           distance={45}
           decay={1.8}
-          castShadow
+          // Corridor lights are decorative; disable shadows to reduce the
+          // number of shadow maps and avoid shader sampler overflow.
+          castShadow={false}
         />
       ))}
       {hoverBeaconPositions.map((position, index) => (
@@ -223,7 +232,8 @@ function ArenaLightRig() {
           color="#ffd59a"
           distance={35}
           decay={1.6}
-          castShadow
+          // Hover beacons are small/local; disable shadows here as well.
+          castShadow={false}
         />
       ))}
     </>
