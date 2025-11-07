@@ -1,116 +1,95 @@
-import { INITIAL_HEALTH, SPAWN_ZONES } from "../../contracts/loadSpawnContract";
-import { emitLiveTraceEvent } from "../../systems/matchTrace/liveTraceEmitter";
-import type { AIState, Team, Vector3, WeaponType } from "../../types";
-import type { Robot } from "../entities/Robot";
-import { createRobot } from "../entities/Robot";
-import { updateTeamCaptain } from "../entities/Team";
-import { setRobotBodyPosition } from "../simulation/physics";
-import { refreshTeamStats } from "../simulation/teamStats";
-import type { WorldView } from "../simulation/worldTypes";
-import { cloneVector, subtractVectors } from "../utils/vector";
+import { applyCaptaincy } from '../../lib/captainElection';
+import { createXorShift32 } from '../../lib/random/xorshift';
+import { TEAM_CONFIGS, TeamId } from '../../lib/teamConfig';
+import { getWeaponProfile, WeaponProfile } from '../../simulation/combat/weapons';
+import { BattleWorld, RobotEntity, toVec3, WeaponType } from '../world';
 
-export const WEAPON_DISTRIBUTION: Record<Team, WeaponType[]> = {
-  red: [
-    "laser",
-    "laser",
-    "laser",
-    "laser",
-    "gun",
-    "gun",
-    "gun",
-    "rocket",
-    "rocket",
-    "rocket",
-  ],
-  blue: [
-    "laser",
-    "laser",
-    "laser",
-    "gun",
-    "gun",
-    "gun",
-    "gun",
-    "rocket",
-    "rocket",
-    "rocket",
-  ],
-};
+export interface SpawnOptions {
+  seed?: number;
+  onRobotSpawn?: (robot: RobotEntity) => void;
+}
 
-function createAIState(offset: Vector3): AIState {
+const WEAPON_ROTATION: WeaponType[] = ['laser', 'gun', 'rocket'];
+const BASE_MAX_HEALTH = 100;
+const BASE_SPEED = 8;
+
+function buildRobotId(team: TeamId, index: number): string {
+  const displayIndex = index + 1;
+  return `${team}-${displayIndex}`;
+}
+
+function getWeaponForIndex(index: number): WeaponType {
+  return WEAPON_ROTATION[index % WEAPON_ROTATION.length];
+}
+
+function createRobot(
+  team: TeamId,
+  spawnIndex: number,
+  orientation: number,
+  strafeSign: 1 | -1,
+  profile: WeaponProfile,
+): RobotEntity {
   return {
-    behaviorMode: "aggressive",
-    targetId: null,
-    coverPosition: null,
-    lastFireTime: 0,
-    formationOffset: cloneVector(offset),
+    id: buildRobotId(team, spawnIndex),
+    kind: 'robot',
+    team,
+    position: toVec3(0, 0, 0),
+    velocity: toVec3(0, 0, 0),
+    orientation,
+    speed: BASE_SPEED,
+    weapon: profile.type,
+    fireCooldown: 0,
+    fireRate: profile.fireRate,
+    health: BASE_MAX_HEALTH,
+    maxHealth: BASE_MAX_HEALTH,
+    ai: {
+      mode: 'seek',
+      targetId: undefined,
+      directive: 'balanced',
+      anchorPosition: null,
+      anchorDistance: profile.range,
+      strafeSign,
+      targetDistance: null,
+      visibleEnemyIds: [],
+      enemyMemory: {},
+      searchPosition: null,
+    },
+    kills: 0,
+    isCaptain: false,
+    spawnIndex,
+    lastDamageTimestamp: 0,
   };
 }
 
-function assignCaptain(world: WorldView, team: Team, robots: Robot[]): void {
-  const [captain] = robots;
-  robots.forEach((robot, index) => {
-    robot.isCaptain = index === 0;
+function spawnTeamRobots(
+  battleWorld: BattleWorld,
+  team: TeamId,
+  seed: number,
+  options: SpawnOptions,
+) {
+  const generator = createXorShift32(seed);
+  const teamConfig = TEAM_CONFIGS[team];
+  const { world } = battleWorld;
+
+  teamConfig.spawnPoints.slice(0, 10).forEach((spawnPoint, index) => {
+    const strafeSign = generator.next() >= 0.5 ? 1 : -1;
+    const weapon = getWeaponForIndex(index);
+    const profile = getWeaponProfile(weapon);
+    const robot = createRobot(team, index, teamConfig.orientation, strafeSign, profile);
+    robot.position = toVec3(spawnPoint.x, spawnPoint.y, spawnPoint.z);
+    robot.fireCooldown = 0;
+    world.add(robot);
+    options.onRobotSpawn?.(robot);
   });
-  world.teams[team] = updateTeamCaptain(
-    world.teams[team],
-    captain ? captain.id : null,
-  );
+
+  const robots = battleWorld.getRobotsByTeam(team);
+  applyCaptaincy(team, robots);
 }
 
-export function spawnTeam(world: WorldView, team: Team): Robot[] {
-  // Prefer arena-configured spawn zones; fall back to canonical contract zones when undefined
-  const spawnZone =
-    (world.arena.spawnZones && world.arena.spawnZones[team]) ||
-    SPAWN_ZONES[team];
-  const weapons = WEAPON_DISTRIBUTION[team];
-  const robots: Robot[] = [];
+export function spawnTeams(battleWorld: BattleWorld, options: SpawnOptions = {}): void {
+  const baseSeed = options.seed ?? Date.now();
+  battleWorld.state.seed = baseSeed;
 
-  spawnZone.spawnPoints.forEach((point, index) => {
-    const id = `${team}-${index}`;
-    const formationOffset = subtractVectors(point, spawnZone.center);
-    const robot = createRobot({
-      id,
-      team,
-      position: cloneVector(point),
-      rotation: { x: 0, y: team === "red" ? 0.2 : -0.2, z: 0, w: 1 },
-      velocity: { x: 0, y: 0, z: 0 },
-      health: INITIAL_HEALTH,
-      maxHealth: INITIAL_HEALTH,
-      weaponType: weapons[index % weapons.length],
-      isCaptain: index === 0,
-      aiState: createAIState(formationOffset),
-      stats: {
-        kills: 0,
-        damageDealt: 0,
-        damageTaken: 0,
-        timeAlive: 0,
-        shotsFired: 0,
-      },
-    });
-
-    robots.push(robot);
-    world.entities.push(robot);
-    world.ecs?.robots.add(robot);
-    setRobotBodyPosition(world.physics, robot, robot.position);
-
-    emitLiveTraceEvent({
-      type: "spawn",
-      entityId: robot.id,
-      teamId: robot.team,
-      position: cloneVector(robot.position),
-      timestampMs: Math.round(world.simulation.simulationTime * 1000),
-    });
-  });
-
-  assignCaptain(world, team, robots);
-  return robots;
-}
-
-export function spawnInitialTeams(world: WorldView, teams: Team[]): Robot[] {
-  const spawned: Robot[] = [];
-  teams.forEach((team) => {
-    spawned.push(...spawnTeam(world, team));
-  });
-  refreshTeamStats(world, teams);
-  return spawned;
+  spawnTeamRobots(battleWorld, 'red', baseSeed ^ 0x9e3779b9, options);
+  spawnTeamRobots(battleWorld, 'blue', baseSeed ^ 0x4f1bbcdc, options);
 }

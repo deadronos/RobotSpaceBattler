@@ -1,299 +1,170 @@
-import {
-  createContext,
-  createElement,
-  type ReactElement,
-  type ReactNode,
-  useContext,
-  useMemo,
-} from "react";
+import { World } from 'miniplex';
 
-import type { Team, Vector3, WeaponType } from "../types";
 import {
-  applyTeamComposition as applyTeamCompositionAPI,
-} from "./api/configAPI";
-import {
-  eliminateRobot as eliminateRobotAPI,
-  inflictDamage as inflictDamageAPI,
-} from "./api/damageAPI";
-import {
-  calculateDistance as calculateDistanceAPI,
-  getArenaConfig as getArenaConfigAPI,
-  getProjectiles as getProjectilesAPI,
-  getRobotById as getRobotByIdAPI,
-  getSimulationState as getSimulationStateAPI,
-} from "./api/queryAPI";
-import {
-  closeSettingsOverlay as closeSettingsOverlayInternal,
-  closeStatsOverlay as closeStatsOverlayInternal,
-  getPerformanceOverlayState as getPerformanceOverlayStateInternal,
-  openSettingsOverlay as openSettingsOverlayInternal,
-  openStatsOverlay as openStatsOverlayInternal,
-  pauseAutoRestart as pauseAutoRestartInternal,
-  recordFrameMetrics as recordFrameMetricsAPI,
-  resetAutoRestartCountdown as resetAutoRestartCountdownInternal,
-  resumeAutoRestart as resumeAutoRestartInternal,
-  setAutoScalingEnabled as setAutoScalingEnabledAPI,
-} from "./api/uiIntegration";
-import { type ArenaEntity, createDefaultArena } from "./entities/Arena";
-import { type Projectile } from "./entities/Projectile";
-import {
-  createInitialSimulationState,
-  type SimulationState,
-} from "./entities/SimulationState";
-import { type TeamEntity } from "./entities/Team";
-import { createECSCollections } from "./factories/createCollections";
-import {
-  createPhysicsProjectile as createPhysicsProjectileImpl,
-} from "./factories/createProjectile";
-import { createTeams } from "./factories/createTeams";
-import {
-  syncTeams,
-} from "./management/battleStateManagement";
-import {
-  applyPhysicsImpulse as applyPhysicsImpulseInternal,
-  getPhysicsSnapshot as getPhysicsSnapshotExternal,
-  setPhysicsBodyPosition as setPhysicsBodyPositionInternal,
-} from "./management/physicsManagement";
-import {
-  setRobotHealth as setRobotHealthInternal,
-  setRobotKills as setRobotKillsInternal,
-  setRobotPosition as setRobotPositionInternal,
-} from "./management/robotManagement";
-import { stepSimulation as stepSimulationImpl } from "./simulation/battleStep";
-import {
-  createPerformanceController,
-  type PerformanceController,
-} from "./simulation/performance";
-import {
-  createPhysicsState,
-} from "./simulation/physics";
-import { refreshTeamStats } from "./simulation/teamStats";
-import type { WorldView } from "./simulation/worldTypes";
-import { reassignCaptain } from "./systems/ai/captainAI";
-import { spawnInitialTeams } from "./systems/spawnSystem";
+  addVec3,
+  cloneVec3,
+  distanceSquaredVec3,
+  Vec3,
+  vec3,
+} from '../lib/math/vec3';
+import { TEAM_CONFIGS, TeamConfig, TeamId } from '../lib/teamConfig';
 
-export interface SimulationWorld extends WorldView {
-  performance: PerformanceController;
+export type { TeamId } from '../lib/teamConfig';
+
+export type WeaponType = 'laser' | 'gun' | 'rocket';
+
+export interface EnemyMemoryEntry {
+  position: Vec3;
+  timestamp: number;
 }
 
-const SimulationWorldContext = createContext<SimulationWorld | null>(null);
-
-type SimulationWorldProviderProps = {
-  value: SimulationWorld;
-  children: ReactNode;
-};
-
-export function SimulationWorldProvider({
-  value,
-  children,
-}: SimulationWorldProviderProps): ReactElement {
-  const memoizedWorld = useMemo(() => value, [value]);
-  return createElement(
-    SimulationWorldContext.Provider,
-    { value: memoizedWorld },
-    children,
-  );
+export interface RobotAIState {
+  mode: 'seek' | 'engage' | 'retreat';
+  targetId?: string;
+  directive?: 'offense' | 'defense' | 'balanced';
+  anchorPosition?: Vec3 | null;
+  anchorDistance?: number | null;
+  strafeSign?: 1 | -1;
+  targetDistance?: number | null;
+  visibleEnemyIds?: string[];
+  enemyMemory?: Record<string, EnemyMemoryEntry>;
+  searchPosition?: Vec3 | null;
+  // Roaming support: a temporary search/roam target and expiry timestamp (ms)
+  roamTarget?: Vec3 | null;
+  roamUntil?: number | null;
 }
 
-export function useSimulationWorld(): SimulationWorld {
-  const world = useContext(SimulationWorldContext);
-  if (!world) {
-    throw new Error(
-      "useSimulationWorld must be used within a SimulationWorldProvider",
-    );
-  }
-  return world;
+export interface RobotEntity {
+  id: string;
+  kind: 'robot';
+  team: TeamId;
+  position: Vec3;
+  velocity: Vec3;
+  orientation: number;
+  speed: number;
+  weapon: WeaponType;
+  fireCooldown: number;
+  fireRate: number;
+  health: number;
+  maxHealth: number;
+  ai: RobotAIState;
+  kills: number;
+  isCaptain: boolean;
+  spawnIndex: number;
+  lastDamageTimestamp: number;
 }
 
-export function initializeSimulation(): SimulationWorld {
-  const arena = createDefaultArena();
-  const teams = createTeams(arena);
-  const ecs = createECSCollections();
-  (Object.values(teams) as TeamEntity[]).forEach((team) => {
-    ecs.teams.add(team);
-  });
-  const world: SimulationWorld = {
-    arena,
-    entities: [],
-    projectiles: [],
-    teams,
-    simulation: createInitialSimulationState(),
-    physics: createPhysicsState(),
-    performance: createPerformanceController(),
-    ecs,
+export interface ProjectileEntity {
+  id: string;
+  kind: 'projectile';
+  team: TeamId;
+  shooterId: string;
+  weapon: WeaponType;
+  position: Vec3;
+  velocity: Vec3;
+  damage: number;
+  maxLifetime: number;
+  spawnTime: number;
+  distanceTraveled: number;
+  maxDistance: number;
+  speed: number;
+  targetId?: string;
+}
+
+export type BattleEntity = RobotEntity | ProjectileEntity;
+
+export interface Store<T extends BattleEntity> {
+  entities: T[];
+}
+
+export interface BattleWorldState {
+  elapsedMs: number;
+  nextProjectileId: number;
+  seed: number;
+}
+
+export interface BattleWorld {
+  world: World<BattleEntity>;
+  robots: Store<RobotEntity>;
+  projectiles: Store<ProjectileEntity>;
+  teams: Record<TeamId, TeamConfig>;
+  state: BattleWorldState;
+  clear: () => void;
+  getRobotsByTeam(team: TeamId): RobotEntity[];
+}
+
+export function toVec3(x = 0, y = 0, z = 0): Vec3 {
+  return vec3(x, y, z);
+}
+
+function isRobotEntity(entity: BattleEntity): entity is RobotEntity {
+  return entity.kind === 'robot';
+}
+
+function isProjectileEntity(entity: BattleEntity): entity is ProjectileEntity {
+  return entity.kind === 'projectile';
+}
+
+function createEntityStore<T extends BattleEntity>(
+  world: World<BattleEntity>,
+  predicate: (entity: BattleEntity) => entity is T,
+): Store<T> {
+  return {
+    get entities() {
+      return Array.from(world.entities).filter(predicate) as T[];
+    },
   };
-  spawnInitialTeams(world, ["red", "blue"]);
-  refreshTeamStats(world, ["red", "blue"]);
-  syncTeams(world);
-  return world;
 }
 
-function createPhysicsProjectile(
-  world: SimulationWorld,
-  config: {
-    id?: string;
-    ownerId: string;
-    weaponType: WeaponType;
-    position: Vector3;
-    velocity: Vector3;
-    damage?: number;
-  },
-): string {
-  return createPhysicsProjectileImpl(world, config);
+function clearWorldEntities(world: World<BattleEntity>): void {
+  Array.from(world.entities).forEach((entity) => world.remove(entity));
 }
 
-export function stepSimulation(
-  world: SimulationWorld,
-  deltaTime: number,
-): void {
-  stepSimulationImpl(world, deltaTime);
+export function createBattleWorld(): BattleWorld {
+  const world = new World<BattleEntity>();
+  const robots = createEntityStore(world, isRobotEntity);
+  const projectiles = createEntityStore(world, isProjectileEntity);
+
+  const state: BattleWorldState = {
+    elapsedMs: 0,
+    nextProjectileId: 0,
+    seed: Date.now(),
+  };
+
+  return {
+    world,
+    robots,
+    projectiles,
+    teams: TEAM_CONFIGS,
+    state,
+    clear: () => {
+      clearWorldEntities(world);
+      state.nextProjectileId = 0;
+    },
+    getRobotsByTeam: (team: TeamId) =>
+      robots.entities.filter((entity) => entity.team === team),
+  };
 }
 
-export function getProjectiles(world: SimulationWorld): Projectile[] {
-  return getProjectilesAPI(world);
-}
-export function inflictDamage(
-  world: SimulationWorld,
-  robotId: string,
-  amount: number,
-): void {
-  inflictDamageAPI(world, robotId, amount);
+export function resetBattleWorld(world: BattleWorld): void {
+  world.clear();
+  world.state.elapsedMs = 0;
 }
 
-export function eliminateRobot(world: SimulationWorld, robotId: string): void {
-  eliminateRobotAPI(world, robotId);
+export function clonePosition(entity: RobotEntity): Vec3 {
+  return cloneVec3(entity.position);
 }
 
-export function calculateDistance(a: Vector3, b: Vector3): number {
-  return calculateDistanceAPI(a, b);
+export function distanceToSpawnCenter(team: TeamId, position: Vec3): number {
+  const center = TEAM_CONFIGS[team].spawnCenter;
+  return Math.sqrt(distanceSquaredVec3(position, center));
 }
 
-export { getDamageMultiplier } from "./systems/weaponSystem";
-
-export function getSimulationState(world: SimulationWorld): SimulationState {
-  return getSimulationStateAPI(world);
+export function getTeamConfig(team: TeamId): TeamConfig {
+  return TEAM_CONFIGS[team];
 }
 
-export function pauseAutoRestart(world: SimulationWorld): void {
-  pauseAutoRestartInternal(world);
-}
-
-export function resumeAutoRestart(world: SimulationWorld): void {
-  resumeAutoRestartInternal(world);
-}
-
-export function resetAutoRestartCountdown(world: SimulationWorld): void {
-  resetAutoRestartCountdownInternal(world);
-}
-
-export function openStatsOverlay(world: SimulationWorld): void {
-  openStatsOverlayInternal(world);
-}
-
-export function closeStatsOverlay(world: SimulationWorld): void {
-  closeStatsOverlayInternal(world);
-}
-
-export function openSettingsOverlay(world: SimulationWorld): void {
-  openSettingsOverlayInternal(world);
-}
-
-export function closeSettingsOverlay(world: SimulationWorld): void {
-  closeSettingsOverlayInternal(world);
-}
-
-export function applyTeamComposition(
-  world: SimulationWorld,
-  config: Record<Team, unknown>,
-): void {
-  applyTeamCompositionAPI(world, config);
-}
-
-export function getArenaConfig(world: SimulationWorld): ArenaEntity {
-  return getArenaConfigAPI(world);
-}
-
-export function recordFrameMetrics(world: SimulationWorld, fps: number): void {
-  recordFrameMetricsAPI(world, fps);
-}
-
-export function setAutoScalingEnabled(
-  world: SimulationWorld,
-  enabled: boolean,
-): void {
-  setAutoScalingEnabledAPI(world, enabled);
-}
-
-export function getPerformanceOverlayState(world: SimulationWorld) {
-  return getPerformanceOverlayStateInternal(world);
-}
-
-export function setPhysicsBodyPosition(
-  world: SimulationWorld,
-  robotId: string,
-  position: Vector3,
-): void {
-  setPhysicsBodyPositionInternal(world, robotId, position);
-}
-
-export function applyPhysicsImpulse(
-  world: SimulationWorld,
-  robotId: string,
-  impulse: Vector3,
-): void {
-  applyPhysicsImpulseInternal(world, robotId, impulse);
-}
-
-export function spawnPhysicsProjectile(
-  world: SimulationWorld,
-  config: {
-    id?: string;
-    ownerId: string;
-    weaponType: WeaponType;
-    position: Vector3;
-    velocity: Vector3;
-    damage?: number;
-  },
-): string {
-  return createPhysicsProjectile(world, config);
-}
-
-export function getPhysicsSnapshot(world: SimulationWorld) {
-  return getPhysicsSnapshotExternal(world);
-}
-
-export function getRobotById(world: SimulationWorld, robotId: string) {
-  return getRobotByIdAPI(world, robotId);
-}
-
-export function setRobotHealth(
-  world: SimulationWorld,
-  robotId: string,
-  health: number,
-): void {
-  setRobotHealthInternal(world, robotId, health);
-}
-
-export function setRobotKills(
-  world: SimulationWorld,
-  robotId: string,
-  kills: number,
-): void {
-  setRobotKillsInternal(world, robotId, kills);
-}
-
-export function setRobotPosition(
-  world: SimulationWorld,
-  robotId: string,
-  position: Vector3,
-): void {
-  setRobotPositionInternal(world, robotId, position);
-}
-
-export function triggerCaptainReelection(
-  world: SimulationWorld,
-  team: Team,
-): void {
-  reassignCaptain(world, team);
-  refreshTeamStats(world, [team]);
+export function translateFromSpawn(team: TeamId, offset: Vec3): Vec3 {
+  const config = TEAM_CONFIGS[team];
+  return addVec3(config.spawnCenter, offset);
 }

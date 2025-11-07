@@ -1,72 +1,95 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import { useFrame } from '@react-three/fiber';
+import { MutableRefObject, useEffect, useRef, useState } from 'react';
 
-import { useSimulationWorld } from "../ecs/world";
-import { useLiveMatchTrace } from "../hooks/useLiveMatchTrace";
-import { useVisualQuality } from "../hooks/useVisualQuality";
-import type { FrameSubscription } from "../systems/physicsSync";
-import { usePhysicsSync } from "../systems/physicsSync";
-import { MatchSceneInner } from "./match/MatchSceneInner";
+import { BattleWorld } from '../ecs/world';
+import { TEAM_CONFIGS } from '../lib/teamConfig';
+import { BattleRunner, createBattleRunner } from '../runtime/simulation/battleRunner';
+import { TelemetryPort } from '../runtime/simulation/ports';
+import { MatchStateMachine } from '../runtime/state/matchStateMachine';
+import { RobotPlaceholder } from './RobotPlaceholder';
+import { Scene } from './Scene';
+import { SpaceStation } from './SpaceStation';
 
-type SimulationProps = {
-  /** Optional override for frame subscription (testing). */
-  useFrameHook?: FrameSubscription;
-};
+interface SimulationProps {
+  battleWorld: BattleWorld;
+  matchMachine: MatchStateMachine;
+  telemetry: TelemetryPort;
+  onRunnerReady?: (runner: BattleRunner) => void;
+}
 
-export default function Simulation({
-  useFrameHook: frameSubscription,
+const FRAME_SAMPLE_INTERVAL = 1 / 30;
+
+function vecToArray(position: { x: number; y: number; z: number }): [number, number, number] {
+  return [position.x, position.y, position.z];
+}
+
+export function Simulation({
+  battleWorld,
+  matchMachine,
+  telemetry,
+  onRunnerReady,
 }: SimulationProps) {
-  const world = useSimulationWorld();
-
-  const frameSubscribersRef = useRef<
-    Array<(state: unknown, delta: number) => void>
-  >([]);
-
-  const sharedFrameHook = useMemo<FrameSubscription | undefined>(() => {
-    if (!frameSubscription) {
-      return undefined;
-    }
-
-    return (callback) => {
-      frameSubscribersRef.current.push(callback);
-      return () => {
-        frameSubscribersRef.current = frameSubscribersRef.current.filter(
-          (existing) => existing !== callback,
-        );
-      };
-    };
-  }, [frameSubscription]);
+  const runnerRef = useRef<BattleRunner | null>(null);
 
   useEffect(() => {
-    if (!frameSubscription) {
-      return undefined;
-    }
+    const runner = createBattleRunner(battleWorld, {
+      seed: battleWorld.state.seed,
+      matchMachine,
+      telemetry,
+    });
 
-    const forwarder = (state: unknown, delta: number) => {
-      frameSubscribersRef.current.forEach((callback) => {
-        callback(state, delta);
-      });
-    };
-
-    const unsubscribe = frameSubscription(forwarder);
+    runnerRef.current = runner;
+    onRunnerReady?.(runner);
 
     return () => {
-      frameSubscribersRef.current = [];
-      if (typeof unsubscribe === "function") {
-        unsubscribe();
-      }
+      runnerRef.current = null;
     };
-  }, [frameSubscription]);
-
-  usePhysicsSync({ world, useFrameHook: sharedFrameHook });
-  const trace = useLiveMatchTrace({ world, useFrameHook: sharedFrameHook });
-  const { qualityLevel } = useVisualQuality();
+  }, [battleWorld, matchMachine, telemetry, onRunnerReady]);
 
   return (
-    <MatchSceneInner
-      matchTrace={trace}
-      autoPlay
-      renderMatch={frameSubscription === undefined}
-      visualQuality={qualityLevel}
-    />
+    <Scene>
+      <SimulationContent battleWorld={battleWorld} runnerRef={runnerRef} />
+    </Scene>
+  );
+}
+
+interface SimulationContentProps {
+  battleWorld: BattleWorld;
+  runnerRef: MutableRefObject<BattleRunner | null>;
+}
+
+function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
+  const [, setVersion] = useState(0);
+  const accumulator = useRef(0);
+
+  useFrame((_, delta) => {
+    runnerRef.current?.step(delta);
+    accumulator.current += delta;
+    if (accumulator.current >= FRAME_SAMPLE_INTERVAL) {
+      accumulator.current = 0;
+      setVersion((value) => value + 1);
+    }
+  });
+
+  const robots = battleWorld.robots.entities;
+  const projectiles = battleWorld.projectiles.entities;
+
+  return (
+    <>
+      <SpaceStation />
+      {robots.map((robot) => (
+        <RobotPlaceholder
+          key={robot.id}
+          color={TEAM_CONFIGS[robot.team].color}
+          position={[robot.position.x, 0.8, robot.position.z]}
+        />
+      ))}
+      {projectiles.map((projectile) => (
+        <mesh key={projectile.id} position={vecToArray(projectile.position)} castShadow>
+          <sphereGeometry args={[0.25, 8, 8]} />
+          <meshStandardMaterial color="#ffd966" emissive="#ffdd88" emissiveIntensity={1.6} />
+        </mesh>
+      ))}
+    </>
   );
 }

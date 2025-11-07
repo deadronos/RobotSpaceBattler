@@ -1,157 +1,177 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import HudRoot from "./components/hud/HudRoot";
-import SettingsDrawer from "./components/overlays/SettingsDrawer";
-import VictoryOverlay from "./components/overlays/VictoryOverlay";
-import Scene from "./components/Scene";
-import StatsModal from "./components/ui/StatsModal";
-import { setVictoryState } from "./ecs/entities/SimulationState";
+import { Simulation } from './components/Simulation';
+import { createBattleWorld } from './ecs/world';
+import { TEAM_CONFIGS } from './lib/teamConfig';
+import { BattleRunner } from './runtime/simulation/battleRunner';
+import { createTelemetryPort } from './runtime/simulation/telemetryAdapter';
 import {
-  openSettingsOverlay,
-  openStatsOverlay,
-  useSimulationWorld,
-} from "./ecs/world";
-import useUiShortcuts from "./hooks/useUiShortcuts";
-import useVictoryCountdown from "./hooks/useVictoryCountdown";
-import { useUIStore } from "./store/uiStore";
-import { useUiBridgeSystem } from "./systems/uiBridgeSystem";
-import {
-  getPlaywrightTriggerFlag,
-  isAppDebug,
-  setAppMounted,
-  setAppSimStatus,
-  setAppUiVictory,
-} from "./utils/debugFlags";
+  createMatchStateMachine,
+  MatchStateSnapshot,
+} from './runtime/state/matchStateMachine';
+import { useTelemetryStore } from './state/telemetryStore';
 
-function logDebug(message: string, error?: unknown) {
-  if (!isAppDebug()) {
-    return;
+function formatStatus({
+  phase,
+  winner,
+  restartTimerMs,
+}: MatchStateSnapshot): string {
+  switch (phase) {
+    case 'running':
+      return 'Battle in progress';
+    case 'paused':
+      return 'Simulation paused';
+    case 'victory': {
+      const countdown = restartTimerMs != null ? Math.ceil(restartTimerMs / 1000) : null;
+      return `Victory: ${winner ?? 'unknown'}${countdown != null ? ` · restart in ${countdown}s` : ''}`;
+    }
+    default:
+      return 'Initializing space match...';
   }
-
-  if (error) {
-    console.warn(`[test-helper] ${message}`, error);
-    return;
-  }
-
-  console.log(`[test-helper] ${message}`);
 }
 
 export default function App() {
-  useUiShortcuts();
-  useUiBridgeSystem();
+  const battleWorld = useMemo(() => createBattleWorld(), []);
+  const telemetryPort = useMemo(() => createTelemetryPort(), []);
+  const [matchSnapshot, setMatchSnapshot] = useState<MatchStateSnapshot>({
+    phase: 'initializing',
+    elapsedMs: 0,
+    restartTimerMs: null,
+    winner: null,
+  });
 
-  const { remainingSeconds, pause, resume, restartNow } = useVictoryCountdown();
-  const world = useSimulationWorld();
-  const sim = world.simulation;
-  const [testTriggered, setTestTriggered] = useState(false);
-  const victoryVisible =
-    useUIStore((s) => s.victoryOverlayVisible) || testTriggered;
-  const winnerName = sim.winner ? String(sim.winner) : "";
-
-  const forceVictoryFromQuery = useMemo(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    try {
-      const params = new URLSearchParams(window.location.search ?? "");
-      return params.get("forceVictory") === "1";
-    } catch (error) {
-      logDebug("failed to parse query string for forceVictory flag", error);
-      return false;
-    }
-  }, []);
+  const matchMachine = useMemo(
+    () =>
+      createMatchStateMachine({
+        autoRestartDelayMs: 5000,
+        onChange: (snapshot) => setMatchSnapshot(snapshot),
+      }),
+    [],
+  );
 
   useEffect(() => {
-    setAppMounted(true);
+    setMatchSnapshot(matchMachine.getSnapshot());
+  }, [matchMachine]);
 
-    const applyVictoryState = () => {
-      try {
-        world.simulation = setVictoryState(world.simulation, "red", Date.now());
-        logDebug("applied SimulationState.setVictoryState helper");
-      } catch (error) {
-        logDebug("falling back to manual simulation victory patch", error);
-        world.simulation = {
-          ...world.simulation,
-          status: "victory",
-          winner: "red",
-          autoRestartCountdown: 5,
-        };
+  const runnerRef = useRef<BattleRunner | null>(null);
+  const telemetryEvents = useTelemetryStore((state) => state.events);
+
+  const aliveCounts = useMemo(() => {
+    void telemetryEvents;
+    const counts = { red: 0, blue: 0 };
+    battleWorld.robots.entities.forEach((robot) => {
+      if (robot.health > 0) {
+        counts[robot.team] += 1;
       }
-    };
+    });
+    return counts;
+  }, [battleWorld, telemetryEvents]);
 
-    const syncUiVictory = () => {
-      try {
-        useUIStore.getState().setVictoryOverlayVisible(true);
-        logDebug("forced victory overlay visible");
-      } catch (error) {
-        logDebug("failed to set victory overlay visibility", error);
-      }
-      setTestTriggered(true);
-    };
+  const handleRunnerReady = useCallback((runner: BattleRunner) => {
+    runnerRef.current = runner;
+  }, []);
 
-    const syncDebugFlags = () => {
-      try {
-        setAppSimStatus(world.simulation.status);
-        setAppUiVictory(useUIStore.getState().victoryOverlayVisible);
-      } catch (error) {
-        logDebug("failed to update debug flag mirrors", error);
-      }
-    };
-
-    const handleVictory = () => {
-      logDebug("received playwright:triggerVictory event");
-      applyVictoryState();
-      syncUiVictory();
-      syncDebugFlags();
-    };
-
-    if (forceVictoryFromQuery) {
-      logDebug("forceVictory query param detected, triggering victory");
-      handleVictory();
+  const handlePauseResume = useCallback(() => {
+    const snapshot = matchMachine.getSnapshot();
+    if (snapshot.phase === 'running') {
+      matchMachine.pause();
+    } else if (snapshot.phase === 'paused') {
+      matchMachine.resume();
     }
+  }, [matchMachine]);
 
-    if (getPlaywrightTriggerFlag()) {
-      logDebug("detected persisted playwright trigger flag");
-      handleVictory();
-    }
+  const handleReset = useCallback(() => {
+    runnerRef.current?.reset();
+  }, []);
 
-    window.addEventListener(
-      "playwright:triggerVictory",
-      handleVictory as EventListener,
-    );
-    return () => {
-      setAppMounted(false);
-      window.removeEventListener(
-        "playwright:triggerVictory",
-        handleVictory as EventListener,
-      );
-    };
-  }, [forceVictoryFromQuery, world]);
+  const statusText = formatStatus(matchSnapshot);
+  const pauseLabel = matchSnapshot.phase === 'paused' ? 'Resume' : 'Pause';
+
+  const winnerLabel =
+    matchSnapshot.phase === 'victory' && matchSnapshot.winner
+      ? TEAM_CONFIGS[matchSnapshot.winner].label
+      : null;
+
+  const restartSeconds =
+    matchSnapshot.phase === 'victory' && matchSnapshot.restartTimerMs != null
+      ? Math.ceil(matchSnapshot.restartTimerMs / 1000)
+      : null;
 
   return (
-    <div id="app-root" style={{ height: "100%" }}>
-      <HudRoot onTogglePause={() => {}} onToggleCinematic={() => {}} />
-      <VictoryOverlay
-        visible={victoryVisible}
-        winnerName={winnerName}
-        countdownSeconds={remainingSeconds}
-        countdownPaused={sim.countdownPaused}
-        teamSummaries={[]}
-        actions={{
-          openStats: () => openStatsOverlay(world),
-          openSettings: () => openSettingsOverlay(world),
-          restartNow: () => restartNow(),
-          pauseCountdown: () => pause(),
-          resumeCountdown: () => resume(),
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <div id="status" className="match-status" role="status">
+        {statusText}
+      </div>
+      <Suspense fallback={<div className="match-status">Loading arena...</div>}>
+        <Simulation
+          battleWorld={battleWorld}
+          matchMachine={matchMachine}
+          telemetry={telemetryPort}
+          onRunnerReady={handleRunnerReady}
+        />
+      </Suspense>
+      <div
+        style={{
+          position: 'absolute',
+          top: 16,
+          right: 16,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 4,
+          alignItems: 'flex-end',
         }}
-      />
-
-      <StatsModal />
-
-      <SettingsDrawer />
-
-      <Scene />
+      >
+        <div style={{ fontWeight: 600, fontSize: 14 }}>Alive</div>
+        <div>{`${TEAM_CONFIGS.red.label}: ${aliveCounts.red}`}</div>
+        <div>{`${TEAM_CONFIGS.blue.label}: ${aliveCounts.blue}`}</div>
+      </div>
+      {matchSnapshot.phase === 'victory' && winnerLabel ? (
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            padding: '24px 32px',
+            borderRadius: 12,
+            background: 'rgba(12, 14, 32, 0.85)',
+            color: '#f7f8ff',
+            textAlign: 'center',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.45)',
+          }}
+        >
+          <h2 style={{ margin: 0, fontSize: 22 }}>{winnerLabel} Triumphs!</h2>
+          {restartSeconds != null ? (
+            <p style={{ margin: '12px 0 0 0' }}>{`Restarting in ${restartSeconds}s`}</p>
+          ) : null}
+          <button
+            type="button"
+            style={{ marginTop: 16 }}
+            onClick={() => {
+              // Placeholder for stats modal trigger
+            }}
+          >
+            View Battle Stats
+          </button>
+        </div>
+      ) : null}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 16,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          gap: 12,
+        }}
+      >
+        <button type="button" onClick={handlePauseResume}>
+          {pauseLabel}
+        </button>
+        <button type="button" onClick={handleReset}>
+          Reset
+        </button>
+      </div>
     </div>
   );
 }
