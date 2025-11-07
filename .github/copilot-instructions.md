@@ -26,7 +26,7 @@ When implementing or modifying features, update both the spec artifacts under
 `specs/` and the `.specify/` templates if responsibilities or workflow steps change.
 
 When in doubt
-- Follow `.specify/memory/constitution.md` for architectural principles (Physics-First, Deterministic, Test-Driven, etc.).
+- Follow `.specify/memory/constitution.md` for architectural principles (Component/Library-First, Test-First (TDD), Size & Separation, React & r3f Best Practices, Observability & Performance, Deprecation & Dependency Hygiene).
 - Follow `spec.md` for current feature branch in `specs` folder
 
 Feedback

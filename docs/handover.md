@@ -1,0 +1,1 @@
+Continue splitting remaining large unit tests (eventTiming.test.ts, matchReplay.test.ts, visualQualityProfile.test.ts) using the same approach (extract helpers and split describe blocks).

@@ -1,0 +1,121 @@
+CONSTITUTION VIOLATION SCAN — 2025-10-19
+===========================================
+
+Generated: node scripts/check_source_size.js
+Constitutional Limit: 300 lines per file
+Status: 4 SOURCE FILES + 8 TEST FILES EXCEED LIMIT
+
+=== PRIORITY TARGETS (Source Files Only) ===
+
+1. src/ecs/world.ts
+   - Current: 471 lines
+   - Target: ≤ 300 lines
+   - Reduction needed: 171 lines (36% reduction)
+   - Risk level: HIGH (orchestrator, many dependencies)
+   - Phase 8 tasks: T058 (plan), T062 (extract)
+
+2. src/systems/matchTrace/matchPlayer.ts
+   - Current: 392 lines
+   - Target: ≤ 300 lines
+   - Reduction needed: 92 lines (23% reduction)
+   - Risk level: MEDIUM (critical path, well-tested)
+   - Phase 8 tasks: T059 (plan), T063 (extract)
+
+3. src/hooks/useCameraControls.ts
+   - Current: 343 lines
+   - Target: ≤ 300 lines
+   - Reduction needed: 43 lines (13% reduction)
+   - Risk level: LOW (pure math + UI state, isolated)
+   - Phase 8 tasks: T060 (plan), T061 (extract)
+
+4. src/components/hud/HudRoot.tsx
+   - Current: 316 lines
+   - Target: ≤ 300 lines
+   - Reduction needed: 16 lines (5% reduction)
+   - Risk level: LOW (minor, UI component)
+   - Phase 8 tasks: NOT SCHEDULED (minor fix)
+   - Note: Possible quick win for Phase 8 if time permits
+
+=== TEST FILES (Beyond Scope of Phase 8) ===
+
+The following test files exceed 300 lines. These are NOT priority for Phase 8
+(test sizes are allowed to be larger; focus is on source file quality).
+
+- tests/unit/eventTiming.test.ts: 507 lines
+- tests/unit/hooks/useLiveMatchTrace.test.ts: 954 lines
+- tests/unit/matchPlayer.test.ts: 373 lines
+- tests/unit/matchReplay.test.ts: 367 lines
+- tests/unit/systems/entityMapper.test.ts: 761 lines
+- tests/unit/systems/visualQualityProfile.test.ts: 356 lines
+- playwright/tests/deterministic-replay.spec.ts: 352 lines
+- playwright/tests/live-match-rendering.spec.ts: 462 lines
+
+Action: Test files will be addressed in future phases if needed. Current phase
+focuses on source file compliance.
+
+=== PHASE 8 REFACTORING STRATEGY ===
+
+Objective: Reduce 3 primary source files (world.ts, matchPlayer.ts, useCameraControls.ts)
+to ≤ 300 lines while preserving public APIs and maintaining test coverage.
+
+Timeline: 3–4 days, ~21 hours effort
+
+Phase breakdown:
+
+1. Planning Phase (T057–T060): 15 hours
+   - T057: Create this scan document ✅
+   - T058: Propose world.ts split strategy
+   - T059: Propose matchPlayer.ts split strategy
+   - T060: Propose useCameraControls.ts split strategy
+
+2. Extraction Phase (T061–T063): 8–9 hours
+   - T061: Extract camera math (low risk, fast)
+   - T062: Extract world factory (medium risk)
+   - T063: Extract event indexing (medium risk)
+
+3. Validation Phase (T064–T066): 3–4 hours
+   - T064: Full regression test suite
+   - T065: Update constitution checks
+   - T066: Document outcomes
+
+=== EXTRACTION APPROACH ===
+
+Each extraction follows this pattern:
+
+1. Write unit tests for extracted logic FIRST
+2. Create new module with extracted code
+3. Add thin re-exports in original file (preserve API)
+4. Run full test suite: npm run test
+5. Run linter: npm run lint
+6. Verify coverage: npm run test:coverage
+7. Commit with clear message
+
+This ensures:
+- ✅ No breaking changes to consuming code
+- ✅ All existing tests continue to pass
+- ✅ Coverage maintained or improved
+- ✅ Easy rollback if needed
+
+=== SUCCESS CRITERIA ===
+
+Phase 8 complete when:
+- [ ] world.ts ≤ 300 lines
+- [ ] matchPlayer.ts ≤ 300 lines
+- [ ] useCameraControls.ts ≤ 300 lines
+- [ ] All tests passing (406+/407)
+- [ ] 0 ESLint errors
+- [ ] 60%+ coverage maintained
+- [ ] Public APIs preserved
+- [ ] No breaking changes
+
+=== SCAN METADATA ===
+
+Generation date: 2025-10-19
+Script: scripts/check_source_size.js
+Branch: 003-extend-placeholder-create
+Baseline tests: 406/407 passing (99.8%)
+Baseline coverage: 60.21% statements
+Constitutional limit: 300 LOC per source file
+Exemption: Possible via CONSTITUTION-EXEMPT header comment (not recommended)
+
+Next: See refactor-plan-*.md files for detailed extraction strategies per file.

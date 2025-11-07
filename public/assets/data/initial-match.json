@@ -1,0 +1,8 @@
+{
+  "matchId": "demo-1337",
+  "seed": 1337,
+  "teams": [
+    { "id": "red", "robotCount": 10 },
+    { "id": "blue", "robotCount": 10 }
+  ]
+}

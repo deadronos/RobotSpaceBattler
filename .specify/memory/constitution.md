@@ -1,20 +1,20 @@
 <!--
 SYNC IMPACT REPORT
-- Version change: TEMPLATE → 1.0.0
+- Version change: 1.0.0 → 1.0.1
 - Modified principles:
-  - TEMPLATE placeholders → six concrete principles
-    (Component/Library-First; Test-First; Size & Separation;
-     React & r3f Best Practices; Observability & Performance;
-     Deprecation & Dependency Hygiene)
-- Added sections: Agentic AI Usage Guidance (when to update constitution)
-- Removed sections: none (template placeholders replaced with concrete text)
+  - None (no substantive governance changes)
+- Added sections: none
+- Removed sections: none
+- Repo references updated:
+  - .github/copilot-instructions.md → align principle list with current six
+  - specs/001-3d-team-vs/plan.md → fix constitution path + version string
 - Templates requiring updates:
-  - .specify/templates/plan-template.md ✅ updated
-  - .specify/templates/spec-template.md ✅ updated
-  - .specify/templates/tasks-template.md ✅ updated
-  - .specify/templates/agent-file-template.md ✅ updated
+  - .specify/templates/plan-template.md ✅ reviewed (no changes required)
+  - .specify/templates/spec-template.md ✅ reviewed (no changes required)
+  - .specify/templates/tasks-template.md ✅ reviewed (no changes required)
+  - .specify/templates/agent-file-template.md ✅ reviewed (no changes required)
 - Follow-up TODOs:
-  - Verify README.md and AGENTS.md references to constitution rules (⚠ pending)
+  - Verify README.md and AGENTS.md references to constitution rules ✅ done
   - Run repository-wide lint/test and update any infra that assumes older
     constitution text (⚠ pending)
 -->
@@ -43,13 +43,42 @@ Rationale: TDD enforces clear requirements, prevents regressions, and keeps the 
 maintainable as the project scales.
 
 ### III. Size & Separation Limits
-Source files MUST be easy to review. Individual source files SHOULD be kept under or equal
-to 300 lines of code (LOC). If a file grows beyond 300 LOC, refactor by extracting logic
-into dedicated modules (hooks, utilities, services, systems). Each module MUST have a
-single responsibility and be independently testable.
+Source files MUST be easy to review. Individual source files MUST be kept under or equal
+to 300 lines of code (LOC). If a file grows beyond 300 LOC a mandatory refactor workflow
+must be followed. When an immediate refactor isn't possible (hotfix, experimental POC),
+the author MUST open a short-term exemption issue that includes a migration plan and
+target release for the refactor.
 
 Rationale: Limiting file size reduces cognitive load during code review, improves
 reusability, and encourages small, focused changes.
+
+Enforcement steps when a file exceeds 300 LOC
+
+1. The author MUST create a short PR or issue that includes:
+   - The path(s) of the oversized file(s).
+   - A one-paragraph explanation why the file exceeded 300 LOC.
+   - A concrete refactor plan listing proposed modules/files to extract and the
+     intended public API for each extraction.
+   - At least one small test demonstrating the extracted boundary (pure function or
+     behaviour) where feasible.
+
+2. The PR/issue MUST include one or more actionable tasks (2–4 hour chunks) tracked in
+   the repo's task/spec system (for example under `specs/<n>/tasks`) with at least the
+   first step marked as `in_progress` when work begins.
+
+3. Reviewers MUST verify the `CONSTITUTION-CHECK` and the refactor plan. If the plan
+   is not actionable or the file remains >300 LOC after review, the reviewer should
+   request the file be converted into a refactor epic with a clear schedule.
+
+Refactor plan guidance
+
+- Split by responsibility: separate pure utilities, I/O, rendering, state, and
+  orchestration into distinct modules.
+- Preserve public API where possible by using internal modules and adding thin
+  re-exporting facades during migration.
+- Add unit tests for the extracted pure logic first, then integration tests for the
+  composed behaviour.
+- Keep commits small and reviewable: extract one cohesive part per PR.
 
 ### IV. React & react-three-fiber (r3f) Best Practices
 Front-end React code MUST follow modern React and r3f best practices:
@@ -192,4 +221,4 @@ approved and governed.
   reflect changes in this document. CI or pre-merge checks SHOULD include a linter
   that validates new PRs for the `CONSTITUTION-CHECK` section and fails if absent.
 
-**Version**: 1.0.0 | **Ratified**: 2025-10-06 | **Last Amended**: 2025-10-06
+**Version**: 1.0.1 | **Ratified**: 2025-10-06 | **Last Amended**: 2025-10-13

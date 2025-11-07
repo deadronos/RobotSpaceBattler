@@ -12,7 +12,20 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["vitest/globals", "vite/client"]
+    "types": [
+      "vitest",
+      "vitest/globals",
+      "vite/client",
+      "react",
+      "react-dom"
+    ]
   },
-  "include": ["src", "tests", "scripts", "vite.config.ts", "vitest.config.ts", "playwright.config.ts"]
+  "include": [
+    "src",
+    "tests",
+    "scripts",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "playwright.config.ts"
+  ]
 }

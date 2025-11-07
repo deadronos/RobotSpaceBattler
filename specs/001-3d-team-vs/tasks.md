@@ -1,182 +1,110 @@
-# Tasks: 3D Team vs Team Autobattler Game Simulation
+# Tasks: 3D Team vs Team Autobattler — Spec UI & Flow
 
-**Input**: Design documents from `/specs/001-3d-team-vs/`
-**Prerequisites**: spec.md (completed), plan.md (pending)
+**Input**: `/specs/001-3d-team-vs/plan.md`, data-model.md, contracts/, quickstart.md  
+**Scope**: Deliver FR-006 – FR-023 player experience (victory flow, stats, overlays, performance feedback) using TDD and constitutional constraints.
 
-## Task Status Legend
-- ✅ **Completed**: Implementation finished, tests passing
-- 🔄 **In Progress**: Currently being worked on
-- ⏸️ **Blocked**: Waiting on dependencies
-- ⬜ **Not Started**: Ready to begin when dependencies clear
-
-## Phase 3.1: Setup & Infrastructure
-
-- [x] **T001** ✅ Create project structure with src/, tests/, playwright/ directories
-  - Status: Completed
-  - Files: Project root structure
-  - Notes: Basic Vite + React + TypeScript setup already in place
-
-- [x] **T002** ✅ [P] Configure ESLint, Prettier, and TypeScript strict mode
-  - Status: Completed
-  - Files: `eslint.config.cjs`, `prettierrc.txt`, `tsconfig.json`
-  - Notes: Constitution-compliant linting rules active
-
-- [ ] **T003** 🔄 [P] Add source-size CI check for 300 LOC constitution limit
-  - Status: In Progress
-  - Files: `.github/workflows/constitution_checks.yml`, `scripts/check_source_size.js`
-  - Notes: CI infrastructure exists, needs integration with feature branch workflow
-
-- [ ] **T004** ⬜ [P] Install and configure @react-three/fiber, @react-three/drei dependencies
-  - Status: Not Started
-  - Files: `package.json`
-  - Dependencies: None
-
-- [ ] **T005** ⬜ [P] Install and configure @react-three/rapier physics engine
-  - Status: Not Started
-  - Files: `package.json`
-  - Dependencies: None
-
-## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
-
-**CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
-
-- [ ] **T006** ⬜ [P] Contract test: Robot spawning (10 red + 10 blue robots in designated zones)
-  - Status: Not Started
-  - Files: `tests/contracts/robot-spawning.test.ts`
-  - Acceptance: FR-001 validation
-  - Dependencies: None
-
-- [x] **T007** ✅ [P] Contract test: Weapon rock-paper-scissors balance system
-  - Status: Completed
-  - Files: `tests/contracts/weapon-balance.test.ts`
-  - Acceptance: FR-003 validation (Laser beats Gun, Gun beats Rocket, Rocket beats Laser)
-  - Notes: Test suite written, currently failing (expected)
-
-- [ ] **T008** 🔄 [P] Integration test: Multi-layered AI behavior (individual + captain)
-  - Status: In Progress
-  - Files: `tests/integration/ai-behavior.test.ts`
-  - Acceptance: FR-002 validation (tactical cover-seeking, captain coordination)
-  - Dependencies: None
-  - Notes: Individual AI test cases written, captain system tests pending
-
-- [ ] **T009** ⬜ [P] Integration test: Victory flow with stats and auto-restart
-  - Status: Not Started
-  - Files: `tests/integration/victory-flow.test.ts`
-  - Acceptance: FR-006, FR-019 validation (5-sec countdown, stats button, team composition settings)
-  - Dependencies: None
-
-## Phase 3.3: Core ECS & Simulation (ONLY after tests are failing)
-
-- [ ] **T010** 🔄 Create Miniplex world and core entity archetypes
-  - Status: In Progress
-  - Files: `src/ecs/world.ts` (85 LOC)
-  - Entities: Robot, Weapon, Projectile, Team, SimulationState
-  - Dependencies: T007 (weapon balance tests must fail first)
-  - Notes: World initialization done, entity archetypes 60% complete
-
-- [x] **T011** ✅ [P] Robot entity with team affiliation, health, position, AI state, captain flag
-  - Status: Completed
-  - Files: `src/ecs/entities/Robot.ts` (120 LOC)
-  - Dependencies: T010
-  - Notes: Includes captain role, AI state machine, stats tracking
-
-- [ ] **T012** ⬜ Weapon system with rock-paper-scissors damage modifiers
-  - Status: Not Started
-  - Files: `src/ecs/systems/weaponSystem.ts` (estimated 180 LOC)
-  - Dependencies: T007 (tests), T011
-  - Blocks: T013
-
-## Phase 3.4: Rendering & Camera
-
-- [ ] **T013** ⏸️ Hybrid camera system (free controls + cinematic mode)
-  - Status: Blocked
-  - Files: `src/components/Camera.tsx` (estimated 240 LOC), `src/hooks/useCameraControls.ts` (estimated 150 LOC)
-  - Acceptance: FR-013, FR-018 (mouse/keyboard/touch controls, pinch-zoom)
-  - Dependencies: T004 (r3f setup)
-  - Notes: Will need decomposition into multiple sub-280 LOC modules per constitution
-
-## Phase 3.5: Polish & Performance
-
-- [ ] **T014** ⬜ [P] Performance management system (quality scaling, time scale, warning overlay)
-  - Status: Not Started
-  - Files: `src/systems/performanceManager.ts` (estimated 200 LOC), `src/components/PerformanceWarning.tsx` (estimated 80 LOC)
-  - Acceptance: FR-021, FR-022, FR-023 (toggleable quality scaling, simulation slowdown, non-intrusive warnings)
-  - Dependencies: T010, T012
-
-- [ ] **T015** ⬜ [P] Post-battle stats tracking and display component
-  - Status: Not Started
-  - Files: `src/components/StatsScreen.tsx` (estimated 220 LOC), `src/hooks/useStatsTracking.ts` (estimated 90 LOC)
-  - Acceptance: FR-019 (per-robot kills, damage dealt/taken, time survived, team aggregates)
-  - Dependencies: T011
-
-## Dependencies Graph
-
+## Execution Flow
 ```
-Setup (T001-T005)
-  ↓
-Tests (T006-T009) ← GATE: Must fail before implementation
-  ↓
-T010 (ECS World)
-  ├→ T011 (Robot Entity) → T012 (Weapon System)
-  └→ T013 (Camera) [blocked on T004]
-     
-T014 (Performance) ← needs T010, T012
-T015 (Stats) ← needs T011
-
-All parallel [P] tasks can run simultaneously within their phase
+1. Load plan.md → extract Gate ordering, file paths, FR mappings
+2. Verify prerequisite scaffolding exists (`src/main.tsx`, `src/App.tsx`, Canvas mount)
+3. Generate tasks gate-by-gate (tests → data/hooks → HUD → overlays → integration → styling → E2E)
+4. Ensure every task references a single file/folder and includes FR linkage
+5. Output checklist with dependencies, parallel lanes, and validation criteria
 ```
 
-## Parallel Execution Examples
+## Format
+- `[ID] [P?] Description`
+- `[P]` indicates parallel-safe tasks (no shared files/dependencies once gate unlocked)
+- Each description names the exact file(s) and cites key FRs
+- Default status `[ ]` (unchecked) — update manually during execution
 
-### Phase 3.1 Setup (can run simultaneously)
-```bash
-# T002, T003, T004, T005 are independent
-npm run setup:lint & npm run setup:ci & npm install @react-three/fiber @react-three/drei & npm install @react-three/rapier
+## Path Conventions
+- Source: `src/`
+- Tests: `tests/`
+- Playwright: `playwright/tests/`
+- Styles: `src/styles/`
+
+---
+
+## Gate 0: UI Flow Tests (5 tasks)
+*Goal: establish failing tests before implementation (Constitution Principle II — Test-First).*
+
+- [x] T001 Create Vitest integration suite `tests/integration/ui/victory-overlay.test.ts` asserting victory overlay countdown, winner label, Stats button, Settings button, manual restart, and auto-reset after 5s. Targets FR-006 + FR-014. Use Testing Library + msw mocks for store actions.
+- [x] T002 Create Vitest integration suite `tests/integration/ui/stats-modal.test.ts` validating Stats modal renders team aggregates, robot rows (kills, damage dealt/taken, time alive), captain indicators, and sorting controls. Covers FR-019 + FR-020.
+- [x] T003 Create Vitest integration suite `tests/integration/ui/performance-banner.test.ts` verifying quality-scaling banner appears when `performanceStats.qualityScalingActive` flips true, displays FPS and scaling state, supports dismiss + auto-hide, and hides when FPS recovers. Covers FR-021 – FR-023.
+- [x] T004 Create unit tests `tests/unit/store/uiStore.test.ts` & `tests/unit/selectors/uiSelectors.test.ts` covering Zustand actions (open/close stats/settings, toggle HUD, set countdown) and selector outputs (team counts, captain info, countdown formatting). Ensures deterministic data layer before UI renders.
+- [ ] T005 Author integration test `tests/integration/simulation/physics-step.test.tsx` mounting `Simulation` within `SimulationWorldProvider` with a stub frame hook, asserting `stepSimulation` runs each frame tick. Satisfies FR-012 and enforces Constitution Principle IV (simulation separate from render).
+
+## Gate 1: Data & Hooks (4 tasks)
+*Goal: build deterministic data plumbing consumed by HUD and overlays.*
+
+- [x] T006 Implement `src/store/uiStore.ts` (≤200 LOC) defining Zustand slices for HUD visibility, modal state, countdown overrides, performance banner flags, and persisted team composition draft. Include action creators and selectors exported for tests (FR-006, FR-014, FR-021).
+- [x] T007 Implement `src/selectors/uiSelectors.ts` (≤220 LOC) mapping Miniplex queries to typed view models (team tallies, captain badge info, weapon distribution, performance KPIs). Memoize selectors; expose helpers used across hooks and tests (FR-019, FR-020, FR-021).
+- [x] T008 Implement `src/hooks/useBattleHudData.ts` to combine ECS selectors + uiStore state into a HUD DTO (status text, team summaries, control states). Use `useSyncExternalStore` or Zustand hook to subscribe for React correctness. Supports FR-006, FR-013.
+- [x] T009 Implement `src/hooks/usePostBattleStats.ts` aggregating per-robot and per-team metrics from `SimulationState` snapshots, sorting by kills → damage, formatting durations, and exposing summary totals for Stats modal (FR-019).
+
+## Gate 2: HUD Composition (4 tasks)
+*Goal: render persistent HUD surfaces once data hooks exist.*
+
+- [x] T010 Implement `src/components/hud/HudRoot.tsx` (≤180 LOC) that positions HUD via CSS grid, renders match title/status, composes `TeamStatusPanel`, `BattleTimer`, and `ControlStrip`, and exposes an overlay toggle region. Include `role="banner"` and `aria-live="polite"` for status text (FR-006).
+- [x] T011 Implement `src/components/hud/TeamStatusPanel.tsx` for each team, showing alive/eliminated counts, captain marker, weapon distribution chips, and team color accent. Read data from `useBattleHudData`. Covers FR-001, FR-020.
+- [x] T012 Implement `src/components/hud/BattleTimer.tsx` showing elapsed battle time and, when victory pending, the countdown overlay badge. Provide semantic labels for screen readers. Supports FR-006, FR-014.
+- [x] T013 Implement `src/components/hud/ControlStrip.tsx` with buttons for Pause/Resume, Cinematic toggle, HUD toggle, and Settings. Dispatch uiStore actions, respect keyboard focus outlines, and disable controls when overlays/modal already active. Covers FR-006, FR-013.
+
+## Gate 3: Overlays & Modals (4 tasks)
+*Goal: deliver pop-up experiences triggered by battle outcomes & performance state.*
+
+- [x] T014 Implement `src/components/overlays/VictoryOverlay.tsx` (≤200 LOC) showing winner, countdown timer, Stats & Settings buttons, manual restart control, and team summary chips. Connect to uiStore + `useVictoryCountdown`. Fulfill FR-006 + FR-014.
+- [x] T015 Implement `src/components/overlays/StatsModal.tsx` with focus trap, keyboard navigation, table sorting, and responsive layout. Consume `usePostBattleStats`, display per-robot rows, team totals, and captain highlight. Satisfies FR-019 + FR-020.
+- [x] T016 Implement `src/components/overlays/SettingsDrawer.tsx` sliding drawer that exposes team composition controls (weapon sliders/toggles), apply/cancel, and resets. Persist values through uiStore for next battle spawn. Aligns with FR-006.
+- [x] T017 Implement `src/components/overlays/PerformanceBanner.tsx` to show FPS, quality-scaling state, auto-hide progress, and dismiss button. Support `aria-live` announcements and user toggle. Covers FR-021 – FR-023.
+
+## Gate 4: Interaction & Integration (5 tasks)
+*Goal: wire runtime events and input handling into the UI.*
+
+- [ ] T018 Wire `src/components/Simulation.tsx` to call `usePhysicsSync`, supporting optional frame hook injection for testing so the ECS steps independently of rendering work. Aligns with FR-012 and Constitution Principle IV.
+- [x] T019 Implement `src/hooks/useVictoryCountdown.ts` handling `SimulationState.status` transitions, starting/stopping the 5s countdown, dispatching auto-restart, and exposing `remainingSeconds`. Integrate with `victorySystem` reset pathway (FR-006, FR-014).
+- [x] T020 Implement `src/hooks/useUiShortcuts.ts` binding keyboard/gamepad events (Space pause, C cinematic, O HUD, Esc close modals) with cleanup, optional touch handling for mobile, and testable command mapping. Supports FR-013, FR-006.
+- [x] T021 Implement `src/systems/uiBridgeSystem.ts` (≤200 LOC Miniplex system) syncing ECS state to uiStore: update team counts, performance metrics, and Stats snapshots when battles end. Keep rendering components pure per Constitution Principle IV. Covers FR-006, FR-019, FR-021.
+- [x] T022 Update `src/App.tsx` to mount `HudRoot`, overlays, providers, and hook initializers (`useBattleHudData`, `useUiShortcuts`, `useVictoryCountdown`). Update `/specs/001-3d-team-vs/quickstart.md` to document new controls and overlays. Ensure no direct ECS mutations from components.
+
+## Gate 5: Styling & Accessibility (1 task)
+*Goal: unify look & feel, ensure responsive + accessible presentation.*
+
+- [x] T023 Create `src/styles/hud.css` and `src/styles/overlays.css` defining layout, typography, color tokens, focus states, prefers-reduced-motion handling, and mobile breakpoints. Wire styles into `App.tsx`. Verify contrast ratios meet WCAG AA.
+
+## Gate 6: End-to-End Validation (1 task)
+*Goal: prove the complete player flow via browser automation.*
+
+- [x] T024 Author Playwright spec `playwright/tests/ui-flow.spec.ts` covering: battle completion triggers Victory overlay → open Stats modal and verify captain/metrics → open Settings, tweak composition, apply → wait for restart and confirm HUD resets. Run in headed + CI modes. Covers FR-006, FR-019, FR-014.
+
+---
+
+## Dependencies
 ```
-
-### Phase 3.2 Tests (can run simultaneously)
-```bash
-# T006, T007, T008, T009 are independent contract/integration tests
-vitest tests/contracts/robot-spawning.test.ts &
-vitest tests/contracts/weapon-balance.test.ts &
-vitest tests/integration/ai-behavior.test.ts &
-vitest tests/integration/victory-flow.test.ts
+T001-T005 → T006-T009 → T010-T013 → T014-T017 → T018-T022 → T023 → T024
 ```
+- Gate 2 tasks require hooks from Gate 1 to compile.
+- Gate 3 tasks require Stats hook (T009) and HUD data (T008).
+- Gate 4 tasks depend on overlays/HUD markup and the physics sync wiring (T018).
+- Styling (T023) needs markup finalized; Playwright (T024) runs last.
 
-### Phase 3.5 Polish (can run simultaneously)
-```bash
-# T014 and T015 are independent
-vitest src/systems/performanceManager.test.ts & vitest src/hooks/useStatsTracking.test.ts
-```
+## Parallel Execution Tips
+- After T009, split HUD tasks: T010 & T011 can progress in parallel while T012 & T013 start once shared utilities ready.
+- After T017, hooks T019/T020 may proceed concurrently before merging into T021/T022.
+- CSS work (T023) can overlap with late integration as long as markup solidified and snapshot tests updated.
 
-## Constitution Compliance Notes
+## Validation Checklist
+- [ ] Gate 0 tests authored and intentionally failing before implementation.
+- [ ] uiStore + selectors achieve 100% branch coverage via T004.
+- [ ] All HUD/overlay components under 300 LOC, memoized appropriately.
+- [ ] Victory countdown verified across T001, T017, T022.
+- [ ] Stats modal presents per-robot metrics and captain badges (FR-019/FR-020).
+- [ ] Performance banner toggles based on quality scaling (FR-021 – FR-023).
+- [ ] Settings drawer persists weapon composition choices into next match (FR-006).
+- [ ] Playwright `ui-flow.spec.ts` passes against production build (`npm run build && npm run preview`).
 
-### File Size Management
-- **T013 Camera System**: Estimated 390 LOC total → MUST decompose into:
-  - `src/components/Camera.tsx` (core component, <240 LOC)
-  - `src/hooks/useCameraControls.ts` (mouse/keyboard, <150 LOC)
-  - `src/hooks/useTouchControls.ts` (touch/pinch, <100 LOC)
-  - `src/hooks/useCinematicMode.ts` (auto-follow, <120 LOC)
+---
 
-- **T012 Weapon System**: Monitor closely, consider decomposition if exceeds 280 LOC:
-  - `src/ecs/systems/weaponSystem.ts` (core logic)
-  - `src/ecs/systems/weaponBalanceCalculator.ts` (rock-paper-scissors modifiers)
-
-### TDD Gate Enforcement
-- ⚠️ **BLOCKER**: T010, T011, T012 CANNOT start until T006-T009 tests are written and failing
-- Current Status: T007 ✅ failing (good), T008 🔄 partially failing, T006 and T009 ⬜ not written yet
-
-### Agentic AI Triggers
-- T013: Complex camera system → candidate for AI-assisted decomposition planning
-- T014: Performance heuristics → candidate for AI-suggested optimization patterns
-
-## Notes
-- Total tasks: 15 (3.1: 5 tasks, 3.2: 4 tasks, 3.3: 3 tasks, 3.4: 1 task, 3.5: 2 tasks)
-- Completed: 4 tasks (27%)
-- In Progress: 3 tasks (20%)
-- Blocked: 1 task (7%)
-- Not Started: 7 tasks (47%)
-- [P] tasks = different files, no dependencies within phase
-- Verify tests fail before implementing (TDD gate)
-- Commit after each task completion
-- Run `npm run check:source-size` before marking any task complete
+**Total Tasks**: 24
+**Status**: ☐ In progress — implementing overlays and integration tasks.

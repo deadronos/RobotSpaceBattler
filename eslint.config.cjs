@@ -86,6 +86,9 @@ module.exports = [
       // react hooks plugin rules
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
+      // modern JSX transform does not require React in scope
+      'react/react-in-jsx-scope': 'off',
+      'react/jsx-uses-react': 'off',
 
       // import / sorting / unused helpers
       'simple-import-sort/imports': 'error',

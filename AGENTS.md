@@ -4,6 +4,8 @@
 
 **Important:** This project follows the constitution defined in `.specify/memory/constitution.md`.
 
+Do not create explainer documents or other documentation unless specifically asked to.
+
 ## Instructions/Prompts are in:  `.github/prompts`
 
 possible prompts for SpecKit workflow:
