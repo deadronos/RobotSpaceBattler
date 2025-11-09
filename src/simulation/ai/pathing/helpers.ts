@@ -1,15 +1,6 @@
 import { RobotEntity } from '../../../ecs/world';
+import { addVec3, cloneVec3, lengthVec3, normalizeVec3, projectOntoPlane, scaleVec3, subtractVec3,Vec3 } from '../../../lib/math/vec3';
 import { TEAM_CONFIGS } from '../../../lib/teamConfig';
-import {
-  addVec3,
-  cloneVec3,
-  lengthVec3,
-  normalizeVec3,
-  projectOntoPlane,
-  scaleVec3,
-  subtractVec3,
-  Vec3,
-} from '../../../lib/math/vec3';
 import { MovementContext } from './types';
 
 const SEPARATION_DISTANCE = 1.5;

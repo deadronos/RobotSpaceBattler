@@ -1,12 +1,6 @@
 import { RobotEntity } from '../../../ecs/world';
+import { addVec3, lengthVec3, normalizeVec3, scaleVec3,Vec3 } from '../../../lib/math/vec3';
 import { RobotBehaviorMode } from '../behaviorState';
-import {
-  addVec3,
-  lengthVec3,
-  normalizeVec3,
-  scaleVec3,
-  Vec3,
-} from '../../../lib/math/vec3';
 import { computeAvoidance } from './avoidance';
 import {
   applySeparation,

@@ -1,7 +1,8 @@
 import { distanceVec3, lengthVec3 } from '../../lib/math/vec3';
 import { nextBehaviorState, RobotBehaviorMode } from '../../simulation/ai/behaviorState';
 import { computeTeamAnchors } from '../../simulation/ai/captainCoordinator';
-import { MovementContext, planRobotMovement } from '../../simulation/ai/pathing';
+import { planRobotMovement } from '../../simulation/ai/pathing';
+import type { MovementContext } from '../../simulation/ai/pathing/types';
 import {
   getLatestEnemyMemory,
   predictSearchAnchor,

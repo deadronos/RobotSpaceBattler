@@ -1,4 +1,4 @@
-import { addVec3, normalizeVec3, scaleVec3, vec3, Vec3 } from '../../../lib/math/vec3';
+import { addVec3, normalizeVec3, scaleVec3, Vec3, vec3 } from '../../../lib/math/vec3';
 import { ARENA_PILLARS, ARENA_WALLS, ROBOT_RADIUS } from '../../environment/arenaGeometry';
 
 const AVOIDANCE_RADIUS = 3.0;
