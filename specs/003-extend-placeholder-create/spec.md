@@ -67,17 +67,6 @@ As an engineer I want the visual playback to reflect the background simulation d
 1. **Given** a recorded simulation trace, **When** the renderer replays the trace, **Then** entity transforms, projectile trajectories, and hit events occur at the same timestamps as the recorded trace within an acceptable tolerance (e.g., ±16ms / 1 frame at 60fps).
 	- `specs/003-extend-placeholder-create/schemas/matchtrace.schema.json` — JSON Schema for MatchTrace
 
-# Feature Specification: 3D Team Fight — Extend 001 & 002
-
-**Feature Branch**: `003-extend-placeholder-create`
-
-**Created**: 2025-10-17
-
-**Status**: Draft
-
-**Input**: User description: "extend-placeholder create a fully 3d team fight
-autobattler extending 001 and 002 spec to build better graphics and integrate with
-background simulation"
 
 ## Clarifications
 

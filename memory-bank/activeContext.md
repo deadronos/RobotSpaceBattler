@@ -3,8 +3,8 @@
 **Created:** 2025-10-17
 
 Current work focus
-- Branch: `002-3d-simulation-graphics` — simulation and graphics improvements
-- Improving physics-sync, performance-sensitive FX, and determinism around weapon events
+- Features: 001-3d-team-vs, 002-3d-simulation-graphics, 003-extend-placeholder-create, 004-ai-roaming-wall-awareness
+- Areas: live trace-driven 3D match playback, battle UI, AI roaming/wall-awareness, performance & constitution compliance
 
 Recent changes
 - AI, PhysicsSync and Weapons designs captured under `memory-bank/designs/`
