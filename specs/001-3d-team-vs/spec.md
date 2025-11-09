@@ -149,11 +149,6 @@
   victory countdown and manual restart/team reconfiguration from the
   victory screen.
 
-- **FR-014**: System MUST initialize and reset the simulation state for
-  replay or restart scenarios, supporting both automatic restart after the
-  victory countdown and manual restart/team reconfiguration from the
-  victory screen.
-
 
 ### Captain Election Decision
 
