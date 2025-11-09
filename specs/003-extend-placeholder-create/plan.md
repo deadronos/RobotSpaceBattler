@@ -1,13 +1,19 @@
-# Implementation Plan: [FEATURE]
+# Implementation Plan: 3D Team Fight — Extend 001 & 002
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+**Branch**: `003-extend-placeholder-create` | **Date**: 2025-10-19 | **Spec**: `specs/003-extend-placeholder-create/spec.md`
+**Input**: Feature specification from `specs/003-extend-placeholder-create/spec.md`
 
 **Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+Unify specs 001 and 002 into a concrete 3D team fight implementation that:
+- Drives visuals from a deterministic MatchTrace produced by the simulation.
+- Supports record-and-replay with RNG seed + ordering guarantees.
+- Exposes runtime visual quality modes without affecting simulation correctness.
+- Produces a fully automated 3D match demo path from spawn to victory.
+
+Plan reflects the current `src/systems/matchTrace/*`, `src/components/match/*`, and related tests as implemented.
 
 ## Technical Context
 

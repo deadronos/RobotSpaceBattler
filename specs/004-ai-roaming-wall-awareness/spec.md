@@ -1,6 +1,6 @@
 AI: Roaming & Wall-Awareness
 
-Status: Proposed / Implemented (codex/improve-robot-awareness-of-walls-and-colliders)
+Status: Implemented (merged into core AI systems)
 
 ## Summary
 
@@ -29,6 +29,13 @@ The implementation goals were:
 
 - `tests/ai/pathing.spec.ts`
   - Added test verifying an avoidance velocity when a robot is adjacent to a wall.
+
+## Functional Requirements
+
+- **FR-004-01**: When an enemy leaves line-of-sight, robots MUST stop pursuing any memory older than `ENGAGE_MEMORY_TIMEOUT_MS` and clear `targetId` before entering roaming.
+- **FR-004-02**: When roaming, robots MUST select random roam targets within `ARENA_BOUNDS` minus a fixed `Roam margin` and store them via `roamTarget`/`roamUntil` on `RobotAIState`.
+- **FR-004-03**: Robots MUST cancel roaming immediately if a valid visible enemy appears.
+- **FR-004-04**: When within `AVOIDANCE_RADIUS` of walls or pillars, `planRobotMovement` MUST apply a repulsive component so velocity is biased away from geometry, preventing sustained wall hugging.
 
 ## Behaviour design
 
