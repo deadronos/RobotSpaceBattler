@@ -1,4 +1,4 @@
-import { vec3, Vec3 } from '../../lib/math/vec3';
+import { Vec3, vec3 } from '../../lib/math/vec3';
 import { ARENA_BOUNDS } from '../../simulation/environment/arenaGeometry';
 import { RobotAIState } from '../world';
 

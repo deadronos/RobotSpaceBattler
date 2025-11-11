@@ -12,7 +12,7 @@ export function Scene({ children }: SceneProps) {
     <Canvas
       shadows
       dpr={[1, 2]}
-      camera={{ position: [0, 18, 32], fov: 45 }}
+      camera={{ position: [-14, 28, 48], fov: 45 }}
       gl={{ antialias: true }}
     >
       <color attach="background" args={['#020310']} />

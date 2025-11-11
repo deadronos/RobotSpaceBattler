@@ -1,5 +1,5 @@
-import { Euler, Vector3 } from 'three';
 import { useMemo } from 'react';
+import { Euler, Vector3 } from 'three';
 
 type LampPanel = {
   position: Vector3;
