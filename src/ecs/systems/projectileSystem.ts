@@ -1,5 +1,6 @@
 import { applyCaptaincy } from '../../lib/captainElection';
 import { addInPlaceVec3, distanceVec3, scaleVec3 } from '../../lib/math/vec3';
+import { isActiveRobot } from '../../lib/robotHelpers';
 import { TelemetryPort } from '../../runtime/simulation/ports';
 import { computeDamageMultiplier } from '../../simulation/combat/weapons';
 import { BattleWorld, ProjectileEntity, RobotEntity } from '../world';
@@ -13,12 +14,12 @@ function findTarget(
     ? robots.find((robot) => robot.id === projectile.targetId)
     : undefined;
 
-  if (direct && direct.health > 0) {
+  if (direct && isActiveRobot(direct)) {
     return direct;
   }
 
   return robots
-    .filter((robot) => robot.team !== projectile.team && robot.health > 0)
+    .filter((robot) => robot.team !== projectile.team && isActiveRobot(robot))
     .sort((a, b) => {
       const da = distanceVec3(a.position, projectile.position);
       const db = distanceVec3(b.position, projectile.position);

@@ -1,5 +1,6 @@
 import { RobotEntity } from '../../ecs/world';
 import { distanceSquaredVec3 } from '../../lib/math/vec3';
+import { isActiveRobot } from '../../lib/robotHelpers';
 import { TEAM_CONFIGS } from '../../lib/teamConfig';
 
 interface RankedTarget {
@@ -36,7 +37,7 @@ function sortByPriority(a: RankedTarget, b: RankedTarget): number {
 
 function filterEnemies(seeker: RobotEntity, robots: RobotEntity[]): RobotEntity[] {
   return robots.filter(
-    (robot) => robot.team !== seeker.team && robot.health > 0 && robot.id !== seeker.id,
+    (robot) => robot.team !== seeker.team && isActiveRobot(robot) && robot.id !== seeker.id,
   );
 }
 

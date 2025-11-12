@@ -5,6 +5,7 @@ import { updateProjectileSystem } from '../../ecs/systems/projectileSystem';
 import { spawnTeams } from '../../ecs/systems/spawnSystem';
 import { BattleWorld, resetBattleWorld, TeamId } from '../../ecs/world';
 import { createXorShift32 } from '../../lib/random/xorshift';
+import { isActiveRobot } from '../../lib/robotHelpers';
 import { MatchStateMachine } from '../state/matchStateMachine';
 import { TelemetryPort } from './ports';
 
@@ -29,7 +30,7 @@ function evaluateVictory(world: BattleWorld, matchMachine: MatchStateMachine): v
 
   const alive = world.robots.entities.reduce(
     (acc, robot) => {
-      if (robot.health > 0) {
+      if (isActiveRobot(robot)) {
         acc[robot.team] += 1;
       }
       return acc;

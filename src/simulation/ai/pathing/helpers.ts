@@ -1,9 +1,8 @@
 import { RobotEntity } from '../../../ecs/world';
+import { ROBOT_SEPARATION_DISTANCE } from '../../../lib/constants';
 import { addVec3, cloneVec3, lengthVec3, normalizeVec3, projectOntoPlane, scaleVec3, subtractVec3,Vec3 } from '../../../lib/math/vec3';
 import { TEAM_CONFIGS } from '../../../lib/teamConfig';
 import { MovementContext } from './types';
-
-const SEPARATION_DISTANCE = 1.5;
 
 export function resolveSpawnCenter(robot: RobotEntity, context?: MovementContext): Vec3 {
   if (context?.spawnCenter) {
@@ -33,7 +32,7 @@ export function applySeparation(
       return acc;
     }
 
-    const strength = Math.max(0, SEPARATION_DISTANCE - distance) / SEPARATION_DISTANCE;
+    const strength = Math.max(0, ROBOT_SEPARATION_DISTANCE - distance) / ROBOT_SEPARATION_DISTANCE;
     const push = scaleVec3(normalizeVec3(delta), strength);
     return addVec3(acc, push);
   }, cloneVec3(baseVelocity));
