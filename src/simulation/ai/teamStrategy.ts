@@ -1,4 +1,5 @@
 import { RobotEntity } from '../../ecs/world';
+import { FORMATION_BASE_RADIUS, FORMATION_RADIUS_VARIANCE } from '../../lib/constants';
 import {
   addVec3,
   normalizeVec3,
@@ -91,7 +92,7 @@ export function buildFormationAnchor(
   const direction = normalizeVec3(
     subtractVec3(targetPosition, robot.position),
   );
-  const baseRadius = 5.5 + (robot.spawnIndex % 3) * 0.15;
+  const baseRadius = FORMATION_BASE_RADIUS + (robot.spawnIndex % 3) * FORMATION_RADIUS_VARIANCE;
   const strafe = robot.ai.strafeSign ?? 1;
   const angleOffset = ((robot.spawnIndex % 5) - 2) * 0.12 * strafe;
   const rotatedDirection = vec3(
