@@ -3,6 +3,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { Simulation } from './components/Simulation';
 import { createBattleWorld } from './ecs/world';
 import { AUTO_RESTART_DELAY_MS, VICTORY_OVERLAY_BACKGROUND } from './lib/constants';
+import { isActiveRobot } from './lib/robotHelpers';
 import { TEAM_CONFIGS } from './lib/teamConfig';
 import { BattleRunner } from './runtime/simulation/battleRunner';
 import { createTelemetryPort } from './runtime/simulation/telemetryAdapter';
@@ -61,7 +62,7 @@ export default function App() {
     void telemetryEvents;
     const counts = { red: 0, blue: 0 };
     battleWorld.robots.entities.forEach((robot) => {
-      if (robot.health > 0) {
+      if (isActiveRobot(robot)) {
         counts[robot.team] += 1;
       }
     });

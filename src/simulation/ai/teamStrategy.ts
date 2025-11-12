@@ -8,6 +8,7 @@ import {
   Vec3,
   vec3,
 } from '../../lib/math/vec3';
+import { isActiveRobot } from '../../lib/robotHelpers';
 import { TEAM_CONFIGS,TeamId } from '../../lib/teamConfig';
 
 export type TeamDirective = 'offense' | 'defense' | 'balanced';
@@ -24,10 +25,6 @@ export interface AnchorAssignment {
 }
 
 export type TeamAnchorAssignments = Record<string, AnchorAssignment>;
-
-function isActiveRobot(robot: RobotEntity): boolean {
-  return robot.health > 0;
-}
 
 export function buildTeamDirectives(robots: RobotEntity[]): TeamDirectiveMap {
   const counts = robots.reduce(

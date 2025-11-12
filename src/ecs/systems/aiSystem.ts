@@ -1,5 +1,6 @@
 import { ENGAGE_MEMORY_TIMEOUT_MS } from '../../lib/constants';
 import { distanceVec3, lengthVec3 } from '../../lib/math/vec3';
+import { isActiveRobot } from '../../lib/robotHelpers';
 import { nextBehaviorState, RobotBehaviorMode } from '../../simulation/ai/behaviorState';
 import { computeTeamAnchors } from '../../simulation/ai/captainCoordinator';
 import { planRobotMovement } from '../../simulation/ai/pathing';
@@ -23,7 +24,7 @@ export function updateAISystem(battleWorld: BattleWorld, rng: () => number): voi
   const anchors = computeTeamAnchors(robots);
 
   robots.forEach((robot) => {
-    const allies = robots.filter((ally) => ally.team === robot.team && ally.health > 0);
+    const allies = robots.filter((ally) => ally.team === robot.team && isActiveRobot(ally));
     const { visibleEnemies } = updateRobotSensors(robot, robots, battleWorld.state.elapsedMs);
 
     let target: RobotEntity | undefined;
