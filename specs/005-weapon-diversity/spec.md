@@ -1,154 +1,179 @@
-# Feature Specification: Weapon Diversity
+# Feature Specification: Weapon Diversity — 10v10 Simulation (Observer)
 
-**Feature Branch**: `005-weapon-diversity`  
-**Created**: 2025-11-12  
-**Status**: Draft  
-**Input**: User description: "Add weapon diversity: introduce multiple weapon types and pickups, balancing, ammo, and UI indicators to encourage varied playstyles."
+**Feature Branch**: `005-weapon-diversity`
+**Created**: 2025-11-12
+**Status**: Draft
+**Input**: Update request: "Incorporate specs 001–004; run 10 vs 10 fight simulation with player as observer; implement rock-paper-scissors weapon bonuses; make rockets and lasers visually distinct (AoE explosions, beams/particles)."
+
+## Summary & Context
+
+This spec updates and expands `specs/005-weapon-diversity` to: (a) explicitly reflect the project's 10 vs 10 team simulation established in `specs/001-3d-team-vs`, (b) follow the renderer and UI guidance from `specs/002-3d-simulation-graphics`, (c) respect deterministic replay and simulation/renderer decoupling in `specs/003-extend-placeholder-create`, and (d) assume the improved AI roaming/wall-awareness behaviours from `specs/004-ai-roaming-wall-awareness` are active.
+
+High-level goals:
+- Run a 10 (red) vs 10 (blue) automated fight where the human is an observer (no active player control).
+- Introduce weapon diversity (guns, lasers, rockets) with rock-paper-scissors balance already scoped in `specs/001` and explicit, testable multipliers here.
+- Provide distinct visuals and particle effects: rockets produce projectile trails and AoE particle explosions on impact; lasers produce visible beam/tracer and connected particle/spark effects; guns have distinct ballistic tracers/impacts.
+- Ensure telemetry, test harnesses, and performance scaling are available to validate balance and visuals without leaking implementation details.
+
+Related specs:
+- `specs/001-3d-team-vs/spec.md` — 10 vs 10 spawn, captain election, ECS architecture, high-level simulation requirements.
+- `specs/002-3d-simulation-graphics/spec.md` — in-round UI, camera modes, quality-scaling and VFX guidance.
+- `specs/003-extend-placeholder-create/spec.md` — deterministic MatchTrace and replay/contracts guidance.
+- `specs/004-ai-roaming-wall-awareness/spec.md` — AI behaviour assumptions (roaming, obstacle avoidance).
+
+## Clarifications
+
+### Session 2025-11-12
+
+- Q: Preferred telemetry/reporting model for test harnesses and authoritative replay? → A: D (MatchTrace file + in-memory aggregator)
+- Q: How should rock-paper-scissors (RPS) bonuses be applied? → A: A (Damage only — multiplicative on baseDamage before resistances)
+
+## Objective
+
+Deliver a validated weapon-diversity feature for the 10v10 observer simulation that:
+- Implements rock-paper-scissors weapon interactions consistent with `specs/001` (Laser > Gun, Gun > Rocket, Rocket > Laser).
+- Adds clearly distinguishable visual and audio cues for each archetype, emphasizing rocket AoE explosions and laser beams/particles.
+- Provides measurable acceptance tests and telemetry to validate balance and visual correctness.
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - Pick up and use a weapon (Priority: P1)
+### User Story 1 — Watch a 10v10 automated match (Priority: P1)
 
-As a player, I want to pick up a weapon in the world so I can use it immediately in combat.
+As an observer, I want to start or join a 10 vs 10 automated match so I can watch the full round without controlling any robots.
 
-**Why this priority**: Picking up and using weapons is the core value of weapon diversity; without reliable pickup/use behavior the feature provides no gameplay value.
+Why: Primary demonstration and evaluation flow for the simulation and new weapons.
 
-**Independent Test**: Place a weapon pickup in the world; a player enters pickup area and interacts; verify player now has the weapon, the pickup disappears, and the UI shows the active weapon and ammo.
+Independent Test: Start a match using the simulation UI; observe two teams of 10 robots spawn, fight, and a winner declared; verify the spectator camera and in-round UI behave per `specs/002`.
 
-**Acceptance Scenarios**:
-
-1. **Given** a weapon pickup present and the player without that weapon, **When** the player touches or interacts with the pickup, **Then** the pickup is removed, the player's active weapon becomes the picked weapon, and the UI updates to show the weapon icon and ammo count.
-2. **Given** a picked weapon with finite ammo, **When** the player fires until ammo is exhausted, **Then** the weapon stops firing, ammo shows 0, and player may switch to another available weapon or fallback weapon.
-
----
-
-### User Story 2 - Recognize weapon archetype visually (Priority: P2)
-
-As a player, I want to be able to identify a weapon's archetype (guns, lasers, rockets) by its icon and in-world appearance so I can make quick strategic choices before picking it up.
-
-**Why this priority**: Visual recognizability reduces cognitive load and enables players to make meaningful, split-second decisions in combat.
-
-**Independent Test**: Present players with HUD icons and corresponding in-world pickups; verify players can correctly classify archetype before pickup in a blind test (see Acceptance Tests).
-
-**Acceptance Scenarios**:
-
-1. **Given** three different pickups (one per archetype) visible in the same area, **When** the player observes them without picking up, **Then** the HUD tooltip or visual indicator clearly shows the archetype and players can correctly identify the archetype from visuals.
-2. **Given** a set of HUD icons and screenshots, **When** a tester is asked to classify archetype, **Then** at least 90% of testers correctly identify the archetype for each sample.
+Acceptance Scenarios:
+1. Given the match is configured for 10v10, When the match starts, Then 10 red and 10 blue robots spawn in their designated zones and engage autonomously.
+2. Given an observer is connected, When the match runs, Then the observer cannot control robots and may toggle camera modes (free, follow, cinematic) while match continues.
 
 ---
 
-### User Story 3 - Carry and switch between weapons (Priority: P3)
+### User Story 2 — Observe distinct weapon behaviour & visuals (Priority: P1)
 
-As a player, I want to carry more than one weapon and switch between them so I can adapt to different combat situations.
+As an observer, I want rockets to show projectile trails and AoE explosions and lasers to show beams/sustained hit VFX so I can easily distinguish archetypes in combat.
 
-**Why this priority**: Weapon switching enables strategic play and makes diversity meaningful instead of cosmetic.
+Independent Test: Run a match with representative weapon usage and capture a ~30s clip; verify rocket impacts show explosion VFX and damage radius, lasers show visible beam/tracer and persistent hit particles, guns show ballistic tracers and impact sparks.
 
-**Independent Test**: Give the player two different weapon pickups; verify switching preserves each weapon's ammo, active weapon changes immediately, and the UI reflects the change.
-
-**Acceptance Scenarios**:
-
-1. **Given** the player has two weapons in inventory, **When** the player switches to the second weapon, **Then** the second weapon becomes active and its ammo count is displayed.
-2. **Given** the player switches back to a previously used weapon, **When** that weapon still has remaining ammo, **Then** its ammo count reflects remaining rounds (no unexpected reset).
+Acceptance Scenarios:
+1. Rocket projectile collisions produce an explosion particle effect and an area-of-effect damage application visible in the log and via damage markers.
+2. Laser firings produce a visible continuous beam/tracer between attacker and target for the duration of firing and spark/impact VFX at the contact point.
 
 ---
 
-### User Story 4 - Balanced pickup distribution (Priority: P4)
+### User Story 3 — Balance validation & rock-paper-scissors tests (Priority: P1)
 
-As a designer, I want weapon pickups distributed so matches encourage varied playstyles and no single weapon monopolizes play.
+As a designer, I want automated 1v1 and small-scale tests that verify the declared RPS relations (Laser > Gun, Gun > Rocket, Rocket > Laser) and numeric multipliers are producing expected outcomes so I can tune values.
 
-**Why this priority**: Ensures playtesting and live matches surface balanced engagements and variety across maps.
+Independent Test: Execute an automated matrix of controlled 1v1 duels (each pair repeated N times) and aggregate win/damage rates to assert expected dominance.
 
-**Independent Test**: Run a batch of test matches or simulated spawn cycles and collect pickup and usage counts to verify distribution targets are met (see Success Criteria).
-
-**Acceptance Scenarios**:
-
-1. **Given** a map with multiple spawn points, **When** the game runs a match, **Then** pickups spawn across locations so that no single weapon represents more than 40% of total pickups over a sample of 50 matches (tunable metric).
+Acceptance Scenarios:
+1. For each weapon pairing, run at least 30 repeated duels with identical starting health and environment; the weapon with declared advantage wins ≥ 70% of trials (initial tuning target).
 
 ---
 
 ### Edge Cases
 
-- Player already at maximum weapon capacity attempts to pick up an additional weapon (see Assumptions for inventory policy).
-- Player picks up a weapon and immediately disconnects — pickup should respawn after configured delay.
-- Pickup spawns in an unreachable or obstructed area — system must detect and respawn or move the pickup after a timeout.
-- Multiple players attempt to pick the same pickup at the same frame — deterministically assign to the player that completes the interaction first and notify other players.
+- If multiple robots are within a rocket's AoE, apply deterministic damage ordering and avoid double-applying per-robot events in the same frame.
+- Laser beams that cross geometry should apply hit detection using the same authoritative rules used by projectiles to keep replay deterministic.
+- If visual VFX fail to load, placeholder simple geometry/particle markers must show so the observer still perceives weapon type.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001 (Weapon Archetypes)**: The game MUST include at least three named weapon archetypes: **guns**, **lasers**, and **rockets**. Each archetype must provide a distinct playstyle driven by differences in core stats, projectile behaviour, and intended engagement ranges.
-  - Acceptance: Guns, lasers and rockets are present in the playable build, each can be picked up, equipped and used, and each demonstrates distinct behaviour in measured playtests.
+- **FR-001 (10v10 Simulation)**: The system MUST run a fully automated 10 vs 10 match (10 red, 10 blue) as the canonical supported simulation size. Acceptance: a match runs from spawn to winner declaration with 20 active robots and no human pilot input required.
 
-- **FR-002 (Pickup Entities)**: Weapons MUST be represented by pickup entities in the world that players can collect.
-  - Acceptance: A placed pickup disappears when collected and spawns again (or is scheduled to) according to the respawn policy.
+- **FR-002 (Observer Mode)**: The human user by default is an observer; observer controls are limited to camera and UI toggles (no movement or weapon control of robots). Acceptance: Observer cannot issue robot control commands; camera toggles function while simulation runs.
 
-- **FR-003 (Inventory & Switching)**: Players MUST be able to carry multiple weapons (inventory capacity defined in Assumptions) and switch between them with immediate effect.
-  - Acceptance: Switching is responsive and preserves each weapon's ammo state.
+- **FR-003 (RPS Balance)**: The system MUST implement rock-paper-scissors relations consistent with `specs/001`: Laser beats Gun, Gun beats Rocket, Rocket beats Laser. Acceptance: Controlled duel tests (see Acceptance Tests) show the declared advantage yields the expected dominance (see testing thresholds).
+ - **FR-003 (RPS Balance)**: The system MUST implement rock-paper-scissors relations consistent with `specs/001`: Laser beats Gun, Gun beats Rocket, Rocket beats Laser. The RPS advantage is applied as a damage-only modifier (see FR-004) — it does not alter accuracy, rate-of-fire, or other weapon stats. Acceptance: Controlled duel tests (see Acceptance Tests) show the declared advantage yields the expected dominance (see testing thresholds).
 
-- **FR-004 (Ammo & Firing)**: Each weapon MUST have an ammo model that is decremented on fire and prevents firing when empty.
-  - Acceptance: Ammo values decrease on fire and display correctly in UI; firing is blocked at zero ammo.
+- **FR-004 (Balance Multipliers — Designer-tunable defaults)**: The feature MUST expose design-level multipliers for inter-archetype bonuses. Suggested initial defaults (tunable):
+  - Advantage multiplier: +25% damage when attacker archetype has advantage vs defender's archetype.
+  - Disadvantage multiplier: −15% damage when attacker archetype is disadvantaged.
+  - These numeric defaults are design guidance; acceptance relies on testable outcomes, not fixed values.
+ - **FR-004 (Balance Multipliers — Designer-tunable defaults)**: The feature MUST expose design-level multipliers for inter-archetype bonuses and apply them as multiplicative damage modifiers to the weapon's `baseDamage` prior to any resistances or additional modifiers. Suggested initial defaults (tunable):
+  - Advantage multiplier: `1.25` (i.e., +25% damage) when attacker archetype has advantage vs defender's archetype.
+  - Disadvantage multiplier: `0.85` (i.e., −15% damage) when attacker archetype is disadvantaged.
+  - Application rules: the engine SHOULD compute `finalDamage = baseDamage * archetypeMultiplier * otherModifiers` where `archetypeMultiplier` is selected from `{1.25, 0.85, 1.0}` depending on attacker/defender archetype relationship. These multipliers are damage-only and do not change hit probability, rate-of-fire, or projectile behavior. These numeric defaults are design guidance; acceptance relies on testable outcomes, not fixed values.
 
-- **FR-005 (Pickup Respawn & Distribution)**: The system MUST support configurable pickup respawn delays and spawn distributions per map to enable balanced availability.
-  - Acceptance: Respawn parameters are applied and pickups reappear after the configured delay.
+- **FR-005 (Weapon Visuals & Audio)**: Each archetype MUST have distinct HUD icon, in-world pickup model, firing SFX, and projectile/impact VFX. Acceptance: Design review and blind recognizability test pass targets (see Success Criteria).
 
-- **FR-006 (UI Feedback)**: The UI MUST show the active weapon icon and ammo count within the HUD immediately after pickup or switch.
-  - Acceptance: UI reflects current weapon and ammo in the same frame/update as the change.
+- **FR-006 (Rocket AoE & Explosion)**: Rocket projectiles MUST produce a visible explosion VFX and apply area-of-effect damage with a defined radius and falloff profile. Acceptance: Rocket impacts create explosion events with AoE damage logged and visible on debug overlays.
 
-- **FR-007 (Telemetry for Balancing)**: The system MUST emit simple usage events for pickups and weapon usage so designers can measure distribution and balance (e.g., pickup-acquired, weapon-fired events).
-  - Acceptance: Events are emitted during gameplay with identifiers allowing aggregation by weapon archetype.
+- **FR-007 (Laser Beam & Sustained Damage)**: Laser weapons MUST present a visible beam/tracer for the duration of firing and may apply instantaneous or ticked damage along beam contacts; acceptance: beam visuals align with hit events in MatchTrace and damage logs.
 
-- **FR-008 (Weapon Stats & Parameters)**: Each weapon MUST expose a consistent set of stats (see Key Entities) that influence combat behaviour. Typical stats include: damage per hit, rate of fire, ammo capacity (or energy/cooldown for non-ammo weapons), projectile speed, accuracy/spread, area-of-effect / splash radius, and reload or cooldown timings.
-  - Acceptance: All weapons in the build expose the stats and those stats are used by the firing/consumption systems; the differences produce measurable behaviour in controlled tests (see Acceptance Tests).
+- **FR-008 (Gun Ballistics / Tracers)**: Gun archetype MUST present high-rate ballistic fire with visible tracers/impacts suited for quick engagements; acceptance: tracer and impact VFX match playtest footage.
 
-- **FR-009 (Distinct Visuals & Audio)**: Each weapon archetype MUST have distinct identifying visuals and audio: an inventory/HUD icon, in-world pickup model, and weapon-specific projectile VFX and firing SFX. Visuals should make archetype identification immediate and unambiguous to players.
-  - Acceptance: Design review sign-off (2 designers) confirms distinct icons/models/VFX per archetype; manual player recognition test (see Acceptance Tests) demonstrates high identifiable distinctness.
+- **FR-009 (Telemetry & Test Hooks)**: Emit telemetry events for pickup-acquired, weapon-fired, weapon-hit, explosion-AoE, and weapon-damage to enable balance aggregation and test automation. Acceptance: Events emitted with weapon archetype and match identifiers and aggregated in the test harness.
+ - **FR-009 (Telemetry & Test Hooks)**: Emit telemetry events for pickup-acquired, weapon-fired, weapon-hit, explosion-AoE, and weapon-damage to enable balance aggregation and test automation. Telemetry MUST be recorded to an authoritative per-match `MatchTrace` file (for deterministic replay and persisted analysis) and also published to an in-memory telemetry aggregator during test runs for fast assertions and harness reads. Acceptance: Events emitted with weapon archetype and match identifiers and aggregated in both `MatchTrace` and the in-memory test harness; the automated duel matrix and balance verifier can read the in-memory summaries and/or the persisted `MatchTrace` as needed.
+
+- **FR-010 (Performance & Quality Scaling)**: Visuals (particles, explosion density, beam resolution) MUST respect the performance manager and quality-scaling parameters from `specs/002`. Acceptance: Quality scaling reduces VFX density and preserves simulation correctness when frame budget is constrained.
+
+- **FR-011 (AI Weapon Use)**: Robot AI SHOULD prefer weapons based on engagement range and RPS advantage where feasible (e.g., choose rocket when clustered enemies present). Acceptance: In a set of simulation runs, AI weapon selection frequency reflects engagement context and RPS heuristics (observational test).
 
 ### Key Entities *(include if feature involves data)*
 
-- **Weapon**: id, name, archetype, short description, intendedEngagementRange (design note), spawnWeight/rarity, primary stat profile reference, readableDisplayName.
-- **WeaponVisuals**: iconId, modelId, projectileVFXId, firingSFXId, colorPalette. Visuals must make archetype identifiable and be linked to the weapon id.
-- **WeaponStats**: damage, rateOfFire, ammoCapacity (or energyRegen/cooldown), projectileSpeed, accuracy, areaOfEffect, reloadTime, recoil, penetration (optional). These fields are design-level parameters and not prescriptive about implementation.
-- **Pickup**: id, weaponId, location, respawnDelay, lastPickedAt, active/inactive flag.
-- **PlayerWeaponState**: currentWeaponId, inventory (list of weaponIds), ammoRemaining per weapon, timing for last switch.
-- **SpawnPoint**: id, coordinates, spawnWeight, lastSpawnedAt.
+- **WeaponProfile**: id, name, archetype (gun|laser|rocket), baseDamage, rateOfFire, ammoOrEnergy, projectileSpeed (if applicable), aoeRadius (rocket), aoeFalloffProfile, beamDuration/tickRate (laser), tracerConfig, visualRefs.
+ - **WeaponProfile**: id, name, archetype (gun|laser|rocket), baseDamage, rateOfFire, ammoOrEnergy, projectileSpeed (if applicable), aoeRadius (rocket), aoeFalloffProfile, beamDuration/tickRate (laser), tracerConfig, visualRefs.
+ - **BalanceMultipliers**: design-level multipliers for archetype interactions. Fields: `advantageMultiplier` (default `1.25`), `disadvantageMultiplier` (default `0.85`), `neutralMultiplier` (default `1.0`). These are applied multiplicatively to `WeaponProfile.baseDamage` for deterministic RPS effects.
+- **ProjectileInstance**: id, weaponProfileId, ownerId, position, velocity, timestampMs, contactEventId.
+- **ExplosionEvent**: id, origin, radius, timestampMs, damageProfileId.
+- **WeaponVisual**: iconRef, modelRef, firingSfxRef, impactVfxRef, beamVfxRef, trailVfxRef.
+- **WeaponTelemetry**: events: `pickup-acquired`, `weapon-fired`, `weapon-hit`, `explosion-aoe`, `weapon-damage` (fields include matchId, weaponProfileId, attackerId, targetId, amount, timestampMs).
+ - **WeaponTelemetry**: events: `pickup-acquired`, `weapon-fired`, `weapon-hit`, `explosion-aoe`, `weapon-damage` (fields include matchId, weaponProfileId, attackerId, targetId, amount, timestampMs).
+ - **TelemetryAggregator**: ephemeral in-memory aggregator used during automated tests and live runs to accumulate per-match event summaries for fast assertions. Fields: `matchId`, `eventCountsByType`, `damageTotalsByWeapon`, `winCountsByArchetype`, `timestampMs` (summary window). The aggregator is optional for production analytics but required for the automated duel matrix harness.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: Implementation includes at least 3 weapon archetypes available in the playable build.
-- **SC-002**: In a sample of 50 standard matches (or equivalent simulated spawn cycles), no single weapon archetype accounts for more than 40% of pickups collected (designer-adjustable target).
-- **SC-003**: At least 95% of players encounter at least 2 distinct weapon archetypes within their first 5 minutes of play (measured over a 100-match sample).
-- **SC-004**: UI updates for pickup/switch actions are visible to the player within one rendered frame or the equivalent immediate UI update (practical verification: observable immediately during manual playtest).
-- **SC-005**: Telemetry events for pickup and weapon usage are present and can be aggregated to report per-weapon pickup counts and fire counts over a match.
-
-- **SC-006**: Each archetype (guns, lasers, rockets) differs from each other in at least two primary stats (example groups: damage per hit, rate-of-fire, projectile speed, area-of-effect) as demonstrated by playtest data over a 50-match sample.
-
-- **SC-007**: Visual distinctness: In a blind recognition test with at least 20 participants, at least 90% of participants correctly identify the weapon archetype from HUD icons or in-world screenshots.
+- **SC-001**: The playable build exposes the three archetypes (guns, lasers, rockets) and they are usable during 10v10 matches.
+- **SC-002**: Controlled duel matrix (each pairing, 30+ runs) shows declared advantage results in ≥70% win rate for advantaged archetype (initial tuning target).
+- **SC-003**: Visual recognizability: blind test with 20+ participants yields ≥90% correct archetype classification for HUD icons and in-world pickup visuals.
+- **SC-004**: Rocket impacts produce visible explosion VFX and logged AoE events in ≥95% of impact captures across 50 recorded impacts.
+- **SC-005**: Beam/laser firings show beam/tracer and corresponding hit/damage logs align within ±16ms in ≥95% of sample events (replay verification).
+- **SC-006**: The simulation runs a 10v10 match end-to-end in the dev environment without crashes in ≥95% of attempts; quality-scaling preserves match outcome when frame budget is constrained (see `specs/002` criteria).
+- **SC-007**: Telemetry events are available and allow calculation of per-weapon pickup counts and fire/hit ratios for balancing.
 
 ## Assumptions
 
-- Default player inventory capacity is 2 weapon slots. If a player at capacity picks up a weapon, the pickup replaces the currently equipped weapon (this behaviour can be modified if designers prefer an alternate policy).
-- Default pickup respawn delay for initial rollout: 20 seconds (tunable by map/designer).
-- Art assets for new weapons (icons, models) will be provided by the art team; placeholder assets can be used for playtesting.
-- Network and persistence considerations (e.g., remote telemetry aggregation) are handled by existing infrastructure and are not part of this feature's implementation details.
+- Simulation uses the 10v10 spawn and AI behaviours defined in `specs/001` and `specs/004` (captain election, roaming/avoidance). This feature does not change the spawn counts.
+- Default balance multipliers: advantage +25% damage, disadvantage −15% damage. These are tunable; acceptance is based on measurable duel outcomes, not fixed numbers.
+- Default rocket AoE radius and falloff are design parameters; initial test can use a conservative radius (e.g., 2–3 units) with linear falloff, tuned during playtests.
+- Art/sound teams deliver final assets; placeholder assets are acceptable for integration and testing.
 
 ## Out of Scope
 
-- Persistent progression, unlocks, or shop systems for weapons.
-- Creating final art/animation beyond placeholders (art integration will be coordinated separately).
+- Persistent progression, shops, loadouts, or unlock systems.
+- Final polished art pipeline and production VFX beyond placeholders.
 
 ## Acceptance Tests (examples, must be automated or manual step-by-step)
 
-- Test A (Pickup test): Spawn a weapon pickup, have a player pick it up. Verify pickup disappears, player's active weapon changes, UI shows icon and ammo, and telemetry event `pickup-acquired` is emitted with weapon id.
+- Test A — 10v10 Observer Run: Launch a 10v10 match as an observer, record a match video and MatchTrace; verify 20 robots spawn, fight autonomously, and a winner is declared. Verify observer cannot issue robot commands.
 
-- Test B (Switching test): Give player two weapons, fire some ammo from weapon A, switch to weapon B, then switch back to A and verify ammo remaining on A equals pre-switch remaining.
+- Test B — RPS Duel Matrix: For each pair of weapon archetypes, run 30 controlled duels with identical config and initial health; aggregate wins; assert advantaged archetype wins ≥70% of trials.
+ - Test B — RPS Duel Matrix: For each pair of weapon archetypes, run 30 controlled duels with identical config and initial health; aggregate wins using the in-memory telemetry aggregator (fast path) and validate against authoritative `MatchTrace` records; assert advantaged archetype wins ≥70% of trials.
+ - Test B — RPS Duel Matrix: For each pair of weapon archetypes, run 30 controlled duels with identical config and initial health; apply the damage-only archetype multipliers (multiplicative on `baseDamage` before resistances); aggregate wins using the in-memory telemetry aggregator (fast path) and validate against authoritative `MatchTrace` records; assert advantaged archetype wins ≥70% of trials.
 
-- Test C (Distribution test): Run 50 matches or spawn cycles, collect pickup counts per weapon, and assert no single archetype exceeds 40% of total pickups.
+- Test C — Rocket AoE Capture: Execute 50 rocket impact captures and assert explosion VFX appears and explosion-AoE telemetry event recorded for ≥95% of samples.
 
-- Test D (Visual identity test): Present HUD icons and in-world pickup screenshots for guns, lasers, and rockets to a panel of at least 20 testers in a blind study. Collect responses and assert at least 90% correct classification per archetype.
+- Test D — Laser Beam Alignment: During a sample of 100 laser-firing events, assert beam visual/tracer aligns with logged hits and damage within ±16ms for ≥95% of events.
 
----
+- Test E — Visual Recognizability: Present icons/screenshots to 20+ testers and assert ≥90% correct classification per archetype.
 
-**Notes**: Designers should treat numerical targets (respawn delay, 40% distribution target) as initial tuning values subject to playtest adjustments. Any changes to inventory capacity or replacement policy should be treated as design decisions and documented in the follow-up plan.
+## Traceability & References
+
+- Related specs: `specs/001-3d-team-vs/spec.md`, `specs/002-3d-simulation-graphics/spec.md`, `specs/003-extend-placeholder-create/spec.md`, `specs/004-ai-roaming-wall-awareness/spec.md`.
+
+## Next steps
+
+1. Implement telemetry hooks, persist `MatchTrace` per-match, and add an in-memory telemetry aggregator for the RPS validation duel harness.
+2. Implement the RPS damage-only multiplier logic in the damage resolution pipeline (apply multiplier to `baseDamage` before resistances) and add unit tests demonstrating deterministic application.
+3. Integrate placeholder VFX for rockets/lasers and run visual/performance tests under quality-scaling.
+4. Run designer blind recognizability study and iterate visuals.
+5. Tune balance multipliers based on duel matrix results and repeat tests until success criteria met.
+
