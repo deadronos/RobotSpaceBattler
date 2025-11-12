@@ -22,7 +22,22 @@ As a player, I want to pick up a weapon in the world so I can use it immediately
 
 ---
 
-### User Story 2 - Carry and switch between weapons (Priority: P2)
+### User Story 2 - Recognize weapon archetype visually (Priority: P2)
+
+As a player, I want to be able to identify a weapon's archetype (guns, lasers, rockets) by its icon and in-world appearance so I can make quick strategic choices before picking it up.
+
+**Why this priority**: Visual recognizability reduces cognitive load and enables players to make meaningful, split-second decisions in combat.
+
+**Independent Test**: Present players with HUD icons and corresponding in-world pickups; verify players can correctly classify archetype before pickup in a blind test (see Acceptance Tests).
+
+**Acceptance Scenarios**:
+
+1. **Given** three different pickups (one per archetype) visible in the same area, **When** the player observes them without picking up, **Then** the HUD tooltip or visual indicator clearly shows the archetype and players can correctly identify the archetype from visuals.
+2. **Given** a set of HUD icons and screenshots, **When** a tester is asked to classify archetype, **Then** at least 90% of testers correctly identify the archetype for each sample.
+
+---
+
+### User Story 3 - Carry and switch between weapons (Priority: P3)
 
 As a player, I want to carry more than one weapon and switch between them so I can adapt to different combat situations.
 
@@ -37,7 +52,7 @@ As a player, I want to carry more than one weapon and switch between them so I c
 
 ---
 
-### User Story 3 - Balanced pickup distribution (Priority: P3)
+### User Story 4 - Balanced pickup distribution (Priority: P4)
 
 As a designer, I want weapon pickups distributed so matches encourage varied playstyles and no single weapon monopolizes play.
 
@@ -62,8 +77,8 @@ As a designer, I want weapon pickups distributed so matches encourage varied pla
 
 ### Functional Requirements
 
-- **FR-001 (Weapon Archetypes)**: The game MUST include at least three distinct weapon archetypes (for example: short-range melee, medium-range projectile, long-range beam) that offer meaningfully different combat roles.
-  - Acceptance: Three archetypes exist in the running build and each can be picked up, equipped, and fired in a live match.
+- **FR-001 (Weapon Archetypes)**: The game MUST include at least three named weapon archetypes: **guns**, **lasers**, and **rockets**. Each archetype must provide a distinct playstyle driven by differences in core stats, projectile behaviour, and intended engagement ranges.
+  - Acceptance: Guns, lasers and rockets are present in the playable build, each can be picked up, equipped and used, and each demonstrates distinct behaviour in measured playtests.
 
 - **FR-002 (Pickup Entities)**: Weapons MUST be represented by pickup entities in the world that players can collect.
   - Acceptance: A placed pickup disappears when collected and spawns again (or is scheduled to) according to the respawn policy.
@@ -83,9 +98,17 @@ As a designer, I want weapon pickups distributed so matches encourage varied pla
 - **FR-007 (Telemetry for Balancing)**: The system MUST emit simple usage events for pickups and weapon usage so designers can measure distribution and balance (e.g., pickup-acquired, weapon-fired events).
   - Acceptance: Events are emitted during gameplay with identifiers allowing aggregation by weapon archetype.
 
+- **FR-008 (Weapon Stats & Parameters)**: Each weapon MUST expose a consistent set of stats (see Key Entities) that influence combat behaviour. Typical stats include: damage per hit, rate of fire, ammo capacity (or energy/cooldown for non-ammo weapons), projectile speed, accuracy/spread, area-of-effect / splash radius, and reload or cooldown timings.
+  - Acceptance: All weapons in the build expose the stats and those stats are used by the firing/consumption systems; the differences produce measurable behaviour in controlled tests (see Acceptance Tests).
+
+- **FR-009 (Distinct Visuals & Audio)**: Each weapon archetype MUST have distinct identifying visuals and audio: an inventory/HUD icon, in-world pickup model, and weapon-specific projectile VFX and firing SFX. Visuals should make archetype identification immediate and unambiguous to players.
+  - Acceptance: Design review sign-off (2 designers) confirms distinct icons/models/VFX per archetype; manual player recognition test (see Acceptance Tests) demonstrates high identifiable distinctness.
+
 ### Key Entities *(include if feature involves data)*
 
-- **Weapon**: id, name, archetype, short description, ammoCapacity, spawnWeight/rarity, intended engagement range (design note), icon reference (art asset id).
+- **Weapon**: id, name, archetype, short description, intendedEngagementRange (design note), spawnWeight/rarity, primary stat profile reference, readableDisplayName.
+- **WeaponVisuals**: iconId, modelId, projectileVFXId, firingSFXId, colorPalette. Visuals must make archetype identifiable and be linked to the weapon id.
+- **WeaponStats**: damage, rateOfFire, ammoCapacity (or energyRegen/cooldown), projectileSpeed, accuracy, areaOfEffect, reloadTime, recoil, penetration (optional). These fields are design-level parameters and not prescriptive about implementation.
 - **Pickup**: id, weaponId, location, respawnDelay, lastPickedAt, active/inactive flag.
 - **PlayerWeaponState**: currentWeaponId, inventory (list of weaponIds), ammoRemaining per weapon, timing for last switch.
 - **SpawnPoint**: id, coordinates, spawnWeight, lastSpawnedAt.
@@ -99,6 +122,10 @@ As a designer, I want weapon pickups distributed so matches encourage varied pla
 - **SC-003**: At least 95% of players encounter at least 2 distinct weapon archetypes within their first 5 minutes of play (measured over a 100-match sample).
 - **SC-004**: UI updates for pickup/switch actions are visible to the player within one rendered frame or the equivalent immediate UI update (practical verification: observable immediately during manual playtest).
 - **SC-005**: Telemetry events for pickup and weapon usage are present and can be aggregated to report per-weapon pickup counts and fire counts over a match.
+
+- **SC-006**: Each archetype (guns, lasers, rockets) differs from each other in at least two primary stats (example groups: damage per hit, rate-of-fire, projectile speed, area-of-effect) as demonstrated by playtest data over a 50-match sample.
+
+- **SC-007**: Visual distinctness: In a blind recognition test with at least 20 participants, at least 90% of participants correctly identify the weapon archetype from HUD icons or in-world screenshots.
 
 ## Assumptions
 
@@ -119,6 +146,8 @@ As a designer, I want weapon pickups distributed so matches encourage varied pla
 - Test B (Switching test): Give player two weapons, fire some ammo from weapon A, switch to weapon B, then switch back to A and verify ammo remaining on A equals pre-switch remaining.
 
 - Test C (Distribution test): Run 50 matches or spawn cycles, collect pickup counts per weapon, and assert no single archetype exceeds 40% of total pickups.
+
+- Test D (Visual identity test): Present HUD icons and in-world pickup screenshots for guns, lasers, and rockets to a panel of at least 20 testers in a blind study. Collect responses and assert at least 90% correct classification per archetype.
 
 ---
 
