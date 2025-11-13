@@ -28,6 +28,10 @@ Related specs:
 - Q: Preferred telemetry/reporting model for test harnesses and authoritative replay? → A: D (MatchTrace file + in-memory aggregator)
 - Q: How should rock-paper-scissors (RPS) bonuses be applied? → A: A (Damage only — multiplicative on baseDamage before resistances)
 
+### Session 2025-11-13
+
+- Q: Preferred telemetry timestamp semantics? → A: A (`timestampMs` = milliseconds since match start; integer ms; include optional `frameIndex` for deterministic ordering)
+
 ## Objective
 
 Deliver a validated weapon-diversity feature for the 10v10 observer simulation that:
@@ -123,9 +127,9 @@ Acceptance Scenarios:
 - **ProjectileInstance**: id, weaponProfileId, ownerId, position, velocity, timestampMs, contactEventId.
 - **ExplosionEvent**: id, origin, radius, timestampMs, damageProfileId.
 - **WeaponVisual**: iconRef, modelRef, firingSfxRef, impactVfxRef, beamVfxRef, trailVfxRef.
-- **WeaponTelemetry**: events: `pickup-acquired`, `weapon-fired`, `weapon-hit`, `explosion-aoe`, `weapon-damage` (fields include matchId, weaponProfileId, attackerId, targetId, amount, timestampMs).
- - **WeaponTelemetry**: events: `pickup-acquired`, `weapon-fired`, `weapon-hit`, `explosion-aoe`, `weapon-damage` (fields include matchId, weaponProfileId, attackerId, targetId, amount, timestampMs).
- - **TelemetryAggregator**: ephemeral in-memory aggregator used during automated tests and live runs to accumulate per-match event summaries for fast assertions. Fields: `matchId`, `eventCountsByType`, `damageTotalsByWeapon`, `winCountsByArchetype`, `timestampMs` (summary window). The aggregator is optional for production analytics but required for the automated duel matrix harness.
+ - **WeaponTelemetry**: events: `pickup-acquired`, `weapon-fired`, `weapon-hit`, `explosion-aoe`, `weapon-damage` (fields include `matchId`, `weaponProfileId`, `attackerId`, `targetId`, `amount`, `timestampMs` — integer milliseconds since match start; optional `frameIndex` for deterministic ordering).
+ - **WeaponTelemetry**: events: `pickup-acquired`, `weapon-fired`, `weapon-hit`, `explosion-aoe`, `weapon-damage` (fields include `matchId`, `weaponProfileId`, `attackerId`, `targetId`, `amount`, `timestampMs` — integer milliseconds since match start; optional `frameIndex` for deterministic ordering).
+ - **TelemetryAggregator**: ephemeral in-memory aggregator used during automated tests and live runs to accumulate per-match event summaries for fast assertions. Fields: `matchId`, `eventCountsByType`, `damageTotalsByWeapon`, `winCountsByArchetype`, `timestampMs` (summary window; integer milliseconds since match start). The aggregator is optional for production analytics but required for the automated duel matrix harness.
 
 ## Success Criteria *(mandatory)*
 
