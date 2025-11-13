@@ -25,11 +25,11 @@ Purpose: Create the minimal project scaffolding and placeholders required to imp
 
 Purpose: Core systems that MUST be implemented before any user story work begins. These are blocking for story work.
 
-- [ ] T004 [P] Implement in-memory `TelemetryAggregator` at `src/telemetry/aggregator.ts` (API: `startMatch(matchId)`, `record(event)`, `summary()`).
+- [X] T004 [P] Implement in-memory `TelemetryAggregator` at `src/telemetry/aggregator.ts` (API: `startMatch(matchId)`, `record(event)`, `summary()`).
 - [X] T005 [P] Implement `MatchTrace` writer at `src/telemetry/matchTrace.ts` (append authoritative per-match events, file path `trace/<matchId>.ndjson`).
-- [ ] T006 [P] Add telemetry ingest API stub for `POST /telemetry/event` at `src/server/api/telemetry.ts` matching `contracts/weapon-diversity-api.yaml`.
-- [ ] T007 [P] Add match-start API stub `POST /match/start` at `src/server/api/match.ts` that triggers match initialization in the simulation harness.
-- [ ] T008 [P] Add duel-run API stub `POST /duel/run` at `src/server/api/duel.ts` that forwards to the duel harness (`scripts/duel-matrix/run-duels.ts`).
+- [-] T006 [P] Add telemetry ingest API stub for `POST /telemetry/event` at `src/server/api/telemetry.ts` matching `contracts/weapon-diversity-api.yaml` (SKIPPED - no backend server).
+- [-] T007 [P] Add match-start API stub `POST /match/start` at `src/server/api/match.ts` that triggers match initialization in the simulation harness (SKIPPED - no backend server).
+- [-] T008 [P] Add duel-run API stub `POST /duel/run` at `src/server/api/duel.ts` that forwards to the duel harness (`scripts/duel-matrix/run-duels.ts`) (SKIPPED - no backend server).
 - [X] T009 [P] Wire test harness registration: update `tests/setup.ts` (or `tests/setup/*.ts`) to register the in-memory `TelemetryAggregator` and `MatchTrace` writer for tests.
 
 **Checkpoint**: After T004–T009 complete, user story work may begin in parallel.
@@ -72,11 +72,11 @@ Goal: Provide automated duel matrix, unit tests, and telemetry to validate RPS r
 
 Independent Test: `scripts/duel-matrix/run-duels.ts --archetypeA=laser --archetypeB=gun --runs=30` produces summarized `winCounts` where advantaged archetype ≥70% wins.
 
-- [ ] T022 [US3] Implement archetype multiplier module `src/simulation/balance/archetypeMultiplier.ts` (API: `getArchetypeMultiplier(attacker, defender)` returning `1.25|0.85|1.0`).
-- [ ] T023 [US3] Integrate archetype multiplier into damage pipeline `src/simulation/damage/damagePipeline.ts` ensuring `finalDamage = baseDamage * archetypeMultiplier * otherModifiers` before resistances.
-- [ ] T024 [US3] Implement/complete duel harness logic in `scripts/duel-matrix/run-duels.ts` (run N duels, seedable RNG, aggregate results via `TelemetryAggregator`).
-- [ ] T025 [US3] Add duel matrix API wiring `src/server/api/duel.ts` to call the duel harness and return `winCounts` / `damageTotals` as defined in `contracts/weapon-diversity-api.yaml`.
-- [ ] T026 [US3] Add automated duel tests `tests/duel/duel-matrix.spec.ts` that run harness headlessly (or call API) and assert advantaged weapon wins ≥70% (configurable sample size).
+- [X] T022 [US3] Implement archetype multiplier module `src/simulation/balance/archetypeMultiplier.ts` (API: `getArchetypeMultiplier(attacker, defender)` returning `1.25|0.85|1.0`).
+- [X] T023 [US3] Integrate archetype multiplier into damage pipeline `src/simulation/damage/damagePipeline.ts` ensuring `finalDamage = baseDamage * archetypeMultiplier * otherModifiers` before resistances.
+- [X] T024 [US3] Implement/complete duel harness logic in `scripts/duel-matrix/run-duels.ts` (run N duels, seedable RNG, aggregate results via `TelemetryAggregator`).
+- [ ] T025 [US3] Add duel matrix API wiring `src/server/api/duel.ts` to call the duel harness and return `winCounts` / `damageTotals` as defined in `contracts/weapon-diversity-api.yaml` (SKIPPED - no API server).
+- [X] T026 [US3] Add automated duel tests `tests/duel/duel-matrix.spec.ts` that run harness headlessly (or call API) and assert advantaged weapon wins ≥70% (configurable sample size).
 
 ---
 

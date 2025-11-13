@@ -2,7 +2,7 @@ import { applyCaptaincy } from '../../lib/captainElection';
 import { addInPlaceVec3, distanceVec3, scaleVec3 } from '../../lib/math/vec3';
 import { isActiveRobot } from '../../lib/robotHelpers';
 import { TelemetryPort } from '../../runtime/simulation/ports';
-import { computeDamageMultiplier } from '../../simulation/combat/weapons';
+import { calculateDamage } from '../../simulation/damage/damagePipeline';
 import { BattleWorld, ProjectileEntity, RobotEntity } from '../world';
 
 function findTarget(
@@ -34,8 +34,16 @@ function applyHit(
   telemetry: TelemetryPort,
 ): void {
   const shooter = world.robots.entities.find((robot) => robot.id === projectile.shooterId);
-  const multiplier = computeDamageMultiplier(projectile.weapon, target.weapon);
-  const damage = projectile.damage * multiplier;
+  
+  // Use new damage pipeline with archetype multiplier integration (T023)
+  // WeaponType ('laser'|'gun'|'rocket') matches WeaponArchetype type
+  const damageResult = calculateDamage({
+    baseDamage: projectile.damage,
+    attackerArchetype: projectile.weapon as 'laser' | 'gun' | 'rocket',
+    defenderArchetype: target.weapon as 'laser' | 'gun' | 'rocket',
+  });
+  
+  const damage = damageResult.finalDamage;
   target.health = Math.max(0, target.health - damage);
   target.lastDamageTimestamp = world.state.elapsedMs;
 

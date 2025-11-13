@@ -71,27 +71,155 @@ function parseArgs(): DuelConfig {
 
 /**
  * Run a single duel between two archetypes
- * TODO: This is a stub. Will be implemented in T024.
+ * Task: T024 - Real 1v1 simulation with ECS
  */
 async function runSingleDuel(
   archetypeA: WeaponArchetype,
   archetypeB: WeaponArchetype,
   seed: number
 ): Promise<{ winner: 'A' | 'B'; damageA: number; damageB: number }> {
-  // Placeholder implementation
-  console.log(`  Duel ${seed}: ${archetypeA} vs ${archetypeB}...`);
+  const { createBattleWorld, resetBattleWorld } = await import('../../src/ecs/world');
+  const { createXorShift32 } = await import('../../src/lib/random/xorshift');
+  const { updateAISystem } = await import('../../src/ecs/systems/aiSystem');
+  const { updateCombatSystem } = await import('../../src/ecs/systems/combatSystem');
+  const { updateMovementSystem } = await import('../../src/ecs/systems/movementSystem');
+  const { updateProjectileSystem } = await import('../../src/ecs/systems/projectileSystem');
+  const { TelemetryAggregator } = await import('../../src/telemetry/aggregator');
+  const { calculateDamage } = await import('../../src/simulation/damage/damagePipeline');
+
+  // Create battle world and telemetry
+  const world = createBattleWorld();
+  const telemetry = new TelemetryAggregator();
+  const matchId = `duel-${archetypeA}-vs-${archetypeB}-${seed}`;
   
-  // TODO: Initialize simulation with two robots
-  // TODO: Equip them with specified archetypes
-  // TODO: Run deterministic battle until one is destroyed
-  // TODO: Return winner and damage stats
+  telemetry.startMatch(matchId);
+  resetBattleWorld(world);
+  world.state.seed = seed;
   
-  // For now, return random result (will be replaced)
-  const winner = Math.random() > 0.5 ? 'A' : 'B';
+  const rng = createXorShift32(seed);
+
+  // Map weapon archetype to WeaponType (they use same names)
+  const weaponA = archetypeA as 'laser' | 'gun' | 'rocket';
+  const weaponB = archetypeB as 'laser' | 'gun' | 'rocket';
+
+  // Spawn two robots facing each other at close range (within weapon range)
+  // Place them stationary at optimal range for a pure damage test
+  const robotA = world.world.add({
+    id: 'robot-a',
+    kind: 'robot',
+    team: 'red',
+    position: [-10, 0, 0],
+    velocity: [0, 0, 0],
+    orientation: 0,
+    speed: 0, // Stationary for pure damage testing
+    weapon: weaponA,
+    fireCooldown: 0,
+    fireRate: 1.5,
+    health: 100,
+    maxHealth: 100,
+    ai: {
+      mode: 'engage',
+      targetId: 'robot-b',
+      strafeSign: 1,
+    },
+    kills: 0,
+    isCaptain: false,
+    spawnIndex: 0,
+    lastDamageTimestamp: 0,
+  });
+
+  const robotB = world.world.add({
+    id: 'robot-b',
+    kind: 'robot',
+    team: 'blue',
+    position: [10, 0, 0],
+    velocity: [0, 0, 0],
+    orientation: Math.PI,
+    speed: 0, // Stationary for pure damage testing
+    weapon: weaponB,
+    fireCooldown: 0,
+    fireRate: 1.5,
+    health: 100,
+    maxHealth: 100,
+    ai: {
+      mode: 'engage',
+      targetId: 'robot-a',
+      strafeSign: -1,
+    },
+    kills: 0,
+    isCaptain: false,
+    spawnIndex: 0,
+    lastDamageTimestamp: 0,
+  });
+
+  // Track damage dealt
+  let damageA = 0;
+  let damageB = 0;
+
+  // Simple telemetry adapter that tracks damage (implements TelemetryPort interface)
+  const duelTelemetry = {
+    reset: () => {},
+    recordSpawn: () => {},
+    recordFire: () => {},
+    recordDamage: (event: { targetId: string; amount: number }) => {
+      if (event.targetId === 'robot-b') {
+        damageA += event.amount;
+      } else if (event.targetId === 'robot-a') {
+        damageB += event.amount;
+      }
+    },
+    recordDeath: () => {},
+  };
+
+  // Run simulation loop until one robot is destroyed
+  const MAX_TICKS = 5000; // Prevent infinite loops
+  const DELTA_SECONDS = 1 / 60; // 60 FPS
+  
+  let projectilesFired = 0;
+  
+  for (let tick = 0; tick < MAX_TICKS; tick++) {
+    world.state.elapsedMs += DELTA_SECONDS * 1000;
+
+    const projectilesB4 = world.projectiles.entities.length;
+    
+    // Update all systems
+    updateAISystem(world, () => rng.next());
+    updateCombatSystem(world, duelTelemetry);
+    updateMovementSystem(world, DELTA_SECONDS);
+    updateProjectileSystem(world, DELTA_SECONDS, duelTelemetry);
+
+    const projectilesAfter = world.projectiles.entities.length;
+    if (projectilesAfter > projectilesB4) {
+      projectilesFired += (projectilesAfter - projectilesB4);
+    }
+
+    // Check if duel is over
+    const aAlive = robotA.health > 0;
+    const bAlive = robotB.health > 0;
+
+    if (!aAlive || !bAlive) {
+      const winner = aAlive ? 'A' : 'B';
+      
+      // Clean up
+      world.clear();
+      telemetry.endMatch();
+      
+      return {
+        winner,
+        damageA,
+        damageB,
+      };
+    }
+  }
+
+  // Timeout - determine winner by remaining health
+  world.clear();
+  telemetry.endMatch();
+  
   return {
-    winner,
-    damageA: Math.random() * 1000,
-    damageB: Math.random() * 1000,
+    winner: robotA.health > robotB.health ? 'A' : 'B',
+    damageA,
+    damageB,
   };
 }
 
@@ -186,5 +314,5 @@ if (require.main === module) {
   main();
 }
 
-export { runDuelMatrix };
+export { runDuelMatrix, runSingleDuel };
 export type { DuelConfig, DuelResult };
