@@ -1,11 +1,7 @@
-import { EnemyMemoryEntry,RobotEntity } from '../../ecs/world';
-import {
-  cloneVec3,
-  distanceSquaredVec3,
-  Vec3,
-} from '../../lib/math/vec3';
-import { isActiveRobot } from '../../lib/robotHelpers';
-import { isLineOfSightBlocked } from '../environment/arenaGeometry';
+import { EnemyMemoryEntry, RobotEntity } from "../../ecs/world";
+import { cloneVec3, distanceSquaredVec3, Vec3 } from "../../lib/math/vec3";
+import { isActiveRobot } from "../../lib/robotHelpers";
+import { isLineOfSightBlocked } from "../environment/arenaGeometry";
 
 const SENSOR_RANGE = 38;
 const SENSOR_RANGE_SQ = SENSOR_RANGE * SENSOR_RANGE;
@@ -13,9 +9,15 @@ const PROXIMITY_RANGE = 8;
 const PROXIMITY_RANGE_SQ = PROXIMITY_RANGE * PROXIMITY_RANGE;
 const MEMORY_DURATION_MS = 8000;
 
-function collectEnemies(robot: RobotEntity, robots: RobotEntity[]): RobotEntity[] {
+function collectEnemies(
+  robot: RobotEntity,
+  robots: RobotEntity[],
+): RobotEntity[] {
   return robots.filter(
-    (candidate) => candidate.team !== robot.team && isActiveRobot(candidate) && candidate.id !== robot.id,
+    (candidate) =>
+      candidate.team !== robot.team &&
+      isActiveRobot(candidate) &&
+      candidate.id !== robot.id,
   );
 }
 
@@ -35,7 +37,10 @@ export interface SensorSnapshot {
   proximityDetections: RobotEntity[];
 }
 
-function pruneMemory(memory: Record<string, EnemyMemoryEntry>, cutoff: number): void {
+function pruneMemory(
+  memory: Record<string, EnemyMemoryEntry>,
+  cutoff: number,
+): void {
   Object.keys(memory).forEach((key) => {
     if (memory[key].timestamp < cutoff) {
       delete memory[key];
@@ -106,11 +111,16 @@ export function getLatestEnemyMemory(
   return latest;
 }
 
-export function hasLineOfSight(robot: RobotEntity, target: RobotEntity): boolean {
+export function hasLineOfSight(
+  robot: RobotEntity,
+  target: RobotEntity,
+): boolean {
   return !isLineOfSightBlocked(robot.position, target.position);
 }
 
-export function predictSearchAnchor(targetMemory: EnemyMemoryEntry | null): Vec3 | null {
+export function predictSearchAnchor(
+  targetMemory: EnemyMemoryEntry | null,
+): Vec3 | null {
   if (!targetMemory) {
     return null;
   }

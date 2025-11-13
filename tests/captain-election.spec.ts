@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 
-import { toVec3 } from '../src/ecs/world';
-import { applyCaptaincy, electCaptain } from '../src/lib/captainElection';
-import { createTestRobot } from './helpers/robotFactory';
+import { toVec3 } from "../src/ecs/world";
+import { applyCaptaincy, electCaptain } from "../src/lib/captainElection";
+import { createTestRobot } from "./helpers/robotFactory";
 
-describe('captain election', () => {
+describe("captain election", () => {
   it("selects the highest health robot", () => {
     const robots = [
       createTestRobot({ id: "a", health: 70 }),

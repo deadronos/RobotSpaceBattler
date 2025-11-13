@@ -1,5 +1,15 @@
-import { addVec3, normalizeVec3, scaleVec3, Vec3, vec3 } from '../../../lib/math/vec3';
-import { ARENA_PILLARS, ARENA_WALLS, ROBOT_RADIUS } from '../../environment/arenaGeometry';
+import {
+  addVec3,
+  normalizeVec3,
+  scaleVec3,
+  Vec3,
+  vec3,
+} from "../../../lib/math/vec3";
+import {
+  ARENA_PILLARS,
+  ARENA_WALLS,
+  ROBOT_RADIUS,
+} from "../../environment/arenaGeometry";
 
 const AVOIDANCE_RADIUS = 3.0;
 
@@ -18,7 +28,8 @@ export function computeAvoidance(pos: Vec3): Vec3 {
     const dz = pos.z - closestZ;
     const dist = Math.sqrt(dx * dx + dz * dz);
     if (dist < AVOIDANCE_RADIUS) {
-      const strength = (AVOIDANCE_RADIUS - Math.max(dist, 0)) / AVOIDANCE_RADIUS;
+      const strength =
+        (AVOIDANCE_RADIUS - Math.max(dist, 0)) / AVOIDANCE_RADIUS;
       let pushDir: Vec3;
       if (dist > 1e-6) {
         pushDir = normalizeVec3({ x: dx, y: 0, z: dz });
@@ -34,7 +45,8 @@ export function computeAvoidance(pos: Vec3): Vec3 {
     const dz = pos.z - pillar.z;
     const dist = Math.sqrt(dx * dx + dz * dz) - (pillar.radius + ROBOT_RADIUS);
     if (dist < AVOIDANCE_RADIUS) {
-      const strength = (AVOIDANCE_RADIUS - Math.max(dist, 0)) / AVOIDANCE_RADIUS;
+      const strength =
+        (AVOIDANCE_RADIUS - Math.max(dist, 0)) / AVOIDANCE_RADIUS;
       const push = normalizeVec3({ x: dx, y: 0, z: dz });
       avoid = addVec3(avoid, scaleVec3(push, strength));
     }

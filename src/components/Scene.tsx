@@ -1,7 +1,7 @@
-import { OrbitControls, Stars } from '@react-three/drei';
-import { Canvas } from '@react-three/fiber';
-import { Physics } from '@react-three/rapier';
-import { ReactNode, Suspense } from 'react';
+import { OrbitControls, Stars } from "@react-three/drei";
+import { Canvas } from "@react-three/fiber";
+import { Physics } from "@react-three/rapier";
+import { ReactNode, Suspense } from "react";
 
 interface SceneProps {
   children?: ReactNode;
@@ -15,7 +15,7 @@ export function Scene({ children }: SceneProps) {
       camera={{ position: [-14, 28, 48], fov: 45 }}
       gl={{ antialias: true }}
     >
-      <color attach="background" args={['#020310']} />
+      <color attach="background" args={["#020310"]} />
       <ambientLight intensity={0.6} color="#4a517a" />
       <hemisphereLight
         groundColor="#0a0b18"

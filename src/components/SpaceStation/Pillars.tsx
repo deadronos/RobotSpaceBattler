@@ -1,4 +1,4 @@
-import { RigidBody } from '@react-three/rapier';
+import { RigidBody } from "@react-three/rapier";
 
 const PILLAR_POSITIONS: [number, number, number][] = [
   [-30, 1.5, -30],

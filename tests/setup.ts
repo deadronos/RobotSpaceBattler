@@ -1,10 +1,10 @@
 /**
  * Test Setup - Global Configuration
- * 
+ *
  * Registers telemetry infrastructure for test harness:
  * - TelemetryAggregator for in-memory event tracking
  * - MatchTrace writer for persistent event logging
- * 
+ *
  * Cleanup hooks ensure proper teardown between tests.
  */
 
@@ -37,7 +37,7 @@ beforeEach(() => {
 afterEach(() => {
   // Clean up any open MatchTrace writers
   closeAllMatchTraces();
-  
+
   // Reset telemetry aggregator
   globalTelemetryAggregator.reset();
 });

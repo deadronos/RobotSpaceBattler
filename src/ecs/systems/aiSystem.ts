@@ -1,21 +1,30 @@
-import { ENGAGE_MEMORY_TIMEOUT_MS } from '../../lib/constants';
-import { distanceVec3, lengthVec3 } from '../../lib/math/vec3';
-import { isActiveRobot } from '../../lib/robotHelpers';
-import { nextBehaviorState, RobotBehaviorMode } from '../../simulation/ai/behaviorState';
-import { computeTeamAnchors } from '../../simulation/ai/captainCoordinator';
-import { planRobotMovement } from '../../simulation/ai/pathing';
-import type { MovementContext } from '../../simulation/ai/pathing/types';
+import { ENGAGE_MEMORY_TIMEOUT_MS } from "../../lib/constants";
+import { distanceVec3, lengthVec3 } from "../../lib/math/vec3";
+import { isActiveRobot } from "../../lib/robotHelpers";
+import {
+  nextBehaviorState,
+  RobotBehaviorMode,
+} from "../../simulation/ai/behaviorState";
+import { computeTeamAnchors } from "../../simulation/ai/captainCoordinator";
+import { planRobotMovement } from "../../simulation/ai/pathing";
+import type { MovementContext } from "../../simulation/ai/pathing/types";
 import {
   getLatestEnemyMemory,
   predictSearchAnchor,
   updateRobotSensors,
-} from '../../simulation/ai/sensors';
-import { findClosestEnemy, pickCaptainTarget } from '../../simulation/ai/targeting';
-import { BattleWorld, RobotEntity } from '../world';
-import { buildNeighbors } from './aiNeighbors';
-import { refreshRoamTarget } from './roaming';
+} from "../../simulation/ai/sensors";
+import {
+  findClosestEnemy,
+  pickCaptainTarget,
+} from "../../simulation/ai/targeting";
+import { BattleWorld, RobotEntity } from "../world";
+import { buildNeighbors } from "./aiNeighbors";
+import { refreshRoamTarget } from "./roaming";
 
-export function updateAISystem(battleWorld: BattleWorld, rng: () => number): void {
+export function updateAISystem(
+  battleWorld: BattleWorld,
+  rng: () => number,
+): void {
   const robots = battleWorld.robots.entities;
   if (robots.length === 0) {
     return;
@@ -24,8 +33,14 @@ export function updateAISystem(battleWorld: BattleWorld, rng: () => number): voi
   const anchors = computeTeamAnchors(robots);
 
   robots.forEach((robot) => {
-    const allies = robots.filter((ally) => ally.team === robot.team && isActiveRobot(ally));
-    const { visibleEnemies } = updateRobotSensors(robot, robots, battleWorld.state.elapsedMs);
+    const allies = robots.filter(
+      (ally) => ally.team === robot.team && isActiveRobot(ally),
+    );
+    const { visibleEnemies } = updateRobotSensors(
+      robot,
+      robots,
+      battleWorld.state.elapsedMs,
+    );
 
     let target: RobotEntity | undefined;
     if (robot.ai.targetId) {
@@ -52,7 +67,11 @@ export function updateAISystem(battleWorld: BattleWorld, rng: () => number): voi
       const memoryEntry = latestMemory?.[1] ?? null;
 
       // Only pursue memory if it is recent enough
-      if (latestMemory && latestMemory[1].timestamp >= battleWorld.state.elapsedMs - ENGAGE_MEMORY_TIMEOUT_MS) {
+      if (
+        latestMemory &&
+        latestMemory[1].timestamp >=
+          battleWorld.state.elapsedMs - ENGAGE_MEMORY_TIMEOUT_MS
+      ) {
         robot.ai.searchPosition = predictSearchAnchor(memoryEntry);
         robot.ai.targetId = latestMemory?.[0];
       } else {
@@ -63,28 +82,31 @@ export function updateAISystem(battleWorld: BattleWorld, rng: () => number): voi
       }
     }
 
-    const targetDistance = target ? distanceVec3(robot.position, target.position) : null;
+    const targetDistance = target
+      ? distanceVec3(robot.position, target.position)
+      : null;
     robot.ai.targetDistance = targetDistance;
 
     const assignment = anchors[robot.id];
     const anchorCandidate = target
-      ? assignment?.anchorPosition ?? null
-      : robot.ai.searchPosition ?? assignment?.anchorPosition ?? null;
+      ? (assignment?.anchorPosition ?? null)
+      : (robot.ai.searchPosition ?? assignment?.anchorPosition ?? null);
     robot.ai.anchorPosition = anchorCandidate;
-    robot.ai.directive = assignment?.directive ?? robot.ai.directive ?? 'balanced';
+    robot.ai.directive =
+      assignment?.directive ?? robot.ai.directive ?? "balanced";
     robot.ai.strafeSign = assignment?.strafeSign ?? robot.ai.strafeSign ?? 1;
     robot.ai.anchorDistance = anchorCandidate
       ? distanceVec3(robot.position, anchorCandidate)
-      : robot.ai.anchorDistance ?? null;
+      : (robot.ai.anchorDistance ?? null);
 
     const behavior = nextBehaviorState(
       {
         health: robot.health,
         maxHealth: robot.maxHealth,
         mode:
-          robot.ai.mode === 'retreat'
+          robot.ai.mode === "retreat"
             ? RobotBehaviorMode.Retreat
-            : robot.ai.mode === 'engage'
+            : robot.ai.mode === "engage"
               ? RobotBehaviorMode.Engage
               : RobotBehaviorMode.Seek,
       },

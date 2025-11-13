@@ -1,15 +1,18 @@
-import { applyCaptaincy } from '../../lib/captainElection';
-import { createXorShift32 } from '../../lib/random/xorshift';
-import { TEAM_CONFIGS, TeamId } from '../../lib/teamConfig';
-import { getWeaponProfile, WeaponProfile } from '../../simulation/combat/weapons';
-import { BattleWorld, RobotEntity, toVec3, WeaponType } from '../world';
+import { applyCaptaincy } from "../../lib/captainElection";
+import { createXorShift32 } from "../../lib/random/xorshift";
+import { TEAM_CONFIGS, TeamId } from "../../lib/teamConfig";
+import {
+  getWeaponProfile,
+  WeaponProfile,
+} from "../../simulation/combat/weapons";
+import { BattleWorld, RobotEntity, toVec3, WeaponType } from "../world";
 
 export interface SpawnOptions {
   seed?: number;
   onRobotSpawn?: (robot: RobotEntity) => void;
 }
 
-const WEAPON_ROTATION: WeaponType[] = ['laser', 'gun', 'rocket'];
+const WEAPON_ROTATION: WeaponType[] = ["laser", "gun", "rocket"];
 const BASE_MAX_HEALTH = 100;
 const BASE_SPEED = 8;
 
@@ -31,7 +34,7 @@ function createRobot(
 ): RobotEntity {
   return {
     id: buildRobotId(team, spawnIndex),
-    kind: 'robot',
+    kind: "robot",
     team,
     position: toVec3(0, 0, 0),
     velocity: toVec3(0, 0, 0),
@@ -43,9 +46,9 @@ function createRobot(
     health: BASE_MAX_HEALTH,
     maxHealth: BASE_MAX_HEALTH,
     ai: {
-      mode: 'seek',
+      mode: "seek",
       targetId: undefined,
-      directive: 'balanced',
+      directive: "balanced",
       anchorPosition: null,
       anchorDistance: profile.range,
       strafeSign,
@@ -75,7 +78,13 @@ function spawnTeamRobots(
     const strafeSign = generator.next() >= 0.5 ? 1 : -1;
     const weapon = getWeaponForIndex(index);
     const profile = getWeaponProfile(weapon);
-    const robot = createRobot(team, index, teamConfig.orientation, strafeSign, profile);
+    const robot = createRobot(
+      team,
+      index,
+      teamConfig.orientation,
+      strafeSign,
+      profile,
+    );
     robot.position = toVec3(spawnPoint.x, spawnPoint.y, spawnPoint.z);
     robot.fireCooldown = 0;
     world.add(robot);
@@ -86,10 +95,13 @@ function spawnTeamRobots(
   applyCaptaincy(team, robots);
 }
 
-export function spawnTeams(battleWorld: BattleWorld, options: SpawnOptions = {}): void {
+export function spawnTeams(
+  battleWorld: BattleWorld,
+  options: SpawnOptions = {},
+): void {
   const baseSeed = options.seed ?? Date.now();
   battleWorld.state.seed = baseSeed;
 
-  spawnTeamRobots(battleWorld, 'red', baseSeed ^ 0x9e3779b9, options);
-  spawnTeamRobots(battleWorld, 'blue', baseSeed ^ 0x4f1bbcdc, options);
+  spawnTeamRobots(battleWorld, "red", baseSeed ^ 0x9e3779b9, options);
+  spawnTeamRobots(battleWorld, "blue", baseSeed ^ 0x4f1bbcdc, options);
 }

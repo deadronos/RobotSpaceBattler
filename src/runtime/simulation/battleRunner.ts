@@ -1,13 +1,13 @@
-import { updateAISystem } from '../../ecs/systems/aiSystem';
-import { updateCombatSystem } from '../../ecs/systems/combatSystem';
-import { updateMovementSystem } from '../../ecs/systems/movementSystem';
-import { updateProjectileSystem } from '../../ecs/systems/projectileSystem';
-import { spawnTeams } from '../../ecs/systems/spawnSystem';
-import { BattleWorld, resetBattleWorld, TeamId } from '../../ecs/world';
-import { createXorShift32 } from '../../lib/random/xorshift';
-import { isActiveRobot } from '../../lib/robotHelpers';
-import { MatchStateMachine } from '../state/matchStateMachine';
-import { TelemetryPort } from './ports';
+import { updateAISystem } from "../../ecs/systems/aiSystem";
+import { updateCombatSystem } from "../../ecs/systems/combatSystem";
+import { updateMovementSystem } from "../../ecs/systems/movementSystem";
+import { updateProjectileSystem } from "../../ecs/systems/projectileSystem";
+import { spawnTeams } from "../../ecs/systems/spawnSystem";
+import { BattleWorld, resetBattleWorld, TeamId } from "../../ecs/world";
+import { createXorShift32 } from "../../lib/random/xorshift";
+import { isActiveRobot } from "../../lib/robotHelpers";
+import { MatchStateMachine } from "../state/matchStateMachine";
+import { TelemetryPort } from "./ports";
 
 const VICTORY_DELAY_MS = 5000;
 
@@ -22,9 +22,12 @@ export interface BattleRunner {
   reset: () => void;
 }
 
-function evaluateVictory(world: BattleWorld, matchMachine: MatchStateMachine): void {
+function evaluateVictory(
+  world: BattleWorld,
+  matchMachine: MatchStateMachine,
+): void {
   const snapshot = matchMachine.getSnapshot();
-  if (snapshot.phase !== 'running') {
+  if (snapshot.phase !== "running") {
     return;
   }
 
@@ -38,14 +41,14 @@ function evaluateVictory(world: BattleWorld, matchMachine: MatchStateMachine): v
     { red: 0, blue: 0 },
   );
 
-  const teams: TeamId[] = ['red', 'blue'];
+  const teams: TeamId[] = ["red", "blue"];
   const defeated = teams.filter((team) => alive[team] === 0);
 
   if (defeated.length === 0 || defeated.length === teams.length) {
     return;
   }
 
-  const winner = defeated[0] === 'red' ? 'blue' : 'red';
+  const winner = defeated[0] === "red" ? "blue" : "red";
   matchMachine.declareVictory(winner, VICTORY_DELAY_MS);
 }
 
@@ -63,7 +66,8 @@ export function createBattleRunner(
     resetBattleWorld(world);
     spawnTeams(world, {
       seed: matchSeed,
-      onRobotSpawn: (robot) => telemetry.recordSpawn(robot, world.state.elapsedMs),
+      onRobotSpawn: (robot) =>
+        telemetry.recordSpawn(robot, world.state.elapsedMs),
     });
     matchMachine.reset();
     matchMachine.start();
@@ -78,7 +82,7 @@ export function createBattleRunner(
 
       const snapshot = matchMachine.getSnapshot();
 
-      if (snapshot.phase === 'running') {
+      if (snapshot.phase === "running") {
         updateAISystem(world, () => rng.next());
         updateCombatSystem(world, telemetry);
         updateMovementSystem(world, deltaSeconds);

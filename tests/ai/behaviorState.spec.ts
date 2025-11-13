@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 import {
   nextBehaviorState,
   RobotBehaviorContext,
   RobotBehaviorMode,
   RobotBehaviorSnapshot,
-} from '../../src/simulation/ai/behaviorState';
+} from "../../src/simulation/ai/behaviorState";
 
 function evaluate(
   snapshot: Partial<RobotBehaviorSnapshot>,
@@ -27,8 +27,8 @@ function evaluate(
   return nextBehaviorState(fullSnapshot, fullContext);
 }
 
-describe('nextBehaviorState', () => {
-  it('returns seek when no target is available', () => {
+describe("nextBehaviorState", () => {
+  it("returns seek when no target is available", () => {
     const result = evaluate(
       { mode: RobotBehaviorMode.Engage },
       { targetDistance: null },
@@ -36,7 +36,7 @@ describe('nextBehaviorState', () => {
     expect(result).toBe(RobotBehaviorMode.Seek);
   });
 
-  it('engages when within range', () => {
+  it("engages when within range", () => {
     const result = evaluate(
       { mode: RobotBehaviorMode.Seek },
       { targetDistance: 8, anchorDistance: 20 },
@@ -44,7 +44,7 @@ describe('nextBehaviorState', () => {
     expect(result).toBe(RobotBehaviorMode.Engage);
   });
 
-  it('retreats when low health and threatened', () => {
+  it("retreats when low health and threatened", () => {
     const result = evaluate(
       { health: 20, maxHealth: 100, mode: RobotBehaviorMode.Engage },
       { targetDistance: 6, anchorDistance: 20 },
@@ -52,7 +52,7 @@ describe('nextBehaviorState', () => {
     expect(result).toBe(RobotBehaviorMode.Retreat);
   });
 
-  it('switches back to engage once safely anchored', () => {
+  it("switches back to engage once safely anchored", () => {
     const result = evaluate(
       { health: 20, maxHealth: 100, mode: RobotBehaviorMode.Retreat },
       { targetDistance: 6, anchorDistance: 2 },
@@ -60,7 +60,7 @@ describe('nextBehaviorState', () => {
     expect(result).toBe(RobotBehaviorMode.Engage);
   });
 
-  it('uses rng when exactly on the engage boundary', () => {
+  it("uses rng when exactly on the engage boundary", () => {
     const engage = evaluate(
       {},
       {

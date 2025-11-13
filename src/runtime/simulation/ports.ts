@@ -1,4 +1,4 @@
-import { RobotEntity, TeamId, WeaponType } from '../../ecs/world';
+import { RobotEntity, TeamId, WeaponType } from "../../ecs/world";
 
 export interface FireEventInput {
   timestampMs: number;

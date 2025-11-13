@@ -1,4 +1,4 @@
-import { WeaponType } from '../../ecs/world';
+import { WeaponType } from "../../ecs/world";
 
 export interface WeaponProfile {
   type: WeaponType;
@@ -10,21 +10,21 @@ export interface WeaponProfile {
 
 const WEAPON_PROFILES: Record<WeaponType, WeaponProfile> = {
   laser: {
-    type: 'laser',
+    type: "laser",
     damage: 14,
     fireRate: 1.8,
     projectileSpeed: 32,
     range: 28,
   },
   gun: {
-    type: 'gun',
+    type: "gun",
     damage: 16,
     fireRate: 1.4,
     projectileSpeed: 26,
     range: 24,
   },
   rocket: {
-    type: 'rocket',
+    type: "rocket",
     damage: 24,
     fireRate: 0.9,
     projectileSpeed: 22,
@@ -54,7 +54,10 @@ export function getWeaponProfile(type: WeaponType): WeaponProfile {
   return WEAPON_PROFILES[type];
 }
 
-export function computeDamageMultiplier(attacker: WeaponType, defender: WeaponType): number {
+export function computeDamageMultiplier(
+  attacker: WeaponType,
+  defender: WeaponType,
+): number {
   return DAMAGE_MATRIX[attacker][defender];
 }
 

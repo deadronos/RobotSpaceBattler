@@ -1,7 +1,7 @@
 /**
  * In-Memory Telemetry Aggregator
  * Spec: specs/005-weapon-diversity/spec.md (FR-009)
- * 
+ *
  * Provides fast in-memory aggregation of weapon telemetry events
  * for test harnesses and live analysis. Complements MatchTrace for
  * persisted replay data.
@@ -12,7 +12,7 @@ import type {
   WeaponArchetype,
   WeaponTelemetryEvent,
   WeaponTelemetryEventType,
-} from '../lib/weapons/types';
+} from "../lib/weapons/types";
 
 /**
  * Match statistics tracked by the aggregator
@@ -49,11 +49,11 @@ export class TelemetryAggregator {
       matchId,
       startTimeMs: Date.now(),
       eventCountsByType: {
-        'pickup-acquired': 0,
-        'weapon-fired': 0,
-        'weapon-hit': 0,
-        'explosion-aoe': 0,
-        'weapon-damage': 0,
+        "pickup-acquired": 0,
+        "weapon-fired": 0,
+        "weapon-hit": 0,
+        "explosion-aoe": 0,
+        "weapon-damage": 0,
       },
       damageTotalsByWeapon: {},
       damageByArchetype: {
@@ -73,12 +73,14 @@ export class TelemetryAggregator {
    */
   record(event: WeaponTelemetryEvent): void {
     if (!this.activeMatch) {
-      console.warn('No active match. Call startMatch() first.');
+      console.warn("No active match. Call startMatch() first.");
       return;
     }
 
     if (event.matchId !== this.activeMatch.matchId) {
-      console.warn(`Event matchId ${event.matchId} doesn't match active match ${this.activeMatch.matchId}`);
+      console.warn(
+        `Event matchId ${event.matchId} doesn't match active match ${this.activeMatch.matchId}`,
+      );
       return;
     }
 
@@ -90,26 +92,28 @@ export class TelemetryAggregator {
 
     // Update aggregates based on event type
     switch (event.type) {
-      case 'pickup-acquired':
+      case "pickup-acquired":
         this.activeMatch.pickupsByWeapon[event.weaponProfileId] =
           (this.activeMatch.pickupsByWeapon[event.weaponProfileId] || 0) + 1;
         break;
 
-      case 'weapon-fired':
+      case "weapon-fired":
         this.activeMatch.shotsFiredByWeapon[event.weaponProfileId] =
           (this.activeMatch.shotsFiredByWeapon[event.weaponProfileId] || 0) + 1;
         break;
 
-      case 'weapon-hit':
+      case "weapon-hit":
         this.activeMatch.hitsRegisteredByWeapon[event.weaponProfileId] =
-          (this.activeMatch.hitsRegisteredByWeapon[event.weaponProfileId] || 0) + 1;
+          (this.activeMatch.hitsRegisteredByWeapon[event.weaponProfileId] ||
+            0) + 1;
         break;
 
-      case 'weapon-damage':
+      case "weapon-damage":
         if (event.amount !== undefined) {
           // Aggregate by weapon profile
           this.activeMatch.damageTotalsByWeapon[event.weaponProfileId] =
-            (this.activeMatch.damageTotalsByWeapon[event.weaponProfileId] || 0) + event.amount;
+            (this.activeMatch.damageTotalsByWeapon[event.weaponProfileId] ||
+              0) + event.amount;
 
           // Aggregate by archetype
           if (event.archetype) {
@@ -118,7 +122,7 @@ export class TelemetryAggregator {
         }
         break;
 
-      case 'explosion-aoe':
+      case "explosion-aoe":
         // AoE events are tracked in counts but don't aggregate separately
         break;
     }
@@ -129,7 +133,7 @@ export class TelemetryAggregator {
    */
   summary(): ITelemetryAggregator {
     if (!this.activeMatch) {
-      throw new Error('No active match. Call startMatch() first.');
+      throw new Error("No active match. Call startMatch() first.");
     }
 
     return {

@@ -8,7 +8,7 @@
  * Weapon archetype enum for rock-paper-scissors balance
  * Laser > Gun, Gun > Rocket, Rocket > Laser
  */
-export type WeaponArchetype = 'gun' | 'laser' | 'rocket';
+export type WeaponArchetype = "gun" | "laser" | "rocket";
 
 /**
  * Weapon profile defines static properties of a weapon type
@@ -79,11 +79,11 @@ export interface WeaponVisual {
  * Telemetry event types for weapon actions
  */
 export type WeaponTelemetryEventType =
-  | 'pickup-acquired'
-  | 'weapon-fired'
-  | 'weapon-hit'
-  | 'explosion-aoe'
-  | 'weapon-damage';
+  | "pickup-acquired"
+  | "weapon-fired"
+  | "weapon-hit"
+  | "explosion-aoe"
+  | "weapon-damage";
 
 /**
  * Telemetry event for weapon actions
@@ -129,19 +129,19 @@ export const DEFAULT_BALANCE_MULTIPLIERS: BalanceMultipliers = {
  */
 export function getArchetypeAdvantage(
   attacker: WeaponArchetype,
-  defender: WeaponArchetype
-): 'advantage' | 'disadvantage' | 'neutral' {
+  defender: WeaponArchetype,
+): "advantage" | "disadvantage" | "neutral" {
   // Laser > Gun
-  if (attacker === 'laser' && defender === 'gun') return 'advantage';
-  if (attacker === 'gun' && defender === 'laser') return 'disadvantage';
+  if (attacker === "laser" && defender === "gun") return "advantage";
+  if (attacker === "gun" && defender === "laser") return "disadvantage";
 
   // Gun > Rocket
-  if (attacker === 'gun' && defender === 'rocket') return 'advantage';
-  if (attacker === 'rocket' && defender === 'gun') return 'disadvantage';
+  if (attacker === "gun" && defender === "rocket") return "advantage";
+  if (attacker === "rocket" && defender === "gun") return "disadvantage";
 
   // Rocket > Laser
-  if (attacker === 'rocket' && defender === 'laser') return 'advantage';
-  if (attacker === 'laser' && defender === 'rocket') return 'disadvantage';
+  if (attacker === "rocket" && defender === "laser") return "advantage";
+  if (attacker === "laser" && defender === "rocket") return "disadvantage";
 
-  return 'neutral';
+  return "neutral";
 }

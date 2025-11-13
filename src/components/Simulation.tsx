@@ -1,14 +1,17 @@
-import { useFrame } from '@react-three/fiber';
-import { MutableRefObject, useEffect, useRef, useState } from 'react';
+import { useFrame } from "@react-three/fiber";
+import { MutableRefObject, useEffect, useRef, useState } from "react";
 
-import { BattleWorld } from '../ecs/world';
-import { TEAM_CONFIGS } from '../lib/teamConfig';
-import { BattleRunner, createBattleRunner } from '../runtime/simulation/battleRunner';
-import { TelemetryPort } from '../runtime/simulation/ports';
-import { MatchStateMachine } from '../runtime/state/matchStateMachine';
-import { RobotPlaceholder } from './RobotPlaceholder';
-import { Scene } from './Scene';
-import { SpaceStation } from './SpaceStation';
+import { BattleWorld } from "../ecs/world";
+import { TEAM_CONFIGS } from "../lib/teamConfig";
+import {
+  BattleRunner,
+  createBattleRunner,
+} from "../runtime/simulation/battleRunner";
+import { TelemetryPort } from "../runtime/simulation/ports";
+import { MatchStateMachine } from "../runtime/state/matchStateMachine";
+import { RobotPlaceholder } from "./RobotPlaceholder";
+import { Scene } from "./Scene";
+import { SpaceStation } from "./SpaceStation";
 
 interface SimulationProps {
   battleWorld: BattleWorld;
@@ -19,7 +22,11 @@ interface SimulationProps {
 
 const FRAME_SAMPLE_INTERVAL = 1 / 30;
 
-function vecToArray(position: { x: number; y: number; z: number }): [number, number, number] {
+function vecToArray(position: {
+  x: number;
+  y: number;
+  z: number;
+}): [number, number, number] {
   return [position.x, position.y, position.z];
 }
 
@@ -85,9 +92,17 @@ function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
         />
       ))}
       {projectiles.map((projectile) => (
-        <mesh key={projectile.id} position={vecToArray(projectile.position)} castShadow>
+        <mesh
+          key={projectile.id}
+          position={vecToArray(projectile.position)}
+          castShadow
+        >
           <sphereGeometry args={[0.25, 8, 8]} />
-          <meshStandardMaterial color="#ffd966" emissive="#ffdd88" emissiveIntensity={1.6} />
+          <meshStandardMaterial
+            color="#ffd966"
+            emissive="#ffdd88"
+            emissiveIntensity={1.6}
+          />
         </mesh>
       ))}
     </>

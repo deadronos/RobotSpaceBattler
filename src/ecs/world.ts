@@ -1,4 +1,4 @@
-import { World } from 'miniplex';
+import { World } from "miniplex";
 
 import {
   addVec3,
@@ -6,12 +6,12 @@ import {
   distanceSquaredVec3,
   Vec3,
   vec3,
-} from '../lib/math/vec3';
-import { TEAM_CONFIGS, TeamConfig, TeamId } from '../lib/teamConfig';
+} from "../lib/math/vec3";
+import { TEAM_CONFIGS, TeamConfig, TeamId } from "../lib/teamConfig";
 
-export type { TeamId } from '../lib/teamConfig';
+export type { TeamId } from "../lib/teamConfig";
 
-export type WeaponType = 'laser' | 'gun' | 'rocket';
+export type WeaponType = "laser" | "gun" | "rocket";
 
 export interface EnemyMemoryEntry {
   position: Vec3;
@@ -19,9 +19,9 @@ export interface EnemyMemoryEntry {
 }
 
 export interface RobotAIState {
-  mode: 'seek' | 'engage' | 'retreat';
+  mode: "seek" | "engage" | "retreat";
   targetId?: string;
-  directive?: 'offense' | 'defense' | 'balanced';
+  directive?: "offense" | "defense" | "balanced";
   anchorPosition?: Vec3 | null;
   anchorDistance?: number | null;
   strafeSign?: 1 | -1;
@@ -36,7 +36,7 @@ export interface RobotAIState {
 
 export interface RobotEntity {
   id: string;
-  kind: 'robot';
+  kind: "robot";
   team: TeamId;
   position: Vec3;
   velocity: Vec3;
@@ -56,7 +56,7 @@ export interface RobotEntity {
 
 export interface ProjectileEntity {
   id: string;
-  kind: 'projectile';
+  kind: "projectile";
   team: TeamId;
   shooterId: string;
   weapon: WeaponType;
@@ -98,11 +98,11 @@ export function toVec3(x = 0, y = 0, z = 0): Vec3 {
 }
 
 function isRobotEntity(entity: BattleEntity): entity is RobotEntity {
-  return entity.kind === 'robot';
+  return entity.kind === "robot";
 }
 
 function isProjectileEntity(entity: BattleEntity): entity is ProjectileEntity {
-  return entity.kind === 'projectile';
+  return entity.kind === "projectile";
 }
 
 function createEntityStore<T extends BattleEntity>(

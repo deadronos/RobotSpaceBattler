@@ -58,13 +58,13 @@ Goal: Rockets show projectile trails and AoE explosions; lasers show beams/trace
 
 Independent Test: `tests/weapon/visuals-smoke.spec.ts` captures a sample run demonstrating rocket explosion VFX and laser beam/tracer alignment; telemetry events recorded for each observed effect.
 
-- [ ] T015 [US2] Implement `WeaponProfile` model and loader at `src/lib/weapons/WeaponProfile.ts` (consumes `src/lib/weapons/types.ts`).
-- [ ] T016 [US2] Implement projectile system entry `src/simulation/projectiles/ProjectileSystem.ts` (spawn/update/resolve projectiles).
-- [ ] T017 [US2] Implement rocket projectile and AoE resolution at `src/simulation/projectiles/rocket.ts` (AoE radius `2.5`, linear falloff multiplier formula per `plan.md`) and emit per-target `weapon-damage` events sorted by `targetId`.
-- [ ] T018 [US2] Implement laser beam system at `src/simulation/weapons/laserBeam.ts` (tick damage at `tickRate=60` Hz, emit per-tick `weapon-damage` with `frameIndex`).
-- [ ] T019 [US2] Add placeholder visuals: `src/visuals/weapons/RocketExplosion.tsx`, `src/visuals/weapons/LaserBeam.tsx`, `src/visuals/weapons/GunTracer.tsx` (respect `QualityManager` settings).
-- [ ] T020 [US2] Instrument telemetry hooks in `src/simulation/damage/damagePipeline.ts` to `record()` events: `weapon-fired`, `weapon-hit`, `explosion-aoe`, `weapon-damage`.
-- [ ] T021 [US2] Add smoke/integration tests: `tests/weapon/rocket-aoe.test.ts` and `tests/weapon/laser-beam.test.ts` validating deterministic ordering and timing (±16ms tolerance for beam alignment).
+- [X] T015 [US2] Implement `WeaponProfile` model and loader at `src/lib/weapons/WeaponProfile.ts` (consumes `src/lib/weapons/types.ts`).
+- [X] T016 [US2] Implement projectile system entry `src/simulation/projectiles/ProjectileSystem.ts` (spawn/update/resolve projectiles).
+- [X] T017 [US2] Implement rocket projectile and AoE resolution at `src/simulation/projectiles/rocket.ts` (AoE radius `2.5`, linear falloff multiplier formula per `plan.md`) and emit per-target `weapon-damage` events sorted by `targetId`.
+- [X] T018 [US2] Implement laser beam system at `src/simulation/weapons/laserBeam.ts` (tick damage at `tickRate=60` Hz, emit per-tick `weapon-damage` with `frameIndex`).
+- [X] T019 [US2] Add placeholder visuals: `src/visuals/weapons/RocketExplosion.tsx`, `src/visuals/weapons/LaserBeam.tsx`, `src/visuals/weapons/GunTracer.tsx` (respect `QualityManager` settings).
+- [X] T020 [US2] Instrument telemetry hooks in `src/simulation/damage/damagePipeline.ts` to `record()` events: `weapon-fired`, `weapon-hit`, `explosion-aoe`, `weapon-damage`.
+- [X] T021 [US2] Add smoke/integration tests: `tests/weapon/rocket-aoe.test.ts` and `tests/weapon/laser-beam.test.ts` validating deterministic ordering and timing (±16ms tolerance for beam alignment).
 
 ### Phase 3.3: User Story 3 — Balance validation & rock-paper-scissors tests (P1) [US3]
 

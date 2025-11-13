@@ -1,9 +1,9 @@
-import { applyCaptaincy } from '../../lib/captainElection';
-import { addInPlaceVec3, distanceVec3, scaleVec3 } from '../../lib/math/vec3';
-import { isActiveRobot } from '../../lib/robotHelpers';
-import { TelemetryPort } from '../../runtime/simulation/ports';
-import { calculateDamage } from '../../simulation/damage/damagePipeline';
-import { BattleWorld, ProjectileEntity, RobotEntity } from '../world';
+import { applyCaptaincy } from "../../lib/captainElection";
+import { addInPlaceVec3, distanceVec3, scaleVec3 } from "../../lib/math/vec3";
+import { isActiveRobot } from "../../lib/robotHelpers";
+import { TelemetryPort } from "../../runtime/simulation/ports";
+import { calculateDamage } from "../../simulation/damage/damagePipeline";
+import { BattleWorld, ProjectileEntity, RobotEntity } from "../world";
 
 function findTarget(
   world: BattleWorld,
@@ -33,16 +33,18 @@ function applyHit(
   target: RobotEntity,
   telemetry: TelemetryPort,
 ): void {
-  const shooter = world.robots.entities.find((robot) => robot.id === projectile.shooterId);
-  
+  const shooter = world.robots.entities.find(
+    (robot) => robot.id === projectile.shooterId,
+  );
+
   // Use new damage pipeline with archetype multiplier integration (T023)
   // WeaponType ('laser'|'gun'|'rocket') matches WeaponArchetype type
   const damageResult = calculateDamage({
     baseDamage: projectile.damage,
-    attackerArchetype: projectile.weapon as 'laser' | 'gun' | 'rocket',
-    defenderArchetype: target.weapon as 'laser' | 'gun' | 'rocket',
+    attackerArchetype: projectile.weapon as "laser" | "gun" | "rocket",
+    defenderArchetype: target.weapon as "laser" | "gun" | "rocket",
   });
-  
+
   const damage = damageResult.finalDamage;
   target.health = Math.max(0, target.health - damage);
   target.lastDamageTimestamp = world.state.elapsedMs;

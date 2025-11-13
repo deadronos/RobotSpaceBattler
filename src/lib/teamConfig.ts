@@ -1,6 +1,6 @@
-import { addVec3, Vec3, vec3 } from './math/vec3';
+import { addVec3, Vec3, vec3 } from "./math/vec3";
 
-export type TeamId = 'red' | 'blue';
+export type TeamId = "red" | "blue";
 
 export interface TeamConfig {
   id: TeamId;
@@ -25,7 +25,7 @@ function createSpawnGrid(
   rows: number,
   spacing: number,
   pointJitter = 0.45,
-  rotationJitter = 0.10,
+  rotationJitter = 0.1,
   lateralBias = 0,
 ): Vec3[] {
   const halfColumns = columns - 1;
@@ -44,8 +44,8 @@ function createSpawnGrid(
       const angle = randRange(-rotationJitter, rotationJitter);
       const cosA = Math.cos(angle);
       const sinA = Math.sin(angle);
-      const localX = (originOffset.x + baseOffset.x);
-      const localZ = (originOffset.z + baseOffset.z);
+      const localX = originOffset.x + baseOffset.x;
+      const localZ = originOffset.z + baseOffset.z;
       const rotX = localX * cosA - localZ * sinA;
       const rotZ = localX * sinA + localZ * cosA;
 
@@ -60,9 +60,13 @@ function createSpawnGrid(
       const maxAbsX = ((columns - 1) / 2) * spacing || 1;
       const normalizedX = Math.abs(localX) / maxAbsX; // 0..1 across grid
       const sideSign = Math.sign(center.x) || 1;
-      const outwardPush = sideSign * normalizedX * lateralBias * randRange(0.4, 1.0);
+      const outwardPush =
+        sideSign * normalizedX * lateralBias * randRange(0.4, 1.0);
 
-      const final = addVec3(center, vec3(rotX + jitterX + outwardPush, 0, rotZ + jitterZ));
+      const final = addVec3(
+        center,
+        vec3(rotX + jitterX + outwardPush, 0, rotZ + jitterZ),
+      );
       spawnPoints.push(final);
     }
   }
@@ -78,23 +82,39 @@ const BLUE_CENTER = vec3(40 + randRange(-2.0, 2.0), 0, randRange(-1.5, 1.5));
 
 export const TEAM_CONFIGS: Record<TeamId, TeamConfig> = {
   red: {
-    id: 'red',
-    label: 'Crimson Fleet',
-    color: '#ff4d5a',
+    id: "red",
+    label: "Crimson Fleet",
+    color: "#ff4d5a",
     spawnCenter: RED_CENTER,
     // The spawn grid itself gets a modest per-point jitter and tiny rotation so
     // squads do not line up the same way every match. We also push outer
     // columns outward (lateralBias) so spawn X offsets can reach toward the
     // arena corners and produce wider flanking starts.
-    spawnPoints: createSpawnGrid(addVec3(RED_CENTER, vec3(0, 0, -6)), 5, 2, 3, 0.6, 0.12, 8.0),
+    spawnPoints: createSpawnGrid(
+      addVec3(RED_CENTER, vec3(0, 0, -6)),
+      5,
+      2,
+      3,
+      0.6,
+      0.12,
+      8.0,
+    ),
     orientation: 0,
   },
   blue: {
-    id: 'blue',
-    label: 'Azure Vanguard',
-    color: '#4da6ff',
+    id: "blue",
+    label: "Azure Vanguard",
+    color: "#4da6ff",
     spawnCenter: BLUE_CENTER,
-    spawnPoints: createSpawnGrid(addVec3(BLUE_CENTER, vec3(0, 0, -6)), 5, 2, 3, 0.6, 0.12, 8.0),
+    spawnPoints: createSpawnGrid(
+      addVec3(BLUE_CENTER, vec3(0, 0, -6)),
+      5,
+      2,
+      3,
+      0.6,
+      0.12,
+      8.0,
+    ),
     orientation: Math.PI,
   },
 };

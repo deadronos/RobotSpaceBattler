@@ -1,9 +1,9 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
-import { TeamId } from '../lib/teamConfig';
+import { TeamId } from "../lib/teamConfig";
 
 export interface SpawnEvent {
-  type: 'spawn';
+  type: "spawn";
   timestampMs: number;
   sequenceId: number;
   entityId: string;
@@ -11,7 +11,7 @@ export interface SpawnEvent {
 }
 
 export interface FireEvent {
-  type: 'fire';
+  type: "fire";
   timestampMs: number;
   sequenceId: number;
   entityId: string;
@@ -19,7 +19,7 @@ export interface FireEvent {
 }
 
 export interface DamageEvent {
-  type: 'damage';
+  type: "damage";
   timestampMs: number;
   sequenceId: number;
   attackerId: string;
@@ -29,7 +29,7 @@ export interface DamageEvent {
 }
 
 export interface DeathEvent {
-  type: 'death';
+  type: "death";
   timestampMs: number;
   sequenceId: number;
   entityId: string;
@@ -80,8 +80,20 @@ function createRobotStats(id: string, teamId: TeamId): RobotTelemetryStats {
 
 function createTeamTotals(): Record<TeamId, TeamTelemetryTotals> {
   return {
-    red: { spawns: 0, shotsFired: 0, damageDealt: 0, damageTaken: 0, deaths: 0 },
-    blue: { spawns: 0, shotsFired: 0, damageDealt: 0, damageTaken: 0, deaths: 0 },
+    red: {
+      spawns: 0,
+      shotsFired: 0,
+      damageDealt: 0,
+      damageTaken: 0,
+      deaths: 0,
+    },
+    blue: {
+      spawns: 0,
+      shotsFired: 0,
+      damageDealt: 0,
+      damageTaken: 0,
+      deaths: 0,
+    },
   };
 }
 
@@ -124,12 +136,12 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
       };
 
       switch (event.type) {
-        case 'spawn': {
+        case "spawn": {
           ensureRobot(event.entityId, event.teamId);
           teamTotals[event.teamId].spawns += 1;
           break;
         }
-        case 'fire': {
+        case "fire": {
           const robot = ensureRobot(event.entityId, event.teamId);
           robots[event.entityId] = {
             ...robot,
@@ -138,7 +150,7 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
           teamTotals[event.teamId].shotsFired += 1;
           break;
         }
-        case 'damage': {
+        case "damage": {
           const attacker = ensureRobot(event.attackerId, event.teamId);
           robots[event.attackerId] = {
             ...attacker,
@@ -156,7 +168,7 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
           }
           break;
         }
-        case 'death': {
+        case "death": {
           const deceased = ensureRobot(event.entityId, event.teamId);
           robots[event.entityId] = {
             ...deceased,

@@ -1,18 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 
-import { RobotBehaviorMode } from '../../src/simulation/ai/behaviorState';
+import { RobotBehaviorMode } from "../../src/simulation/ai/behaviorState";
 import {
   integrateMovement,
   planRobotMovement,
-} from '../../src/simulation/ai/pathing';
-import { createTestRobot } from '../helpers/robotFactory';
+} from "../../src/simulation/ai/pathing";
+import { createTestRobot } from "../helpers/robotFactory";
 
-describe('planRobotMovement', () => {
-  it('moves toward the target while seeking', () => {
+describe("planRobotMovement", () => {
+  it("moves toward the target while seeking", () => {
     const robot = createTestRobot();
     const target = createTestRobot({
-      id: 'enemy',
-      team: 'blue',
+      id: "enemy",
+      team: "blue",
       position: { x: 0, y: 0, z: 10 },
     });
 
@@ -22,14 +22,14 @@ describe('planRobotMovement', () => {
     expect(plan.orientation).toBeCloseTo(0, 5);
   });
 
-  it('retreats toward spawn and integrates velocity', () => {
+  it("retreats toward spawn and integrates velocity", () => {
     const robot = createTestRobot({
       position: { x: -2, y: 0, z: 0 },
       velocity: { x: 1, y: 0, z: 0 },
     });
     const target = createTestRobot({
-      id: 'enemy',
-      team: 'blue',
+      id: "enemy",
+      team: "blue",
       position: { x: -4, y: 0, z: 0 },
     });
 
@@ -41,7 +41,7 @@ describe('planRobotMovement', () => {
     expect(nextPosition.x).toBeLessThan(robot.position.x);
   });
 
-  it('pushes away from nearby allies when anchored', () => {
+  it("pushes away from nearby allies when anchored", () => {
     const robot = createTestRobot({
       position: { x: 0, y: 0, z: 0 },
       velocity: { x: 0, y: 0, z: 0 },
@@ -61,14 +61,14 @@ describe('planRobotMovement', () => {
     expect(plan.velocity.x).toBeLessThan(0);
   });
 
-  it('strafes around the target when settled near the anchor', () => {
+  it("strafes around the target when settled near the anchor", () => {
     const robot = createTestRobot({
       position: { x: 0, y: 0, z: 0 },
       velocity: { x: 0, y: 0, z: 0 },
     });
     const target = createTestRobot({
-      id: 'enemy',
-      team: 'blue',
+      id: "enemy",
+      team: "blue",
       position: { x: 0, y: 0, z: 10 },
     });
 
@@ -87,13 +87,13 @@ describe('planRobotMovement', () => {
     expect(plan.velocity.z).toBeGreaterThan(0);
   });
 
-  it('shifts sideways when an ally blocks line of sight to the target', () => {
+  it("shifts sideways when an ally blocks line of sight to the target", () => {
     const robot = createTestRobot({
-      ai: { mode: 'engage', targetId: 'enemy', strafeSign: 1 },
+      ai: { mode: "engage", targetId: "enemy", strafeSign: 1 },
     });
     const target = createTestRobot({
-      id: 'enemy',
-      team: 'blue',
+      id: "enemy",
+      team: "blue",
       position: { x: 0, y: 0, z: 8 },
     });
 
@@ -112,11 +112,11 @@ describe('planRobotMovement', () => {
     expect(plan.velocity.z).toBeGreaterThanOrEqual(0);
   });
 
-  it('creates an avoidance velocity when positioned adjacent to a wall', () => {
+  it("creates an avoidance velocity when positioned adjacent to a wall", () => {
     const robot = createTestRobot({
       position: { x: 0, y: 0, z: -49 }, // near the outer wall at z = -50
       velocity: { x: 0, y: 0, z: 0 },
-      ai: { mode: 'seek', strafeSign: 1 },
+      ai: { mode: "seek", strafeSign: 1 },
     });
 
     const plan = planRobotMovement(
