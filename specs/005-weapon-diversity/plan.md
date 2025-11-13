@@ -85,6 +85,50 @@ Break tasks into small, testable increments (TDD):
 - Wire visuals to `visualRefs` from WeaponProfile and respect QualityManager settings.
 - Tests: run smoke scene with quality presets and assert no simulation behavior changes.
 
+2.6a Renderer Integration & Seeded Loadouts (decisions applied)
+- Objective: Make beams and rockets visible in the observer UI and support randomized, seeded weapon loadouts at spawn. Ensure the renderer consumes a single authoritative weapon profile source so visuals stay consistent with simulation data and replay (MatchTrace).
+
+- Decisions (recorded):
+  - Loadout distribution: **random per-robot (uniform)**.
+  - Seed semantics: **use the global match seed** (`battleWorld.state.seed`) for deterministic assignment.
+  - Default behavior: **switch default to seeded randomness** (spawnTeams uses the seed by default).
+  - Profile consolidation: **migrate** `src/simulation/combat/weapons.ts` into the `weaponRegistry` at `src/lib/weapons/WeaponProfile.ts` (preferred) and provide a thin adapter for backward compatibility if needed.
+  - Rendering strategy: **event-driven** — the renderer subscribes to explosion/hit events emitted by `projectileSystem` or `battleRunner` telemetry.
+  - QualityManager: create a **minimal** `src/visuals/QualityManager.ts` to control gating and VFX density; keep it small for now.
+  - Visuals: use current placeholders but **enhance** them (particle trails for rockets, sprite/particle explosion, beams as lines/cylinders with fadeout).
+  - Performance: implement pooling for VFX objects; QualityManager can reduce pool sizes or particle counts. **No hard limiting by default**; quality settings can throttle when needed.
+
+- Files/Functions to Modify/Create (concrete):
+  - `src/components/Simulation.tsx` (modify) — replace generic projectile sphere rendering with a type-aware renderer and an event subscription to the renderer adapter.
+  - `src/visuals/WeaponRenderer.tsx` (new) — adapter mapping simulation entities/events to `LaserBeam`, `RocketExplosion`, `GunTracer`/`GunTracerWithImpact` components.
+  - `src/ecs/systems/spawnSystem.ts` (modify) — use the seeded RNG for uniform per-robot weapon selection (no rotation fallback required).
+  - `src/lib/weapons/WeaponProfile.ts` (modify) — migrate numeric profiles into the registry, ensure `visualRefs` exist, and export a compatibility adapter so existing imports remain valid.
+  - `src/ecs/systems/projectileSystem.ts` and `src/simulation/projectiles/rocket.ts` (modify) — emit structured `explosion` / `hit` events (with `timestampMs`, `weaponProfileId`, `attackerId`, `targetId`) the renderer subscribes to; ensure telemetry hooks for MatchTrace are preserved.
+  - `src/visuals/QualityManager.ts` (new) — minimal interface and runtime toggle for VFX density/feature flags.
+
+- Tests to Write / Update:
+  - `tests/visuals/weapon-rendering.spec.ts`:
+    - `should render LaserBeam when beam entity active`
+    - `should spawn RocketExplosion on explosion event`
+    - `should render GunTracer/GunTracerWithImpact on gun hit events`
+    - `should consult weaponRegistry for visualRefs and fallback gracefully`
+  - `tests/spawn/spawnSystem.seededLoadouts.spec.ts`:
+    - `should assign weapons deterministically given the same seed`
+    - `should produce different distributions for different seeds`
+    - `should maintain per-match determinism for replay (MatchTrace)`
+
+- Implementation Steps (concrete order):
+  1. Migrate numeric weapon profiles into `weaponRegistry` and add a small compatibility adapter (`src/simulation/combat/weaponAdapter.ts`) that exposes the lightweight API used throughout the codebase.
+  2. Modify `spawnSystem.spawnTeamRobots` to construct its seeded `generator` from `battleWorld.state.seed` and pick a weapon per-robot using `index = Math.floor(generator.next() * archetypes.length)`; set robot weapon fields from the migrated registry.
+  3. Implement `WeaponRenderer` and wire it into `SimulationContent` so it subscribes to event emitters from `projectileSystem` / `battleRunner` telemetry. Use event-driven rendering: render beams while beam entities exist, spawn explosion visuals on `explosion` events, and show tracers on `hit` events.
+  4. Add a minimal `QualityManager` and gate VFX creation (particle counts, trail length, beam detail). Default to full fidelity; quality settings lower counts and can disable trails.
+  5. Improve placeholders visually (simple particle emitters for rocket trails/explosions and fadeout lines for beams/tracers). Prefer sprite-based particle emitters that leverage existing PNGs for quick polish.
+  6. Add pooling for explosion/tracer objects and make pool sizes adjustable by `QualityManager` (default: no enforcement; quality can reduce concurrency).
+  7. Add unit and integration tests to verify seeded spawn determinism, emitted events, and that the renderer creates expected visual nodes on events. Run smoke/perf checks and iterate if quality gating is required.
+
+**Notes:** These choices record your preferences and remove optional branches from the plan (uniform random per-robot, global seed, migrate profiles, event-driven rendering, minimal QualityManager, enhanced placeholders with particle effects, pooling but no default limit). Implementation will follow TDD as described elsewhere in the plan.
+
+
 2.7 AI Weapon Heuristics
 - Update AI selection heuristics to include RPS consideration and engagement-range heuristics; tests to verify selection frequencies in controlled contexts.
 
