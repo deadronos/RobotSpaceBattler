@@ -7,6 +7,7 @@
  */
 
 import { WeaponArchetype } from '../../src/lib/weapons/types';
+import type { RobotEntity } from '../../src/ecs/world';
 
 interface DuelConfig {
   archetypeA: WeaponArchetype;
@@ -78,7 +79,7 @@ async function runSingleDuel(
   archetypeB: WeaponArchetype,
   seed: number
 ): Promise<{ winner: 'A' | 'B'; damageA: number; damageB: number }> {
-  const { createBattleWorld, resetBattleWorld } = await import('../../src/ecs/world');
+  const { createBattleWorld, resetBattleWorld, toVec3 } = await import('../../src/ecs/world');
   const { createXorShift32 } = await import('../../src/lib/random/xorshift');
   const { updateAISystem } = await import('../../src/ecs/systems/aiSystem');
   const { updateCombatSystem } = await import('../../src/ecs/systems/combatSystem');
@@ -108,8 +109,8 @@ async function runSingleDuel(
     id: 'robot-a',
     kind: 'robot',
     team: 'red',
-    position: [-10, 0, 0],
-    velocity: [0, 0, 0],
+    position: toVec3(-10, 0, 0),
+    velocity: toVec3(0, 0, 0),
     orientation: 0,
     speed: 0, // Stationary for pure damage testing
     weapon: weaponA,
@@ -126,14 +127,14 @@ async function runSingleDuel(
     isCaptain: false,
     spawnIndex: 0,
     lastDamageTimestamp: 0,
-  });
+  }) as RobotEntity;
 
   const robotB = world.world.add({
     id: 'robot-b',
     kind: 'robot',
     team: 'blue',
-    position: [10, 0, 0],
-    velocity: [0, 0, 0],
+    position: toVec3(10, 0, 0),
+    velocity: toVec3(0, 0, 0),
     orientation: Math.PI,
     speed: 0, // Stationary for pure damage testing
     weapon: weaponB,
@@ -150,7 +151,7 @@ async function runSingleDuel(
     isCaptain: false,
     spawnIndex: 0,
     lastDamageTimestamp: 0,
-  });
+  }) as RobotEntity;
 
   // Track damage dealt
   let damageA = 0;

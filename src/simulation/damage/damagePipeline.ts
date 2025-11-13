@@ -13,8 +13,8 @@
  * 4. Resistances (applied last)
  */
 
-import { getArchetypeMultiplier } from '../balance/archetypeMultiplier';
 import type { WeaponArchetype } from '../../lib/weapons/types';
+import { getArchetypeMultiplier } from '../balance/archetypeMultiplier';
 
 /**
  * Damage calculation input parameters

@@ -44,8 +44,8 @@ describe('duel harness', () => {
     it('should have exactly one winner', async () => {
       const result = await runSingleDuel('rocket', 'gun', 55555);
 
-      expect(result.winner === 'A' || result.winner === 'B').toBe(true);
-      expect(result.winner !== 'A' || result.winner !== 'B').toBe(true);
+      // Ensure winner is either 'A' or 'B'
+      expect(['A', 'B']).toContain(result.winner);
     });
 
     it('should work for all archetype combinations', async () => {

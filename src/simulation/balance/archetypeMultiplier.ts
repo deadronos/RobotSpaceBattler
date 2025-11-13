@@ -12,9 +12,9 @@
  */
 
 import {
-  WeaponArchetype,
   DEFAULT_BALANCE_MULTIPLIERS,
   getArchetypeAdvantage,
+  WeaponArchetype,
 } from '../../lib/weapons/types';
 
 /**
