@@ -1,0 +1,70 @@
+openapi: 3.0.0
+info:
+  title: Weapon Diversity API
+  version: 0.1.0
+paths:
+  /match/start:
+    post:
+      summary: Start a 10v10 automated match (observer mode)
+      responses:
+        '200':
+          description: Match started
+  /telemetry/event:
+    post:
+      summary: Emit a weapon-related telemetry event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [pickup-acquired, weapon-fired, weapon-hit, explosion-aoe, weapon-damage]
+                matchId:
+                  type: string
+                weaponProfileId:
+                  type: string
+                attackerId:
+                  type: string
+                targetId:
+                  type: string
+                amount:
+                  type: number
+                timestampMs:
+                  type: number
+      responses:
+        '200':
+          description: Event recorded
+  /duel/run:
+    post:
+      summary: Run a controlled duel for RPS validation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                archetypeA:
+                  type: string
+                  enum: [gun, laser, rocket]
+                archetypeB:
+                  type: string
+                  enum: [gun, laser, rocket]
+                runs:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Duel results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  winCounts:
+                    type: object
+                  damageTotals:
+                    type: object
