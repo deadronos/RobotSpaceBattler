@@ -15,9 +15,9 @@ title: "Tasks — Weapon Diversity (005)"
 
 Purpose: Create the minimal project scaffolding and placeholders required to implement and test the feature.
 
-- [ ] T001 [P] Create TypeScript weapon types file at `src/lib/weapons/types.ts` (define `WeaponProfile`, `BalanceMultipliers`, `ProjectileInstance`, `ExplosionEvent`, `WeaponTelemetry`, `TelemetryAggregator`).
-- [ ] T002 [P] Add placeholder VFX assets and README in `public/assets/vfx/weapon-placeholders/` (placeholder files: `rocket-placeholder.png`, `laser-placeholder.png`, `gun-placeholder.png`).
-- [ ] T003 [P] Add duel-matrix script skeleton `scripts/duel-matrix/run-duels.ts` with CLI args `--archetypeA`, `--archetypeB`, `--runs`.
+- [X] T001 [P] Create TypeScript weapon types file at `src/lib/weapons/types.ts` (define `WeaponProfile`, `BalanceMultipliers`, `ProjectileInstance`, `ExplosionEvent`, `WeaponTelemetry`, `TelemetryAggregator`).
+- [X] T002 [P] Add placeholder VFX assets and README in `public/assets/vfx/weapon-placeholders/` (placeholder files: `rocket-placeholder.png`, `laser-placeholder.png`, `gun-placeholder.png`).
+- [X] T003 [P] Add duel-matrix script skeleton `scripts/duel-matrix/run-duels.ts` with CLI args `--archetypeA`, `--archetypeB`, `--runs`.
 
 ---
 
