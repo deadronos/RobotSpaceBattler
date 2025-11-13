@@ -26,11 +26,11 @@ Purpose: Create the minimal project scaffolding and placeholders required to imp
 Purpose: Core systems that MUST be implemented before any user story work begins. These are blocking for story work.
 
 - [ ] T004 [P] Implement in-memory `TelemetryAggregator` at `src/telemetry/aggregator.ts` (API: `startMatch(matchId)`, `record(event)`, `summary()`).
-- [ ] T005 [P] Implement `MatchTrace` writer at `src/telemetry/matchTrace.ts` (append authoritative per-match events, file path `trace/<matchId>.json`).
+- [X] T005 [P] Implement `MatchTrace` writer at `src/telemetry/matchTrace.ts` (append authoritative per-match events, file path `trace/<matchId>.ndjson`).
 - [ ] T006 [P] Add telemetry ingest API stub for `POST /telemetry/event` at `src/server/api/telemetry.ts` matching `contracts/weapon-diversity-api.yaml`.
 - [ ] T007 [P] Add match-start API stub `POST /match/start` at `src/server/api/match.ts` that triggers match initialization in the simulation harness.
 - [ ] T008 [P] Add duel-run API stub `POST /duel/run` at `src/server/api/duel.ts` that forwards to the duel harness (`scripts/duel-matrix/run-duels.ts`).
-- [ ] T009 [P] Wire test harness registration: update `tests/setup.ts` (or `tests/setup/*.ts`) to register the in-memory `TelemetryAggregator` and `MatchTrace` writer for tests.
+- [X] T009 [P] Wire test harness registration: update `tests/setup.ts` (or `tests/setup/*.ts`) to register the in-memory `TelemetryAggregator` and `MatchTrace` writer for tests.
 
 **Checkpoint**: After T004–T009 complete, user story work may begin in parallel.
 
