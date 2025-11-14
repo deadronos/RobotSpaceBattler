@@ -30,11 +30,14 @@ export function RocketExplosion({
 
   const effectiveScale = (radius / 2.5) * scale * 3;
 
+
   return (
-    <Billboard position={position}>
-      <sprite scale={[effectiveScale, effectiveScale, 1]}>
-        <spriteMaterial map={texture} transparent opacity={0.8} />
-      </sprite>
-    </Billboard>
+    <group name="rocket-explosion-sprite">
+      <Billboard name="rocket-explosion-billboard" position={position}>
+        <sprite name="rocket-explosion-sprite" scale={[effectiveScale, effectiveScale, 1]}>
+          <spriteMaterial map={texture} transparent opacity={0.8} />
+        </sprite>
+      </Billboard>
+    </group>
   );
 }

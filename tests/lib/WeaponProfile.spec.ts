@@ -91,11 +91,13 @@ describe("WeaponProfile", () => {
       const registry = new WeaponProfileRegistry();
       const customProfile: WeaponProfile = {
         id: "custom-gun",
+        type: "gun",
         name: "Custom Gun",
         archetype: "gun",
         baseDamage: 20,
         rateOfFire: 2.0,
         ammoOrEnergy: 100,
+        range: 26,
         projectileSpeed: 30,
         tracerConfig: {},
         visualRefs: {
@@ -116,11 +118,13 @@ describe("WeaponProfile", () => {
       const registry = new WeaponProfileRegistry();
       const profile: WeaponProfile = {
         id: "test-gun",
+        type: "gun",
         name: "Test",
         archetype: "gun",
         baseDamage: 10,
         rateOfFire: 1,
         ammoOrEnergy: 50,
+        range: 16,
         tracerConfig: {},
         visualRefs: {
           iconRef: "",

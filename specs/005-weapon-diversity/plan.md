@@ -107,7 +107,7 @@ Break tasks into small, testable increments (TDD):
   - `src/visuals/QualityManager.ts` (new) — minimal interface and runtime toggle for VFX density/feature flags.
 
 - Tests to Write / Update:
-  - `tests/visuals/weapon-rendering.spec.ts`:
+  - `tests/visuals/weapon-rendering.spec.tsx`:
     - `should render LaserBeam when beam entity active`
     - `should spawn RocketExplosion on explosion event`
     - `should render GunTracer/GunTracerWithImpact on gun hit events`

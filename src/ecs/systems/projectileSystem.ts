@@ -3,6 +3,7 @@ import { addInPlaceVec3, distanceVec3, scaleVec3 } from "../../lib/math/vec3";
 import { isActiveRobot } from "../../lib/robotHelpers";
 import { TelemetryPort } from "../../runtime/simulation/ports";
 import { calculateDamage } from "../../simulation/damage/damagePipeline";
+import type { WeaponVisualEventEmitter } from "../../visuals/events";
 import { BattleWorld, ProjectileEntity, RobotEntity } from "../world";
 
 function findTarget(
@@ -32,6 +33,7 @@ function applyHit(
   projectile: ProjectileEntity,
   target: RobotEntity,
   telemetry: TelemetryPort,
+  visualEvents?: WeaponVisualEventEmitter,
 ): void {
   const shooter = world.robots.entities.find(
     (robot) => robot.id === projectile.shooterId,
@@ -73,6 +75,24 @@ function applyHit(
     applyCaptaincy(target.team, world.getRobotsByTeam(target.team));
   }
 
+  if (visualEvents) {
+    const shooterPosition: [number, number, number] = shooter
+      ? [shooter.position.x, shooter.position.y, shooter.position.z]
+      : [projectile.position.x, projectile.position.y, projectile.position.z];
+    const impactPosition: [number, number, number] = [
+      target.position.x,
+      target.position.y,
+      target.position.z,
+    ];
+
+    visualEvents.emit({
+      type: "gun-tracer",
+      id: `tracer-${projectile.id}-${world.state.elapsedMs}`,
+      startPosition: shooterPosition,
+      impactPosition,
+    });
+  }
+
   world.world.remove(projectile);
 }
 
@@ -80,6 +100,7 @@ export function updateProjectileSystem(
   world: BattleWorld,
   deltaSeconds: number,
   telemetry: TelemetryPort,
+  visualEvents?: WeaponVisualEventEmitter,
 ): void {
   const projectiles = [...world.projectiles.entities];
 
@@ -105,7 +126,7 @@ export function updateProjectileSystem(
     const hitRadius = 1.2;
     const distance = distanceVec3(projectile.position, target.position);
     if (distance <= hitRadius) {
-      applyHit(world, projectile, target, telemetry);
+      applyHit(world, projectile, target, telemetry, visualEvents);
     }
   });
 }

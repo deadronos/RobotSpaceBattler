@@ -162,12 +162,12 @@ implement minimal code to pass, then iterate and harden with integration tests.
 		5. Run tests and iterate until green. Remove duplicate hard-coded profile data only
 			 after tests prove parity.
 
-- T032: WeaponRenderer & Visual Wiring [TDD]
+- [X] T032: WeaponRenderer & Visual Wiring [TDD]
 	- Objective: Replace generic projectile sphere rendering with an event-driven renderer
 		that creates `LaserBeam`, `RocketExplosion`, and `GunTracer` visuals based on
 		simulation events/entities.
 	- Files: `src/visuals/WeaponRenderer.tsx` (new), `src/components/Simulation.tsx` (modify),
-		`tests/visuals/weapon-rendering.spec.ts`
+		`tests/visuals/weapon-rendering.spec.tsx`
 	- Tests to write first (red):
 		- `should render LaserBeam when beam entity active` (simulate beam entity in
 			battleWorld and assert `LaserBeam` mount)
@@ -192,7 +192,7 @@ implement minimal code to pass, then iterate and harden with integration tests.
 		6. Add an integration smoke test that runs the battle runner for a few frames and
 			 asserts `WeaponRenderer` reacts to a fired rocket by adding an explosion node.
 
-- T033: Minimal `QualityManager` and gating [TDD]
+- [X] T033: Minimal `QualityManager` and gating [TDD]
 	- Objective: Provide a runtime toggle to reduce VFX density and particle counts for
 		low-quality modes.
 	- Files: `src/visuals/QualityManager.ts` (new), tests in
@@ -210,7 +210,7 @@ implement minimal code to pass, then iterate and harden with integration tests.
 			 particle/trail visuals.
 		4. Run tests until green.
 
-- T034: VFX Pooling (explosions/tracers) [TDD]
+- [X] T034: VFX Pooling (explosions/tracers) [TDD]
 	- Objective: Implement simple pooling to reuse visual nodes and limit GC/alloc churn
 		when many effects spawn.
 	- Files: `src/visuals/pools.ts`, tests in `tests/visuals/pooling.spec.ts`

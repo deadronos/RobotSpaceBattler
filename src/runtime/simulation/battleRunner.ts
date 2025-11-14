@@ -6,6 +6,7 @@ import { spawnTeams } from "../../ecs/systems/spawnSystem";
 import { BattleWorld, resetBattleWorld, TeamId } from "../../ecs/world";
 import { createXorShift32 } from "../../lib/random/xorshift";
 import { isActiveRobot } from "../../lib/robotHelpers";
+import type { WeaponVisualEventEmitter } from "../../visuals/events";
 import { MatchStateMachine } from "../state/matchStateMachine";
 import { TelemetryPort } from "./ports";
 
@@ -15,6 +16,7 @@ export interface BattleRunnerOptions {
   seed?: number;
   telemetry: TelemetryPort;
   matchMachine: MatchStateMachine;
+  visualEventEmitter?: WeaponVisualEventEmitter;
 }
 
 export interface BattleRunner {
@@ -58,7 +60,7 @@ export function createBattleRunner(
 ): BattleRunner {
   const seed = options.seed ?? world.state.seed ?? Date.now();
   const rng = createXorShift32(seed);
-  const { telemetry, matchMachine } = options;
+  const { telemetry, matchMachine, visualEventEmitter } = options;
 
   function spawnMatch(nextSeed?: number) {
     const matchSeed = nextSeed ?? Math.floor(rng.next() * 0xffffffff);
@@ -86,7 +88,12 @@ export function createBattleRunner(
         updateAISystem(world, () => rng.next());
         updateCombatSystem(world, telemetry);
         updateMovementSystem(world, deltaSeconds);
-        updateProjectileSystem(world, deltaSeconds, telemetry);
+        updateProjectileSystem(
+          world,
+          deltaSeconds,
+          telemetry,
+          visualEventEmitter,
+        );
         evaluateVictory(world, matchMachine);
       }
 

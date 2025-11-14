@@ -9,17 +9,20 @@
  * Laser > Gun, Gun > Rocket, Rocket > Laser
  */
 export type WeaponArchetype = "gun" | "laser" | "rocket";
+export type WeaponType = WeaponArchetype;
 
 /**
  * Weapon profile defines static properties of a weapon type
  */
 export interface WeaponProfile {
   id: string;
+  type: WeaponType;
   name: string;
   archetype: WeaponArchetype;
   baseDamage: number;
   rateOfFire: number;
   ammoOrEnergy: number;
+  range: number;
   projectileSpeed?: number; // For guns and rockets
   aoeRadius?: number; // Rocket only
   aoeFalloffProfile?: string; // Rocket only

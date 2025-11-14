@@ -27,7 +27,7 @@ export function LaserBeam({
   lineWidth = 0.15,
 }: LaserBeamProps) {
   return (
-    <>
+    <group name="laser-beam-line">
       <Line
         points={[startPosition, endPosition]}
         color={color}
@@ -36,18 +36,20 @@ export function LaserBeam({
         opacity={0.9}
       />
       <pointLight
+        name="laser-beam-start-light"
         position={startPosition}
         color={color}
         intensity={0.5}
         distance={2}
       />
       <pointLight
+        name="laser-beam-end-light"
         position={endPosition}
         color={color}
         intensity={0.5}
         distance={2}
       />
-    </>
+    </group>
   );
 }
 
@@ -66,6 +68,7 @@ export function LaserBeamTextured({
   return (
     <>
       <Line
+        name="laser-beam-textured-line"
         points={[startPosition, endPosition]}
         color={color}
         lineWidth={0.2}

@@ -1,18 +1,17 @@
 import { applyCaptaincy } from "../../lib/captainElection";
 import { createXorShift32 } from "../../lib/random/xorshift";
 import { TEAM_CONFIGS, TeamId } from "../../lib/teamConfig";
-import {
-  getWeaponProfile,
-  WeaponProfile,
-} from "../../simulation/combat/weapons";
-import { BattleWorld, RobotEntity, toVec3, WeaponType } from "../world";
+import type { WeaponType } from "../../lib/weapons/types";
+import type { LegacyWeaponProfile } from "../../simulation/combat/weapons";
+import { getWeaponProfile } from "../../simulation/combat/weapons";
+import { BattleWorld, RobotEntity, toVec3 } from "../world";
 
 export interface SpawnOptions {
   seed?: number;
   onRobotSpawn?: (robot: RobotEntity) => void;
 }
 
-const WEAPON_ROTATION: WeaponType[] = ["laser", "gun", "rocket"];
+const WEAPON_TYPES: WeaponType[] = ["laser", "gun", "rocket"];
 const BASE_MAX_HEALTH = 100;
 const BASE_SPEED = 8;
 
@@ -21,16 +20,12 @@ function buildRobotId(team: TeamId, index: number): string {
   return `${team}-${displayIndex}`;
 }
 
-function getWeaponForIndex(index: number): WeaponType {
-  return WEAPON_ROTATION[index % WEAPON_ROTATION.length];
-}
-
 function createRobot(
   team: TeamId,
   spawnIndex: number,
   orientation: number,
   strafeSign: 1 | -1,
-  profile: WeaponProfile,
+  profile: LegacyWeaponProfile,
 ): RobotEntity {
   return {
     id: buildRobotId(team, spawnIndex),
@@ -76,7 +71,13 @@ function spawnTeamRobots(
 
   teamConfig.spawnPoints.slice(0, 10).forEach((spawnPoint, index) => {
     const strafeSign = generator.next() >= 0.5 ? 1 : -1;
-    const weapon = getWeaponForIndex(index);
+    const randomValue = generator.next();
+    const normalizedRandom = randomValue - Math.floor(randomValue);
+    const weaponIndex = Math.min(
+      Math.floor(normalizedRandom * WEAPON_TYPES.length),
+      WEAPON_TYPES.length - 1,
+    );
+    const weapon = WEAPON_TYPES[weaponIndex];
     const profile = getWeaponProfile(weapon);
     const robot = createRobot(
       team,

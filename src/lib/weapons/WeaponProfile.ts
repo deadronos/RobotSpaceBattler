@@ -16,11 +16,13 @@ import type { WeaponProfile } from "./types";
 const DEFAULT_PROFILES: WeaponProfile[] = [
   {
     id: "gun",
+    type: "gun",
     name: "Machine Gun",
     archetype: "gun",
     baseDamage: 16,
     rateOfFire: 1.4,
     ammoOrEnergy: 200,
+    range: 24,
     projectileSpeed: 26,
     tracerConfig: {
       color: "#ffaa00",
@@ -36,11 +38,13 @@ const DEFAULT_PROFILES: WeaponProfile[] = [
   },
   {
     id: "laser",
+    type: "laser",
     name: "Pulse Laser",
     archetype: "laser",
     baseDamage: 14,
     rateOfFire: 1.8,
     ammoOrEnergy: 300,
+    range: 28,
     beamDuration: 0.5,
     tickRate: 60,
     tracerConfig: {
@@ -58,11 +62,13 @@ const DEFAULT_PROFILES: WeaponProfile[] = [
   },
   {
     id: "rocket",
+    type: "rocket",
     name: "Rocket Launcher",
     archetype: "rocket",
     baseDamage: 24,
     rateOfFire: 0.9,
     ammoOrEnergy: 50,
+    range: 34,
     projectileSpeed: 22,
     aoeRadius: 2.5,
     aoeFalloffProfile: "linear",

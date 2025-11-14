@@ -29,6 +29,7 @@ export function GunTracer({
 }: GunTracerProps) {
   return (
     <Line
+      name="gun-tracer-line"
       points={[startPosition, endPosition]}
       color={color}
       lineWidth={lineWidth}
@@ -46,6 +47,7 @@ export function GunTracerWithImpact({
   endPosition,
   impactPosition,
   color = "#ffaa00",
+  lineWidth = 0.1,
 }: GunTracerProps & { impactPosition: [number, number, number] }) {
   const texture = useTexture(
     "/assets/vfx/weapon-placeholders/gun-placeholder.png",
@@ -54,9 +56,10 @@ export function GunTracerWithImpact({
   return (
     <>
       <Line
+        name="gun-tracer-with-impact-line"
         points={[startPosition, endPosition]}
         color={color}
-        lineWidth={0.1}
+        lineWidth={lineWidth}
         transparent
         opacity={0.7}
       />
