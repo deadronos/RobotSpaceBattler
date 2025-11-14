@@ -1,4 +1,4 @@
-import { Vec3 } from '../../../lib/math/vec3';
+import { Vec3 } from "../../../lib/math/vec3";
 
 export interface MovementPlan {
   velocity: Vec3;

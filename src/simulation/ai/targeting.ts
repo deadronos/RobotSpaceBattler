@@ -1,7 +1,7 @@
-import { RobotEntity } from '../../ecs/world';
-import { distanceSquaredVec3 } from '../../lib/math/vec3';
-import { isActiveRobot } from '../../lib/robotHelpers';
-import { TEAM_CONFIGS } from '../../lib/teamConfig';
+import { RobotEntity } from "../../ecs/world";
+import { distanceSquaredVec3 } from "../../lib/math/vec3";
+import { isActiveRobot } from "../../lib/robotHelpers";
+import { TEAM_CONFIGS } from "../../lib/teamConfig";
 
 interface RankedTarget {
   entity: RobotEntity;
@@ -9,8 +9,11 @@ interface RankedTarget {
   spawnDistanceSq: number;
 }
 
-function rankCandidates(seeker: RobotEntity, candidates: RobotEntity[]): RankedTarget[] {
-  const spawnCenter = TEAM_CONFIGS[candidates[0]?.team ?? 'blue'].spawnCenter;
+function rankCandidates(
+  seeker: RobotEntity,
+  candidates: RobotEntity[],
+): RankedTarget[] {
+  const spawnCenter = TEAM_CONFIGS[candidates[0]?.team ?? "blue"].spawnCenter;
 
   return candidates.map((entity) => ({
     entity,
@@ -35,9 +38,15 @@ function sortByPriority(a: RankedTarget, b: RankedTarget): number {
   return a.entity.id.localeCompare(b.entity.id);
 }
 
-function filterEnemies(seeker: RobotEntity, robots: RobotEntity[]): RobotEntity[] {
+function filterEnemies(
+  seeker: RobotEntity,
+  robots: RobotEntity[],
+): RobotEntity[] {
   return robots.filter(
-    (robot) => robot.team !== seeker.team && isActiveRobot(robot) && robot.id !== seeker.id,
+    (robot) =>
+      robot.team !== seeker.team &&
+      isActiveRobot(robot) &&
+      robot.id !== seeker.id,
   );
 }
 
@@ -53,10 +62,7 @@ export function findClosestEnemy(
   return ranked[0]?.entity;
 }
 
-function sortCaptainTargets(
-  a: RankedTarget,
-  b: RankedTarget,
-): number {
+function sortCaptainTargets(a: RankedTarget, b: RankedTarget): number {
   if (b.entity.health !== a.entity.health) {
     return b.entity.health - a.entity.health;
   }
@@ -76,7 +82,7 @@ function rankCaptainCandidates(
   seeker: RobotEntity,
   enemies: RobotEntity[],
 ): RankedTarget[] {
-  const spawnCenter = TEAM_CONFIGS[enemies[0]?.team ?? 'blue'].spawnCenter;
+  const spawnCenter = TEAM_CONFIGS[enemies[0]?.team ?? "blue"].spawnCenter;
 
   return enemies.map((entity) => ({
     entity,

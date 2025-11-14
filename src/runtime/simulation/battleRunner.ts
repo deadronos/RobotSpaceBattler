@@ -1,13 +1,14 @@
-import { updateAISystem } from '../../ecs/systems/aiSystem';
-import { updateCombatSystem } from '../../ecs/systems/combatSystem';
-import { updateMovementSystem } from '../../ecs/systems/movementSystem';
-import { updateProjectileSystem } from '../../ecs/systems/projectileSystem';
-import { spawnTeams } from '../../ecs/systems/spawnSystem';
-import { BattleWorld, resetBattleWorld, TeamId } from '../../ecs/world';
-import { createXorShift32 } from '../../lib/random/xorshift';
-import { isActiveRobot } from '../../lib/robotHelpers';
-import { MatchStateMachine } from '../state/matchStateMachine';
-import { TelemetryPort } from './ports';
+import { updateAISystem } from "../../ecs/systems/aiSystem";
+import { updateCombatSystem } from "../../ecs/systems/combatSystem";
+import { updateMovementSystem } from "../../ecs/systems/movementSystem";
+import { updateProjectileSystem } from "../../ecs/systems/projectileSystem";
+import { spawnTeams } from "../../ecs/systems/spawnSystem";
+import { BattleWorld, resetBattleWorld, TeamId } from "../../ecs/world";
+import { createXorShift32 } from "../../lib/random/xorshift";
+import { isActiveRobot } from "../../lib/robotHelpers";
+import type { WeaponVisualEventEmitter } from "../../visuals/events";
+import { MatchStateMachine } from "../state/matchStateMachine";
+import { TelemetryPort } from "./ports";
 
 const VICTORY_DELAY_MS = 5000;
 
@@ -15,6 +16,7 @@ export interface BattleRunnerOptions {
   seed?: number;
   telemetry: TelemetryPort;
   matchMachine: MatchStateMachine;
+  visualEventEmitter?: WeaponVisualEventEmitter;
 }
 
 export interface BattleRunner {
@@ -22,9 +24,12 @@ export interface BattleRunner {
   reset: () => void;
 }
 
-function evaluateVictory(world: BattleWorld, matchMachine: MatchStateMachine): void {
+function evaluateVictory(
+  world: BattleWorld,
+  matchMachine: MatchStateMachine,
+): void {
   const snapshot = matchMachine.getSnapshot();
-  if (snapshot.phase !== 'running') {
+  if (snapshot.phase !== "running") {
     return;
   }
 
@@ -38,14 +43,14 @@ function evaluateVictory(world: BattleWorld, matchMachine: MatchStateMachine): v
     { red: 0, blue: 0 },
   );
 
-  const teams: TeamId[] = ['red', 'blue'];
+  const teams: TeamId[] = ["red", "blue"];
   const defeated = teams.filter((team) => alive[team] === 0);
 
   if (defeated.length === 0 || defeated.length === teams.length) {
     return;
   }
 
-  const winner = defeated[0] === 'red' ? 'blue' : 'red';
+  const winner = defeated[0] === "red" ? "blue" : "red";
   matchMachine.declareVictory(winner, VICTORY_DELAY_MS);
 }
 
@@ -55,7 +60,7 @@ export function createBattleRunner(
 ): BattleRunner {
   const seed = options.seed ?? world.state.seed ?? Date.now();
   const rng = createXorShift32(seed);
-  const { telemetry, matchMachine } = options;
+  const { telemetry, matchMachine, visualEventEmitter } = options;
 
   function spawnMatch(nextSeed?: number) {
     const matchSeed = nextSeed ?? Math.floor(rng.next() * 0xffffffff);
@@ -63,7 +68,8 @@ export function createBattleRunner(
     resetBattleWorld(world);
     spawnTeams(world, {
       seed: matchSeed,
-      onRobotSpawn: (robot) => telemetry.recordSpawn(robot, world.state.elapsedMs),
+      onRobotSpawn: (robot) =>
+        telemetry.recordSpawn(robot, world.state.elapsedMs),
     });
     matchMachine.reset();
     matchMachine.start();
@@ -78,11 +84,16 @@ export function createBattleRunner(
 
       const snapshot = matchMachine.getSnapshot();
 
-      if (snapshot.phase === 'running') {
+      if (snapshot.phase === "running") {
         updateAISystem(world, () => rng.next());
         updateCombatSystem(world, telemetry);
         updateMovementSystem(world, deltaSeconds);
-        updateProjectileSystem(world, deltaSeconds, telemetry);
+        updateProjectileSystem(
+          world,
+          deltaSeconds,
+          telemetry,
+          visualEventEmitter,
+        );
         evaluateVictory(world, matchMachine);
       }
 

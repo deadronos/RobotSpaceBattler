@@ -1,4 +1,4 @@
-import { Vec3, vec3 } from '../../lib/math/vec3';
+import { Vec3, vec3 } from "../../lib/math/vec3";
 
 export interface ArenaWall {
   x: number;
@@ -54,7 +54,11 @@ export const ARENA_PILLARS: readonly ArenaPillar[] = Object.freeze([
 
 const EPSILON = 1e-3;
 
-function segmentIntersectsAabb2D(start: Vec3, end: Vec3, wall: ArenaWall): boolean {
+function segmentIntersectsAabb2D(
+  start: Vec3,
+  end: Vec3,
+  wall: ArenaWall,
+): boolean {
   const dirX = end.x - start.x;
   const dirZ = end.z - start.z;
 
@@ -105,7 +109,11 @@ function segmentIntersectsAabb2D(start: Vec3, end: Vec3, wall: ArenaWall): boole
   return tMax > EPSILON && tMin < 1 - EPSILON;
 }
 
-function segmentIntersectsCircle2D(start: Vec3, end: Vec3, pillar: ArenaPillar): boolean {
+function segmentIntersectsCircle2D(
+  start: Vec3,
+  end: Vec3,
+  pillar: ArenaPillar,
+): boolean {
   const dx = end.x - start.x;
   const dz = end.z - start.z;
   const fx = start.x - pillar.x;

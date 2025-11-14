@@ -1,1 +1,1 @@
-export { computeTeamAnchors } from './teamStrategy';
+export { computeTeamAnchors } from "./teamStrategy";

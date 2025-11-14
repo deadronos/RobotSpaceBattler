@@ -1,14 +1,29 @@
-import { useFrame } from '@react-three/fiber';
-import { MutableRefObject, useEffect, useRef, useState } from 'react';
+import { useFrame } from "@react-three/fiber";
+import {
+  MutableRefObject,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
-import { BattleWorld } from '../ecs/world';
-import { TEAM_CONFIGS } from '../lib/teamConfig';
-import { BattleRunner, createBattleRunner } from '../runtime/simulation/battleRunner';
-import { TelemetryPort } from '../runtime/simulation/ports';
-import { MatchStateMachine } from '../runtime/state/matchStateMachine';
-import { RobotPlaceholder } from './RobotPlaceholder';
-import { Scene } from './Scene';
-import { SpaceStation } from './SpaceStation';
+import { BattleWorld } from "../ecs/world";
+import { TEAM_CONFIGS } from "../lib/teamConfig";
+import {
+  BattleRunner,
+  createBattleRunner,
+} from "../runtime/simulation/battleRunner";
+import { TelemetryPort } from "../runtime/simulation/ports";
+import { MatchStateMachine } from "../runtime/state/matchStateMachine";
+import {
+  createWeaponVisualEventEmitter,
+  type WeaponVisualEventEmitter,
+} from "../visuals/events";
+import { QualityManager } from "../visuals/QualityManager";
+import { WeaponRenderer } from "../visuals/WeaponRenderer";
+import { RobotPlaceholder } from "./RobotPlaceholder";
+import { Scene } from "./Scene";
+import { SpaceStation } from "./SpaceStation";
 
 interface SimulationProps {
   battleWorld: BattleWorld;
@@ -19,7 +34,11 @@ interface SimulationProps {
 
 const FRAME_SAMPLE_INTERVAL = 1 / 30;
 
-function vecToArray(position: { x: number; y: number; z: number }): [number, number, number] {
+function vecToArray(position: {
+  x: number;
+  y: number;
+  z: number;
+}): [number, number, number] {
   return [position.x, position.y, position.z];
 }
 
@@ -30,12 +49,15 @@ export function Simulation({
   onRunnerReady,
 }: SimulationProps) {
   const runnerRef = useRef<BattleRunner | null>(null);
+  const visualEventEmitter = useMemo(() => createWeaponVisualEventEmitter(), []);
+  const qualityManager = useMemo(() => new QualityManager(), []);
 
   useEffect(() => {
     const runner = createBattleRunner(battleWorld, {
       seed: battleWorld.state.seed,
       matchMachine,
       telemetry,
+      visualEventEmitter,
     });
 
     runnerRef.current = runner;
@@ -43,12 +65,18 @@ export function Simulation({
 
     return () => {
       runnerRef.current = null;
+      visualEventEmitter.clear();
     };
-  }, [battleWorld, matchMachine, telemetry, onRunnerReady]);
+  }, [battleWorld, matchMachine, telemetry, onRunnerReady, visualEventEmitter]);
 
   return (
     <Scene>
-      <SimulationContent battleWorld={battleWorld} runnerRef={runnerRef} />
+      <SimulationContent
+        battleWorld={battleWorld}
+        runnerRef={runnerRef}
+        visualEventEmitter={visualEventEmitter}
+        qualityManager={qualityManager}
+      />
     </Scene>
   );
 }
@@ -56,9 +84,16 @@ export function Simulation({
 interface SimulationContentProps {
   battleWorld: BattleWorld;
   runnerRef: MutableRefObject<BattleRunner | null>;
+  visualEventEmitter: WeaponVisualEventEmitter;
+  qualityManager: QualityManager;
 }
 
-function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
+function SimulationContent({
+  battleWorld,
+  runnerRef,
+  visualEventEmitter,
+  qualityManager,
+}: SimulationContentProps) {
   const [, setVersion] = useState(0);
   const accumulator = useRef(0);
 
@@ -85,11 +120,23 @@ function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
         />
       ))}
       {projectiles.map((projectile) => (
-        <mesh key={projectile.id} position={vecToArray(projectile.position)} castShadow>
+        <mesh
+          key={projectile.id}
+          position={vecToArray(projectile.position)}
+          castShadow
+        >
           <sphereGeometry args={[0.25, 8, 8]} />
-          <meshStandardMaterial color="#ffd966" emissive="#ffdd88" emissiveIntensity={1.6} />
+          <meshStandardMaterial
+            color="#ffd966"
+            emissive="#ffdd88"
+            emissiveIntensity={1.6}
+          />
         </mesh>
       ))}
+      <WeaponRenderer
+        eventEmitter={visualEventEmitter}
+        qualityManager={qualityManager}
+      />
     </>
   );
 }

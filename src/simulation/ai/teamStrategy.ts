@@ -1,5 +1,8 @@
-import { RobotEntity } from '../../ecs/world';
-import { FORMATION_BASE_RADIUS, FORMATION_RADIUS_VARIANCE } from '../../lib/constants';
+import { RobotEntity } from "../../ecs/world";
+import {
+  FORMATION_BASE_RADIUS,
+  FORMATION_RADIUS_VARIANCE,
+} from "../../lib/constants";
 import {
   addVec3,
   normalizeVec3,
@@ -7,11 +10,11 @@ import {
   subtractVec3,
   Vec3,
   vec3,
-} from '../../lib/math/vec3';
-import { isActiveRobot } from '../../lib/robotHelpers';
-import { TEAM_CONFIGS,TeamId } from '../../lib/teamConfig';
+} from "../../lib/math/vec3";
+import { isActiveRobot } from "../../lib/robotHelpers";
+import { TEAM_CONFIGS, TeamId } from "../../lib/teamConfig";
 
-export type TeamDirective = 'offense' | 'defense' | 'balanced';
+export type TeamDirective = "offense" | "defense" | "balanced";
 
 export interface TeamDirectiveMap {
   red: TeamDirective;
@@ -38,17 +41,20 @@ export function buildTeamDirectives(robots: RobotEntity[]): TeamDirectiveMap {
   );
 
   if (counts.red > counts.blue) {
-    return { red: 'offense', blue: 'defense' };
+    return { red: "offense", blue: "defense" };
   }
 
   if (counts.blue > counts.red) {
-    return { red: 'defense', blue: 'offense' };
+    return { red: "defense", blue: "offense" };
   }
 
-  return { red: 'balanced', blue: 'balanced' };
+  return { red: "balanced", blue: "balanced" };
 }
 
-export function computeEnemyCentroid(team: TeamId, robots: RobotEntity[]): Vec3 | null {
+export function computeEnemyCentroid(
+  team: TeamId,
+  robots: RobotEntity[],
+): Vec3 | null {
   const enemies = robots.filter(
     (robot) => robot.team !== team && isActiveRobot(robot),
   );
@@ -72,7 +78,7 @@ function resolveTargetPosition(target: AnchorTarget | undefined): Vec3 {
     return vec3(0, 0, 0);
   }
 
-  if ('position' in target) {
+  if ("position" in target) {
     return target.position;
   }
 
@@ -84,12 +90,11 @@ export function buildFormationAnchor(
   target: AnchorTarget | undefined,
 ): Vec3 {
   const targetPosition = resolveTargetPosition(
-    target ?? TEAM_CONFIGS[robot.team === 'red' ? 'blue' : 'red'].spawnCenter,
+    target ?? TEAM_CONFIGS[robot.team === "red" ? "blue" : "red"].spawnCenter,
   );
-  const direction = normalizeVec3(
-    subtractVec3(targetPosition, robot.position),
-  );
-  const baseRadius = FORMATION_BASE_RADIUS + (robot.spawnIndex % 3) * FORMATION_RADIUS_VARIANCE;
+  const direction = normalizeVec3(subtractVec3(targetPosition, robot.position));
+  const baseRadius =
+    FORMATION_BASE_RADIUS + (robot.spawnIndex % 3) * FORMATION_RADIUS_VARIANCE;
   const strafe = robot.ai.strafeSign ?? 1;
   const angleOffset = ((robot.spawnIndex % 5) - 2) * 0.12 * strafe;
   const rotatedDirection = vec3(
@@ -98,13 +103,13 @@ export function buildFormationAnchor(
     Math.cos(angleOffset) * direction.z - Math.sin(angleOffset) * direction.x,
   );
 
-  return addVec3(
-    targetPosition,
-    scaleVec3(rotatedDirection, baseRadius),
-  );
+  return addVec3(targetPosition, scaleVec3(rotatedDirection, baseRadius));
 }
 
-export function findCoverPoint(robot: RobotEntity, enemyCentroid: Vec3 | null): Vec3 {
+export function findCoverPoint(
+  robot: RobotEntity,
+  enemyCentroid: Vec3 | null,
+): Vec3 {
   const spawnCenter = TEAM_CONFIGS[robot.team].spawnCenter;
 
   if (!enemyCentroid) {
@@ -130,7 +135,9 @@ export function computeEnemyTarget(
   return centroid ?? undefined;
 }
 
-export function computeTeamAnchors(robots: RobotEntity[]): TeamAnchorAssignments {
+export function computeTeamAnchors(
+  robots: RobotEntity[],
+): TeamAnchorAssignments {
   const assignments: TeamAnchorAssignments = {};
   const directives = buildTeamDirectives(robots);
 
@@ -139,11 +146,9 @@ export function computeTeamAnchors(robots: RobotEntity[]): TeamAnchorAssignments
     blue: [],
   };
 
-  robots
-    .filter(isActiveRobot)
-    .forEach((robot) => {
-      grouped[robot.team].push(robot);
-    });
+  robots.filter(isActiveRobot).forEach((robot) => {
+    grouped[robot.team].push(robot);
+  });
 
   (Object.keys(grouped) as TeamId[]).forEach((team) => {
     const teamRobots = grouped[team].slice().sort((a, b) => {
@@ -165,7 +170,10 @@ export function computeTeamAnchors(robots: RobotEntity[]): TeamAnchorAssignments
         anchorPosition = buildFormationAnchor(robot, anchorTarget);
       } else {
         const fallbackOffset = vec3(strafeSign * (4 + index), 0, 4 + index);
-        anchorPosition = addVec3(TEAM_CONFIGS[team].spawnCenter, fallbackOffset);
+        anchorPosition = addVec3(
+          TEAM_CONFIGS[team].spawnCenter,
+          fallbackOffset,
+        );
       }
 
       assignments[robot.id] = {

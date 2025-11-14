@@ -1,17 +1,27 @@
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
-import { Simulation } from './components/Simulation';
-import { createBattleWorld } from './ecs/world';
-import { AUTO_RESTART_DELAY_MS, VICTORY_OVERLAY_BACKGROUND } from './lib/constants';
-import { isActiveRobot } from './lib/robotHelpers';
-import { TEAM_CONFIGS } from './lib/teamConfig';
-import { BattleRunner } from './runtime/simulation/battleRunner';
-import { createTelemetryPort } from './runtime/simulation/telemetryAdapter';
+import { Simulation } from "./components/Simulation";
+import { createBattleWorld } from "./ecs/world";
+import {
+  AUTO_RESTART_DELAY_MS,
+  VICTORY_OVERLAY_BACKGROUND,
+} from "./lib/constants";
+import { isActiveRobot } from "./lib/robotHelpers";
+import { TEAM_CONFIGS } from "./lib/teamConfig";
+import { BattleRunner } from "./runtime/simulation/battleRunner";
+import { createTelemetryPort } from "./runtime/simulation/telemetryAdapter";
 import {
   createMatchStateMachine,
   MatchStateSnapshot,
-} from './runtime/state/matchStateMachine';
-import { useTelemetryStore } from './state/telemetryStore';
+} from "./runtime/state/matchStateMachine";
+import { useTelemetryStore } from "./state/telemetryStore";
 
 function formatStatus({
   phase,
@@ -19,16 +29,17 @@ function formatStatus({
   restartTimerMs,
 }: MatchStateSnapshot): string {
   switch (phase) {
-    case 'running':
-      return 'Battle in progress';
-    case 'paused':
-      return 'Simulation paused';
-    case 'victory': {
-      const countdown = restartTimerMs != null ? Math.ceil(restartTimerMs / 1000) : null;
-      return `Victory: ${winner ?? 'unknown'}${countdown != null ? ` · restart in ${countdown}s` : ''}`;
+    case "running":
+      return "Battle in progress";
+    case "paused":
+      return "Simulation paused";
+    case "victory": {
+      const countdown =
+        restartTimerMs != null ? Math.ceil(restartTimerMs / 1000) : null;
+      return `Victory: ${winner ?? "unknown"}${countdown != null ? ` · restart in ${countdown}s` : ""}`;
     }
     default:
-      return 'Initializing space match...';
+      return "Initializing space match...";
   }
 }
 
@@ -36,7 +47,7 @@ export default function App() {
   const battleWorld = useMemo(() => createBattleWorld(), []);
   const telemetryPort = useMemo(() => createTelemetryPort(), []);
   const [matchSnapshot, setMatchSnapshot] = useState<MatchStateSnapshot>({
-    phase: 'initializing',
+    phase: "initializing",
     elapsedMs: 0,
     restartTimerMs: null,
     winner: null,
@@ -75,9 +86,9 @@ export default function App() {
 
   const handlePauseResume = useCallback(() => {
     const snapshot = matchMachine.getSnapshot();
-    if (snapshot.phase === 'running') {
+    if (snapshot.phase === "running") {
       matchMachine.pause();
-    } else if (snapshot.phase === 'paused') {
+    } else if (snapshot.phase === "paused") {
       matchMachine.resume();
     }
   }, [matchMachine]);
@@ -87,20 +98,20 @@ export default function App() {
   }, []);
 
   const statusText = formatStatus(matchSnapshot);
-  const pauseLabel = matchSnapshot.phase === 'paused' ? 'Resume' : 'Pause';
+  const pauseLabel = matchSnapshot.phase === "paused" ? "Resume" : "Pause";
 
   const winnerLabel =
-    matchSnapshot.phase === 'victory' && matchSnapshot.winner
+    matchSnapshot.phase === "victory" && matchSnapshot.winner
       ? TEAM_CONFIGS[matchSnapshot.winner].label
       : null;
 
   const restartSeconds =
-    matchSnapshot.phase === 'victory' && matchSnapshot.restartTimerMs != null
+    matchSnapshot.phase === "victory" && matchSnapshot.restartTimerMs != null
       ? Math.ceil(matchSnapshot.restartTimerMs / 1000)
       : null;
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <div id="status" className="match-status" role="status">
         {statusText}
       </div>
@@ -114,37 +125,39 @@ export default function App() {
       </Suspense>
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 16,
           right: 16,
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           gap: 4,
-          alignItems: 'flex-end',
+          alignItems: "flex-end",
         }}
       >
         <div style={{ fontWeight: 600, fontSize: 14 }}>Alive</div>
         <div>{`${TEAM_CONFIGS.red.label}: ${aliveCounts.red}`}</div>
         <div>{`${TEAM_CONFIGS.blue.label}: ${aliveCounts.blue}`}</div>
       </div>
-      {matchSnapshot.phase === 'victory' && winnerLabel ? (
+      {matchSnapshot.phase === "victory" && winnerLabel ? (
         <div
           style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            padding: '24px 32px',
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            padding: "24px 32px",
             borderRadius: 12,
             background: VICTORY_OVERLAY_BACKGROUND,
-            color: '#f7f8ff',
-            textAlign: 'center',
-            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.45)',
+            color: "#f7f8ff",
+            textAlign: "center",
+            boxShadow: "0 12px 32px rgba(0, 0, 0, 0.45)",
           }}
         >
           <h2 style={{ margin: 0, fontSize: 22 }}>{winnerLabel} Triumphs!</h2>
           {restartSeconds != null ? (
-            <p style={{ margin: '12px 0 0 0' }}>{`Restarting in ${restartSeconds}s`}</p>
+            <p
+              style={{ margin: "12px 0 0 0" }}
+            >{`Restarting in ${restartSeconds}s`}</p>
           ) : null}
           <button
             type="button"
@@ -159,11 +172,11 @@ export default function App() {
       ) : null}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           bottom: 16,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
+          left: "50%",
+          transform: "translateX(-50%)",
+          display: "flex",
           gap: 12,
         }}
       >

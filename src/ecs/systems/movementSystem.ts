@@ -5,14 +5,14 @@ import {
   scaleInPlaceVec3,
   scaleVec3,
   Vec3,
-} from '../../lib/math/vec3';
+} from "../../lib/math/vec3";
 import {
   ARENA_BOUNDS,
   ARENA_PILLARS,
   ARENA_WALLS,
   ROBOT_RADIUS,
-} from '../../simulation/environment/arenaGeometry';
-import { BattleWorld } from '../world';
+} from "../../simulation/environment/arenaGeometry";
+import { BattleWorld } from "../world";
 
 const FRICTION = 0.92;
 const { min: MIN_BOUNDS, max: MAX_BOUNDS } = ARENA_BOUNDS;
@@ -25,8 +25,14 @@ function checkBoxCollision(
   halfDepth: number,
   radius: number,
 ): boolean {
-  const closestX = Math.max(boxX - halfWidth, Math.min(pos.x, boxX + halfWidth));
-  const closestZ = Math.max(boxZ - halfDepth, Math.min(pos.z, boxZ + halfDepth));
+  const closestX = Math.max(
+    boxX - halfWidth,
+    Math.min(pos.x, boxX + halfWidth),
+  );
+  const closestZ = Math.max(
+    boxZ - halfDepth,
+    Math.min(pos.z, boxZ + halfDepth),
+  );
   const distanceX = pos.x - closestX;
   const distanceZ = pos.z - closestZ;
   return distanceX * distanceX + distanceZ * distanceZ < radius * radius;
@@ -48,7 +54,16 @@ function checkCircleCollision(
 function resolveCollision(pos: Vec3): void {
   // Check walls
   for (const wall of ARENA_WALLS) {
-    if (checkBoxCollision(pos, wall.x, wall.z, wall.halfWidth, wall.halfDepth, ROBOT_RADIUS)) {
+    if (
+      checkBoxCollision(
+        pos,
+        wall.x,
+        wall.z,
+        wall.halfWidth,
+        wall.halfDepth,
+        ROBOT_RADIUS,
+      )
+    ) {
       // Push robot out of wall
       const closestX = Math.max(
         wall.x - wall.halfWidth,
@@ -71,7 +86,9 @@ function resolveCollision(pos: Vec3): void {
 
   // Check pillars
   for (const pillar of ARENA_PILLARS) {
-    if (checkCircleCollision(pos, pillar.x, pillar.z, pillar.radius, ROBOT_RADIUS)) {
+    if (
+      checkCircleCollision(pos, pillar.x, pillar.z, pillar.radius, ROBOT_RADIUS)
+    ) {
       const dx = pos.x - pillar.x;
       const dz = pos.z - pillar.z;
       const dist = Math.sqrt(dx * dx + dz * dz);
@@ -85,7 +102,10 @@ function resolveCollision(pos: Vec3): void {
   }
 }
 
-export function updateMovementSystem(world: BattleWorld, deltaSeconds: number): void {
+export function updateMovementSystem(
+  world: BattleWorld,
+  deltaSeconds: number,
+): void {
   const { robots } = world;
 
   robots.entities.forEach((robot) => {

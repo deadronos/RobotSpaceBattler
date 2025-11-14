@@ -5,10 +5,10 @@ import {
   scaleVec3,
   subtractVec3,
   vec3,
-} from '../../lib/math/vec3';
-import { TelemetryPort } from '../../runtime/simulation/ports';
-import { getWeaponProfile } from '../../simulation/combat/weapons';
-import { BattleWorld, ProjectileEntity, RobotEntity } from '../world';
+} from "../../lib/math/vec3";
+import { TelemetryPort } from "../../runtime/simulation/ports";
+import { getWeaponProfile } from "../../simulation/combat/weapons";
+import { BattleWorld, ProjectileEntity, RobotEntity } from "../world";
 
 function createProjectileId(world: BattleWorld): string {
   const id = `projectile-${world.state.nextProjectileId}`;
@@ -26,18 +26,21 @@ function createProjectile(
   }
 
   const profile = getWeaponProfile(shooter.weapon);
-  const direction = normalizeVec3(subtractVec3(target.position, shooter.position));
+  const direction = normalizeVec3(
+    subtractVec3(target.position, shooter.position),
+  );
 
   if (direction.x === 0 && direction.y === 0 && direction.z === 0) {
     return null;
   }
 
   const velocity = scaleVec3(direction, profile.projectileSpeed);
-  const maxLifetime = Math.max(1, profile.range / profile.projectileSpeed) * 1000;
+  const maxLifetime =
+    Math.max(1, profile.range / profile.projectileSpeed) * 1000;
 
   return {
     id: createProjectileId(world),
-    kind: 'projectile',
+    kind: "projectile",
     team: shooter.team,
     shooterId: shooter.id,
     weapon: shooter.weapon,
@@ -53,7 +56,10 @@ function createProjectile(
   };
 }
 
-export function updateCombatSystem(world: BattleWorld, telemetry: TelemetryPort): void {
+export function updateCombatSystem(
+  world: BattleWorld,
+  telemetry: TelemetryPort,
+): void {
   const robots = world.robots.entities;
   if (robots.length === 0) {
     return;
@@ -66,11 +72,13 @@ export function updateCombatSystem(world: BattleWorld, telemetry: TelemetryPort)
       return;
     }
 
-    if (robot.fireCooldown > 0 || robot.ai.mode === 'retreat') {
+    if (robot.fireCooldown > 0 || robot.ai.mode === "retreat") {
       return;
     }
 
-    const target = robot.ai.targetId ? robotsById.get(robot.ai.targetId) : undefined;
+    const target = robot.ai.targetId
+      ? robotsById.get(robot.ai.targetId)
+      : undefined;
     if (!target || target.health <= 0) {
       return;
     }

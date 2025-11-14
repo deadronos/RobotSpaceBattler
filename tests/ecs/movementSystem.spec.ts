@@ -1,11 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 
-import { updateMovementSystem } from '../../src/ecs/systems/movementSystem';
-import { createBattleWorld } from '../../src/ecs/world';
-import { createTestRobot } from '../helpers/robotFactory';
+import { updateMovementSystem } from "../../src/ecs/systems/movementSystem";
+import { createBattleWorld } from "../../src/ecs/world";
+import { createTestRobot } from "../helpers/robotFactory";
 
-describe('updateMovementSystem', () => {
-  it('leaves robot position to be resolved by physics', () => {
+describe("updateMovementSystem", () => {
+  it("leaves robot position to be resolved by physics", () => {
     const world = createBattleWorld();
     const robot = createTestRobot();
 

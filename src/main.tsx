@@ -1,14 +1,14 @@
-import './index.css';
+import "./index.css";
 
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
 
-import App from './App';
+import App from "./App";
 
 function renderApp() {
-  const rootElement = document.getElementById('root');
+  const rootElement = document.getElementById("root");
   if (!rootElement) {
-    throw new Error('Root element #root not found');
+    throw new Error("Root element #root not found");
   }
 
   const root = createRoot(rootElement);

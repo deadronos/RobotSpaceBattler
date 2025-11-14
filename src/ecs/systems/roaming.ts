@@ -1,12 +1,16 @@
-import { Vec3, vec3 } from '../../lib/math/vec3';
-import { ARENA_BOUNDS } from '../../simulation/environment/arenaGeometry';
-import { RobotAIState } from '../world';
+import { Vec3, vec3 } from "../../lib/math/vec3";
+import { ARENA_BOUNDS } from "../../simulation/environment/arenaGeometry";
+import { RobotAIState } from "../world";
 
 const ROAM_MARGIN = 6;
 const ROAM_BASE_DURATION = 3000;
 const ROAM_EXTRA_WINDOW = 4000;
 
-export function refreshRoamTarget(aiState: RobotAIState, elapsedMs: number, rng: () => number): void {
+export function refreshRoamTarget(
+  aiState: RobotAIState,
+  elapsedMs: number,
+  rng: () => number,
+): void {
   const now = elapsedMs;
   const roamUntil = aiState.roamUntil ?? 0;
 
@@ -14,7 +18,8 @@ export function refreshRoamTarget(aiState: RobotAIState, elapsedMs: number, rng:
     const roamPoint = pickRandomRoamPoint(rng);
     aiState.roamTarget = roamPoint;
     aiState.searchPosition = roamPoint;
-    aiState.roamUntil = now + ROAM_BASE_DURATION + Math.floor(rng() * ROAM_EXTRA_WINDOW);
+    aiState.roamUntil =
+      now + ROAM_BASE_DURATION + Math.floor(rng() * ROAM_EXTRA_WINDOW);
   } else if (aiState.roamTarget) {
     aiState.searchPosition = aiState.roamTarget;
   }

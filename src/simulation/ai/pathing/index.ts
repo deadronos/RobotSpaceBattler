@@ -1,15 +1,21 @@
-import { RobotEntity } from '../../../ecs/world';
-import { addVec3, lengthVec3, normalizeVec3, scaleVec3,Vec3 } from '../../../lib/math/vec3';
-import { RobotBehaviorMode } from '../behaviorState';
-import { computeAvoidance } from './avoidance';
+import { RobotEntity } from "../../../ecs/world";
+import {
+  addVec3,
+  lengthVec3,
+  normalizeVec3,
+  scaleVec3,
+  Vec3,
+} from "../../../lib/math/vec3";
+import { RobotBehaviorMode } from "../behaviorState";
+import { computeAvoidance } from "./avoidance";
 import {
   applySeparation,
   clampVelocity,
   computeForwardDirection,
   computeOrientation,
   resolveSpawnCenter,
-} from './helpers';
-import { MovementContext, MovementPlan } from './types';
+} from "./helpers";
+import { MovementContext, MovementPlan } from "./types";
 
 const SEEK_SPEED = 6;
 const RETREAT_SPEED = 7;
@@ -25,12 +31,16 @@ export function planRobotMovement(
 ): MovementPlan {
   const spawnCenter = spawnCenterOverride ?? resolveSpawnCenter(robot, context);
   const strafeSign = context?.strafeSign ?? robot.ai.strafeSign ?? 1;
-  const formationAnchor = context?.formationAnchor ?? robot.ai.anchorPosition ?? null;
+  const formationAnchor =
+    context?.formationAnchor ?? robot.ai.anchorPosition ?? null;
 
   let desiredVelocity = robot.velocity;
 
   if (mode === RobotBehaviorMode.Retreat) {
-    const retreatDirection = computeForwardDirection(robot.position, spawnCenter);
+    const retreatDirection = computeForwardDirection(
+      robot.position,
+      spawnCenter,
+    );
     desiredVelocity = scaleVec3(retreatDirection, RETREAT_SPEED);
   } else if (mode === RobotBehaviorMode.Engage && target) {
     const forward = computeForwardDirection(robot.position, target.position);
@@ -76,7 +86,10 @@ export function planRobotMovement(
   }
 
   desiredVelocity = applySeparation(desiredVelocity, robot, context?.neighbors);
-  desiredVelocity = clampVelocity(desiredVelocity, mode === RobotBehaviorMode.Retreat ? RETREAT_SPEED : SEEK_SPEED);
+  desiredVelocity = clampVelocity(
+    desiredVelocity,
+    mode === RobotBehaviorMode.Retreat ? RETREAT_SPEED : SEEK_SPEED,
+  );
 
   const orientation = computeOrientation(desiredVelocity, robot.orientation);
 
@@ -86,7 +99,11 @@ export function planRobotMovement(
   };
 }
 
-export function integrateMovement(position: Vec3, velocity: Vec3, deltaSeconds: number): Vec3 {
+export function integrateMovement(
+  position: Vec3,
+  velocity: Vec3,
+  deltaSeconds: number,
+): Vec3 {
   const delta = scaleVec3(velocity, deltaSeconds);
   return addVec3(position, delta);
 }

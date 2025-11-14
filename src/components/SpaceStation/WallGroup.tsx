@@ -1,5 +1,5 @@
-import { RigidBody } from '@react-three/rapier';
-import { useMemo } from 'react';
+import { RigidBody } from "@react-three/rapier";
+import { useMemo } from "react";
 
 type WallConfig = {
   pos: [number, number, number];
@@ -31,7 +31,11 @@ export function WallGroup() {
         <RigidBody key={index} type="fixed" colliders="cuboid">
           <mesh position={wall.pos} receiveShadow castShadow>
             <boxGeometry args={wall.dim} />
-            <meshPhysicalMaterial color="#313c60" metalness={0.55} roughness={0.45} />
+            <meshPhysicalMaterial
+              color="#313c60"
+              metalness={0.55}
+              roughness={0.45}
+            />
           </mesh>
         </RigidBody>
       ))}

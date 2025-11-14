@@ -199,3 +199,7 @@ coverage/
 # Keep the gitignore itself tracked
 !.gitignore
 .github/instructions/todos.instructions.md
+
+# Telemetry trace files (runtime data)
+trace/
+trace-test/

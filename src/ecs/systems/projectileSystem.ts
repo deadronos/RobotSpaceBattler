@@ -1,9 +1,10 @@
-import { applyCaptaincy } from '../../lib/captainElection';
-import { addInPlaceVec3, distanceVec3, scaleVec3 } from '../../lib/math/vec3';
-import { isActiveRobot } from '../../lib/robotHelpers';
-import { TelemetryPort } from '../../runtime/simulation/ports';
-import { computeDamageMultiplier } from '../../simulation/combat/weapons';
-import { BattleWorld, ProjectileEntity, RobotEntity } from '../world';
+import { applyCaptaincy } from "../../lib/captainElection";
+import { addInPlaceVec3, distanceVec3, scaleVec3 } from "../../lib/math/vec3";
+import { isActiveRobot } from "../../lib/robotHelpers";
+import { TelemetryPort } from "../../runtime/simulation/ports";
+import { calculateDamage } from "../../simulation/damage/damagePipeline";
+import type { WeaponVisualEventEmitter } from "../../visuals/events";
+import { BattleWorld, ProjectileEntity, RobotEntity } from "../world";
 
 function findTarget(
   world: BattleWorld,
@@ -32,10 +33,21 @@ function applyHit(
   projectile: ProjectileEntity,
   target: RobotEntity,
   telemetry: TelemetryPort,
+  visualEvents?: WeaponVisualEventEmitter,
 ): void {
-  const shooter = world.robots.entities.find((robot) => robot.id === projectile.shooterId);
-  const multiplier = computeDamageMultiplier(projectile.weapon, target.weapon);
-  const damage = projectile.damage * multiplier;
+  const shooter = world.robots.entities.find(
+    (robot) => robot.id === projectile.shooterId,
+  );
+
+  // Use new damage pipeline with archetype multiplier integration (T023)
+  // WeaponType ('laser'|'gun'|'rocket') matches WeaponArchetype type
+  const damageResult = calculateDamage({
+    baseDamage: projectile.damage,
+    attackerArchetype: projectile.weapon as "laser" | "gun" | "rocket",
+    defenderArchetype: target.weapon as "laser" | "gun" | "rocket",
+  });
+
+  const damage = damageResult.finalDamage;
   target.health = Math.max(0, target.health - damage);
   target.lastDamageTimestamp = world.state.elapsedMs;
 
@@ -63,6 +75,24 @@ function applyHit(
     applyCaptaincy(target.team, world.getRobotsByTeam(target.team));
   }
 
+  if (visualEvents) {
+    const shooterPosition: [number, number, number] = shooter
+      ? [shooter.position.x, shooter.position.y, shooter.position.z]
+      : [projectile.position.x, projectile.position.y, projectile.position.z];
+    const impactPosition: [number, number, number] = [
+      target.position.x,
+      target.position.y,
+      target.position.z,
+    ];
+
+    visualEvents.emit({
+      type: "gun-tracer",
+      id: `tracer-${projectile.id}-${world.state.elapsedMs}`,
+      startPosition: shooterPosition,
+      impactPosition,
+    });
+  }
+
   world.world.remove(projectile);
 }
 
@@ -70,6 +100,7 @@ export function updateProjectileSystem(
   world: BattleWorld,
   deltaSeconds: number,
   telemetry: TelemetryPort,
+  visualEvents?: WeaponVisualEventEmitter,
 ): void {
   const projectiles = [...world.projectiles.entities];
 
@@ -95,7 +126,7 @@ export function updateProjectileSystem(
     const hitRadius = 1.2;
     const distance = distanceVec3(projectile.position, target.position);
     if (distance <= hitRadius) {
-      applyHit(world, projectile, target, telemetry);
+      applyHit(world, projectile, target, telemetry, visualEvents);
     }
   });
 }

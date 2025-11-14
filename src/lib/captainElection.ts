@@ -1,6 +1,6 @@
-import { getTeamConfig, RobotEntity, TeamId } from '../ecs/world';
-import { distanceSquaredVec3 } from './math/vec3';
-import { isActiveRobot } from './robotHelpers';
+import { getTeamConfig, RobotEntity, TeamId } from "../ecs/world";
+import { distanceSquaredVec3 } from "./math/vec3";
+import { isActiveRobot } from "./robotHelpers";
 
 function captainScore(robot: RobotEntity, spawnCenterDistance: number) {
   return {
@@ -11,7 +11,10 @@ function captainScore(robot: RobotEntity, spawnCenterDistance: number) {
   };
 }
 
-export function electCaptain(team: TeamId, robots: RobotEntity[]): string | null {
+export function electCaptain(
+  team: TeamId,
+  robots: RobotEntity[],
+): string | null {
   const teamConfig = getTeamConfig(team);
   const eligible = robots.filter(
     (robot) => robot.team === team && isActiveRobot(robot),
@@ -23,7 +26,10 @@ export function electCaptain(team: TeamId, robots: RobotEntity[]): string | null
 
   const sorted = eligible
     .map((robot) => {
-      const spawnDistance = distanceSquaredVec3(robot.position, teamConfig.spawnCenter);
+      const spawnDistance = distanceSquaredVec3(
+        robot.position,
+        teamConfig.spawnCenter,
+      );
       return { robot, metrics: captainScore(robot, spawnDistance) };
     })
     .sort((a, b) => {

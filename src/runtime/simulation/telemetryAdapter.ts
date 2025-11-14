@@ -1,11 +1,11 @@
-import { RobotEntity } from '../../ecs/world';
-import { useTelemetryStore } from '../../state/telemetryStore';
+import { RobotEntity } from "../../ecs/world";
+import { useTelemetryStore } from "../../state/telemetryStore";
 import {
   DamageEventInput,
   DeathEventInput,
   FireEventInput,
   TelemetryPort,
-} from './ports';
+} from "./ports";
 
 export function createTelemetryPort(): TelemetryPort {
   let sequenceId = 0;
@@ -22,7 +22,7 @@ export function createTelemetryPort(): TelemetryPort {
     },
     recordSpawn: (robot: RobotEntity, timestampMs: number) => {
       useTelemetryStore.getState().recordEvent({
-        type: 'spawn',
+        type: "spawn",
         timestampMs,
         sequenceId: nextSequence(),
         entityId: robot.id,
@@ -31,7 +31,7 @@ export function createTelemetryPort(): TelemetryPort {
     },
     recordFire: (event: FireEventInput) => {
       useTelemetryStore.getState().recordEvent({
-        type: 'fire',
+        type: "fire",
         timestampMs: event.timestampMs,
         sequenceId: nextSequence(),
         entityId: event.entityId,
@@ -40,7 +40,7 @@ export function createTelemetryPort(): TelemetryPort {
     },
     recordDamage: (event: DamageEventInput) => {
       useTelemetryStore.getState().recordEvent({
-        type: 'damage',
+        type: "damage",
         timestampMs: event.timestampMs,
         sequenceId: nextSequence(),
         attackerId: event.attackerId,
@@ -51,7 +51,7 @@ export function createTelemetryPort(): TelemetryPort {
     },
     recordDeath: (event: DeathEventInput) => {
       useTelemetryStore.getState().recordEvent({
-        type: 'death',
+        type: "death",
         timestampMs: event.timestampMs,
         sequenceId: nextSequence(),
         entityId: event.entityId,
