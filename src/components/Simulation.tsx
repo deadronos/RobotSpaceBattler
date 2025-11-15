@@ -6,10 +6,15 @@ import { TEAM_CONFIGS } from '../lib/teamConfig';
 import { BattleRunner, createBattleRunner } from '../runtime/simulation/battleRunner';
 import { TelemetryPort } from '../runtime/simulation/ports';
 import { MatchStateMachine } from '../runtime/state/matchStateMachine';
+import { useQualitySettings } from '../state/quality/QualityManager';
+import { recordRendererFrame } from '../visuals/rendererStats';
 import { RobotPlaceholder } from './RobotPlaceholder';
 import { Scene } from './Scene';
 import { SpaceStation } from './SpaceStation';
 import { EffectVisual } from './vfx/EffectVisual';
+import { InstancedEffects } from './vfx/InstancedEffects';
+import { InstancedProjectiles } from './vfx/InstancedProjectiles';
+import { LaserBatchRenderer } from './vfx/LaserBatchRenderer';
 import { ProjectileVisual } from './vfx/ProjectileVisual';
 
 interface SimulationProps {
@@ -59,8 +64,12 @@ interface SimulationContentProps {
 function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
   const [, setVersion] = useState(0);
   const accumulator = useRef(0);
+  const qualitySettings = useQualitySettings();
+  const instancingEnabled = qualitySettings.visuals.instancing.enabled;
+  const instanceManager = battleWorld.visuals.instanceManager;
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
+    recordRendererFrame(state.gl, delta);
     runnerRef.current?.step(delta);
     accumulator.current += delta;
     if (accumulator.current >= FRAME_SAMPLE_INTERVAL) {
@@ -74,6 +83,18 @@ function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
   const effects = battleWorld.effects.entities;
   const robotsById = useMemo(() => new Map(robots.map((robot) => [robot.id, robot])), [robots]);
   const currentTimeMs = battleWorld.state.elapsedMs;
+  const fallbackProjectiles = useMemo(() => {
+    if (!instancingEnabled) {
+      return projectiles;
+    }
+    return projectiles.filter((projectile) => projectile.instanceIndex === undefined);
+  }, [projectiles, instancingEnabled]);
+  const fallbackEffects = useMemo(() => {
+    if (!instancingEnabled) {
+      return effects;
+    }
+    return effects.filter((effect) => effect.instanceIndex === undefined);
+  }, [effects, instancingEnabled]);
 
   return (
     <>
@@ -85,7 +106,22 @@ function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
           position={[robot.position.x, 0.8, robot.position.z]}
         />
       ))}
-      {projectiles.map((projectile) => (
+      {instancingEnabled ? (
+        <>
+          <InstancedProjectiles projectiles={projectiles} instanceManager={instanceManager} />
+          <LaserBatchRenderer
+            projectiles={projectiles}
+            robotsById={robotsById}
+            instanceManager={instanceManager}
+          />
+          <InstancedEffects
+            effects={effects}
+            instanceManager={instanceManager}
+            currentTimeMs={currentTimeMs}
+          />
+        </>
+      ) : null}
+      {fallbackProjectiles.map((projectile) => (
         <ProjectileVisual
           key={projectile.id}
           projectile={projectile}
@@ -93,7 +129,7 @@ function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
           target={projectile.targetId ? robotsById.get(projectile.targetId) : undefined}
         />
       ))}
-      {effects.map((effect) => (
+      {fallbackEffects.map((effect) => (
         <EffectVisual key={effect.id} effect={effect} currentTimeMs={currentTimeMs} />
       ))}
     </>

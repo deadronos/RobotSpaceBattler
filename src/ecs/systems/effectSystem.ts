@@ -6,7 +6,7 @@ export function updateEffectSystem(world: BattleWorld): void {
 
   effects.forEach((effect) => {
     if (now - effect.createdAt >= effect.duration) {
-      world.world.remove(effect);
+      world.removeEffect(effect);
     }
   });
 }

@@ -8,6 +8,14 @@ import {
   vec3,
 } from '../lib/math/vec3';
 import { TEAM_CONFIGS, TeamConfig, TeamId } from '../lib/teamConfig';
+import { qualityManager } from '../state/quality/QualityManager';
+import {
+  createVisualInstanceManager,
+  VisualInstanceCategory,
+  VisualInstanceManager,
+} from '../visuals/VisualInstanceManager';
+import { createEffectPool, EffectPool } from './pools/EffectPool';
+import { createProjectilePool, ProjectilePool } from './pools/ProjectilePool';
 
 export type { TeamId } from '../lib/teamConfig';
 
@@ -76,6 +84,7 @@ export interface ProjectileEntity {
   explosionDurationMs?: number;
   beamWidth?: number;
   impactDurationMs?: number;
+  instanceIndex?: number;
 }
 
 export type EffectType = 'explosion' | 'impact' | 'laser-impact';
@@ -90,6 +99,7 @@ export interface EffectEntity {
   secondaryColor?: string;
   createdAt: number;
   duration: number;
+  instanceIndex?: number;
 }
 
 export type BattleEntity = RobotEntity | ProjectileEntity | EffectEntity;
@@ -114,6 +124,17 @@ export interface BattleWorld {
   state: BattleWorldState;
   clear: () => void;
   getRobotsByTeam(team: TeamId): RobotEntity[];
+  visuals: {
+    instanceManager: VisualInstanceManager;
+  };
+  pools: {
+    projectiles: ProjectilePool;
+    effects: EffectPool;
+  };
+  addProjectile: (projectile: ProjectileEntity) => void;
+  removeProjectile: (projectile: ProjectileEntity) => void;
+  addEffect: (effect: EffectEntity) => void;
+  removeEffect: (effect: EffectEntity) => void;
 }
 
 export function toVec3(x = 0, y = 0, z = 0): Vec3 {
@@ -143,8 +164,14 @@ function createEntityStore<T extends BattleEntity>(
   };
 }
 
-function clearWorldEntities(world: World<BattleEntity>): void {
-  Array.from(world.entities).forEach((entity) => world.remove(entity));
+function mapProjectileToCategory(projectile: ProjectileEntity): VisualInstanceCategory {
+  if (projectile.weapon === 'rocket') {
+    return 'rockets';
+  }
+  if (projectile.weapon === 'laser') {
+    return 'lasers';
+  }
+  return 'bullets';
 }
 
 export function createBattleWorld(): BattleWorld {
@@ -160,21 +187,73 @@ export function createBattleWorld(): BattleWorld {
     seed: Date.now(),
   };
 
-  return {
+  const instancingConfig = qualityManager.getInstancingConfig();
+  const instanceManager = createVisualInstanceManager({
+    maxInstances: instancingConfig.maxInstances,
+  });
+
+  const projectilePool = createProjectilePool(
+    instancingConfig.maxInstances.bullets + instancingConfig.maxInstances.rockets,
+  );
+  const effectPool = createEffectPool(instancingConfig.maxInstances.effects);
+
+  const battleWorld: BattleWorld = {
     world,
     robots,
     projectiles,
     effects,
     teams: TEAM_CONFIGS,
     state,
+    visuals: {
+      instanceManager,
+    },
+    pools: {
+      projectiles: projectilePool,
+      effects: effectPool,
+    },
     clear: () => {
-      clearWorldEntities(world);
+      Array.from(world.entities).forEach((entity) => {
+        if (isProjectileEntity(entity)) {
+          battleWorld.removeProjectile(entity);
+        } else if (isEffectEntity(entity)) {
+          battleWorld.removeEffect(entity);
+        } else {
+          world.remove(entity);
+        }
+      });
+      instanceManager.reset();
+      projectilePool.reset();
+      effectPool.reset();
       state.nextProjectileId = 0;
       state.nextEffectId = 0;
     },
     getRobotsByTeam: (team: TeamId) =>
       robots.entities.filter((entity) => entity.team === team),
+    addProjectile: (projectile: ProjectileEntity) => {
+      world.add(projectile);
+      const category = mapProjectileToCategory(projectile);
+      const index = instanceManager.allocateIndex(category, projectile.id);
+      projectile.instanceIndex = index ?? undefined;
+    },
+    removeProjectile: (projectile: ProjectileEntity) => {
+      const category = mapProjectileToCategory(projectile);
+      instanceManager.releaseIndex(category, projectile.id);
+      world.remove(projectile);
+      projectilePool.release(projectile);
+    },
+    addEffect: (effect: EffectEntity) => {
+      world.add(effect);
+      const index = instanceManager.allocateIndex('effects', effect.id);
+      effect.instanceIndex = index ?? undefined;
+    },
+    removeEffect: (effect: EffectEntity) => {
+      instanceManager.releaseIndex('effects', effect.id);
+      world.remove(effect);
+      effectPool.release(effect);
+    },
   };
+
+  return battleWorld;
 }
 
 export function resetBattleWorld(world: BattleWorld): void {

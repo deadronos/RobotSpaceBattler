@@ -43,17 +43,19 @@ function spawnEffect(
   const id = `effect-${world.state.nextEffectId}`;
   world.state.nextEffectId += 1;
 
-  world.world.add({
-    id,
-    kind: 'effect',
-    effectType,
-    position: cloneVec3(projectile.position),
-    radius,
-    color,
-    secondaryColor,
-    createdAt: world.state.elapsedMs,
-    duration: durationMs,
-  });
+  const effect = world.pools.effects.acquire();
+  effect.id = id;
+  effect.kind = 'effect';
+  effect.effectType = effectType;
+  effect.position = cloneVec3(projectile.position);
+  effect.radius = radius;
+  effect.color = color;
+  effect.secondaryColor = secondaryColor;
+  effect.createdAt = world.state.elapsedMs;
+  effect.duration = durationMs;
+  effect.instanceIndex = undefined;
+
+  world.addEffect(effect);
 }
 
 function applyDamageToRobot(
@@ -128,7 +130,7 @@ function applyDirectHit(
     secondaryColor,
   );
 
-  world.world.remove(projectile);
+  world.removeProjectile(projectile);
 }
 
 function applyRocketExplosion(
@@ -143,7 +145,7 @@ function applyRocketExplosion(
     if (directTarget) {
       applyDirectHit(world, projectile, directTarget, shooter, telemetry);
     } else {
-      world.world.remove(projectile);
+      world.removeProjectile(projectile);
     }
     return;
   }
@@ -172,7 +174,7 @@ function applyRocketExplosion(
     secondaryColor,
   );
 
-  world.world.remove(projectile);
+  world.removeProjectile(projectile);
 }
 
 export function updateProjectileSystem(
@@ -192,7 +194,7 @@ export function updateProjectileSystem(
       projectile.distanceTraveled >= projectile.maxDistance ||
       ageMs >= projectile.maxLifetime
     ) {
-      world.world.remove(projectile);
+      world.removeProjectile(projectile);
       return;
     }
 
