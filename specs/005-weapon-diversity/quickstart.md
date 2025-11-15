@@ -23,7 +23,18 @@
 - Adjust performance/quality settings in the UI.
 - Verify VFX density and simulation correctness at different frame budgets.
 
-### 5. Telemetry & Test Hooks
+### 5. VFX Instancing Toggle & Perf Harness
+- Enable or disable instanced rendering by setting the environment flag `REACT_APP_VFX_INSTANCING=1` (or pass `?instancing=1` in the URL for ad-hoc runs).
+- Use the in-app Quality menu (or `window.__qualityManager.setInstancingEnabled(true|false)`) to flip instancing at runtime for parity checks.
+- Run the automated draw-call comparison harness:
+
+```bash
+npm run perf:vfx-instancing -- --skip-build
+```
+
+- Inspect the console output for baseline vs instanced draw-call counts and recent instancing telemetry events.
+
+### 6. Telemetry & Test Hooks
 - Inspect telemetry events for weapon actions in both in-memory and persisted MatchTrace.
 - Use API endpoints (see contracts) for automated event emission and duel runs.
 
