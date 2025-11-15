@@ -1,9 +1,9 @@
 import { applyCaptaincy } from '../../lib/captainElection';
-import { addInPlaceVec3, distanceVec3, scaleVec3 } from '../../lib/math/vec3';
+import { addInPlaceVec3, cloneVec3, distanceVec3, scaleVec3 } from '../../lib/math/vec3';
 import { isActiveRobot } from '../../lib/robotHelpers';
 import { TelemetryPort } from '../../runtime/simulation/ports';
 import { computeDamageMultiplier } from '../../simulation/combat/weapons';
-import { BattleWorld, ProjectileEntity, RobotEntity } from '../world';
+import { BattleWorld, EffectType, ProjectileEntity, RobotEntity } from '../world';
 
 function findTarget(
   world: BattleWorld,
@@ -27,15 +27,53 @@ function findTarget(
     })[0];
 }
 
-function applyHit(
+function spawnEffect(
+  world: BattleWorld,
+  projectile: ProjectileEntity,
+  effectType: EffectType,
+  radius: number,
+  color: string,
+  durationMs: number,
+  secondaryColor?: string,
+): void {
+  if (radius <= 0 || durationMs <= 0) {
+    return;
+  }
+
+  const id = `effect-${world.state.nextEffectId}`;
+  world.state.nextEffectId += 1;
+
+  world.world.add({
+    id,
+    kind: 'effect',
+    effectType,
+    position: cloneVec3(projectile.position),
+    radius,
+    color,
+    secondaryColor,
+    createdAt: world.state.elapsedMs,
+    duration: durationMs,
+  });
+}
+
+function applyDamageToRobot(
   world: BattleWorld,
   projectile: ProjectileEntity,
   target: RobotEntity,
+  shooter: RobotEntity | undefined,
+  baseDamage: number,
   telemetry: TelemetryPort,
 ): void {
-  const shooter = world.robots.entities.find((robot) => robot.id === projectile.shooterId);
+  if (target.health <= 0 || baseDamage <= 0) {
+    return;
+  }
+
   const multiplier = computeDamageMultiplier(projectile.weapon, target.weapon);
-  const damage = projectile.damage * multiplier;
+  const damage = baseDamage * multiplier;
+  if (damage <= 0) {
+    return;
+  }
+
   target.health = Math.max(0, target.health - damage);
   target.lastDamageTimestamp = world.state.elapsedMs;
 
@@ -62,6 +100,77 @@ function applyHit(
     world.world.remove(target);
     applyCaptaincy(target.team, world.getRobotsByTeam(target.team));
   }
+}
+
+function applyDirectHit(
+  world: BattleWorld,
+  projectile: ProjectileEntity,
+  target: RobotEntity,
+  shooter: RobotEntity | undefined,
+  telemetry: TelemetryPort,
+): void {
+  applyDamageToRobot(world, projectile, target, shooter, projectile.damage, telemetry);
+
+  const effectRadius = projectile.projectileSize
+    ? projectile.projectileSize * (projectile.weapon === 'laser' ? 2.4 : 1.6)
+    : 0.45;
+  const duration = projectile.impactDurationMs ?? 240;
+  const secondaryColor = projectile.weapon === 'laser' ? '#b9fdfd' : '#fff3c4';
+  const effectType: EffectType = projectile.weapon === 'laser' ? 'laser-impact' : 'impact';
+
+  spawnEffect(
+    world,
+    projectile,
+    effectType,
+    effectRadius,
+    projectile.projectileColor ?? '#ffffff',
+    duration,
+    secondaryColor,
+  );
+
+  world.world.remove(projectile);
+}
+
+function applyRocketExplosion(
+  world: BattleWorld,
+  projectile: ProjectileEntity,
+  shooter: RobotEntity | undefined,
+  telemetry: TelemetryPort,
+  directTarget: RobotEntity | undefined,
+): void {
+  const radius = projectile.aoeRadius ?? 0;
+  if (radius <= 0 || !directTarget) {
+    if (directTarget) {
+      applyDirectHit(world, projectile, directTarget, shooter, telemetry);
+    } else {
+      world.world.remove(projectile);
+    }
+    return;
+  }
+
+  const impacted = world.robots.entities
+    .filter((robot) => robot.team !== projectile.team && isActiveRobot(robot))
+    .map((robot) => ({ robot, distance: distanceVec3(robot.position, projectile.position) }))
+    .filter(({ distance }) => distance <= radius)
+    .sort((a, b) => a.robot.id.localeCompare(b.robot.id));
+
+  impacted.forEach(({ robot, distance }) => {
+    const falloff = Math.max(0, 1 - distance / radius);
+    const baseDamage = projectile.damage * falloff;
+    applyDamageToRobot(world, projectile, robot, shooter, baseDamage, telemetry);
+  });
+
+  const duration = projectile.explosionDurationMs ?? 720;
+  const secondaryColor = projectile.trailColor ?? '#ffd7a1';
+  spawnEffect(
+    world,
+    projectile,
+    'explosion',
+    Math.max(radius, projectile.projectileSize ? projectile.projectileSize * 4 : radius),
+    projectile.projectileColor ?? '#ff9d5c',
+    duration,
+    secondaryColor,
+  );
 
   world.world.remove(projectile);
 }
@@ -95,7 +204,13 @@ export function updateProjectileSystem(
     const hitRadius = 1.2;
     const distance = distanceVec3(projectile.position, target.position);
     if (distance <= hitRadius) {
-      applyHit(world, projectile, target, telemetry);
+      const shooter = world.robots.entities.find((robot) => robot.id === projectile.shooterId);
+
+      if (projectile.weapon === 'rocket') {
+        applyRocketExplosion(world, projectile, shooter, telemetry, target);
+      } else {
+        applyDirectHit(world, projectile, target, shooter, telemetry);
+      }
     }
   });
 }

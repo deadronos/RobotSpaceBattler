@@ -69,9 +69,30 @@ export interface ProjectileEntity {
   maxDistance: number;
   speed: number;
   targetId?: string;
+  projectileSize?: number;
+  projectileColor?: string;
+  trailColor?: string;
+  aoeRadius?: number;
+  explosionDurationMs?: number;
+  beamWidth?: number;
+  impactDurationMs?: number;
 }
 
-export type BattleEntity = RobotEntity | ProjectileEntity;
+export type EffectType = 'explosion' | 'impact' | 'laser-impact';
+
+export interface EffectEntity {
+  id: string;
+  kind: 'effect';
+  effectType: EffectType;
+  position: Vec3;
+  radius: number;
+  color: string;
+  secondaryColor?: string;
+  createdAt: number;
+  duration: number;
+}
+
+export type BattleEntity = RobotEntity | ProjectileEntity | EffectEntity;
 
 export interface Store<T extends BattleEntity> {
   entities: T[];
@@ -80,6 +101,7 @@ export interface Store<T extends BattleEntity> {
 export interface BattleWorldState {
   elapsedMs: number;
   nextProjectileId: number;
+  nextEffectId: number;
   seed: number;
 }
 
@@ -87,6 +109,7 @@ export interface BattleWorld {
   world: World<BattleEntity>;
   robots: Store<RobotEntity>;
   projectiles: Store<ProjectileEntity>;
+  effects: Store<EffectEntity>;
   teams: Record<TeamId, TeamConfig>;
   state: BattleWorldState;
   clear: () => void;
@@ -103,6 +126,10 @@ function isRobotEntity(entity: BattleEntity): entity is RobotEntity {
 
 function isProjectileEntity(entity: BattleEntity): entity is ProjectileEntity {
   return entity.kind === 'projectile';
+}
+
+function isEffectEntity(entity: BattleEntity): entity is EffectEntity {
+  return entity.kind === 'effect';
 }
 
 function createEntityStore<T extends BattleEntity>(
@@ -124,10 +151,12 @@ export function createBattleWorld(): BattleWorld {
   const world = new World<BattleEntity>();
   const robots = createEntityStore(world, isRobotEntity);
   const projectiles = createEntityStore(world, isProjectileEntity);
+  const effects = createEntityStore(world, isEffectEntity);
 
   const state: BattleWorldState = {
     elapsedMs: 0,
     nextProjectileId: 0,
+    nextEffectId: 0,
     seed: Date.now(),
   };
 
@@ -135,11 +164,13 @@ export function createBattleWorld(): BattleWorld {
     world,
     robots,
     projectiles,
+    effects,
     teams: TEAM_CONFIGS,
     state,
     clear: () => {
       clearWorldEntities(world);
       state.nextProjectileId = 0;
+      state.nextEffectId = 0;
     },
     getRobotsByTeam: (team: TeamId) =>
       robots.entities.filter((entity) => entity.team === team),

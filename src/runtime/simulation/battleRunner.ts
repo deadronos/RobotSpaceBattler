@@ -1,5 +1,6 @@
 import { updateAISystem } from '../../ecs/systems/aiSystem';
 import { updateCombatSystem } from '../../ecs/systems/combatSystem';
+import { updateEffectSystem } from '../../ecs/systems/effectSystem';
 import { updateMovementSystem } from '../../ecs/systems/movementSystem';
 import { updateProjectileSystem } from '../../ecs/systems/projectileSystem';
 import { spawnTeams } from '../../ecs/systems/spawnSystem';
@@ -83,6 +84,7 @@ export function createBattleRunner(
         updateCombatSystem(world, telemetry);
         updateMovementSystem(world, deltaSeconds);
         updateProjectileSystem(world, deltaSeconds, telemetry);
+        updateEffectSystem(world);
         evaluateVictory(world, matchMachine);
       }
 
