@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber';
-import { MutableRefObject, useEffect, useRef, useState } from 'react';
+import { MutableRefObject, useEffect, useMemo, useRef, useState } from 'react';
 
 import { BattleWorld } from '../ecs/world';
 import { TEAM_CONFIGS } from '../lib/teamConfig';
@@ -9,6 +9,8 @@ import { MatchStateMachine } from '../runtime/state/matchStateMachine';
 import { RobotPlaceholder } from './RobotPlaceholder';
 import { Scene } from './Scene';
 import { SpaceStation } from './SpaceStation';
+import { EffectVisual } from './vfx/EffectVisual';
+import { ProjectileVisual } from './vfx/ProjectileVisual';
 
 interface SimulationProps {
   battleWorld: BattleWorld;
@@ -18,10 +20,6 @@ interface SimulationProps {
 }
 
 const FRAME_SAMPLE_INTERVAL = 1 / 30;
-
-function vecToArray(position: { x: number; y: number; z: number }): [number, number, number] {
-  return [position.x, position.y, position.z];
-}
 
 export function Simulation({
   battleWorld,
@@ -73,6 +71,9 @@ function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
 
   const robots = battleWorld.robots.entities;
   const projectiles = battleWorld.projectiles.entities;
+  const effects = battleWorld.effects.entities;
+  const robotsById = useMemo(() => new Map(robots.map((robot) => [robot.id, robot])), [robots]);
+  const currentTimeMs = battleWorld.state.elapsedMs;
 
   return (
     <>
@@ -85,10 +86,15 @@ function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
         />
       ))}
       {projectiles.map((projectile) => (
-        <mesh key={projectile.id} position={vecToArray(projectile.position)} castShadow>
-          <sphereGeometry args={[0.25, 8, 8]} />
-          <meshStandardMaterial color="#ffd966" emissive="#ffdd88" emissiveIntensity={1.6} />
-        </mesh>
+        <ProjectileVisual
+          key={projectile.id}
+          projectile={projectile}
+          shooter={robotsById.get(projectile.shooterId)}
+          target={projectile.targetId ? robotsById.get(projectile.targetId) : undefined}
+        />
+      ))}
+      {effects.map((effect) => (
+        <EffectVisual key={effect.id} effect={effect} currentTimeMs={currentTimeMs} />
       ))}
     </>
   );

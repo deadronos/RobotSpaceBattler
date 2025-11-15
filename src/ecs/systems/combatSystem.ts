@@ -50,6 +50,13 @@ function createProjectile(
     maxDistance: profile.range,
     speed: profile.projectileSpeed,
     targetId: target.id,
+    projectileSize: profile.projectileSize,
+    projectileColor: profile.projectileColor,
+    trailColor: profile.trailColor,
+    aoeRadius: profile.aoeRadius,
+    explosionDurationMs: profile.explosionDurationMs,
+    beamWidth: profile.beamWidth,
+    impactDurationMs: profile.impactDurationMs,
   };
 }
 
