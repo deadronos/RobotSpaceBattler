@@ -66,6 +66,76 @@ Independent Test: `tests/weapon/visuals-smoke.spec.ts` captures a sample run dem
 - [ ] T020 [US2] Instrument telemetry hooks in `src/simulation/damage/damagePipeline.ts` to `record()` events: `weapon-fired`, `weapon-hit`, `explosion-aoe`, `weapon-damage`.
 - [ ] T021 [US2] Add smoke/integration tests: `tests/weapon/rocket-aoe.test.ts` and `tests/weapon/laser-beam.test.ts` validating deterministic ordering and timing (±16ms tolerance for beam alignment).
 
+---
+
+
+### Phase 3.4: Rendering Instancing & Pooling (Performance & Visuals)
+Purpose: Implement GPU-friendly instancing and ECS-light pooling for ephemeral visual entities to reduce draw calls and React component churn while preserving MatchTrace and simulation determinism.
+
+- **Note**: These tasks are dependent on T015 (Weapon profiles), T016 (ProjectileSystem), and T019 (Placeholder visuals) to be implemented first.
+
+- [ ] T031 [US2] POC: `InstancedProjectiles` component
+  - Create `src/components/vfx/InstancedProjectiles.tsx` POC that renders bullets and rockets as `InstancedMesh`.
+  - Add debug toggle `REACT_APP_VFX_INSTANCING` so it can be compared against the old renderer.
+  - Add a sample scene or story that validates transform updates, fading, and color.
+
+- [ ] T032 [US2] POC: `LaserBatchRenderer`
+  - Create `src/components/vfx/LaserBatchRenderer.tsx` to batch laser beams using `LineSegments`.
+  - Ensure per-beam start/end color/width updates can be done each frame with minimal allocations.
+
+- [ ] T033 [US2] POC: `InstancedEffects`
+  - Create `src/components/vfx/InstancedEffects.tsx` that batches explosions and impacts using instanced geometry or `Points`.
+
+- [ ] T034 [P] VisualInstanceManager core
+  - Add `src/visuals/VisualInstanceManager.ts` with `allocateIndex`, `releaseIndex`, `getIndex` APIs.
+  - Add a capacity config per category and a free-list reuse policy.
+  - Emit telemetry for alloc/release/fallback.
+
+- [ ] T035 [US2] Integrate VisualInstanceManager with ProjectileSystem
+  - Update `src/simulation/projectiles/` to call `allocateIndex` on spawn and `releaseIndex` on expiry.
+  - Optionally store `projectile.instanceIndex` for parity and debugging.
+
+- [ ] T036 [US2] Integrate VisualInstanceManager with EffectSystem
+  - Update `src/simulation/effects/` to call `allocateIndex` on spawn and `releaseIndex` on expire.
+
+- [ ] T037 [P] Add optional ECS pools
+  - Add `src/ecs/pools/ProjectilePool.ts` to pre-allocate projectile memory and reuse objects.
+  - Add `src/ecs/pools/EffectPool.ts` if necessary.
+  - Add tests that confirm pooling reduces GC under stress.
+
+- [ ] T038 [P] QualityManager toggles and config
+  - Add `visuals.instancing.enabled` feature flag to `QualityManager`.
+  - Add config keys: `maxInstances.bullets`, `maxInstances.rockets`, `maxInstances.lasers`, `maxInstances.effects`.
+
+- [ ] T039 [US2] Simulation rendering integration & feature toggle
+  - Modify `src/components/Simulation.tsx` to render `InstancedProjectiles`, `InstancedEffects`, and `LaserBatchRenderer` when `visuals.instancing.enabled` is true.
+  - Keep `ProjectileVisual` and `EffectVisual` as a debug fallback.
+
+- [ ] T040 [P] Telemetry & Observability
+  - Emit telemetry events: `VFX:Instancing:Alloc`, `VFX:Instancing:Release`, `VFX:Instancing:Fallback`.
+  - Provide `window.__rendererStats` and `renderer.info` instrumentation to collect draw-call and JS performance metrics for the perf harness.
+
+- [ ] T041 [P] Headless perf harness & measurement scripts
+  - Add `scripts/perf/measure_drawcalls.js` to build the app and measure draw-call counts and JS frame times headlessly.
+  - Add an optional CI job `perf:vfx-instancing` that runs baseline vs instanced comparisons.
+
+- [ ] T042 [US2] Tests & parity validation
+  - Add unit tests for `VisualInstanceManager` allocation/release logic.
+  - Add headless screenshot parity tests and perf checks that validate draw-call reduction and visual parity between instanced and non-instanced modes.
+
+- [ ] T043 [P] Optional: Robot visual instancing (advanced)
+  - Add a research task to decouple physics from visuals and, if feasible, render robots as `InstancedMesh` with per-instance transforms updated from physics.
+  - Add tests to ensure determinism and MatchTrace parity.
+
+- [ ] T044 [P] Documentation and Quickstart Updates
+  - Update `specs/005-weapon-diversity/quickstart.md` with commands and flags for toggling instancing.
+  - Add a `docs/technical/instancing.md` notes file describing instance management and debug flags.
+
+
+- [ ] T045 [P] PR & Release Notes
+  - Add `instancing` section to `./docs/RELEASE_NOTES.md` and create a PR with a `CONSTITUTION-CHECK` section and a short exec summary.
+
+
 ### Phase 3.3: User Story 3 — Balance validation & rock-paper-scissors tests (P1) [US3]
 
 Goal: Provide automated duel matrix, unit tests, and telemetry to validate RPS relations (Laser > Gun, Gun > Rocket, Rocket > Laser) and designer-tunable multipliers.
@@ -97,8 +167,9 @@ Independent Test: `scripts/duel-matrix/run-duels.ts --archetypeA=laser --archety
 
 ### Story Dependencies (high level)
 - US1 (10v10) depends on: T004, T005, T006, T007, T009
-- US2 (Visuals & mechanics) depends on: T001, T004, T005, T016
+- US2 (Visuals & mechanics) depends on: T001, T004, T005, T016, T019
 - US3 (Balance + duel harness) depends on: T001, T004, T005, T003
+- Instancing (Phase 3.4): T031..T041 depend on: T015, T016, T019
 
 ---
 
@@ -106,6 +177,7 @@ Independent Test: `scripts/duel-matrix/run-duels.ts --archetypeA=laser --archety
 
 - Foundation: `T004`, `T005`, `T006`, `T007`, `T008`, `T009` can be worked on in parallel by separate engineers.
 - US2 parallel: `T017` (rocket) and `T018` (laser) and `T019` (visuals) are independent and can be implemented in parallel once weapon types exist.
+ - Instancing parallel: `T031` (InstancedProjectiles POC), `T032` (LaserBatchRenderer POC), and `T033` (InstancedEffects POC) can be implemented and validated independently before the final integration tasks T034..T041.
 - US3 parallel: writing `T022` (multiplier) and `T023` (damage pipeline integration) can be split: one engineer implements `T022`, another updates pipeline `T023` after API is stable.
 
 ---
@@ -114,6 +186,7 @@ Independent Test: `scripts/duel-matrix/run-duels.ts --archetypeA=laser --archety
 
 - **US1**: `tests/integration/10v10-observer.spec.ts` — Start match, assert 10 red + 10 blue spawn, verify observer cannot control robots, toggle camera modes.
 - **US2**: `tests/weapon/rocket-aoe.test.ts`, `tests/weapon/laser-beam.test.ts` — Rocket AoE emits `explosion-aoe` and `weapon-damage` events with deterministic ordering; Laser beam emits per-tick `weapon-damage` and visuals align within ±16ms.
+ - **US2** (Instancing): `tests/perf/instancing.spec.ts` — Run a heavy 10v10 stress scenario with instancing toggled ON/OFF; confirm draw-call reduction and no changes to MatchTrace or telemetry outputs; also assert visual parity for a sample of scenes.
 - **US3**: `tests/duel/duel-matrix.spec.ts` — For each pairing (laser/gun, gun/rocket, rocket/laser) run ≥30 duels and assert advantaged archetype ≥70% win rate.
 
 ---
@@ -129,6 +202,15 @@ Independent Test: `scripts/duel-matrix/run-duels.ts --archetypeA=laser --archety
 ## File To Be Created
 
 - `specs/005-weapon-diversity/tasks.md` (this file)
+
+Additional files referenced (instancing & perf):
+- `src/components/vfx/InstancedProjectiles.tsx`
+- `src/components/vfx/LaserBatchRenderer.tsx`
+- `src/components/vfx/InstancedEffects.tsx`
+- `src/visuals/VisualInstanceManager.ts`
+- `src/ecs/pools/ProjectilePool.ts`
+- `src/ecs/pools/EffectPool.ts` (optional)
+- `scripts/perf/measure_drawcalls.js`
 
 ---
 

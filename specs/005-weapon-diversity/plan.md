@@ -101,11 +101,94 @@ Break tasks into small, testable increments (TDD):
 2.11 Docs & PR
 - Update README/quickstart and create PR with `CONSTITUTION-CHECK` section, tests, and exec summary.
 
+### 2.12 Rendering Instancing & Pooling (detailed tasks)
+Purpose: Replace per-entity React visual components for ephemeral, visual-only entities with GPU-friendly instanced or batched renderers. This reduces CPU/React overhead and draw calls for high-VFX scenarios while preserving simulation semantics.
+
+2.12.1 Scope & Targets
+- Projectiles (gun bullets, rockets): `InstancedMesh` by archetype (bullet/rocket) with `instanceMatrix` and `instanceColor` attributes.
+- Laser beams: `LineSegments` or instanced line geometry batched per-frame to handle many beams with minimal draw calls.
+- Effects (explosions, sparks, impact rings) and small particles: `InstancedMesh`/`Points` with per-instance attributes (time, opacity, color), optionally shader-based.
+- Decorative/ambient visual-only entities (debris, small props): instanced where reused.
+- Robots (visual-only) remain NOT instanced by default until a later decoupling step (physics/visual separation).
+
+Files to modify & new files to add
+- Modify:
+  - `src/components/Simulation.tsx` — replace per-entity `ProjectileVisual`/`EffectVisual` with `InstancedProjectiles`/`InstancedEffects`.
+  - `src/components/vfx/ProjectileVisual.tsx` — keep as debug fallback and for parity testing; optionally remove when instancing is stable.
+  - `src/components/vfx/EffectVisual.tsx` — keep as debug fallback.
+  - `src/simulation/projectiles` (system) — allocate/release instance indices during spawn & expiration.
+  - `src/simulation/effects` (system) — allocate/release instance indices during spawn & expiration.
+- Add:
+  - `src/components/vfx/InstancedProjectiles.tsx`
+  - `src/components/vfx/LaserBatchRenderer.tsx`
+  - `src/components/vfx/InstancedEffects.tsx`
+  - `src/visuals/VisualInstanceManager.ts`
+  - `src/ecs/pools/ProjectilePool.ts` (optional)
+  - `src/ecs/pools/EffectPool.ts` (optional)
+
+2.12.2 Low-risk first steps (Proof-of-Concept)
+- Add `src/components/vfx/InstancedProjectiles.tsx` (POC): implement minimal `InstancedMesh` for gun bullets and a simple `InstancedMesh` for rockets. Ensure an instance index mapping exists and is updated per frame via `instancedMesh.setMatrixAt(index, matrix)`, `.instanceMatrix.needsUpdate = true`.
+- Add `src/components/vfx/LaserBatchRenderer.tsx` (POC): implement a `LineSegments` buffer that accepts all active `laser` projectile start and end positions and reconstructs a dynamic `BufferGeometry` each frame.
+- Keep `ProjectileVisual` mapping as a dev-only fallback behind `process.env.REACT_APP_VFX_INSTANCING` toggle.
+
+2.12.3 Visual Instance Manager & Pools
+- Add `src/visuals/VisualInstanceManager.ts`: a small module that provides per-category `allocateIndex(entityId)` / `releaseIndex(entityId)` operations and a `getIndex(entityId)` lookup. It returns `instanceIndex` and supports a `maxInstances` parameter per category.
+- Add `src/ecs/pools/ProjectilePool.ts` (optional): two strategies: (A) keep pre-allocated entities in `miniplex` with `active` flag and toggle active; (B) maintain external object memory and add/remove from `miniplex` as `acquire`/`release`. Implement (A) as default if compatible with miniplex constraints.
+- Add `src/ecs/pools/EffectPool.ts` for effects if necessary.
+
+2.12.4 Systems integration
+- Update `src/simulation/projectiles/` system: upon projectile spawn, call `VisualInstanceManager.allocateIndex()` and store `instanceIndex` within the projectile entity. On projectile expiry, call `VisualInstanceManager.releaseIndex()`.
+- Update `src/simulation/effects/` system: same lifecycle management for effects.
+- Ensure no simulation semantics are changed; instancing only affects visuals.
+
+2.12.5 Renderer changes & UI integration
+- Add new components:
+  - `src/components/vfx/InstancedProjectiles.tsx`: reads `battleWorld.projectiles.entities`, groups by archetype, updates instance transforms & colors per frame; exposes debug mode to use `ProjectileVisual` for uninstanced items.
+  - `src/components/vfx/LaserBatchRenderer.tsx`: batch lasers as `LineSegments`.
+  - `src/components/vfx/InstancedEffects.tsx`: batch explosions and impacts using instanced geometry and simple shaders for fade and color.
+- Modify `src/components/Simulation.tsx`: replace per-`ProjectileVisual` / `EffectVisual` mapping with `InstancedProjectiles` and `InstancedEffects` rendered once per scene; keep `RobotPlaceholder` per-entity for now.
+
+2.12.6 Feature toggles & Quality manager
+- Add toggle in `QualityManager` (`visuals.instancing.enabled`) and config keys for `maxInstances.bullets`, `maxInstances.rockets`, `maxInstances.lasers`, `maxInstances.effects` with sensible defaults (e.g., 128 bullets, 48 rockets, 32 lasers, 256 effects).
+- If toggled off, preserve current per-entity rendering for parity and testing.
+
+2.12.7 Telemetry, Observability & Testing
+- Emit telemetry events on: `VFX:Instancing:Alloc(index, entityId, category)`, `VFX:Instancing:Release(index, entityId, category)`, and `VFX:Instancing:Fallback(category, reason)`. Write a small aggregator for these events in `TelemetryPort`.
+- Add headless perf tests and screenshot parity tests in `tests/` for both instanced and non-instanced scenarios: test `drawCallCount` is improved, `frameTime` is reduced, and visuals match (pixel-diff or acceptance threshold).
+
+2.12.8 Optional: Robot decoupling & instanced visuals (advanced)
+- If profiling demonstrates robots are also a material bottleneck, add a later-phase (Phase 4) task to decouple physics from visuals: render robots as `InstancedMesh` while keeping per-robot colliders and RigidBody in synchronous state updates. This requires robust testing for determinism.
+
+2.12.9 Acceptance criteria for instancing
+- Visual parity verified and instancing reduces CPU update cost and draw calls in the dev environment.
+- No change to MatchTrace records or simulation output; telemetry remains unchanged (except optional instancing telemetry).
+- Fallbacks log telemetry and remain under a low threshold for normal test loads.
+
+2.12.10 Rollout & Validation
+- Begin with a POC branch implementing `InstancedProjectiles` and corresponding tests.
+- Validate performance and parity and then roll out `LaserBatchRenderer` and `InstancedEffects` subsequently; add `EffectPool` as needed.
+- Merge with `QualityManager` toggles and QA validation.
+
+2.12.11 Performance & Measurement Harness
+- Add lightweight headless perf harness scripts in `scripts/perf/measure_drawcalls.js` that:
+  - Build a release version of the app (`npm run build`) and serve it temporarily (e.g., `npm run preview`).
+  - Launch a headless browser (puppeteer) and navigate to the scene, toggle `VFX_INSTANCING` on/off via URL query or a debug toggle.
+  - Collect runtime metrics: `renderer.info.render.calls`, `renderer.info.render.triangles`, JS per-frame timing from a `window.__rendererStats` insertion, and instance counts by category.
+  - Capture averages across a steady-state frame window and store to JSON for later comparison.
+  - Report if instanced mode improves draw-calls and JS render time relative to baseline; if not, flag for team review.
+
+Phase 3 — Validation & Tuning (brief)
+
 ## Phase 3 — Validation & Tuning (brief)
 
 - Execute duel-matrix across seed variations and collect statistics.
 - Adjust multipliers if required and re-run tests until acceptance.
 - Record final tuning in `research.md` and update `spec.md` acceptance notes.
+
+### Post-Implementation Checks (instancing)
+- Validate logging of `VFX:Instancing:Fallback` is present and under threshold in test runs.
+- Collect performance deltas and update `specs/002` quality defaults if needed.
+- Add an `instancing` section to `./docs/RELEASE_NOTES.md` describing toggles and known issues.
 
 ## Acceptance Checklist
 
@@ -114,6 +197,7 @@ Break tasks into small, testable increments (TDD):
 - Rocket AoE tests: 50 impact captures with explosion events logged (>=95% reliability in test harness).
 - Laser beam alignment tests: damage timestamps aligned within ±16ms for >=95% of sampled events.
 - 10v10 integration test passes and MatchTrace persisted.
+ - Visual instancing parity & perf check: run `Test F — Instancing` (spec) and assert instanced mode reduces draw calls and JS render overhead while maintaining visual parity and telemetry determinism.
 
 ## Artifacts Created / Paths
 

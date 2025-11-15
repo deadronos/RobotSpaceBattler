@@ -119,17 +119,51 @@ Acceptance Scenarios:
 
 - **FR-011 (AI Weapon Use)**: Robot AI SHOULD prefer weapons based on engagement range and RPS advantage where feasible (e.g., choose rocket when clustered enemies present). Acceptance: In a set of simulation runs, AI weapon selection frequency reflects engagement context and RPS heuristics (observational test).
 
+### FR-012 (Rendering Instancing & Pooling)
+- **FR-012 (Rendering Instancing & Pooling)**: To meet performance targets under heavy projectile / VFX load, the renderer MUST use GPU-friendly instancing and batched draw calls for visual-only entities. The expected scope is "instanced for virtually all visual-only entities", with the following specifics:
+  - Projectiles (guns, rockets): instanced meshes with per-instance color/transform attributes.
+  - Laser beams: batched line segments or instanced geometry updated per-frame.
+  - Short-lived effects (explosions, sparks, impact rings): instanced geometries or particle systems; avoid creating per-effect React components wherever possible.
+  - Background / decorative visual-only entities and small props: use instancing or particle points if re-used.
+  - Robots and physics-driven entities: remain per-entity RigidBody / collider-managed objects and NOT instanced by default, _unless_ a later-phase decoupling permits safe visual instancing without breaking determinism or physics.
+
+  Acceptance Criteria (instances/batches only change visuals):
+  - The visual rendering change must be purely visual — simulation, MatchTrace, and telemetry semantics must remain unchanged.
+  - A controlled perf test (10v10 with heavy projectile fire and effects) demonstrates a measurable improvement (e.g., a demonstrable reduction in draw call counts and lower per-frame React update overhead in dev environment) compared to a baseline run without instancing. Specific numeric thresholds TBD after profiling, but measured improvements are required to consider instancing accepted.
+  - Rendering parity: instanced mode must visually match the non-instanced fallback for a sampling of scenarios and pass the blind recognizability acceptance test (SC-003) for archetype visuals.
+  - Any fallback behavior (e.g., capacity exhausted) must be telemetry-logged and kept within a low threshold (e.g., fallback occurrences < 5% under test load).
+
+  Implementation constraints:
+  - Instancing must be opt-in via `QualityManager` and runtime flags so it can be toggled for comparison & CI runs.
+  - The `MatchTrace` and deterministic replay records MUST NOT be affected by instancing decisions; visual instance index mapping is not required for deterministic semantics but must be traceable for debugging.
+  - Per-instance runtime attributes (color, lifetime, scale) can be implemented using `InstancedBufferAttribute` and must be updated using efficient `three` methods with minimal allocations.
+
+High-level bullet points: Instancing strategy and scope
+- Scope: "fully and almost all entities" refers to every visual-only, ephemeral entity that does not require individual physics or per-frame gameplay logic to be present as a unique runtime object for the simulation. This includes projectiles, beams, impact effects, shots/tracers, debris particles, and sparks. It excludes the authoritative physics/colliders for robots unless decoupled.
+- Architecture: Add a lightweight VisualInstanceManager that maintains mappings from `entityId` -> `instanceIndex` and a `freeIndex` pool per instance category (bullet/rocket/laser/effect). Integrate the manager with render-level components, and ensure the ECS `projectileSystem` and `effectSystem` acquire/release indices as part of lifecycle management.
+- Implement per-entity fallback: if the instance pool is exhausted (no free indices), fall back to the existing per-entity React component renderer for parity and visibility.
+- Quality & telemetry: Integrate instancing toggles into `QualityManager` and track telemetry counts for active instances and fallback events (`VFX:Instancing:Fallback`) to monitor performance and correctness across runs.
+- Testing & safety: Add render parity tests and perf regressions to the CI harness to ensure instancing doesn't regress simulation determinism or match telemetry output.
+  - Visual parity tests (affected components must pass a screenshot or headless scene diff test for a representative set of scenarios).
+  - Perf regression tests: collect draw-call counts and JS render times before/after; assert improvements or fix thresholds.
+  - End-to-end duel-matrix and 10v10 smoke tests must run under both instanced and non-instanced modes to demonstrate no behavioural differences in outputs & telemetry.
+
 ### Key Entities *(include if feature involves data)*
 
 - **WeaponProfile**: id, name, archetype (gun|laser|rocket), baseDamage, rateOfFire, ammoOrEnergy, projectileSpeed (if applicable), aoeRadius (rocket), aoeFalloffProfile, beamDuration/tickRate (laser), tracerConfig, visualRefs.
  - **WeaponProfile**: id, name, archetype (gun|laser|rocket), baseDamage, rateOfFire, ammoOrEnergy, projectileSpeed (if applicable), aoeRadius (rocket), aoeFalloffProfile, beamDuration/tickRate (laser), tracerConfig, visualRefs.
  - **BalanceMultipliers**: design-level multipliers for archetype interactions. Fields: `advantageMultiplier` (default `1.25`), `disadvantageMultiplier` (default `0.85`), `neutralMultiplier` (default `1.0`). These are applied multiplicatively to `WeaponProfile.baseDamage` for deterministic RPS effects.
 - **ProjectileInstance**: id, weaponProfileId, ownerId, position, velocity, timestampMs, contactEventId.
+ - **ProjectileInstance**: id, weaponProfileId, ownerId, position, velocity, timestampMs, contactEventId. (Optional `instanceIndex` when visual instancing is used.)
 - **ExplosionEvent**: id, origin, radius, timestampMs, damageProfileId.
+ - **ExplosionEvent**: id, origin, radius, timestampMs, damageProfileId. (Optional `instanceIndex` for batched visual representation.)
 - **WeaponVisual**: iconRef, modelRef, firingSfxRef, impactVfxRef, beamVfxRef, trailVfxRef.
  - **WeaponTelemetry**: events: `pickup-acquired`, `weapon-fired`, `weapon-hit`, `explosion-aoe`, `weapon-damage` (fields include `matchId`, `weaponProfileId`, `attackerId`, `targetId`, `amount`, `timestampMs` — integer milliseconds since match start; optional `frameIndex` for deterministic ordering).
  - **WeaponTelemetry**: events: `pickup-acquired`, `weapon-fired`, `weapon-hit`, `explosion-aoe`, `weapon-damage` (fields include `matchId`, `weaponProfileId`, `attackerId`, `targetId`, `amount`, `timestampMs` — integer milliseconds since match start; optional `frameIndex` for deterministic ordering).
  - **TelemetryAggregator**: ephemeral in-memory aggregator used during automated tests and live runs to accumulate per-match event summaries for fast assertions. Fields: `matchId`, `eventCountsByType`, `damageTotalsByWeapon`, `winCountsByArchetype`, `timestampMs` (summary window; integer milliseconds since match start). The aggregator is optional for production analytics but required for the automated duel matrix harness.
+
+#### VisualInstanceManager (concept)
+- Visual-only component coordinator. Provides an API for the renderer and ECS to allocate & release per-category instance indices and map `entityId` => `instanceIndex` for batched rendering. It is a runtime optimization layer; it must be fully optional and togglable via `QualityManager`.
 
 ## Success Criteria *(mandatory)*
 
@@ -169,6 +203,8 @@ Acceptance Scenarios:
 
 - Test E — Visual Recognizability: Present icons/screenshots to 20+ testers and assert ≥90% correct classification per archetype.
 
+- Test F — Instancing Performance & Parity: Run a heavy 10v10 match with a stress VFX profile (maximum bullets/rockets/laser beams); run the test under both instancing-enabled and instancing-disabled modes. Acceptance: instanced mode reduces draw calls and JS/React per-frame overhead while matching visual parity and producing identical MatchTrace and telemetry outputs; fallback occurrences remain under a configured threshold.
+
 ## Traceability & References
 
 - Related specs: `specs/001-3d-team-vs/spec.md`, `specs/002-3d-simulation-graphics/spec.md`, `specs/003-extend-placeholder-create/spec.md`, `specs/004-ai-roaming-wall-awareness/spec.md`.
@@ -180,4 +216,5 @@ Acceptance Scenarios:
 3. Integrate placeholder VFX for rockets/lasers and run visual/performance tests under quality-scaling.
 4. Run designer blind recognizability study and iterate visuals.
 5. Tune balance multipliers based on duel matrix results and repeat tests until success criteria met.
+6. Implement rendering instancing & pooling for visual-only entities (projectiles, lasers, effects) with a POC followed by rollout, feature flag toggles, and test/harness validations per `plan.md`.
 
