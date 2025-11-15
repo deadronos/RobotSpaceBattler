@@ -21,10 +21,8 @@ function useResizeInstanceCount(ref: MutableRefObject<InstancedMesh | null>, cap
 export function InstancedProjectiles({ projectiles, instanceManager }: InstancedProjectilesProps) {
   const bulletCapacity = instanceManager.getCapacity('bullets');
   const rocketCapacity = instanceManager.getCapacity('rockets');
-
-  if (bulletCapacity === 0 && rocketCapacity === 0) {
-    return null;
-  }
+  const shouldRenderBullets = bulletCapacity > 0;
+  const shouldRenderRockets = rocketCapacity > 0;
 
   const bulletMeshRef = useRef<InstancedMesh | null>(null);
   const rocketMeshRef = useRef<InstancedMesh | null>(null);
@@ -130,15 +128,19 @@ export function InstancedProjectiles({ projectiles, instanceManager }: Instanced
     }
   });
 
+  if (!shouldRenderBullets && !shouldRenderRockets) {
+    return null;
+  }
+
   return (
     <group>
-      {bulletCapacity > 0 ? (
+      {shouldRenderBullets ? (
         <instancedMesh ref={bulletMeshRef} args={[undefined, undefined, bulletCapacity]}>
           <sphereGeometry args={[0.12, 12, 12]} />
           <meshStandardMaterial vertexColors emissiveIntensity={1.05} toneMapped={false} />
         </instancedMesh>
       ) : null}
-      {rocketCapacity > 0 ? (
+      {shouldRenderRockets ? (
         <instancedMesh ref={rocketMeshRef} args={[undefined, undefined, rocketCapacity]}>
           <cylinderGeometry args={[0.08, 0.12, 0.9, 10]} />
           <meshStandardMaterial vertexColors emissiveIntensity={1.1} toneMapped={false} />

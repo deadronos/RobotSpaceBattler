@@ -2,6 +2,10 @@ import type { WebGLRenderer } from 'three';
 
 const GLOBAL_KEY = '__rendererStats';
 
+type RendererStatsWindow = Window & {
+  [GLOBAL_KEY]?: RendererStatsSnapshot;
+};
+
 export interface RendererStatsSnapshot {
   drawCalls: number;
   triangles: number;
@@ -27,13 +31,14 @@ function ensureGlobalSnapshot(): RendererStatsSnapshot | null {
     return null;
   }
 
-  const existing = (window as Record<string, unknown>)[GLOBAL_KEY];
+  const statsWindow = window as RendererStatsWindow;
+  const existing = statsWindow[GLOBAL_KEY];
   if (existing && typeof existing === 'object') {
-    return existing as RendererStatsSnapshot;
+    return existing;
   }
 
   const snapshot = { ...defaultSnapshot } satisfies RendererStatsSnapshot;
-  (window as Record<string, unknown>)[GLOBAL_KEY] = snapshot;
+  statsWindow[GLOBAL_KEY] = snapshot;
   return snapshot;
 }
 

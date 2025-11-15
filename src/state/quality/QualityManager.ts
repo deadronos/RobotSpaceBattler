@@ -18,6 +18,15 @@ export interface QualitySettings {
   };
 }
 
+type QualityOverrides = {
+  visuals?: {
+    instancing?: {
+      enabled?: boolean;
+      maxInstances?: Partial<InstancingMaxInstancesConfig>;
+    };
+  };
+};
+
 type QualityListener = () => void;
 
 function readBooleanFlag(): boolean {
@@ -79,20 +88,23 @@ export class QualityManager {
   private settings: QualitySettings;
   private readonly listeners = new Set<QualityListener>();
 
-  constructor(initial?: Partial<QualitySettings>) {
+  constructor(initial?: QualityOverrides) {
     this.settings = initial ? this.mergeSettings(DEFAULT_SETTINGS, initial) : cloneSettings(DEFAULT_SETTINGS);
   }
 
-  private mergeSettings(base: QualitySettings, overrides: Partial<QualitySettings>): QualitySettings {
+  private mergeSettings(base: QualitySettings, overrides: QualityOverrides): QualitySettings {
+    const instancing = overrides.visuals?.instancing;
+    const maxInstanceOverrides = instancing?.maxInstances ?? {};
+
     return {
       visuals: {
         instancing: {
-          enabled: overrides.visuals?.instancing?.enabled ?? base.visuals.instancing.enabled,
+          enabled: instancing?.enabled ?? base.visuals.instancing.enabled,
           maxInstances: {
-            bullets: overrides.visuals?.instancing?.maxInstances?.bullets ?? base.visuals.instancing.maxInstances.bullets,
-            rockets: overrides.visuals?.instancing?.maxInstances?.rockets ?? base.visuals.instancing.maxInstances.rockets,
-            lasers: overrides.visuals?.instancing?.maxInstances?.lasers ?? base.visuals.instancing.maxInstances.lasers,
-            effects: overrides.visuals?.instancing?.maxInstances?.effects ?? base.visuals.instancing.maxInstances.effects,
+            bullets: maxInstanceOverrides.bullets ?? base.visuals.instancing.maxInstances.bullets,
+            rockets: maxInstanceOverrides.rockets ?? base.visuals.instancing.maxInstances.rockets,
+            lasers: maxInstanceOverrides.lasers ?? base.visuals.instancing.maxInstances.lasers,
+            effects: maxInstanceOverrides.effects ?? base.visuals.instancing.maxInstances.effects,
           },
         },
       },
@@ -121,12 +133,7 @@ export class QualityManager {
     this.settings = this.mergeSettings(this.settings, {
       visuals: {
         instancing: {
-          maxInstances: {
-            bullets: maxInstances.bullets,
-            rockets: maxInstances.rockets,
-            lasers: maxInstances.lasers,
-            effects: maxInstances.effects,
-          } as InstancingMaxInstancesConfig,
+          maxInstances,
         },
       },
     });
@@ -147,8 +154,11 @@ export class QualityManager {
 
 export const qualityManager = new QualityManager();
 
+type QualityManagerWindow = Window & { __qualityManager?: QualityManager };
+
 if (typeof window !== 'undefined') {
-  (window as Record<string, unknown>).__qualityManager = qualityManager;
+  const managerWindow = window as QualityManagerWindow;
+  managerWindow.__qualityManager = qualityManager;
 }
 
 export function useQualitySettings(): QualitySettings {

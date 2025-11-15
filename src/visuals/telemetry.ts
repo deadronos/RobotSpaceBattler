@@ -1,27 +1,28 @@
+import type { RendererStatsSnapshot } from './rendererStats';
 import type { VisualInstanceTelemetryEmitter, VisualInstanceTelemetryEvent } from './VisualInstanceManager';
 
 const GLOBAL_KEY = '__rendererStats';
-const TELEMETRY_KEY = 'instancingTelemetry';
 
-interface RendererStatsGlobal {
-  drawCalls?: number;
-  triangles?: number;
-  lines?: number;
-  points?: number;
-  geometries?: number;
-  textures?: number;
-  frameTimeMs?: number;
-  [TELEMETRY_KEY]?: VisualInstanceTelemetryEvent[];
+interface RendererStatsGlobal extends RendererStatsSnapshot {
+  instancingTelemetry?: VisualInstanceTelemetryEvent[];
 }
+
+type RendererStatsWindow = Window & {
+  [GLOBAL_KEY]?: RendererStatsGlobal;
+};
 
 function getGlobalStats(): RendererStatsGlobal | null {
   if (typeof window === 'undefined') {
     return null;
   }
 
-  const existing = (window as Record<string, unknown>)[GLOBAL_KEY];
+  const statsWindow = window as RendererStatsWindow;
+  const existing = statsWindow[GLOBAL_KEY];
   if (existing && typeof existing === 'object') {
-    return existing as RendererStatsGlobal;
+    if (!existing.instancingTelemetry) {
+      existing.instancingTelemetry = [];
+    }
+    return existing;
   }
 
   const stats: RendererStatsGlobal = {
@@ -32,9 +33,9 @@ function getGlobalStats(): RendererStatsGlobal | null {
     geometries: 0,
     textures: 0,
     frameTimeMs: 0,
-    [TELEMETRY_KEY]: [],
+    instancingTelemetry: [],
   };
-  (window as Record<string, unknown>)[GLOBAL_KEY] = stats;
+  statsWindow[GLOBAL_KEY] = stats;
   return stats;
 }
 
@@ -47,11 +48,11 @@ export function pushVisualTelemetryEvent(event?: VisualInstanceTelemetryEvent): 
     return;
   }
 
-  if (!stats[TELEMETRY_KEY]) {
-    stats[TELEMETRY_KEY] = [];
+  if (!stats.instancingTelemetry) {
+    stats.instancingTelemetry = [];
   }
 
-  const events = stats[TELEMETRY_KEY]!;
+  const events = stats.instancingTelemetry;
   events.push(event);
   if (events.length > 256) {
     events.splice(0, events.length - 256);

@@ -12,10 +12,10 @@ import { RobotPlaceholder } from './RobotPlaceholder';
 import { Scene } from './Scene';
 import { SpaceStation } from './SpaceStation';
 import { EffectVisual } from './vfx/EffectVisual';
-import { ProjectileVisual } from './vfx/ProjectileVisual';
 import { InstancedEffects } from './vfx/InstancedEffects';
 import { InstancedProjectiles } from './vfx/InstancedProjectiles';
 import { LaserBatchRenderer } from './vfx/LaserBatchRenderer';
+import { ProjectileVisual } from './vfx/ProjectileVisual';
 
 interface SimulationProps {
   battleWorld: BattleWorld;

@@ -9,13 +9,13 @@ import {
 } from '../lib/math/vec3';
 import { TEAM_CONFIGS, TeamConfig, TeamId } from '../lib/teamConfig';
 import { qualityManager } from '../state/quality/QualityManager';
-import { createEffectPool, EffectPool } from './pools/EffectPool';
-import { createProjectilePool, ProjectilePool } from './pools/ProjectilePool';
 import {
+  createVisualInstanceManager,
   VisualInstanceCategory,
   VisualInstanceManager,
-  createVisualInstanceManager,
 } from '../visuals/VisualInstanceManager';
+import { createEffectPool, EffectPool } from './pools/EffectPool';
+import { createProjectilePool, ProjectilePool } from './pools/ProjectilePool';
 
 export type { TeamId } from '../lib/teamConfig';
 
