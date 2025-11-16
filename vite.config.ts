@@ -48,8 +48,20 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('three')) return 'vendor_three'
-            if (id.includes('@react-three')) return 'vendor_r3'
+            // Co-locate React, three, and @react-three packages into a single
+            // vendor chunk to avoid circular cross-chunk dependencies where a
+            // three-related vendor chunk may be evaluated before React is
+            // initialized (causing `useLayoutEffect` to be undefined).
+            //
+            // Keeping these packages together ensures the React runtime is
+            // available to three/r3f code during module initialization.
+            if (
+              id.includes('node_modules/react') ||
+              id.includes('node_modules/react-dom') ||
+              id.includes('node_modules/three') ||
+              id.includes('node_modules/@react-three')
+            )
+              return 'vendor_three'
             if (id.includes('@react-three/rapier') || id.includes('rapier')) return 'vendor_rapier'
             if (id.includes('miniplex')) return 'vendor_miniplex'
             return 'vendor'
