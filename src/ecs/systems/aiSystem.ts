@@ -1,5 +1,6 @@
 import { ENGAGE_MEMORY_TIMEOUT_MS } from '../../lib/constants';
 import { distanceVec3, lengthVec3 } from '../../lib/math/vec3';
+import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
 import { isActiveRobot } from '../../lib/robotHelpers';
 import { nextBehaviorState, RobotBehaviorMode } from '../../simulation/ai/behaviorState';
 import { computeTeamAnchors } from '../../simulation/ai/captainCoordinator';
@@ -16,15 +17,30 @@ import { buildNeighbors } from './aiNeighbors';
 import { refreshRoamTarget } from './roaming';
 
 export function updateAISystem(battleWorld: BattleWorld, rng: () => number): void {
+  perfMarkStart('updateAISystem');
+
   const robots = battleWorld.robots.entities;
   if (robots.length === 0) {
+    perfMarkEnd('updateAISystem');
     return;
   }
 
   const anchors = computeTeamAnchors(robots);
+  const robotsByTeam = new Map<string, RobotEntity[]>();
+
+  for (let i = 0; i < robots.length; i += 1) {
+    const robot = robots[i];
+    if (!robotsByTeam.has(robot.team)) {
+      robotsByTeam.set(robot.team, []);
+    }
+
+    if (isActiveRobot(robot)) {
+      robotsByTeam.get(robot.team)?.push(robot);
+    }
+  }
 
   robots.forEach((robot) => {
-    const allies = robots.filter((ally) => ally.team === robot.team && isActiveRobot(ally));
+    const allies = robotsByTeam.get(robot.team) ?? [];
     const { visibleEnemies } = updateRobotSensors(robot, robots, battleWorld.state.elapsedMs);
 
     let target: RobotEntity | undefined;
@@ -116,4 +132,6 @@ export function updateAISystem(battleWorld: BattleWorld, rng: () => number): voi
     robot.orientation = movementPlan.orientation;
     robot.speed = lengthVec3(movementPlan.velocity);
   });
+
+  perfMarkEnd('updateAISystem');
 }

@@ -5,6 +5,7 @@ import { updateMovementSystem } from '../../ecs/systems/movementSystem';
 import { updateProjectileSystem } from '../../ecs/systems/projectileSystem';
 import { spawnTeams } from '../../ecs/systems/spawnSystem';
 import { BattleWorld, resetBattleWorld, TeamId } from '../../ecs/world';
+import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
 import { createXorShift32 } from '../../lib/random/xorshift';
 import { isActiveRobot } from '../../lib/robotHelpers';
 import { MatchStateMachine } from '../state/matchStateMachine';
@@ -74,17 +75,31 @@ export function createBattleRunner(
 
   return {
     step: (deltaSeconds: number) => {
+      perfMarkStart('battleRunner.step');
       const deltaMs = deltaSeconds * 1000;
       world.state.elapsedMs += deltaMs;
 
       const snapshot = matchMachine.getSnapshot();
 
       if (snapshot.phase === 'running') {
+        perfMarkStart('updateAISystem');
         updateAISystem(world, () => rng.next());
+        perfMarkEnd('updateAISystem');
+
+        perfMarkStart('updateCombatSystem');
         updateCombatSystem(world, telemetry);
+        perfMarkEnd('updateCombatSystem');
+
+        perfMarkStart('updateMovementSystem');
         updateMovementSystem(world, deltaSeconds);
+        perfMarkEnd('updateMovementSystem');
+
         updateProjectileSystem(world, deltaSeconds, telemetry);
+
+        perfMarkStart('updateEffectSystem');
         updateEffectSystem(world);
+        perfMarkEnd('updateEffectSystem');
+
         evaluateVictory(world, matchMachine);
       }
 
@@ -92,6 +107,8 @@ export function createBattleRunner(
       if (shouldRestart) {
         spawnMatch();
       }
+
+      perfMarkEnd('battleRunner.step');
     },
     reset: () => {
       spawnMatch();
