@@ -13,6 +13,9 @@ import { TelemetryPort } from '../../runtime/simulation/ports';
 import { computeDamageMultiplier } from '../../simulation/combat/weapons';
 import { BattleWorld, EffectType, ProjectileEntity, RobotEntity } from '../world';
 
+const activeRobotsScratch: RobotEntity[] = [];
+const robotsByIdScratch = new Map<string, RobotEntity>();
+
 function findTarget(
   projectile: ProjectileEntity,
   activeRobots: RobotEntity[],
@@ -155,6 +158,7 @@ function applyRocketExplosion(
   shooter: RobotEntity | undefined,
   telemetry: TelemetryPort,
   directTarget: RobotEntity | undefined,
+  activeRobots: RobotEntity[],
 ): void {
   const radius = projectile.aoeRadius ?? 0;
   if (radius <= 0 || !directTarget) {
@@ -166,17 +170,21 @@ function applyRocketExplosion(
     return;
   }
 
-  const impacted = world.robots.entities
-    .filter((robot) => robot.team !== projectile.team && isActiveRobot(robot))
-    .map((robot) => ({ robot, distance: distanceVec3(robot.position, projectile.position) }))
-    .filter(({ distance }) => distance <= radius)
-    .sort((a, b) => a.robot.id.localeCompare(b.robot.id));
+  for (let i = 0; i < activeRobots.length; i += 1) {
+    const robot = activeRobots[i];
+    if (robot.team === projectile.team) {
+      continue;
+    }
 
-  impacted.forEach(({ robot, distance }) => {
+    const distance = distanceVec3(robot.position, projectile.position);
+    if (distance > radius) {
+      continue;
+    }
+
     const falloff = Math.max(0, 1 - distance / radius);
     const baseDamage = projectile.damage * falloff;
     applyDamageToRobot(world, projectile, robot, shooter, baseDamage, telemetry);
-  });
+  }
 
   const duration = projectile.explosionDurationMs ?? 720;
   const secondaryColor = projectile.trailColor ?? '#ffd7a1';
@@ -201,13 +209,14 @@ export function updateProjectileSystem(
   perfMarkStart('updateProjectileSystem');
 
   const robots = world.robots.entities;
-  const activeRobots: RobotEntity[] = [];
-  const robotsById = new Map<string, RobotEntity>();
+  activeRobotsScratch.length = 0;
+  robotsByIdScratch.clear();
+
   for (let i = 0; i < robots.length; i += 1) {
     const robot = robots[i];
-    robotsById.set(robot.id, robot);
+    robotsByIdScratch.set(robot.id, robot);
     if (isActiveRobot(robot)) {
-      activeRobots.push(robot);
+      activeRobotsScratch.push(robot);
     }
   }
 
@@ -226,21 +235,21 @@ export function updateProjectileSystem(
       ageMs >= projectile.maxLifetime
     ) {
       world.removeProjectile(projectile);
-      return;
+      continue;
     }
 
-    const target = findTarget(projectile, activeRobots, robotsById);
+    const target = findTarget(projectile, activeRobotsScratch, robotsByIdScratch);
     if (!target) {
-      return;
+      continue;
     }
 
     const hitRadius = 1.2;
     const distance = distanceVec3(projectile.position, target.position);
     if (distance <= hitRadius) {
-      const shooter = world.robots.entities.find((robot) => robot.id === projectile.shooterId);
+      const shooter = robotsByIdScratch.get(projectile.shooterId);
 
       if (projectile.weapon === 'rocket') {
-        applyRocketExplosion(world, projectile, shooter, telemetry, target);
+        applyRocketExplosion(world, projectile, shooter, telemetry, target, activeRobotsScratch);
       } else {
         applyDirectHit(world, projectile, target, shooter, telemetry);
       }

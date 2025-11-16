@@ -78,18 +78,15 @@ export function LaserBatchRenderer({ projectiles, robotsById, instanceManager }:
     let positionsDirty = false;
     let colorsDirty = false;
 
-    projectiles.forEach((projectile) => {
-      if (projectile.weapon !== 'laser') {
-        return;
-      }
-
-      if (capacity === 0) {
-        return;
+    for (let i = 0; i < projectiles.length; i += 1) {
+      const projectile = projectiles[i];
+      if (projectile.weapon !== 'laser' || capacity === 0) {
+        continue;
       }
 
       const index = projectile.instanceIndex ?? instanceManager.getIndex('lasers', projectile.id);
       if (index === null || index === undefined || index >= capacity) {
-        return;
+        continue;
       }
 
       activeIndices.add(index);
@@ -127,10 +124,10 @@ export function LaserBatchRenderer({ projectiles, robotsById, instanceManager }:
       color.multiplyScalar(0.7).toArray(colors, offset + 3);
       positionsDirty = true;
       colorsDirty = true;
-    });
+    }
 
     const hidden = -512;
-    previousIndices.forEach((index) => {
+    for (const index of previousIndices) {
       if (!activeIndices.has(index)) {
         const offset = index * 6;
         positions[offset] = hidden;
@@ -148,7 +145,7 @@ export function LaserBatchRenderer({ projectiles, robotsById, instanceManager }:
         positionsDirty = true;
         colorsDirty = true;
       }
-    });
+    }
 
     if (positionsDirty) {
       positionAttr.needsUpdate = true;

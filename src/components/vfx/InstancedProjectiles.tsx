@@ -63,25 +63,26 @@ export function InstancedProjectiles({ projectiles, instanceManager }: Instanced
     currentBulletDirty.clear();
     currentRocketDirty.clear();
 
-    projectiles.forEach((projectile) => {
+    for (let i = 0; i < projectiles.length; i += 1) {
+      const projectile = projectiles[i];
       if (projectile.weapon === 'laser') {
-        return;
+        continue;
       }
 
       const category = projectile.weapon === 'rocket' ? 'rockets' : 'bullets';
       const mesh = category === 'rockets' ? rocketMesh : bulletMesh;
       if (!mesh) {
-        return;
+        continue;
       }
 
       const capacity = category === 'rockets' ? rocketCapacity : bulletCapacity;
       if (capacity === 0) {
-        return;
+        continue;
       }
 
       const index = projectile.instanceIndex ?? instanceManager.getIndex(category, projectile.id);
       if (index === null || index === undefined || index >= capacity) {
-        return;
+        continue;
       }
 
       const seen = category === 'rockets' ? currentRocketActive : currentBulletActive;
@@ -110,10 +111,10 @@ export function InstancedProjectiles({ projectiles, instanceManager }: Instanced
       mesh.setColorAt(index, color);
 
       dirty.add(index);
-    });
+    }
 
     if (bulletMesh) {
-      lastBulletActive.forEach((index) => {
+      for (const index of lastBulletActive) {
         if (!currentBulletActive.has(index)) {
           dummy.position.set(0, -512, 0);
           dummy.rotation.set(0, 0, 0);
@@ -123,7 +124,7 @@ export function InstancedProjectiles({ projectiles, instanceManager }: Instanced
           bulletMesh.setColorAt(index, hiddenColor);
           currentBulletDirty.add(index);
         }
-      });
+      }
 
       if (currentBulletDirty.size > 0) {
         bulletMesh.instanceMatrix.needsUpdate = true;
@@ -134,7 +135,7 @@ export function InstancedProjectiles({ projectiles, instanceManager }: Instanced
     }
 
     if (rocketMesh) {
-      lastRocketActive.forEach((index) => {
+      for (const index of lastRocketActive) {
         if (!currentRocketActive.has(index)) {
           dummy.position.set(0, -512, 0);
           dummy.rotation.set(0, 0, 0);
@@ -144,7 +145,7 @@ export function InstancedProjectiles({ projectiles, instanceManager }: Instanced
           rocketMesh.setColorAt(index, hiddenColor);
           currentRocketDirty.add(index);
         }
-      });
+      }
 
       if (currentRocketDirty.size > 0) {
         rocketMesh.instanceMatrix.needsUpdate = true;

@@ -49,10 +49,11 @@ export function InstancedEffects({ effects, instanceManager, currentTimeMs }: In
     dirtyIndices.clear();
     const now = timeRef.current;
 
-    effects.forEach((effect) => {
+    for (let i = 0; i < effects.length; i += 1) {
+      const effect = effects[i];
       const index = effect.instanceIndex ?? instanceManager.getIndex('effects', effect.id);
       if (index === null || index === undefined || index >= capacity) {
-        return;
+        continue;
       }
 
       activeIndices.add(index);
@@ -79,9 +80,9 @@ export function InstancedEffects({ effects, instanceManager, currentTimeMs }: In
       mesh.setColorAt(index, color);
 
       dirtyIndices.add(index);
-    });
+    }
 
-    previousIndices.forEach((index) => {
+    for (const index of previousIndices) {
       if (!activeIndices.has(index)) {
         dummy.position.set(0, -512, 0);
         dummy.scale.set(0.001, 0.001, 0.001);
@@ -91,7 +92,7 @@ export function InstancedEffects({ effects, instanceManager, currentTimeMs }: In
         mesh.setColorAt(index, hiddenColor);
         dirtyIndices.add(index);
       }
-    });
+    }
 
     if (dirtyIndices.size > 0) {
       mesh.instanceMatrix.needsUpdate = true;

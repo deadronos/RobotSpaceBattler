@@ -19,6 +19,9 @@ allocation churn, and frequent GPU buffer uploads even when instancing is enable
   and R3F visual hooks for projectiles, lasers, and effects.
 - Projectile targeting now uses a single-pass nearest-neighbor scan against cached active
   robots instead of per-frame array spreads and sorts.
+- Projectile simulation now reuses scratch caches for active robots and id lookups, avoids
+  early loop exits, and applies rocket splash damage in a single pass over active enemies
+  instead of chained filter/map/sort allocations.
 - Instanced projectile and effect visuals track active and dirty indices to avoid
   full-capacity hide loops and only upload matrices/colors when something changed.
 - Laser batch renderer now updates attributes only when beams change and avoids
