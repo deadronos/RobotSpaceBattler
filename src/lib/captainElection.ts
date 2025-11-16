@@ -1,9 +1,6 @@
 import { getTeamConfig, RobotEntity, TeamId } from '../ecs/world';
 import { distanceSquaredVec3 } from './math/vec3';
-
-function isRobotEligible(robot: RobotEntity): boolean {
-  return robot.health > 0;
-}
+import { isActiveRobot } from './robotHelpers';
 
 function captainScore(robot: RobotEntity, spawnCenterDistance: number) {
   return {
@@ -17,7 +14,7 @@ function captainScore(robot: RobotEntity, spawnCenterDistance: number) {
 export function electCaptain(team: TeamId, robots: RobotEntity[]): string | null {
   const teamConfig = getTeamConfig(team);
   const eligible = robots.filter(
-    (robot) => robot.team === team && isRobotEligible(robot),
+    (robot) => robot.team === team && isActiveRobot(robot),
   );
 
   if (eligible.length === 0) {

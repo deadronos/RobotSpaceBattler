@@ -17,6 +17,7 @@
     "ci:test": "cross-env CI=true vitest run --coverage",
     "playwright:install": "playwright install",
     "playwright:test": "playwright test",
+    "perf:vfx-instancing": "node ./scripts/perf/measure_drawcalls.js",
     "check:source-size": "node ./scripts/check_source_size.js",
     "check:pr-constitution": "node ./scripts/check_pr_constitution_check.js",
     "typecheck": "tsc --noEmit"

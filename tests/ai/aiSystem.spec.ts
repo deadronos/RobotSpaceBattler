@@ -1,55 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { createBattleWorld, RobotEntity, toVec3 } from '../../src/ecs/world';
+
 import { updateAISystem } from '../../src/ecs/systems/aiSystem';
-
-function createRobot(overrides: Partial<RobotEntity> = {}): RobotEntity {
-  const base: RobotEntity = {
-    id: 'robot',
-    kind: 'robot',
-    team: 'red',
-    position: toVec3(0, 0, 0),
-    velocity: toVec3(0, 0, 0),
-    orientation: 0,
-    speed: 0,
-    weapon: 'laser',
-    fireCooldown: 0,
-    fireRate: 1,
-    health: 100,
-    maxHealth: 100,
-    ai: {
-      mode: 'seek',
-      targetId: undefined,
-      directive: 'balanced',
-      anchorPosition: null,
-      anchorDistance: null,
-      strafeSign: 1,
-      targetDistance: null,
-      visibleEnemyIds: [],
-      enemyMemory: {},
-      searchPosition: null,
-    },
-    kills: 0,
-    isCaptain: false,
-    spawnIndex: 0,
-    lastDamageTimestamp: 0,
-  };
-
-  return {
-    ...base,
-    ...overrides,
-    position: overrides.position ?? { ...base.position },
-    velocity: overrides.velocity ?? { ...base.velocity },
-    ai: { ...base.ai, ...(overrides.ai ?? {}) },
-  };
-}
+import { createBattleWorld, toVec3 } from '../../src/ecs/world';
+import { createTestRobot } from '../helpers/robotFactory';
 
 describe('updateAISystem roaming and LOS timeout', () => {
   it('clears stale memory after timeout and picks a roam target', () => {
     const world = createBattleWorld();
 
     // Place robots away from central obstacle at (0,0) so LOS is unobstructed
-    const red = createRobot({ id: 'red-1', team: 'red', position: toVec3(-10, 0, 0) });
-    const blue = createRobot({ id: 'blue-1', team: 'blue', position: toVec3(-10, 0, 10) });
+    const red = createTestRobot({ id: 'red-1', team: 'red', position: toVec3(-10, 0, 0) });
+    const blue = createTestRobot({ id: 'blue-1', team: 'blue', position: toVec3(-10, 0, 10) });
 
     world.world.add(red);
     world.world.add(blue);

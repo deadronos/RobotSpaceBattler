@@ -4,6 +4,7 @@ import {
   distanceSquaredVec3,
   Vec3,
 } from '../../lib/math/vec3';
+import { isActiveRobot } from '../../lib/robotHelpers';
 import { isLineOfSightBlocked } from '../environment/arenaGeometry';
 
 const SENSOR_RANGE = 38;
@@ -14,7 +15,7 @@ const MEMORY_DURATION_MS = 8000;
 
 function collectEnemies(robot: RobotEntity, robots: RobotEntity[]): RobotEntity[] {
   return robots.filter(
-    (candidate) => candidate.team !== robot.team && candidate.health > 0 && candidate.id !== robot.id,
+    (candidate) => candidate.team !== robot.team && isActiveRobot(candidate) && candidate.id !== robot.id,
   );
 }
 

@@ -1,53 +1,16 @@
 import { describe, expect, it } from 'vitest';
+
 import { RobotBehaviorMode } from '../../src/simulation/ai/behaviorState';
 import {
   integrateMovement,
   planRobotMovement,
 } from '../../src/simulation/ai/pathing';
-import { RobotEntity } from '../../src/ecs/world';
-
-function createRobot(overrides: Partial<RobotEntity> = {}): RobotEntity {
-  const base: RobotEntity = {
-    id: 'robot',
-    kind: 'robot',
-    team: 'red',
-    position: { x: 0, y: 0, z: 0 },
-    velocity: { x: 0, y: 0, z: 0 },
-    orientation: 0,
-    weapon: 'laser',
-    speed: 0,
-    fireCooldown: 0,
-    fireRate: 1,
-    health: 100,
-    maxHealth: 100,
-    ai: {
-      mode: 'seek',
-      targetId: undefined,
-      directive: 'balanced',
-      anchorPosition: null,
-      anchorDistance: null,
-      strafeSign: 1,
-      targetDistance: null,
-    },
-    kills: 0,
-    isCaptain: false,
-    spawnIndex: 0,
-    lastDamageTimestamp: 0,
-  };
-
-  return {
-    ...base,
-    ...overrides,
-    position: overrides.position ?? { ...base.position },
-    velocity: overrides.velocity ?? { ...base.velocity },
-    ai: { ...base.ai, ...(overrides.ai ?? {}) },
-  };
-}
+import { createTestRobot } from '../helpers/robotFactory';
 
 describe('planRobotMovement', () => {
   it('moves toward the target while seeking', () => {
-    const robot = createRobot();
-    const target = createRobot({
+    const robot = createTestRobot();
+    const target = createTestRobot({
       id: 'enemy',
       team: 'blue',
       position: { x: 0, y: 0, z: 10 },
@@ -60,11 +23,11 @@ describe('planRobotMovement', () => {
   });
 
   it('retreats toward spawn and integrates velocity', () => {
-    const robot = createRobot({
+    const robot = createTestRobot({
       position: { x: -2, y: 0, z: 0 },
       velocity: { x: 1, y: 0, z: 0 },
     });
-    const target = createRobot({
+    const target = createTestRobot({
       id: 'enemy',
       team: 'blue',
       position: { x: -4, y: 0, z: 0 },
@@ -79,7 +42,7 @@ describe('planRobotMovement', () => {
   });
 
   it('pushes away from nearby allies when anchored', () => {
-    const robot = createRobot({
+    const robot = createTestRobot({
       position: { x: 0, y: 0, z: 0 },
       velocity: { x: 0, y: 0, z: 0 },
     });
@@ -99,11 +62,11 @@ describe('planRobotMovement', () => {
   });
 
   it('strafes around the target when settled near the anchor', () => {
-    const robot = createRobot({
+    const robot = createTestRobot({
       position: { x: 0, y: 0, z: 0 },
       velocity: { x: 0, y: 0, z: 0 },
     });
-    const target = createRobot({
+    const target = createTestRobot({
       id: 'enemy',
       team: 'blue',
       position: { x: 0, y: 0, z: 10 },
@@ -125,10 +88,10 @@ describe('planRobotMovement', () => {
   });
 
   it('shifts sideways when an ally blocks line of sight to the target', () => {
-    const robot = createRobot({
+    const robot = createTestRobot({
       ai: { mode: 'engage', targetId: 'enemy', strafeSign: 1 },
     });
-    const target = createRobot({
+    const target = createTestRobot({
       id: 'enemy',
       team: 'blue',
       position: { x: 0, y: 0, z: 8 },
@@ -150,7 +113,7 @@ describe('planRobotMovement', () => {
   });
 
   it('creates an avoidance velocity when positioned adjacent to a wall', () => {
-    const robot = createRobot({
+    const robot = createTestRobot({
       position: { x: 0, y: 0, z: -49 }, // near the outer wall at z = -50
       velocity: { x: 0, y: 0, z: 0 },
       ai: { mode: 'seek', strafeSign: 1 },

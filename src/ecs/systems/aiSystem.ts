@@ -1,4 +1,7 @@
+import { ENGAGE_MEMORY_TIMEOUT_MS } from '../../lib/constants';
 import { distanceVec3, lengthVec3 } from '../../lib/math/vec3';
+import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
+import { isActiveRobot } from '../../lib/robotHelpers';
 import { nextBehaviorState, RobotBehaviorMode } from '../../simulation/ai/behaviorState';
 import { computeTeamAnchors } from '../../simulation/ai/captainCoordinator';
 import { planRobotMovement } from '../../simulation/ai/pathing';
@@ -14,20 +17,31 @@ import { buildNeighbors } from './aiNeighbors';
 import { refreshRoamTarget } from './roaming';
 
 export function updateAISystem(battleWorld: BattleWorld, rng: () => number): void {
+  perfMarkStart('updateAISystem');
+
   const robots = battleWorld.robots.entities;
   if (robots.length === 0) {
+    perfMarkEnd('updateAISystem');
     return;
   }
 
   const anchors = computeTeamAnchors(robots);
+  const robotsByTeam = new Map<string, RobotEntity[]>();
+
+  for (let i = 0; i < robots.length; i += 1) {
+    const robot = robots[i];
+    if (!robotsByTeam.has(robot.team)) {
+      robotsByTeam.set(robot.team, []);
+    }
+
+    if (isActiveRobot(robot)) {
+      robotsByTeam.get(robot.team)?.push(robot);
+    }
+  }
 
   robots.forEach((robot) => {
-    const allies = robots.filter((ally) => ally.team === robot.team && ally.health > 0);
+    const allies = robotsByTeam.get(robot.team) ?? [];
     const { visibleEnemies } = updateRobotSensors(robot, robots, battleWorld.state.elapsedMs);
-
-    // If we currently don't see any enemies, only respect very recent memory
-    // for pursuing — otherwise the robot becomes passive and may roam.
-    const ENGAGE_MEMORY_TIMEOUT_MS = 1500; // user-configured default
 
     let target: RobotEntity | undefined;
     if (robot.ai.targetId) {
@@ -53,7 +67,7 @@ export function updateAISystem(battleWorld: BattleWorld, rng: () => number): voi
       const latestMemory = getLatestEnemyMemory(robot);
       const memoryEntry = latestMemory?.[1] ?? null;
 
-      // Only pursue memory if it is recent enough (line-of-sight timeout)
+      // Only pursue memory if it is recent enough
       if (latestMemory && latestMemory[1].timestamp >= battleWorld.state.elapsedMs - ENGAGE_MEMORY_TIMEOUT_MS) {
         robot.ai.searchPosition = predictSearchAnchor(memoryEntry);
         robot.ai.targetId = latestMemory?.[0];
@@ -118,4 +132,6 @@ export function updateAISystem(battleWorld: BattleWorld, rng: () => number): voi
     robot.orientation = movementPlan.orientation;
     robot.speed = lengthVec3(movementPlan.velocity);
   });
+
+  perfMarkEnd('updateAISystem');
 }

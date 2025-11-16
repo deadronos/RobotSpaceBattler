@@ -35,22 +35,32 @@ function createProjectile(
   const velocity = scaleVec3(direction, profile.projectileSpeed);
   const maxLifetime = Math.max(1, profile.range / profile.projectileSpeed) * 1000;
 
-  return {
-    id: createProjectileId(world),
-    kind: 'projectile',
-    team: shooter.team,
-    shooterId: shooter.id,
-    weapon: shooter.weapon,
-    position: addVec3(shooter.position, vec3(0, 0.8, 0)),
-    velocity,
-    damage: profile.damage,
-    maxLifetime,
-    spawnTime: world.state.elapsedMs,
-    distanceTraveled: 0,
-    maxDistance: profile.range,
-    speed: profile.projectileSpeed,
-    targetId: target.id,
-  };
+  const projectile = world.pools.projectiles.acquire();
+
+  projectile.id = createProjectileId(world);
+  projectile.kind = 'projectile';
+  projectile.team = shooter.team;
+  projectile.shooterId = shooter.id;
+  projectile.weapon = shooter.weapon;
+  projectile.position = addVec3(shooter.position, vec3(0, 0.8, 0));
+  projectile.velocity = velocity;
+  projectile.damage = profile.damage;
+  projectile.maxLifetime = maxLifetime;
+  projectile.spawnTime = world.state.elapsedMs;
+  projectile.distanceTraveled = 0;
+  projectile.maxDistance = profile.range;
+  projectile.speed = profile.projectileSpeed;
+  projectile.targetId = target.id;
+  projectile.projectileSize = profile.projectileSize;
+  projectile.projectileColor = profile.projectileColor;
+  projectile.trailColor = profile.trailColor;
+  projectile.aoeRadius = profile.aoeRadius;
+  projectile.explosionDurationMs = profile.explosionDurationMs;
+  projectile.beamWidth = profile.beamWidth;
+  projectile.impactDurationMs = profile.impactDurationMs;
+  projectile.instanceIndex = undefined;
+
+  return projectile;
 }
 
 export function updateCombatSystem(world: BattleWorld, telemetry: TelemetryPort): void {
@@ -86,7 +96,7 @@ export function updateCombatSystem(world: BattleWorld, telemetry: TelemetryPort)
       return;
     }
 
-    world.world.add(projectile);
+    world.addProjectile(projectile);
     robot.fireCooldown = 1 / profile.fireRate;
 
     telemetry.recordFire({

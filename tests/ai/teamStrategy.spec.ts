@@ -1,60 +1,23 @@
 import { describe, expect, it } from 'vitest';
 
-import { RobotEntity, toVec3 } from '../../src/ecs/world';
+import { computeTeamAnchors } from '../../src/simulation/ai/captainCoordinator';
 import {
   buildFormationAnchor,
   buildTeamDirectives,
   computeEnemyCentroid,
   findCoverPoint,
 } from '../../src/simulation/ai/teamStrategy';
-import { computeTeamAnchors } from '../../src/simulation/ai/captainCoordinator';
+import { toVec3 } from '../../src/ecs/world';
 import { TEAM_CONFIGS } from '../../src/lib/teamConfig';
-
-function createRobot(overrides: Partial<RobotEntity> = {}): RobotEntity {
-  const base: RobotEntity = {
-    id: 'robot',
-    kind: 'robot',
-    team: 'red',
-    position: toVec3(0, 0, 0),
-    velocity: toVec3(0, 0, 0),
-    orientation: 0,
-    weapon: 'laser',
-    speed: 0,
-    fireCooldown: 0,
-    fireRate: 1,
-    health: 100,
-    maxHealth: 100,
-    ai: {
-      mode: 'seek',
-      targetId: undefined,
-      directive: 'balanced',
-      anchorPosition: null,
-      anchorDistance: null,
-      strafeSign: 1,
-      targetDistance: null,
-    },
-    kills: 0,
-    isCaptain: false,
-    spawnIndex: 0,
-    lastDamageTimestamp: 0,
-  };
-
-  return {
-    ...base,
-    ...overrides,
-    position: overrides.position ?? { ...base.position },
-    velocity: overrides.velocity ?? { ...base.velocity },
-    ai: { ...base.ai, ...(overrides.ai ?? {}) },
-  };
-}
+import { createTestRobot } from '../helpers/robotFactory';
 
 describe('teamStrategy', () => {
   it('marks advantaged team as offense and disadvantaged as defense', () => {
     const robots = [
-      createRobot({ id: 'r1', team: 'red' }),
-      createRobot({ id: 'r2', team: 'red' }),
-      createRobot({ id: 'r3', team: 'red' }),
-      createRobot({ id: 'b1', team: 'blue' }),
+      createTestRobot({ id: 'r1', team: 'red' }),
+      createTestRobot({ id: 'r2', team: 'red' }),
+      createTestRobot({ id: 'r3', team: 'red' }),
+      createTestRobot({ id: 'b1', team: 'blue' }),
     ];
 
     const directives = buildTeamDirectives(robots);
@@ -64,9 +27,9 @@ describe('teamStrategy', () => {
 
   it('computes enemy centroid', () => {
     const robots = [
-      createRobot({ id: 'r1', team: 'red' }),
-      createRobot({ id: 'b1', team: 'blue', position: toVec3(10, 0, 0) }),
-      createRobot({ id: 'b2', team: 'blue', position: toVec3(0, 0, 10) }),
+      createTestRobot({ id: 'r1', team: 'red' }),
+      createTestRobot({ id: 'b1', team: 'blue', position: toVec3(10, 0, 0) }),
+      createTestRobot({ id: 'b2', team: 'blue', position: toVec3(0, 0, 10) }),
     ];
 
     const centroid = computeEnemyCentroid('red', robots);
@@ -76,8 +39,8 @@ describe('teamStrategy', () => {
   });
 
   it('builds formation anchor around target', () => {
-    const robot = createRobot({ id: 'attacker', spawnIndex: 3 });
-    const target = createRobot({
+    const robot = createTestRobot({ id: 'attacker', spawnIndex: 3 });
+    const target = createTestRobot({
       id: 'target',
       team: 'blue',
       position: toVec3(10, 0, 0),
@@ -89,21 +52,21 @@ describe('teamStrategy', () => {
   });
 
   it('finds cover point near spawn away from enemies', () => {
-    const robot = createRobot({ id: 'defender', position: toVec3(-5, 0, 0) });
+    const robot = createTestRobot({ id: 'defender', position: toVec3(-5, 0, 0) });
     const enemyCentroid = toVec3(10, 0, 0);
     const cover = findCoverPoint(robot, enemyCentroid);
     expect(cover.x).toBeLessThan(robot.position.x);
   });
 
   it('computes captain anchors per robot', () => {
-    const captain = createRobot({
+    const captain = createTestRobot({
       id: 'captain-red',
       team: 'red',
       isCaptain: true,
       ai: { mode: 'seek', targetId: 'target', directive: 'offense' },
     });
-    const ally = createRobot({ id: 'ally', team: 'red', spawnIndex: 2 });
-    const target = createRobot({
+    const ally = createTestRobot({ id: 'ally', team: 'red', spawnIndex: 2 });
+    const target = createTestRobot({
       id: 'target',
       team: 'blue',
       position: toVec3(20, 0, 0),
@@ -116,19 +79,19 @@ describe('teamStrategy', () => {
   it('assigns spaced anchors for balanced directives', () => {
     const spawnCenter = TEAM_CONFIGS.red.spawnCenter;
     const robots = [
-      createRobot({
+      createTestRobot({
         id: 'r0',
         team: 'red',
         spawnIndex: 0,
         position: spawnCenter,
       }),
-      createRobot({
+      createTestRobot({
         id: 'r1',
         team: 'red',
         spawnIndex: 1,
         position: spawnCenter,
       }),
-      createRobot({
+      createTestRobot({
         id: 'b1',
         team: 'blue',
         spawnIndex: 0,
