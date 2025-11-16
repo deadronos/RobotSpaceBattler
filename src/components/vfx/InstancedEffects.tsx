@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Color, InstancedMesh, Object3D } from 'three';
 
 import { EffectEntity } from '../../ecs/world';
+import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
 import { VisualInstanceManager } from '../../visuals/VisualInstanceManager';
 
 interface InstancedEffectsProps {
@@ -17,7 +18,9 @@ export function InstancedEffects({ effects, instanceManager, currentTimeMs }: In
   const dummy = useMemo(() => new Object3D(), []);
   const color = useMemo(() => new Color(), []);
   const hiddenColor = useMemo(() => new Color('#000000'), []);
-  const seen = useMemo(() => new Set<number>(), []);
+  const activeIndicesRef = useRef<Set<number>>(new Set());
+  const previousActiveIndicesRef = useRef<Set<number>>(new Set());
+  const dirtyIndicesRef = useRef<Set<number>>(new Set());
   const timeRef = useRef(currentTimeMs);
 
   useEffect(() => {
@@ -31,12 +34,19 @@ export function InstancedEffects({ effects, instanceManager, currentTimeMs }: In
   }, [capacity]);
 
   useFrame(() => {
+    perfMarkStart('InstancedEffects.useFrame');
     const mesh = meshRef.current;
     if (!mesh) {
+      perfMarkEnd('InstancedEffects.useFrame');
       return;
     }
 
-    seen.clear();
+    const activeIndices = activeIndicesRef.current;
+    const previousIndices = previousActiveIndicesRef.current;
+    const dirtyIndices = dirtyIndicesRef.current;
+
+    activeIndices.clear();
+    dirtyIndices.clear();
     const now = timeRef.current;
 
     effects.forEach((effect) => {
@@ -45,7 +55,7 @@ export function InstancedEffects({ effects, instanceManager, currentTimeMs }: In
         return;
       }
 
-      seen.add(index);
+      activeIndices.add(index);
 
       const elapsed = Math.max(0, now - effect.createdAt);
       const progress = effect.duration > 0 ? Math.min(1, elapsed / effect.duration) : 1;
@@ -67,23 +77,33 @@ export function InstancedEffects({ effects, instanceManager, currentTimeMs }: In
       const tint = effect.secondaryColor ?? effect.color;
       color.set(tint).multiplyScalar(Math.max(0.1, fade));
       mesh.setColorAt(index, color);
+
+      dirtyIndices.add(index);
     });
 
-    for (let i = 0; i < capacity; i += 1) {
-      if (!seen.has(i)) {
+    previousIndices.forEach((index) => {
+      if (!activeIndices.has(index)) {
         dummy.position.set(0, -512, 0);
         dummy.scale.set(0.001, 0.001, 0.001);
         dummy.rotation.set(0, 0, 0);
         dummy.updateMatrix();
-        mesh.setMatrixAt(i, dummy.matrix);
-        mesh.setColorAt(i, hiddenColor);
+        mesh.setMatrixAt(index, dummy.matrix);
+        mesh.setColorAt(index, hiddenColor);
+        dirtyIndices.add(index);
+      }
+    });
+
+    if (dirtyIndices.size > 0) {
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) {
+        mesh.instanceColor.needsUpdate = true;
       }
     }
 
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor) {
-      mesh.instanceColor.needsUpdate = true;
-    }
+    previousActiveIndicesRef.current = activeIndices;
+    activeIndicesRef.current = previousIndices;
+
+    perfMarkEnd('InstancedEffects.useFrame');
   });
 
   if (capacity === 0) {

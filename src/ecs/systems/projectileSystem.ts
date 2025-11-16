@@ -1,30 +1,46 @@
 import { applyCaptaincy } from '../../lib/captainElection';
-import { addInPlaceVec3, cloneVec3, distanceVec3, scaleVec3 } from '../../lib/math/vec3';
+import {
+  addInPlaceVec3,
+  cloneVec3,
+  distanceSquaredVec3,
+  distanceVec3,
+  scaleVec3To,
+  vec3,
+} from '../../lib/math/vec3';
+import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
 import { isActiveRobot } from '../../lib/robotHelpers';
 import { TelemetryPort } from '../../runtime/simulation/ports';
 import { computeDamageMultiplier } from '../../simulation/combat/weapons';
 import { BattleWorld, EffectType, ProjectileEntity, RobotEntity } from '../world';
 
 function findTarget(
-  world: BattleWorld,
   projectile: ProjectileEntity,
+  activeRobots: RobotEntity[],
+  robotsById: Map<string, RobotEntity>,
 ): RobotEntity | undefined {
-  const robots = world.robots.entities;
-  const direct = projectile.targetId
-    ? robots.find((robot) => robot.id === projectile.targetId)
-    : undefined;
+  const direct = projectile.targetId ? robotsById.get(projectile.targetId) : undefined;
 
-  if (direct && isActiveRobot(direct)) {
+  if (direct && direct.team !== projectile.team && isActiveRobot(direct)) {
     return direct;
   }
 
-  return robots
-    .filter((robot) => robot.team !== projectile.team && isActiveRobot(robot))
-    .sort((a, b) => {
-      const da = distanceVec3(a.position, projectile.position);
-      const db = distanceVec3(b.position, projectile.position);
-      return da - db;
-    })[0];
+  let best: RobotEntity | undefined;
+  let bestDistanceSq = Number.POSITIVE_INFINITY;
+
+  for (let i = 0; i < activeRobots.length; i += 1) {
+    const candidate = activeRobots[i];
+    if (candidate.team === projectile.team) {
+      continue;
+    }
+
+    const distanceSq = distanceSquaredVec3(candidate.position, projectile.position);
+    if (distanceSq < bestDistanceSq) {
+      bestDistanceSq = distanceSq;
+      best = candidate;
+    }
+  }
+
+  return best;
 }
 
 function spawnEffect(
@@ -182,10 +198,25 @@ export function updateProjectileSystem(
   deltaSeconds: number,
   telemetry: TelemetryPort,
 ): void {
-  const projectiles = [...world.projectiles.entities];
+  perfMarkStart('updateProjectileSystem');
 
-  projectiles.forEach((projectile) => {
-    const displacement = scaleVec3(projectile.velocity, deltaSeconds);
+  const robots = world.robots.entities;
+  const activeRobots: RobotEntity[] = [];
+  const robotsById = new Map<string, RobotEntity>();
+  for (let i = 0; i < robots.length; i += 1) {
+    const robot = robots[i];
+    robotsById.set(robot.id, robot);
+    if (isActiveRobot(robot)) {
+      activeRobots.push(robot);
+    }
+  }
+
+  const projectiles = world.projectiles.entities;
+  const displacement = vec3();
+
+  for (let i = 0; i < projectiles.length; i += 1) {
+    const projectile = projectiles[i];
+    scaleVec3To(displacement, projectile.velocity, deltaSeconds);
     addInPlaceVec3(projectile.position, displacement);
     projectile.distanceTraveled += projectile.speed * deltaSeconds;
 
@@ -198,7 +229,7 @@ export function updateProjectileSystem(
       return;
     }
 
-    const target = findTarget(world, projectile);
+    const target = findTarget(projectile, activeRobots, robotsById);
     if (!target) {
       return;
     }
@@ -214,5 +245,7 @@ export function updateProjectileSystem(
         applyDirectHit(world, projectile, target, shooter, telemetry);
       }
     }
-  });
+  }
+
+  perfMarkEnd('updateProjectileSystem');
 }

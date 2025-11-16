@@ -1,6 +1,6 @@
 # Performance Enhancement Plan — Weapon Visuals & ECS
 
-**Status**: Draft
+**Status**: In Progress — Phase 0/1 instrumentation and quick wins live in main branch
 **Owner**: Team / Maintainer
 **Created**: 2025-11-16
 
@@ -11,6 +11,23 @@
 This plan addresses performance hotspots discovered in the `src/` tree related to weapon
 systems, instanced visuals, and ECS loops. These hotspots cause CPU overhead, high
 allocation churn, and frequent GPU buffer uploads even when instancing is enabled.
+
+### Current Implementation Snapshot
+
+- Added a `VITE_PERF_DEV` flag and `perfMarkStart`/`perfMarkEnd` helpers to capture
+  per-system timings (`battleRunner.step`, AI, combat, movement, projectiles, effects)
+  and R3F visual hooks for projectiles, lasers, and effects.
+- Projectile targeting now uses a single-pass nearest-neighbor scan against cached active
+  robots instead of per-frame array spreads and sorts.
+- Instanced projectile and effect visuals track active and dirty indices to avoid
+  full-capacity hide loops and only upload matrices/colors when something changed.
+- Laser batch renderer now updates attributes only when beams change and avoids
+  per-frame bounding sphere recomputation by disabling frustum culling.
+- AI ally lookups cache active robots by team once per tick to remove repeated
+  `.filter` allocations.
+
+Enable perf profiling in dev with `VITE_PERF_DEV=1 npm run dev` and view marks in Chrome
+Performance panel.
 
 The aim is to produce short-term wins and longer-term structural improvements to
 reduce frame time, reduce allocations, and improve scalability.

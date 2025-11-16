@@ -12,6 +12,13 @@ export function cloneVec3(vector: Vec3): Vec3 {
   return { x: vector.x, y: vector.y, z: vector.z };
 }
 
+export function copyVec3(target: Vec3, source: Vec3): Vec3 {
+  target.x = source.x;
+  target.y = source.y;
+  target.z = source.z;
+  return target;
+}
+
 export function addVec3(a: Vec3, b: Vec3): Vec3 {
   return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z };
 }
@@ -22,6 +29,13 @@ export function subtractVec3(a: Vec3, b: Vec3): Vec3 {
 
 export function scaleVec3(vector: Vec3, scalar: number): Vec3 {
   return { x: vector.x * scalar, y: vector.y * scalar, z: vector.z * scalar };
+}
+
+export function scaleVec3To(target: Vec3, vector: Vec3, scalar: number): Vec3 {
+  target.x = vector.x * scalar;
+  target.y = vector.y * scalar;
+  target.z = vector.z * scalar;
+  return target;
 }
 
 export function lengthVec3(vector: Vec3): number {
@@ -42,7 +56,10 @@ export function normalizeVec3(vector: Vec3): Vec3 {
 }
 
 export function distanceSquaredVec3(a: Vec3, b: Vec3): number {
-  return lengthSquaredVec3(subtractVec3(a, b));
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  const dz = a.z - b.z;
+  return dx * dx + dy * dy + dz * dz;
 }
 
 export function distanceVec3(a: Vec3, b: Vec3): number {

@@ -10,6 +10,7 @@ import {
 } from 'three';
 
 import { ProjectileEntity, RobotEntity } from '../../ecs/world';
+import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
 import { VisualInstanceManager } from '../../visuals/VisualInstanceManager';
 
 interface LaserBatchRendererProps {
@@ -37,7 +38,8 @@ export function LaserBatchRenderer({ projectiles, robotsById, instanceManager }:
   const dummyStart = useMemo(() => new Vector3(), []);
   const dummyEnd = useMemo(() => new Vector3(), []);
   const tempVelocity = useMemo(() => new Vector3(), []);
-  const seen = useMemo(() => new Set<number>(), []);
+  const activeIndicesRef = useRef<Set<number>>(new Set());
+  const previousIndicesRef = useRef<Set<number>>(new Set());
   const lineRef = useRef<LineSegments | null>(null);
 
   useEffect(() => {
@@ -56,18 +58,25 @@ export function LaserBatchRenderer({ projectiles, robotsById, instanceManager }:
   }, [material]);
 
   useFrame(() => {
+    perfMarkStart('LaserBatchRenderer.useFrame');
     const line = lineRef.current;
     if (!line) {
+      perfMarkEnd('LaserBatchRenderer.useFrame');
       return;
     }
 
     const positionAttr = geometry.getAttribute('position');
     const colorAttr = geometry.getAttribute('color');
     if (!positionAttr || !colorAttr) {
+      perfMarkEnd('LaserBatchRenderer.useFrame');
       return;
     }
 
-    seen.clear();
+    const activeIndices = activeIndicesRef.current;
+    const previousIndices = previousIndicesRef.current;
+    activeIndices.clear();
+    let positionsDirty = false;
+    let colorsDirty = false;
 
     projectiles.forEach((projectile) => {
       if (projectile.weapon !== 'laser') {
@@ -83,7 +92,7 @@ export function LaserBatchRenderer({ projectiles, robotsById, instanceManager }:
         return;
       }
 
-      seen.add(index);
+      activeIndices.add(index);
 
       const shooter = robotsById.get(projectile.shooterId);
       const target = projectile.targetId ? robotsById.get(projectile.targetId) : undefined;
@@ -116,12 +125,14 @@ export function LaserBatchRenderer({ projectiles, robotsById, instanceManager }:
       color.set(beamColor);
       color.toArray(colors, offset);
       color.multiplyScalar(0.7).toArray(colors, offset + 3);
+      positionsDirty = true;
+      colorsDirty = true;
     });
 
     const hidden = -512;
-    for (let i = 0; i < capacity; i += 1) {
-      if (!seen.has(i)) {
-        const offset = i * 6;
+    previousIndices.forEach((index) => {
+      if (!activeIndices.has(index)) {
+        const offset = index * 6;
         positions[offset] = hidden;
         positions[offset + 1] = hidden;
         positions[offset + 2] = hidden;
@@ -134,12 +145,22 @@ export function LaserBatchRenderer({ projectiles, robotsById, instanceManager }:
         colors[offset + 3] = 0;
         colors[offset + 4] = 0;
         colors[offset + 5] = 0;
+        positionsDirty = true;
+        colorsDirty = true;
       }
+    });
+
+    if (positionsDirty) {
+      positionAttr.needsUpdate = true;
+    }
+    if (colorsDirty) {
+      colorAttr.needsUpdate = true;
     }
 
-    positionAttr.needsUpdate = true;
-    colorAttr.needsUpdate = true;
-    geometry.computeBoundingSphere();
+    previousIndicesRef.current = activeIndices;
+    activeIndicesRef.current = previousIndices;
+
+    perfMarkEnd('LaserBatchRenderer.useFrame');
   });
 
   if (capacity === 0) {
