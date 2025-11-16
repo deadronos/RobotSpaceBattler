@@ -1,30 +1,49 @@
 import { applyCaptaincy } from '../../lib/captainElection';
-import { addInPlaceVec3, cloneVec3, distanceVec3, scaleVec3 } from '../../lib/math/vec3';
+import {
+  addInPlaceVec3,
+  cloneVec3,
+  distanceSquaredVec3,
+  distanceVec3,
+  scaleVec3To,
+  vec3,
+} from '../../lib/math/vec3';
+import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
 import { isActiveRobot } from '../../lib/robotHelpers';
 import { TelemetryPort } from '../../runtime/simulation/ports';
 import { computeDamageMultiplier } from '../../simulation/combat/weapons';
 import { BattleWorld, EffectType, ProjectileEntity, RobotEntity } from '../world';
 
-function findTarget(
-  world: BattleWorld,
-  projectile: ProjectileEntity,
-): RobotEntity | undefined {
-  const robots = world.robots.entities;
-  const direct = projectile.targetId
-    ? robots.find((robot) => robot.id === projectile.targetId)
-    : undefined;
+const activeRobotsScratch: RobotEntity[] = [];
+const robotsByIdScratch = new Map<string, RobotEntity>();
 
-  if (direct && isActiveRobot(direct)) {
+function findTarget(
+  projectile: ProjectileEntity,
+  activeRobots: RobotEntity[],
+  robotsById: Map<string, RobotEntity>,
+): RobotEntity | undefined {
+  const direct = projectile.targetId ? robotsById.get(projectile.targetId) : undefined;
+
+  if (direct && direct.team !== projectile.team && isActiveRobot(direct)) {
     return direct;
   }
 
-  return robots
-    .filter((robot) => robot.team !== projectile.team && isActiveRobot(robot))
-    .sort((a, b) => {
-      const da = distanceVec3(a.position, projectile.position);
-      const db = distanceVec3(b.position, projectile.position);
-      return da - db;
-    })[0];
+  let best: RobotEntity | undefined;
+  let bestDistanceSq = Number.POSITIVE_INFINITY;
+
+  for (let i = 0; i < activeRobots.length; i += 1) {
+    const candidate = activeRobots[i];
+    if (candidate.team === projectile.team) {
+      continue;
+    }
+
+    const distanceSq = distanceSquaredVec3(candidate.position, projectile.position);
+    if (distanceSq < bestDistanceSq) {
+      bestDistanceSq = distanceSq;
+      best = candidate;
+    }
+  }
+
+  return best;
 }
 
 function spawnEffect(
@@ -139,6 +158,7 @@ function applyRocketExplosion(
   shooter: RobotEntity | undefined,
   telemetry: TelemetryPort,
   directTarget: RobotEntity | undefined,
+  activeRobots: RobotEntity[],
 ): void {
   const radius = projectile.aoeRadius ?? 0;
   if (radius <= 0 || !directTarget) {
@@ -150,17 +170,21 @@ function applyRocketExplosion(
     return;
   }
 
-  const impacted = world.robots.entities
-    .filter((robot) => robot.team !== projectile.team && isActiveRobot(robot))
-    .map((robot) => ({ robot, distance: distanceVec3(robot.position, projectile.position) }))
-    .filter(({ distance }) => distance <= radius)
-    .sort((a, b) => a.robot.id.localeCompare(b.robot.id));
+  for (let i = 0; i < activeRobots.length; i += 1) {
+    const robot = activeRobots[i];
+    if (robot.team === projectile.team) {
+      continue;
+    }
 
-  impacted.forEach(({ robot, distance }) => {
+    const distance = distanceVec3(robot.position, projectile.position);
+    if (distance > radius) {
+      continue;
+    }
+
     const falloff = Math.max(0, 1 - distance / radius);
     const baseDamage = projectile.damage * falloff;
     applyDamageToRobot(world, projectile, robot, shooter, baseDamage, telemetry);
-  });
+  }
 
   const duration = projectile.explosionDurationMs ?? 720;
   const secondaryColor = projectile.trailColor ?? '#ffd7a1';
@@ -182,10 +206,26 @@ export function updateProjectileSystem(
   deltaSeconds: number,
   telemetry: TelemetryPort,
 ): void {
-  const projectiles = [...world.projectiles.entities];
+  perfMarkStart('updateProjectileSystem');
 
-  projectiles.forEach((projectile) => {
-    const displacement = scaleVec3(projectile.velocity, deltaSeconds);
+  const robots = world.robots.entities;
+  activeRobotsScratch.length = 0;
+  robotsByIdScratch.clear();
+
+  for (let i = 0; i < robots.length; i += 1) {
+    const robot = robots[i];
+    robotsByIdScratch.set(robot.id, robot);
+    if (isActiveRobot(robot)) {
+      activeRobotsScratch.push(robot);
+    }
+  }
+
+  const projectiles = world.projectiles.entities;
+  const displacement = vec3();
+
+  for (let i = 0; i < projectiles.length; i += 1) {
+    const projectile = projectiles[i];
+    scaleVec3To(displacement, projectile.velocity, deltaSeconds);
     addInPlaceVec3(projectile.position, displacement);
     projectile.distanceTraveled += projectile.speed * deltaSeconds;
 
@@ -195,24 +235,26 @@ export function updateProjectileSystem(
       ageMs >= projectile.maxLifetime
     ) {
       world.removeProjectile(projectile);
-      return;
+      continue;
     }
 
-    const target = findTarget(world, projectile);
+    const target = findTarget(projectile, activeRobotsScratch, robotsByIdScratch);
     if (!target) {
-      return;
+      continue;
     }
 
     const hitRadius = 1.2;
     const distance = distanceVec3(projectile.position, target.position);
     if (distance <= hitRadius) {
-      const shooter = world.robots.entities.find((robot) => robot.id === projectile.shooterId);
+      const shooter = robotsByIdScratch.get(projectile.shooterId);
 
       if (projectile.weapon === 'rocket') {
-        applyRocketExplosion(world, projectile, shooter, telemetry, target);
+        applyRocketExplosion(world, projectile, shooter, telemetry, target, activeRobotsScratch);
       } else {
         applyDirectHit(world, projectile, target, shooter, telemetry);
       }
     }
-  });
+  }
+
+  perfMarkEnd('updateProjectileSystem');
 }

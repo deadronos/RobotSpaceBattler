@@ -3,6 +3,7 @@ import { MutableRefObject, useEffect, useMemo, useRef } from 'react';
 import { Color, InstancedMesh, Object3D, Vector3 } from 'three';
 
 import { ProjectileEntity } from '../../ecs/world';
+import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
 import { VisualInstanceManager } from '../../visuals/VisualInstanceManager';
 
 interface InstancedProjectilesProps {
@@ -31,44 +32,61 @@ export function InstancedProjectiles({ projectiles, instanceManager }: Instanced
   const lookTarget = useMemo(() => new Vector3(), []);
   const color = useMemo(() => new Color(), []);
   const hiddenColor = useMemo(() => new Color('#000000'), []);
-  const bulletSeen = useMemo(() => new Set<number>(), []);
-  const rocketSeen = useMemo(() => new Set<number>(), []);
+  const bulletActiveRef = useRef<Set<number>>(new Set());
+  const rocketActiveRef = useRef<Set<number>>(new Set());
+  const previousBulletActiveRef = useRef<Set<number>>(new Set());
+  const previousRocketActiveRef = useRef<Set<number>>(new Set());
+  const bulletDirtyRef = useRef<Set<number>>(new Set());
+  const rocketDirtyRef = useRef<Set<number>>(new Set());
 
   useResizeInstanceCount(bulletMeshRef, bulletCapacity);
   useResizeInstanceCount(rocketMeshRef, rocketCapacity);
 
   useFrame(() => {
+    perfMarkStart('InstancedProjectiles.useFrame');
     const bulletMesh = bulletMeshRef.current;
     const rocketMesh = rocketMeshRef.current;
     if (!bulletMesh && !rocketMesh) {
+      perfMarkEnd('InstancedProjectiles.useFrame');
       return;
     }
 
-    bulletSeen.clear();
-    rocketSeen.clear();
+    const currentBulletActive = bulletActiveRef.current;
+    const currentRocketActive = rocketActiveRef.current;
+    const lastBulletActive = previousBulletActiveRef.current;
+    const lastRocketActive = previousRocketActiveRef.current;
+    const currentBulletDirty = bulletDirtyRef.current;
+    const currentRocketDirty = rocketDirtyRef.current;
 
-    projectiles.forEach((projectile) => {
+    currentBulletActive.clear();
+    currentRocketActive.clear();
+    currentBulletDirty.clear();
+    currentRocketDirty.clear();
+
+    for (let i = 0; i < projectiles.length; i += 1) {
+      const projectile = projectiles[i];
       if (projectile.weapon === 'laser') {
-        return;
+        continue;
       }
 
       const category = projectile.weapon === 'rocket' ? 'rockets' : 'bullets';
       const mesh = category === 'rockets' ? rocketMesh : bulletMesh;
       if (!mesh) {
-        return;
+        continue;
       }
 
       const capacity = category === 'rockets' ? rocketCapacity : bulletCapacity;
       if (capacity === 0) {
-        return;
+        continue;
       }
 
       const index = projectile.instanceIndex ?? instanceManager.getIndex(category, projectile.id);
       if (index === null || index === undefined || index >= capacity) {
-        return;
+        continue;
       }
 
-      const seen = category === 'rockets' ? rocketSeen : bulletSeen;
+      const seen = category === 'rockets' ? currentRocketActive : currentBulletActive;
+      const dirty = category === 'rockets' ? currentRocketDirty : currentBulletDirty;
       seen.add(index);
 
       dummy.position.set(projectile.position.x, projectile.position.y, projectile.position.z);
@@ -91,41 +109,60 @@ export function InstancedProjectiles({ projectiles, instanceManager }: Instanced
       const colorHex = projectile.projectileColor ?? (category === 'rockets' ? '#ff955c' : '#ffe08a');
       color.set(colorHex);
       mesh.setColorAt(index, color);
-    });
+
+      dirty.add(index);
+    }
 
     if (bulletMesh) {
-      for (let i = 0; i < bulletCapacity; i += 1) {
-        if (!bulletSeen.has(i)) {
+      for (const index of lastBulletActive) {
+        if (!currentBulletActive.has(index)) {
           dummy.position.set(0, -512, 0);
           dummy.rotation.set(0, 0, 0);
           dummy.scale.set(0.001, 0.001, 0.001);
           dummy.updateMatrix();
-          bulletMesh.setMatrixAt(i, dummy.matrix);
-          bulletMesh.setColorAt(i, hiddenColor);
+          bulletMesh.setMatrixAt(index, dummy.matrix);
+          bulletMesh.setColorAt(index, hiddenColor);
+          currentBulletDirty.add(index);
         }
       }
-      bulletMesh.instanceMatrix.needsUpdate = true;
-      if (bulletMesh.instanceColor) {
-        bulletMesh.instanceColor.needsUpdate = true;
+
+      if (currentBulletDirty.size > 0) {
+        bulletMesh.instanceMatrix.needsUpdate = true;
+        if (bulletMesh.instanceColor) {
+          bulletMesh.instanceColor.needsUpdate = true;
+        }
       }
     }
 
     if (rocketMesh) {
-      for (let i = 0; i < rocketCapacity; i += 1) {
-        if (!rocketSeen.has(i)) {
+      for (const index of lastRocketActive) {
+        if (!currentRocketActive.has(index)) {
           dummy.position.set(0, -512, 0);
           dummy.rotation.set(0, 0, 0);
           dummy.scale.set(0.001, 0.001, 0.001);
           dummy.updateMatrix();
-          rocketMesh.setMatrixAt(i, dummy.matrix);
-          rocketMesh.setColorAt(i, hiddenColor);
+          rocketMesh.setMatrixAt(index, dummy.matrix);
+          rocketMesh.setColorAt(index, hiddenColor);
+          currentRocketDirty.add(index);
         }
       }
-      rocketMesh.instanceMatrix.needsUpdate = true;
-      if (rocketMesh.instanceColor) {
-        rocketMesh.instanceColor.needsUpdate = true;
+
+      if (currentRocketDirty.size > 0) {
+        rocketMesh.instanceMatrix.needsUpdate = true;
+        if (rocketMesh.instanceColor) {
+          rocketMesh.instanceColor.needsUpdate = true;
+        }
       }
+
     }
+
+    previousBulletActiveRef.current = currentBulletActive;
+    bulletActiveRef.current = lastBulletActive;
+
+    previousRocketActiveRef.current = currentRocketActive;
+    rocketActiveRef.current = lastRocketActive;
+
+    perfMarkEnd('InstancedProjectiles.useFrame');
   });
 
   if (!shouldRenderBullets && !shouldRenderRockets) {
