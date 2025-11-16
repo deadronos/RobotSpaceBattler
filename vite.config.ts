@@ -46,29 +46,17 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
+        // Fallback: put all `node_modules` into a single `vendor` chunk.
+        // This avoids cross-chunk circular initialization ordering issues at
+        // the cost of a larger vendor bundle. Use this when finer-grained
+        // manualChunks lead to runtime races (React runtime undefined).
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            // Co-locate React, three, and @react-three packages into a single
-            // vendor chunk to avoid circular cross-chunk dependencies where a
-            // three-related vendor chunk may be evaluated before React is
-            // initialized (causing `useLayoutEffect` to be undefined).
-            //
-            // Keeping these packages together ensures the React runtime is
-            // available to three/r3f code during module initialization.
-            if (
-              id.includes('node_modules/react') ||
-              id.includes('node_modules/react-dom') ||
-              id.includes('node_modules/three') ||
-              id.includes('node_modules/@react-three')
-            )
-              return 'vendor_three'
-            if (id.includes('@react-three/rapier') || id.includes('rapier')) return 'vendor_rapier'
-            if (id.includes('miniplex')) return 'vendor_miniplex'
             return 'vendor'
           }
-        }
-      },
-      plugins: [visualizer({ filename: 'dist/stats.html', open: false })]
+        },
+        plugins: [visualizer({ filename: 'dist/stats.html', open: false })]
+      }
     }
   }
 })
