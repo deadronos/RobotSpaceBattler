@@ -10,6 +10,8 @@ import { TelemetryPort } from '../../runtime/simulation/ports';
 import { getWeaponProfile } from '../../simulation/combat/weapons';
 import { BattleWorld, ProjectileEntity, RobotEntity } from '../world';
 
+const robotsByIdScratch = new Map<string, RobotEntity>();
+
 function createProjectileId(world: BattleWorld): string {
   const id = `projectile-${world.state.nextProjectileId}`;
   world.state.nextProjectileId += 1;
@@ -69,31 +71,36 @@ export function updateCombatSystem(world: BattleWorld, telemetry: TelemetryPort)
     return;
   }
 
-  const robotsById = new Map(robots.map((robot) => [robot.id, robot]));
+  robotsByIdScratch.clear();
+  for (let i = 0; i < robots.length; i += 1) {
+    const robot = robots[i];
+    robotsByIdScratch.set(robot.id, robot);
+  }
 
-  robots.forEach((robot) => {
+  for (let i = 0; i < robots.length; i += 1) {
+    const robot = robots[i];
     if (robot.health <= 0) {
-      return;
+      continue;
     }
 
     if (robot.fireCooldown > 0 || robot.ai.mode === 'retreat') {
-      return;
+      continue;
     }
 
-    const target = robot.ai.targetId ? robotsById.get(robot.ai.targetId) : undefined;
+    const target = robot.ai.targetId ? robotsByIdScratch.get(robot.ai.targetId) : undefined;
     if (!target || target.health <= 0) {
-      return;
+      continue;
     }
 
     const profile = getWeaponProfile(robot.weapon);
     const distance = distanceVec3(robot.position, target.position);
     if (distance > profile.range) {
-      return;
+      continue;
     }
 
     const projectile = createProjectile(robot, target, world);
     if (!projectile) {
-      return;
+      continue;
     }
 
     world.addProjectile(projectile);
@@ -105,5 +112,5 @@ export function updateCombatSystem(world: BattleWorld, telemetry: TelemetryPort)
       teamId: robot.team,
       weapon: robot.weapon,
     });
-  });
+  }
 }

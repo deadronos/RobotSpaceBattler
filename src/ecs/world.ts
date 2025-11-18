@@ -156,10 +156,25 @@ function isEffectEntity(entity: BattleEntity): entity is EffectEntity {
 function createEntityStore<T extends BattleEntity>(
   world: World<BattleEntity>,
   predicate: (entity: BattleEntity) => entity is T,
+  getRevision: () => number,
 ): Store<T> {
+  let cachedRevision = -1;
+  let cachedEntities: T[] = [];
+
   return {
     get entities() {
-      return Array.from(world.entities).filter(predicate) as T[];
+      const revision = getRevision();
+      if (revision !== cachedRevision) {
+        cachedEntities = [];
+        world.entities.forEach((entity) => {
+          if (predicate(entity)) {
+            cachedEntities.push(entity as T);
+          }
+        });
+        cachedRevision = revision;
+      }
+
+      return cachedEntities;
     },
   };
 }
@@ -176,9 +191,38 @@ function mapProjectileToCategory(projectile: ProjectileEntity): VisualInstanceCa
 
 export function createBattleWorld(): BattleWorld {
   const world = new World<BattleEntity>();
-  const robots = createEntityStore(world, isRobotEntity);
-  const projectiles = createEntityStore(world, isProjectileEntity);
-  const effects = createEntityStore(world, isEffectEntity);
+  let worldRevision = 0;
+
+  const notifyMutation = () => {
+    worldRevision += 1;
+  };
+
+  const originalAdd = world.add.bind(world);
+  world.add = ((entity: BattleEntity) => {
+    const result = originalAdd(entity);
+    notifyMutation();
+    return result;
+  }) as typeof world.add;
+
+  const originalRemove = world.remove.bind(world);
+  world.remove = ((entity: BattleEntity) => {
+    const result = originalRemove(entity);
+    notifyMutation();
+    return result;
+  }) as typeof world.remove;
+
+  const originalClear = world.clear.bind(world);
+  world.clear = (() => {
+    const result = originalClear();
+    notifyMutation();
+    return result;
+  }) as typeof world.clear;
+
+  const getRevision = () => worldRevision;
+
+  const robots = createEntityStore(world, isRobotEntity, getRevision);
+  const projectiles = createEntityStore(world, isProjectileEntity, getRevision);
+  const effects = createEntityStore(world, isEffectEntity, getRevision);
 
   const state: BattleWorldState = {
     elapsedMs: 0,
