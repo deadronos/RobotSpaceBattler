@@ -2,11 +2,12 @@ import { BattleWorld } from '../world';
 
 export function updateEffectSystem(world: BattleWorld): void {
   const now = world.state.elapsedMs;
-  const effects = [...world.effects.entities];
+  const effects = world.effects.entities;
 
-  effects.forEach((effect) => {
+  for (let i = effects.length - 1; i >= 0; i -= 1) {
+    const effect = effects[i];
     if (now - effect.createdAt >= effect.duration) {
       world.removeEffect(effect);
     }
-  });
+  }
 }
