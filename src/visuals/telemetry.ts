@@ -11,6 +11,17 @@ type RendererStatsWindow = Window & {
   [GLOBAL_KEY]?: RendererStatsGlobal;
 };
 
+// Determine once whether debug logs are enabled via URL flag, e.g. /?debuglogs=1
+const DEBUG_LOGS_ENABLED = (() => {
+  try {
+    if (typeof window === 'undefined' || !window.location) return false;
+    const params = new URLSearchParams(window.location.search || '');
+    const v = params.get('debuglogs');
+    return v === '1' || v === 'true';
+  } catch (e) {
+    return false;
+  }
+})();
 function getGlobalStats(): RendererStatsGlobal | null {
   if (typeof window === 'undefined') {
     return null;
@@ -63,7 +74,7 @@ export function createVisualTelemetryEmitter(): VisualInstanceTelemetryEmitter {
   return {
     emit: (event: VisualInstanceTelemetryEvent) => {
       pushVisualTelemetryEvent(event);
-      if (typeof console !== 'undefined' && console.debug) {
+      if (DEBUG_LOGS_ENABLED && typeof console !== 'undefined' && console.debug) {
         console.debug(`[${event.type}]`, event);
       }
     },
