@@ -1,3 +1,5 @@
+import type { World as RapierWorld } from '@dimforge/rapier3d-compat';
+
 import { updateAISystem } from '../../ecs/systems/aiSystem';
 import { updateCombatSystem } from '../../ecs/systems/combatSystem';
 import { updateEffectSystem } from '../../ecs/systems/effectSystem';
@@ -22,6 +24,8 @@ export interface BattleRunnerOptions {
 export interface BattleRunner {
   step: (deltaSeconds: number) => void;
   reset: () => void;
+  setRapierWorld: (rapierWorld: RapierWorld | null) => void;
+  getRapierWorld: () => RapierWorld | undefined;
 }
 
 function evaluateVictory(world: BattleWorld, matchMachine: MatchStateMachine): void {
@@ -112,6 +116,12 @@ export function createBattleRunner(
     },
     reset: () => {
       spawnMatch();
+    },
+    setRapierWorld: (rapierWorld: RapierWorld | null) => {
+      world.rapierWorld = rapierWorld ?? undefined;
+    },
+    getRapierWorld: () => {
+      return world.rapierWorld;
     },
   };
 }

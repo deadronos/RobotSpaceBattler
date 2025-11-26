@@ -1,3 +1,4 @@
+import type { World as RapierWorld } from '@dimforge/rapier3d-compat';
 import { World } from 'miniplex';
 
 import {
@@ -122,6 +123,7 @@ export interface BattleWorld {
   effects: Store<EffectEntity>;
   teams: Record<TeamId, TeamConfig>;
   state: BattleWorldState;
+  rapierWorld?: RapierWorld;
   clear: () => void;
   getRobotsByTeam(team: TeamId): RobotEntity[];
   visuals: {
