@@ -1,4 +1,6 @@
+import type { World as RapierWorld } from '@dimforge/rapier3d-compat';
 import { useFrame } from '@react-three/fiber';
+import { useRapier } from '@react-three/rapier';
 import { MutableRefObject, useEffect, useMemo, useRef, useState } from 'react';
 
 import { BattleWorld } from '../ecs/world';
@@ -67,6 +69,23 @@ function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
   const qualitySettings = useQualitySettings();
   const instancingEnabled = qualitySettings.visuals.instancing.enabled;
   const instanceManager = battleWorld.visuals.instanceManager;
+  const { world: rapierWorld } = useRapier();
+
+  // Pass Rapier world to BattleRunner for raycasting
+  // Note: Type assertion needed due to duplicate @dimforge/rapier3d-compat types
+  // between direct dependency and @react-three/rapier's bundled version
+  useEffect(() => {
+    const runner = runnerRef.current;
+    if (rapierWorld && runner) {
+      runner.setRapierWorld(rapierWorld as unknown as RapierWorld);
+    }
+    return () => {
+      // Cleanup on unmount - use captured runner reference
+      if (runner) {
+        runner.setRapierWorld(null);
+      }
+    };
+  }, [rapierWorld, runnerRef]);
 
   useFrame((state, delta) => {
     recordRendererFrame(state.gl, delta);
