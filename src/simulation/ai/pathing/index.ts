@@ -9,12 +9,16 @@ import {
   computeOrientation,
   resolveSpawnCenter,
 } from './helpers';
+import { createPhysicsQueryService } from './physicsQueryService';
+import { computePredictiveAvoidance } from './predictiveAvoidance';
+import { shouldRaycastThisFrame } from './raycastScheduler';
 import { MovementContext, MovementPlan } from './types';
 
 const SEEK_SPEED = 6;
 const RETREAT_SPEED = 7;
 const STRAFE_SPEED = 4;
-const AVOIDANCE_STRENGTH = 1.2;
+/** Reactive avoidance strength multiplier (increased for better wall clearance) */
+const AVOIDANCE_STRENGTH = 1.8;
 
 export function planRobotMovement(
   robot: RobotEntity,
@@ -67,12 +71,34 @@ export function planRobotMovement(
     desiredVelocity = scaleVec3(direction, SEEK_SPEED * 0.5);
   }
 
+  // Apply reactive avoidance (always runs)
   const avoidance = computeAvoidance(robot.position);
   if (lengthVec3(avoidance) > 0) {
     desiredVelocity = addVec3(
       desiredVelocity,
       scaleVec3(normalizeVec3(avoidance), SEEK_SPEED * AVOIDANCE_STRENGTH),
     );
+  }
+
+  // Apply predictive avoidance when Rapier world is available
+  // Only raycast on scheduled frames to distribute load across entities
+  if (context?.rapierWorld) {
+    const entityId = context.entityId ?? 0;
+    const frameCount = context.frameCount ?? 0;
+    
+    if (shouldRaycastThisFrame(entityId, frameCount)) {
+      const queryService = createPhysicsQueryService(context.rapierWorld);
+      const predictiveAvoidance = computePredictiveAvoidance(
+        robot.position,
+        desiredVelocity,
+        queryService,
+      );
+      
+      // Blend predictive avoidance with existing velocity
+      if (lengthVec3(predictiveAvoidance) > 0) {
+        desiredVelocity = addVec3(desiredVelocity, predictiveAvoidance);
+      }
+    }
   }
 
   desiredVelocity = applySeparation(desiredVelocity, robot, context?.neighbors);

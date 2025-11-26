@@ -1,7 +1,8 @@
 import { addVec3, normalizeVec3, scaleVec3, Vec3, vec3 } from '../../../lib/math/vec3';
 import { ARENA_PILLARS, ARENA_WALLS, ROBOT_RADIUS } from '../../environment/arenaGeometry';
 
-const AVOIDANCE_RADIUS = 3.0;
+/** Reactive avoidance detection radius (increased for better wall awareness) */
+export const AVOIDANCE_RADIUS = 4.5;
 
 export function computeAvoidance(pos: Vec3): Vec3 {
   let avoid = vec3(0, 0, 0);
