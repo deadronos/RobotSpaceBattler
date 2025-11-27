@@ -95,8 +95,11 @@ export function createPhysicsQueryService(
       maxDistance: number,
       filterMask?: number
     ): RaycastHit | null {
-      // Create proper Ray instance (fixes Rapier deprecation warning)
-      const ray = new Ray(origin, direction);
+      // Rapier 0.19+ prefers single-object constructor { origin, dir }
+      // but @types/rapier still expects (origin, dir) two-arg form.
+      // Using new API to avoid deprecation warning.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ray = new (Ray as any)({ origin, dir: direction });
       const hit = world.castRayAndGetNormal(ray, maxDistance, true, undefined, filterMask);
 
       if (!hit) {
