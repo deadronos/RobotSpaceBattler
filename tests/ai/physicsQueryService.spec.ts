@@ -61,18 +61,18 @@ describe('PhysicsQueryService', () => {
 
   describe('with mocked Rapier world', () => {
     let mockWorld: {
-      castRay: ReturnType<typeof vi.fn>;
+      castRayAndGetNormal: ReturnType<typeof vi.fn>;
     };
     let service: PhysicsQueryService;
 
     beforeEach(() => {
       mockWorld = {
-        castRay: vi.fn(),
+        castRayAndGetNormal: vi.fn(),
       };
     });
 
     it('castRay returns RaycastHit when world returns a hit', () => {
-      mockWorld.castRay.mockReturnValue({
+      mockWorld.castRayAndGetNormal.mockReturnValue({
         timeOfImpact: 5.0,
         normal: { x: 0, y: 0, z: -1 },
       });
@@ -94,7 +94,7 @@ describe('PhysicsQueryService', () => {
     });
 
     it('castRay returns null when world returns no hit', () => {
-      mockWorld.castRay.mockReturnValue(null);
+      mockWorld.castRayAndGetNormal.mockReturnValue(null);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       service = createPhysicsQueryService(mockWorld as any);
@@ -109,7 +109,7 @@ describe('PhysicsQueryService', () => {
     });
 
     it('castRay passes correct parameters to Rapier world', () => {
-      mockWorld.castRay.mockReturnValue(null);
+      mockWorld.castRayAndGetNormal.mockReturnValue(null);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       service = createPhysicsQueryService(mockWorld as any);
@@ -121,20 +121,23 @@ describe('PhysicsQueryService', () => {
         0x00040003 // filterMask
       );
 
-      expect(mockWorld.castRay).toHaveBeenCalledTimes(1);
+      expect(mockWorld.castRayAndGetNormal).toHaveBeenCalledTimes(1);
 
-      const [ray, maxToi, solid, filterGroups] = mockWorld.castRay.mock.calls[0];
+      // castRayAndGetNormal(ray, maxToi, solid, filterFlags, filterGroups)
+      const [ray, maxToi, solid, filterFlags, filterGroups] =
+        mockWorld.castRayAndGetNormal.mock.calls[0];
 
-      // Check ray origin and direction
+      // Check ray is a Ray instance with origin and dir
       expect(ray.origin).toEqual({ x: 1, y: 2, z: 3 });
       expect(ray.dir).toEqual({ x: 0, y: 0, z: 1 });
       expect(maxToi).toBe(15);
       expect(solid).toBe(true);
+      expect(filterFlags).toBeUndefined();
       expect(filterGroups).toBe(0x00040003);
     });
 
     it('castRayFan returns array of hits for multiple directions', () => {
-      mockWorld.castRay
+      mockWorld.castRayAndGetNormal
         .mockReturnValueOnce({
           timeOfImpact: 3.0,
           normal: { x: 0, y: 0, z: -1 },
@@ -177,7 +180,7 @@ describe('PhysicsQueryService', () => {
     });
 
     it('castRayFan passes filterMask to all rays', () => {
-      mockWorld.castRay.mockReturnValue(null);
+      mockWorld.castRayAndGetNormal.mockReturnValue(null);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       service = createPhysicsQueryService(mockWorld as any);
@@ -194,11 +197,11 @@ describe('PhysicsQueryService', () => {
         0x00010001
       );
 
-      expect(mockWorld.castRay).toHaveBeenCalledTimes(2);
+      expect(mockWorld.castRayAndGetNormal).toHaveBeenCalledTimes(2);
 
-      // Both calls should have same filterGroups
-      const [, , , filterGroups1] = mockWorld.castRay.mock.calls[0];
-      const [, , , filterGroups2] = mockWorld.castRay.mock.calls[1];
+      // Both calls should have same filterGroups (5th parameter)
+      const [, , , , filterGroups1] = mockWorld.castRayAndGetNormal.mock.calls[0];
+      const [, , , , filterGroups2] = mockWorld.castRayAndGetNormal.mock.calls[1];
 
       expect(filterGroups1).toBe(0x00010001);
       expect(filterGroups2).toBe(0x00010001);
@@ -215,7 +218,7 @@ describe('PhysicsQueryService', () => {
       );
 
       expect(results).toHaveLength(0);
-      expect(mockWorld.castRay).not.toHaveBeenCalled();
+      expect(mockWorld.castRayAndGetNormal).not.toHaveBeenCalled();
     });
   });
 

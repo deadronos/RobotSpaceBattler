@@ -4,6 +4,8 @@
  * @module physicsQueryService
  */
 
+import { Ray } from '@dimforge/rapier3d-compat';
+
 /** 3D vector for physics queries */
 export interface Vec3Like {
   x: number;
@@ -59,10 +61,11 @@ export interface PhysicsQueryService {
  * Only defines methods we use to avoid importing full Rapier types.
  */
 interface RapierWorldLike {
-  castRay(
-    ray: { origin: Vec3Like; dir: Vec3Like },
+  castRayAndGetNormal(
+    ray: Ray,
     maxToi: number,
     solid: boolean,
+    filterFlags?: number,
     filterGroups?: number
   ): { timeOfImpact: number; normal: Vec3Like } | null;
 }
@@ -92,8 +95,9 @@ export function createPhysicsQueryService(
       maxDistance: number,
       filterMask?: number
     ): RaycastHit | null {
-      const ray = { origin, dir: direction };
-      const hit = world.castRay(ray, maxDistance, true, filterMask);
+      // Create proper Ray instance (fixes Rapier deprecation warning)
+      const ray = new Ray(origin, direction);
+      const hit = world.castRayAndGetNormal(ray, maxDistance, true, undefined, filterMask);
 
       if (!hit) {
         return null;

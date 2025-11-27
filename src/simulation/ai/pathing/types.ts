@@ -1,11 +1,13 @@
+import { Ray } from '@dimforge/rapier3d-compat';
 import { Vec3 } from '../../../lib/math/vec3';
 
 /** Minimal Rapier World interface for movement planning */
 interface RapierWorldLike {
-  castRay(
-    ray: { origin: { x: number; y: number; z: number }; dir: { x: number; y: number; z: number } },
+  castRayAndGetNormal(
+    ray: Ray,
     maxToi: number,
     solid: boolean,
+    filterFlags?: number,
     filterGroups?: number
   ): { timeOfImpact: number; normal: { x: number; y: number; z: number } } | null;
 }

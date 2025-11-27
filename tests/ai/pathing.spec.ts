@@ -7,15 +7,15 @@ import {
 } from '../../src/simulation/ai/pathing';
 import { createTestRobot } from '../helpers/robotFactory';
 
-/** Interface for our mock Rapier world with spyable castRay */
+/** Interface for our mock Rapier world with spyable castRayAndGetNormal */
 interface MockRapierWorld {
-  castRay: Mock;
+  castRayAndGetNormal: Mock;
 }
 
 /** Helper to create a mock Rapier world that returns a predictable raycast result */
 function createMockRapierWorld(hitDistance?: number): MockRapierWorld {
   return {
-    castRay: vi.fn().mockReturnValue(
+    castRayAndGetNormal: vi.fn().mockReturnValue(
       hitDistance !== undefined
         ? { timeOfImpact: hitDistance, normal: { x: 0, y: 0, z: -1 } }
         : null
@@ -178,8 +178,8 @@ describe('planRobotMovement with predictive avoidance', () => {
       },
     );
 
-    // castRay should have been called (3 times for the fan pattern)
-    expect(mockWorld.castRay).toHaveBeenCalled();
+    // castRayAndGetNormal should have been called (3 times for the fan pattern)
+    expect(mockWorld.castRayAndGetNormal).toHaveBeenCalled();
     // The plan should have some velocity (combined from base movement and avoidance)
     expect(plan.velocity.z).toBeDefined();
   });
@@ -239,8 +239,8 @@ describe('planRobotMovement with predictive avoidance', () => {
       },
     );
 
-    // castRay should NOT have been called (not this entity's frame)
-    expect(mockWorld.castRay).not.toHaveBeenCalled();
+    // castRayAndGetNormal should NOT have been called (not this entity's frame)
+    expect(mockWorld.castRayAndGetNormal).not.toHaveBeenCalled();
     // Should still produce a valid movement plan
     expect(plan.velocity.z).toBeGreaterThan(0);
   });
