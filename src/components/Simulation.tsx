@@ -19,15 +19,30 @@ import { InstancedProjectiles } from './vfx/InstancedProjectiles';
 import { LaserBatchRenderer } from './vfx/LaserBatchRenderer';
 import { ProjectileVisual } from './vfx/ProjectileVisual';
 
+/**
+ * Props for the Simulation component.
+ */
 interface SimulationProps {
+  /** The BattleWorld instance containing simulation state. */
   battleWorld: BattleWorld;
+  /** The state machine managing match lifecycle. */
   matchMachine: MatchStateMachine;
+  /** Port for recording telemetry data. */
   telemetry: TelemetryPort;
+  /** Optional callback when the battle runner is initialized. */
   onRunnerReady?: (runner: BattleRunner) => void;
 }
 
 const FRAME_SAMPLE_INTERVAL = 1 / 30;
 
+/**
+ * The core simulation component.
+ * Integrates the ECS world, physics, and rendering.
+ * Manages the BattleRunner lifecycle and updates.
+ *
+ * @param props - Component props.
+ * @returns The Simulation component tree.
+ */
 export function Simulation({
   battleWorld,
   matchMachine,
@@ -63,6 +78,10 @@ interface SimulationContentProps {
   runnerRef: MutableRefObject<BattleRunner | null>;
 }
 
+/**
+ * Internal content of the simulation scene.
+ * Handles the game loop (useFrame), rendering of entities, and physics integration.
+ */
 function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
   const [, setVersion] = useState(0);
   const accumulator = useRef(0);

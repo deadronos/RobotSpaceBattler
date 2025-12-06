@@ -96,10 +96,10 @@ export function createPhysicsQueryService(
       filterMask?: number
     ): RaycastHit | null {
       // Rapier 0.19+ prefers single-object constructor { origin, dir }
-      // but @types/rapier still expects (origin, dir) two-arg form.
-      // Using new API to avoid deprecation warning.
+      // but the currently installed version in this environment seems to treat the first arg as origin directly.
+      // Reverting to 2-arg constructor to ensure correct behavior.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ray = new (Ray as any)({ origin, dir: direction });
+      const ray = new (Ray as any)(origin, direction);
       const hit = world.castRayAndGetNormal(ray, maxDistance, true, undefined, filterMask);
 
       if (!hit) {

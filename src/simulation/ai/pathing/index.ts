@@ -20,6 +20,17 @@ const STRAFE_SPEED = 4;
 /** Reactive avoidance strength multiplier (increased for better wall clearance) */
 const AVOIDANCE_STRENGTH = 1.8;
 
+/**
+ * Plans the movement for a robot based on its behavior mode, target, and environment.
+ * Combines steering behaviors: seeking, strafing, separation, and avoidance.
+ *
+ * @param robot - The robot entity.
+ * @param mode - The current behavior mode (Seek, Engage, Retreat).
+ * @param target - The current target robot (if any).
+ * @param spawnCenterOverride - Optional override for the team's spawn center.
+ * @param context - Additional movement context (neighbors, anchors, physics).
+ * @returns A MovementPlan containing the desired velocity and orientation.
+ */
 export function planRobotMovement(
   robot: RobotEntity,
   mode: RobotBehaviorMode,
@@ -112,6 +123,13 @@ export function planRobotMovement(
   };
 }
 
+/**
+ * Updates a position by integrating velocity over time.
+ * @param position - The current position.
+ * @param velocity - The velocity vector.
+ * @param deltaSeconds - Time step in seconds.
+ * @returns The new position.
+ */
 export function integrateMovement(position: Vec3, velocity: Vec3, deltaSeconds: number): Vec3 {
   const delta = scaleVec3(velocity, deltaSeconds);
   return addVec3(position, delta);

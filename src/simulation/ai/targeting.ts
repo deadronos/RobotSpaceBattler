@@ -41,6 +41,15 @@ function filterEnemies(seeker: RobotEntity, robots: RobotEntity[]): RobotEntity[
   );
 }
 
+/**
+ * Finds the best enemy target for a robot.
+ * Prioritizes closest enemies.
+ *
+ * @param seeker - The robot looking for a target.
+ * @param robots - The list of all robots.
+ * @param candidates - Optional subset of robots to consider (e.g., visible ones).
+ * @returns The best target robot or undefined.
+ */
 export function findClosestEnemy(
   seeker: RobotEntity,
   robots: RobotEntity[],
@@ -85,6 +94,15 @@ function rankCaptainCandidates(
   }));
 }
 
+/**
+ * Selects a target for a captain robot.
+ * Captains prioritize enemy captains and high-value targets.
+ *
+ * @param captain - The captain robot.
+ * @param robots - The list of all robots.
+ * @param candidates - Optional subset of robots to consider.
+ * @returns The selected target robot or undefined.
+ */
 export function pickCaptainTarget(
   captain: RobotEntity,
   robots: RobotEntity[],

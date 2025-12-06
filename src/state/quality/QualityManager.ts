@@ -1,5 +1,8 @@
 import { useSyncExternalStore } from 'react';
 
+/**
+ * Configuration for maximum instance counts per visual category.
+ */
 export interface InstancingMaxInstancesConfig {
   bullets: number;
   rockets: number;
@@ -7,11 +10,17 @@ export interface InstancingMaxInstancesConfig {
   effects: number;
 }
 
+/**
+ * Configuration for instancing quality settings.
+ */
 export interface InstancingQualityConfig {
   enabled: boolean;
   maxInstances: InstancingMaxInstancesConfig;
 }
 
+/**
+ * Global quality settings structure.
+ */
 export interface QualitySettings {
   visuals: {
     instancing: InstancingQualityConfig;
@@ -84,6 +93,10 @@ function cloneSettings(settings: QualitySettings): QualitySettings {
   };
 }
 
+/**
+ * Manages application-wide quality settings (e.g., graphics fidelity).
+ * Allows subscribing to changes and persists settings.
+ */
 export class QualityManager {
   private settings: QualitySettings;
   private readonly listeners = new Set<QualityListener>();
@@ -111,14 +124,24 @@ export class QualityManager {
     };
   }
 
+  /**
+   * Gets the current quality settings.
+   */
   getSettings(): QualitySettings {
     return this.settings;
   }
 
+  /**
+   * Gets the instancing specific configuration.
+   */
   getInstancingConfig(): InstancingQualityConfig {
     return this.settings.visuals.instancing;
   }
 
+  /**
+   * Enables or disables instancing.
+   * @param enabled - True to enable.
+   */
   setInstancingEnabled(enabled: boolean): void {
     if (this.settings.visuals.instancing.enabled === enabled) {
       return;
@@ -129,6 +152,10 @@ export class QualityManager {
     this.emit();
   }
 
+  /**
+   * Updates the maximum instance counts.
+   * @param maxInstances - Partial config with new limits.
+   */
   updateInstancingMaxInstances(maxInstances: Partial<InstancingMaxInstancesConfig>): void {
     this.settings = this.mergeSettings(this.settings, {
       visuals: {
@@ -140,6 +167,11 @@ export class QualityManager {
     this.emit();
   }
 
+  /**
+   * Subscribes to settings changes.
+   * @param listener - Callback function.
+   * @returns Unsubscribe function.
+   */
   subscribe(listener: QualityListener): () => void {
     this.listeners.add(listener);
     return () => {
@@ -161,6 +193,10 @@ if (typeof window !== 'undefined') {
   managerWindow.__qualityManager = qualityManager;
 }
 
+/**
+ * React hook to access quality settings.
+ * @returns The current QualitySettings.
+ */
 export function useQualitySettings(): QualitySettings {
   return useSyncExternalStore(
     (listener) => qualityManager.subscribe(listener),

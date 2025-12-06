@@ -24,6 +24,10 @@ const WALL_GROUP: WallConfig[] = [
   { pos: [35, 2.5, 35], dim: [6, 5, 6] },
 ];
 
+/**
+ * Renders the static walls of the arena.
+ * Handles both visual representation and physics bodies.
+ */
 export function WallGroup() {
   const walls = useMemo(() => WALL_GROUP, []);
 

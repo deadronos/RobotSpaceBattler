@@ -18,6 +18,13 @@ function createProjectileId(world: BattleWorld): string {
   return id;
 }
 
+/**
+ * Creates a new projectile entity based on the shooter's weapon and target.
+ * @param shooter - The robot firing the weapon.
+ * @param target - The target robot.
+ * @param world - The battle world.
+ * @returns A new ProjectileEntity, or null if the projectile could not be created.
+ */
 function createProjectile(
   shooter: RobotEntity,
   target: RobotEntity,
@@ -65,6 +72,13 @@ function createProjectile(
   return projectile;
 }
 
+/**
+ * Updates the combat logic for the battle.
+ * Handles weapon firing, cooldowns, and projectile creation.
+ *
+ * @param world - The battle world state.
+ * @param telemetry - Port for recording telemetry events (e.g., shots fired).
+ */
 export function updateCombatSystem(world: BattleWorld, telemetry: TelemetryPort): void {
   const robots = world.robots.entities;
   if (robots.length === 0) {

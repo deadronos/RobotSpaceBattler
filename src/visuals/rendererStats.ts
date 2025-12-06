@@ -6,6 +6,9 @@ type RendererStatsWindow = Window & {
   [GLOBAL_KEY]?: RendererStatsSnapshot;
 };
 
+/**
+ * Snapshot of renderer performance statistics.
+ */
 export interface RendererStatsSnapshot {
   drawCalls: number;
   triangles: number;
@@ -42,6 +45,12 @@ function ensureGlobalSnapshot(): RendererStatsSnapshot | null {
   return snapshot;
 }
 
+/**
+ * Initializes the renderer statistics collection.
+ * Sets up the renderer to preserve frame info for reading.
+ *
+ * @param renderer - The Three.js WebGLRenderer.
+ */
 export function initializeRendererStats(renderer: WebGLRenderer): void {
   const snapshot = ensureGlobalSnapshot();
   if (!snapshot) {
@@ -51,6 +60,13 @@ export function initializeRendererStats(renderer: WebGLRenderer): void {
   renderer.info.autoReset = false;
 }
 
+/**
+ * Records the statistics for the current frame.
+ * Should be called at the end of the render loop.
+ *
+ * @param renderer - The Three.js WebGLRenderer.
+ * @param delta - The time elapsed for this frame in seconds.
+ */
 export function recordRendererFrame(renderer: WebGLRenderer, delta: number): void {
   const snapshot = ensureGlobalSnapshot();
   if (!snapshot) {

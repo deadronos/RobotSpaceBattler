@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import { TeamId } from '../lib/teamConfig';
 
+/** Event representing a robot spawn. */
 export interface SpawnEvent {
   type: 'spawn';
   timestampMs: number;
@@ -10,6 +11,7 @@ export interface SpawnEvent {
   teamId: TeamId;
 }
 
+/** Event representing a weapon fire. */
 export interface FireEvent {
   type: 'fire';
   timestampMs: number;
@@ -18,6 +20,7 @@ export interface FireEvent {
   teamId: TeamId;
 }
 
+/** Event representing damage dealt. */
 export interface DamageEvent {
   type: 'damage';
   timestampMs: number;
@@ -28,6 +31,7 @@ export interface DamageEvent {
   amount: number;
 }
 
+/** Event representing a robot death. */
 export interface DeathEvent {
   type: 'death';
   timestampMs: number;
@@ -37,8 +41,10 @@ export interface DeathEvent {
   attackerId?: string;
 }
 
+/** Union of all possible telemetry events. */
 export type TelemetryEvent = SpawnEvent | FireEvent | DamageEvent | DeathEvent;
 
+/** Aggregated stats for a single robot. */
 export interface RobotTelemetryStats {
   id: string;
   teamId: TeamId;
@@ -49,6 +55,7 @@ export interface RobotTelemetryStats {
   deaths: number;
 }
 
+/** Aggregated stats for a team. */
 export interface TeamTelemetryTotals {
   spawns: number;
   shotsFired: number;
@@ -57,12 +64,21 @@ export interface TeamTelemetryTotals {
   deaths: number;
 }
 
+/**
+ * State shape for the telemetry store.
+ */
 export interface TelemetryState {
+  /** The ID of the current match. */
   matchId: string | null;
+  /** List of all recorded events in the current match. */
   events: TelemetryEvent[];
+  /** Map of robot IDs to their aggregated stats. */
   robots: Record<string, RobotTelemetryStats>;
+  /** Map of team IDs to their aggregated totals. */
   teamTotals: Record<TeamId, TeamTelemetryTotals>;
+  /** Records a new event. */
   recordEvent: (event: TelemetryEvent) => void;
+  /** Resets the store for a new match. */
   reset: (matchId?: string) => void;
 }
 
@@ -92,6 +108,9 @@ function cloneTeamTotals(totals: Record<TeamId, TeamTelemetryTotals>) {
   };
 }
 
+/**
+ * Zustand store for managing match telemetry data.
+ */
 export const useTelemetryStore = create<TelemetryState>((set) => ({
   matchId: null,
   events: [],

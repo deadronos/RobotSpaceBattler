@@ -19,6 +19,10 @@ function useResizeInstanceCount(ref: MutableRefObject<InstancedMesh | null>, cap
   }, [capacity, ref]);
 }
 
+/**
+ * Renders bullet and rocket projectiles using instanced rendering.
+ * Efficiently handles high projectile counts.
+ */
 export function InstancedProjectiles({ projectiles, instanceManager }: InstancedProjectilesProps) {
   const bulletCapacity = instanceManager.getCapacity('bullets');
   const rocketCapacity = instanceManager.getCapacity('rockets');
@@ -187,6 +191,9 @@ export function InstancedProjectiles({ projectiles, instanceManager }: Instanced
   );
 }
 
+/**
+ * Demo wrapper for testing InstancedProjectiles independently.
+ */
 export function InstancedProjectilesDemo({ projectiles }: { projectiles: ProjectileEntity[] }) {
   // Simple passthrough demo component for storybook/dev harness compatibility.
   const manager = useMemo(
