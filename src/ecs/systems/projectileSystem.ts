@@ -201,6 +201,14 @@ function applyRocketExplosion(
   world.removeProjectile(projectile);
 }
 
+/**
+ * Updates the projectile simulation.
+ * Handles projectile movement, collision detection, and damage application.
+ *
+ * @param world - The battle world.
+ * @param deltaSeconds - Time elapsed since last update in seconds.
+ * @param telemetry - Port for recording telemetry events.
+ */
 export function updateProjectileSystem(
   world: BattleWorld,
   deltaSeconds: number,

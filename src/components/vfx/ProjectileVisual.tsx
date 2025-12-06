@@ -5,9 +5,15 @@ import { Group, Vector3 } from 'three';
 
 import { ProjectileEntity, RobotEntity } from '../../ecs/world';
 
+/**
+ * Props for the ProjectileVisual component.
+ */
 interface ProjectileVisualProps {
+  /** The projectile entity to render. */
   projectile: ProjectileEntity;
+  /** The robot that fired the projectile (optional). */
   shooter?: RobotEntity;
+  /** The target robot (optional). */
   target?: RobotEntity;
 }
 
@@ -131,6 +137,10 @@ function GunProjectileVisual({ projectile }: { projectile: ProjectileEntity }) {
   );
 }
 
+/**
+ * Renders a visual representation of a projectile.
+ * Chooses the appropriate visual style based on the weapon type.
+ */
 export function ProjectileVisual({ projectile, shooter, target }: ProjectileVisualProps) {
   if (projectile.weapon === 'rocket') {
     return <RocketProjectileVisual projectile={projectile} />;

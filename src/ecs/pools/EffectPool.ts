@@ -1,20 +1,39 @@
 import { vec3 } from '../../lib/math/vec3';
 import { EffectEntity } from '../world';
 
+/**
+ * Statistics for effect pool usage.
+ */
 export interface EffectPoolStats {
+  /** Number of new effect objects created. */
   created: number;
+  /** Number of times an existing effect object was reused. */
   reused: number;
+  /** Number of times an effect object was released back to the pool. */
   released: number;
 }
 
+/**
+ * Interface for the object pool managing effect entities.
+ * Helps reduce garbage collection overhead by reusing objects.
+ */
 export interface EffectPool {
+  /** Gets an effect entity from the pool (or creates a new one). */
   acquire: () => EffectEntity;
+  /** Returns an effect entity to the pool for reuse. */
   release: (effect: EffectEntity) => void;
+  /** Resets the pool and clears stats. */
   reset: () => void;
+  /** Gets the number of free objects currently in the pool. */
   getFreeCount: () => number;
+  /** Gets usage statistics. */
   getStats: () => EffectPoolStats;
 }
 
+/**
+ * Creates an empty effect entity with default values.
+ * @returns A new EffectEntity.
+ */
 function createEmptyEffect(): EffectEntity {
   return {
     id: '',
@@ -28,6 +47,12 @@ function createEmptyEffect(): EffectEntity {
   };
 }
 
+/**
+ * Creates a pool for managing EffectEntity objects.
+ *
+ * @param initialSize - The initial number of objects to pre-allocate (default 64).
+ * @returns An EffectPool instance.
+ */
 export function createEffectPool(initialSize = 64): EffectPool {
   const free: EffectEntity[] = [];
   const stats: EffectPoolStats = {

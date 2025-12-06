@@ -1,5 +1,8 @@
 import { Vec3, vec3 } from '../../lib/math/vec3';
 
+/**
+ * Definition of a rectangular arena wall.
+ */
 export interface ArenaWall {
   x: number;
   z: number;
@@ -7,12 +10,18 @@ export interface ArenaWall {
   halfDepth: number;
 }
 
+/**
+ * Definition of a cylindrical arena pillar.
+ */
 export interface ArenaPillar {
   x: number;
   z: number;
   radius: number;
 }
 
+/**
+ * Definition of the arena's spatial bounds.
+ */
 export interface ArenaBounds {
   min: Vec3;
   max: Vec3;
@@ -135,6 +144,14 @@ function segmentIntersectsCircle2D(start: Vec3, end: Vec3, pillar: ArenaPillar):
   return false;
 }
 
+/**
+ * Checks if the line of sight between two points is blocked by any static geometry (walls or pillars).
+ * Performed in 2D (XZ plane).
+ *
+ * @param start - The starting point.
+ * @param end - The ending point.
+ * @returns True if line of sight is blocked.
+ */
 export function isLineOfSightBlocked(start: Vec3, end: Vec3): boolean {
   if (start.x === end.x && start.z === end.z) {
     return false;

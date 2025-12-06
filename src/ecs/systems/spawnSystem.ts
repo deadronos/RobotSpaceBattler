@@ -4,8 +4,13 @@ import { TEAM_CONFIGS, TeamId } from '../../lib/teamConfig';
 import { getWeaponProfile, WeaponProfile } from '../../simulation/combat/weapons';
 import { BattleWorld, RobotEntity, toVec3, WeaponType } from '../world';
 
+/**
+ * Options for spawning robots.
+ */
 export interface SpawnOptions {
+  /** The random seed for the match. */
   seed?: number;
+  /** Callback triggered when a robot is spawned. */
   onRobotSpawn?: (robot: RobotEntity) => void;
 }
 
@@ -13,15 +18,36 @@ const WEAPON_ROTATION: WeaponType[] = ['laser', 'gun', 'rocket'];
 const BASE_MAX_HEALTH = 100;
 const BASE_SPEED = 8;
 
+/**
+ * Generates a unique ID for a robot.
+ * @param team - The team ID.
+ * @param index - The robot's index within the team.
+ * @returns A string ID.
+ */
 function buildRobotId(team: TeamId, index: number): string {
   const displayIndex = index + 1;
   return `${team}-${displayIndex}`;
 }
 
+/**
+ * Determines the weapon for a robot based on its spawn index.
+ * Cyclically rotates through available weapon types.
+ * @param index - The spawn index.
+ * @returns The WeaponType.
+ */
 function getWeaponForIndex(index: number): WeaponType {
   return WEAPON_ROTATION[index % WEAPON_ROTATION.length];
 }
 
+/**
+ * Creates a new robot entity with initial stats.
+ * @param team - The team ID.
+ * @param spawnIndex - The robot's spawn index.
+ * @param orientation - Initial facing direction.
+ * @param strafeSign - Initial strafing direction preference.
+ * @param profile - Weapon profile.
+ * @returns A new RobotEntity.
+ */
 function createRobot(
   team: TeamId,
   spawnIndex: number,
@@ -61,6 +87,13 @@ function createRobot(
   };
 }
 
+/**
+ * Spawns all robots for a specific team.
+ * @param battleWorld - The battle world.
+ * @param team - The team ID.
+ * @param seed - The seed for randomization.
+ * @param options - Spawn options.
+ */
 function spawnTeamRobots(
   battleWorld: BattleWorld,
   team: TeamId,
@@ -86,6 +119,11 @@ function spawnTeamRobots(
   applyCaptaincy(team, robots);
 }
 
+/**
+ * Initializes the battle by spawning teams and setting up the initial state.
+ * @param battleWorld - The battle world.
+ * @param options - Configuration options for spawning.
+ */
 export function spawnTeams(battleWorld: BattleWorld, options: SpawnOptions = {}): void {
   const baseSeed = options.seed ?? Date.now();
   battleWorld.state.seed = baseSeed;

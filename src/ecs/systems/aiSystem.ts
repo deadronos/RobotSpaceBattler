@@ -16,6 +16,13 @@ import { BattleWorld, RobotEntity } from '../world';
 import { buildNeighbors } from './aiNeighbors';
 import { refreshRoamTarget } from './roaming';
 
+/**
+ * Updates the AI for all robots in the battle world.
+ * Manages sensor updates, target selection, behavior state transitions, and movement planning.
+ *
+ * @param battleWorld - The current state of the battle world.
+ * @param rng - A random number generator function.
+ */
 export function updateAISystem(battleWorld: BattleWorld, rng: () => number): void {
   perfMarkStart('updateAISystem');
 

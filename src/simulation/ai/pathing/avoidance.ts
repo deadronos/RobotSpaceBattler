@@ -4,6 +4,13 @@ import { ARENA_PILLARS, ARENA_WALLS, ROBOT_RADIUS } from '../../environment/aren
 /** Reactive avoidance detection radius (increased for better wall awareness) */
 export const AVOIDANCE_RADIUS = 4.5;
 
+/**
+ * Computes an avoidance force vector based on proximity to static obstacles.
+ * Uses a simple reactive model: if close to a wall/pillar, push away.
+ *
+ * @param pos - The current position of the entity.
+ * @returns A force vector to steer away from obstacles.
+ */
 export function computeAvoidance(pos: Vec3): Vec3 {
   let avoid = vec3(0, 0, 0);
 

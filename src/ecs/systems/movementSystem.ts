@@ -6,11 +6,11 @@ import {
   scaleVec3,
   Vec3,
 } from '../../lib/math/vec3';
+import { ROBOT_RADIUS } from '../../lib/robotHelpers';
 import {
   ARENA_BOUNDS,
   ARENA_PILLARS,
   ARENA_WALLS,
-  ROBOT_RADIUS,
 } from '../../simulation/environment/arenaGeometry';
 import { BattleWorld } from '../world';
 
@@ -85,6 +85,13 @@ function resolveCollision(pos: Vec3): void {
   }
 }
 
+/**
+ * Updates the movement physics for all robots.
+ * Handles velocity application, friction, and collision resolution with the environment.
+ *
+ * @param world - The battle world state.
+ * @param deltaSeconds - The time elapsed since the last update in seconds.
+ */
 export function updateMovementSystem(world: BattleWorld, deltaSeconds: number): void {
   const { robots } = world;
 

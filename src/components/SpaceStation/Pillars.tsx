@@ -9,6 +9,10 @@ const PILLAR_POSITIONS: [number, number, number][] = [
   [30, 1.5, 30],
 ];
 
+/**
+ * Renders the set of static pillars in the arena.
+ * Handles both visual representation and physics bodies.
+ */
 export function Pillars() {
   return (
     <>
@@ -23,6 +27,9 @@ interface PillarProps {
   position: [number, number, number];
 }
 
+/**
+ * A single cylindrical pillar.
+ */
 function Pillar({ position }: PillarProps) {
   return (
     <RigidBody

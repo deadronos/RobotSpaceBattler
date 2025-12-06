@@ -15,16 +15,36 @@ import { TelemetryPort } from './ports';
 
 const VICTORY_DELAY_MS = 5000;
 
+/**
+ * Options to configure a BattleRunner.
+ */
 export interface BattleRunnerOptions {
+  /** Optional random seed (overrides generated seed). */
   seed?: number;
+  /** Telemetry interface for recording match events. */
   telemetry: TelemetryPort;
+  /** State machine managing match lifecycle. */
   matchMachine: MatchStateMachine;
 }
 
+/**
+ * Controller for running the battle simulation loop.
+ * Orchestrates system updates, victory conditions, and match resets.
+ */
 export interface BattleRunner {
+  /**
+   * Advances the simulation by a time step.
+   * @param deltaSeconds - Time elapsed since last frame.
+   */
   step: (deltaSeconds: number) => void;
+  /** Resets the battle to a new match state. */
   reset: () => void;
+  /**
+   * injects the Rapier physics world for predictive avoidance queries.
+   * @param rapierWorld - The Rapier world instance.
+   */
   setRapierWorld: (rapierWorld: RapierWorld | null) => void;
+  /** Gets the current Rapier world instance. */
   getRapierWorld: () => RapierWorld | undefined;
 }
 
@@ -55,6 +75,13 @@ function evaluateVictory(world: BattleWorld, matchMachine: MatchStateMachine): v
   matchMachine.declareVictory(winner, VICTORY_DELAY_MS);
 }
 
+/**
+ * Creates a new BattleRunner instance.
+ *
+ * @param world - The battle world state container.
+ * @param options - Configuration options.
+ * @returns A BattleRunner object.
+ */
 export function createBattleRunner(
   world: BattleWorld,
   options: BattleRunnerOptions,
