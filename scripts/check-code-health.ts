@@ -10,6 +10,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+/**
+ * Metadata for a scanned module.
+ */
 interface ModuleInfo {
   path: string;
   name: string;
@@ -18,6 +21,9 @@ interface ModuleInfo {
   size: number;
 }
 
+/**
+ * Group of potential duplicate modules.
+ */
 interface DuplicateGroup {
   pattern: string;
   modules: ModuleInfo[];
@@ -25,7 +31,12 @@ interface DuplicateGroup {
 }
 
 /**
- * Scan directory for TypeScript/JavaScript files
+ * Scan directory for TypeScript/JavaScript files.
+ * Recursively walks the directory tree.
+ *
+ * @param dir - The directory to scan.
+ * @param extensions - List of file extensions to include (default: .ts, .tsx, .js, .jsx).
+ * @returns Array of file paths.
  */
 function scanDirectory(dir: string, extensions = ['.ts', '.tsx', '.js', '.jsx']): string[] {
   const files: string[] = [];
@@ -55,7 +66,11 @@ function scanDirectory(dir: string, extensions = ['.ts', '.tsx', '.js', '.jsx'])
 }
 
 /**
- * Extract basic module information
+ * Extract basic module information from a file.
+ * Analyzes exports, imports, and line count.
+ *
+ * @param filePath - Path to the file.
+ * @returns ModuleInfo object.
  */
 function analyzeModule(filePath: string): ModuleInfo {
   const content = fs.readFileSync(filePath, 'utf8');
@@ -89,7 +104,11 @@ function analyzeModule(filePath: string): ModuleInfo {
 }
 
 /**
- * Find potential duplicate modules based on naming patterns
+ * Find potential duplicate modules based on naming patterns.
+ * Groups modules with similar base names (e.g., "Robot" and "RobotEntity").
+ *
+ * @param modules - List of analyzed modules.
+ * @returns Array of duplicate groups.
  */
 function findDuplicates(modules: ModuleInfo[]): DuplicateGroup[] {
   const groups: Map<string, ModuleInfo[]> = new Map();
@@ -122,7 +141,11 @@ function findDuplicates(modules: ModuleInfo[]): DuplicateGroup[] {
 }
 
 /**
- * Calculate similarity score between modules (0-100)
+ * Calculate similarity score between modules (0-100).
+ * Uses export count variance as a heuristic.
+ *
+ * @param modules - List of modules to compare.
+ * @returns Similarity score.
  */
 function calculateSimilarity(modules: ModuleInfo[]): number {
   if (modules.length < 2) return 0;
@@ -137,7 +160,10 @@ function calculateSimilarity(modules: ModuleInfo[]): number {
 }
 
 /**
- * Generate deprecation plan
+ * Generate deprecation plan report from found duplicates.
+ *
+ * @param duplicates - List of duplicate groups.
+ * @returns Formatted report string.
  */
 function generateDeprecationPlan(duplicates: DuplicateGroup[]): string {
   if (duplicates.length === 0) {
@@ -172,7 +198,7 @@ function generateDeprecationPlan(duplicates: DuplicateGroup[]): string {
 }
 
 /**
- * Main execution
+ * Main execution function.
  */
 function main() {
   const projectRoot = process.cwd();

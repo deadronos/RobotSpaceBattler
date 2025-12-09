@@ -3,17 +3,31 @@ import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { ReactNode, Suspense } from 'react';
 
+import { initializeRendererStats } from '../visuals/rendererStats';
+
+/**
+ * Props for the Scene component.
+ */
 interface SceneProps {
+  /** The 3D content to render inside the scene. */
   children?: ReactNode;
 }
 
+/**
+ * The main 3D scene container.
+ * Sets up the Canvas, lights, physics world, and camera controls.
+ *
+ * @param props - Component props.
+ * @returns The rendered scene.
+ */
 export function Scene({ children }: SceneProps) {
   return (
     <Canvas
       shadows
       dpr={[1, 2]}
-      camera={{ position: [0, 18, 32], fov: 45 }}
+      camera={{ position: [-14, 28, 48], fov: 45 }}
       gl={{ antialias: true }}
+      onCreated={({ gl }) => initializeRendererStats(gl)}
     >
       <color attach="background" args={['#020310']} />
       <ambientLight intensity={0.6} color="#4a517a" />

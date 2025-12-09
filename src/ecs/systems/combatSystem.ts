@@ -10,12 +10,21 @@ import { TelemetryPort } from '../../runtime/simulation/ports';
 import { getWeaponProfile } from '../../simulation/combat/weapons';
 import { BattleWorld, ProjectileEntity, RobotEntity } from '../world';
 
+const robotsByIdScratch = new Map<string, RobotEntity>();
+
 function createProjectileId(world: BattleWorld): string {
   const id = `projectile-${world.state.nextProjectileId}`;
   world.state.nextProjectileId += 1;
   return id;
 }
 
+/**
+ * Creates a new projectile entity based on the shooter's weapon and target.
+ * @param shooter - The robot firing the weapon.
+ * @param target - The target robot.
+ * @param world - The battle world.
+ * @returns A new ProjectileEntity, or null if the projectile could not be created.
+ */
 function createProjectile(
   shooter: RobotEntity,
   target: RobotEntity,
@@ -35,58 +44,80 @@ function createProjectile(
   const velocity = scaleVec3(direction, profile.projectileSpeed);
   const maxLifetime = Math.max(1, profile.range / profile.projectileSpeed) * 1000;
 
-  return {
-    id: createProjectileId(world),
-    kind: 'projectile',
-    team: shooter.team,
-    shooterId: shooter.id,
-    weapon: shooter.weapon,
-    position: addVec3(shooter.position, vec3(0, 0.8, 0)),
-    velocity,
-    damage: profile.damage,
-    maxLifetime,
-    spawnTime: world.state.elapsedMs,
-    distanceTraveled: 0,
-    maxDistance: profile.range,
-    speed: profile.projectileSpeed,
-    targetId: target.id,
-  };
+  const projectile = world.pools.projectiles.acquire();
+
+  projectile.id = createProjectileId(world);
+  projectile.kind = 'projectile';
+  projectile.team = shooter.team;
+  projectile.shooterId = shooter.id;
+  projectile.weapon = shooter.weapon;
+  projectile.position = addVec3(shooter.position, vec3(0, 0.8, 0));
+  projectile.velocity = velocity;
+  projectile.damage = profile.damage;
+  projectile.maxLifetime = maxLifetime;
+  projectile.spawnTime = world.state.elapsedMs;
+  projectile.distanceTraveled = 0;
+  projectile.maxDistance = profile.range;
+  projectile.speed = profile.projectileSpeed;
+  projectile.targetId = target.id;
+  projectile.projectileSize = profile.projectileSize;
+  projectile.projectileColor = profile.projectileColor;
+  projectile.trailColor = profile.trailColor;
+  projectile.aoeRadius = profile.aoeRadius;
+  projectile.explosionDurationMs = profile.explosionDurationMs;
+  projectile.beamWidth = profile.beamWidth;
+  projectile.impactDurationMs = profile.impactDurationMs;
+  projectile.instanceIndex = undefined;
+
+  return projectile;
 }
 
+/**
+ * Updates the combat logic for the battle.
+ * Handles weapon firing, cooldowns, and projectile creation.
+ *
+ * @param world - The battle world state.
+ * @param telemetry - Port for recording telemetry events (e.g., shots fired).
+ */
 export function updateCombatSystem(world: BattleWorld, telemetry: TelemetryPort): void {
   const robots = world.robots.entities;
   if (robots.length === 0) {
     return;
   }
 
-  const robotsById = new Map(robots.map((robot) => [robot.id, robot]));
+  robotsByIdScratch.clear();
+  for (let i = 0; i < robots.length; i += 1) {
+    const robot = robots[i];
+    robotsByIdScratch.set(robot.id, robot);
+  }
 
-  robots.forEach((robot) => {
+  for (let i = 0; i < robots.length; i += 1) {
+    const robot = robots[i];
     if (robot.health <= 0) {
-      return;
+      continue;
     }
 
     if (robot.fireCooldown > 0 || robot.ai.mode === 'retreat') {
-      return;
+      continue;
     }
 
-    const target = robot.ai.targetId ? robotsById.get(robot.ai.targetId) : undefined;
+    const target = robot.ai.targetId ? robotsByIdScratch.get(robot.ai.targetId) : undefined;
     if (!target || target.health <= 0) {
-      return;
+      continue;
     }
 
     const profile = getWeaponProfile(robot.weapon);
     const distance = distanceVec3(robot.position, target.position);
     if (distance > profile.range) {
-      return;
+      continue;
     }
 
     const projectile = createProjectile(robot, target, world);
     if (!projectile) {
-      return;
+      continue;
     }
 
-    world.world.add(projectile);
+    world.addProjectile(projectile);
     robot.fireCooldown = 1 / profile.fireRate;
 
     telemetry.recordFire({
@@ -95,5 +126,5 @@ export function updateCombatSystem(world: BattleWorld, telemetry: TelemetryPort)
       teamId: robot.team,
       weapon: robot.weapon,
     });
-  });
+  }
 }

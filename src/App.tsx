@@ -2,6 +2,8 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 
 import { Simulation } from './components/Simulation';
 import { createBattleWorld } from './ecs/world';
+import { AUTO_RESTART_DELAY_MS, VICTORY_OVERLAY_BACKGROUND } from './lib/constants';
+import { isActiveRobot } from './lib/robotHelpers';
 import { TEAM_CONFIGS } from './lib/teamConfig';
 import { BattleRunner } from './runtime/simulation/battleRunner';
 import { createTelemetryPort } from './runtime/simulation/telemetryAdapter';
@@ -43,7 +45,7 @@ export default function App() {
   const matchMachine = useMemo(
     () =>
       createMatchStateMachine({
-        autoRestartDelayMs: 5000,
+        autoRestartDelayMs: AUTO_RESTART_DELAY_MS,
         onChange: (snapshot) => setMatchSnapshot(snapshot),
       }),
     [],
@@ -60,7 +62,7 @@ export default function App() {
     void telemetryEvents;
     const counts = { red: 0, blue: 0 };
     battleWorld.robots.entities.forEach((robot) => {
-      if (robot.health > 0) {
+      if (isActiveRobot(robot)) {
         counts[robot.team] += 1;
       }
     });
@@ -134,7 +136,7 @@ export default function App() {
             transform: 'translate(-50%, -50%)',
             padding: '24px 32px',
             borderRadius: 12,
-            background: 'rgba(12, 14, 32, 0.85)',
+            background: VICTORY_OVERLAY_BACKGROUND,
             color: '#f7f8ff',
             textAlign: 'center',
             boxShadow: '0 12px 32px rgba(0, 0, 0, 0.45)',

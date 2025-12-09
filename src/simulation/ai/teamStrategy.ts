@@ -1,4 +1,5 @@
 import { RobotEntity } from '../../ecs/world';
+import { FORMATION_BASE_RADIUS, FORMATION_RADIUS_VARIANCE } from '../../lib/constants';
 import {
   addVec3,
   normalizeVec3,
@@ -7,27 +8,44 @@ import {
   Vec3,
   vec3,
 } from '../../lib/math/vec3';
+import { isActiveRobot } from '../../lib/robotHelpers';
 import { TEAM_CONFIGS,TeamId } from '../../lib/teamConfig';
 
+/**
+ * Types of strategic directives a team can adopt.
+ */
 export type TeamDirective = 'offense' | 'defense' | 'balanced';
 
+/**
+ * Mapping of team IDs to their current directive.
+ */
 export interface TeamDirectiveMap {
   red: TeamDirective;
   blue: TeamDirective;
 }
 
+/**
+ * Assigned anchor position and behavior for a robot.
+ */
 export interface AnchorAssignment {
+  /** The target position to hold or move towards. */
   anchorPosition: Vec3 | null;
+  /** The preferred strafing direction. */
   strafeSign: 1 | -1;
+  /** The strategic directive. */
   directive: TeamDirective;
 }
 
+/**
+ * Map of robot IDs to their anchor assignments.
+ */
 export type TeamAnchorAssignments = Record<string, AnchorAssignment>;
 
-function isActiveRobot(robot: RobotEntity): boolean {
-  return robot.health > 0;
-}
-
+/**
+ * Determines the strategic directive for each team based on the current battle state.
+ * @param robots - The list of all robots.
+ * @returns A map of directives for each team.
+ */
 export function buildTeamDirectives(robots: RobotEntity[]): TeamDirectiveMap {
   const counts = robots.reduce(
     (acc, robot) => {
@@ -50,6 +68,12 @@ export function buildTeamDirectives(robots: RobotEntity[]): TeamDirectiveMap {
   return { red: 'balanced', blue: 'balanced' };
 }
 
+/**
+ * Calculates the centroid (average position) of enemy robots.
+ * @param team - The observing team.
+ * @param robots - The list of all robots.
+ * @returns The centroid position or null if no enemies are active.
+ */
 export function computeEnemyCentroid(team: TeamId, robots: RobotEntity[]): Vec3 | null {
   const enemies = robots.filter(
     (robot) => robot.team !== team && isActiveRobot(robot),
@@ -81,6 +105,14 @@ function resolveTargetPosition(target: AnchorTarget | undefined): Vec3 {
   return target;
 }
 
+/**
+ * Calculates a formation anchor position for a robot relative to a target.
+ * Creates a spread-out formation to avoid bunching up.
+ *
+ * @param robot - The robot entity.
+ * @param target - The target entity or position.
+ * @returns The calculated anchor position.
+ */
 export function buildFormationAnchor(
   robot: RobotEntity,
   target: AnchorTarget | undefined,
@@ -91,7 +123,7 @@ export function buildFormationAnchor(
   const direction = normalizeVec3(
     subtractVec3(targetPosition, robot.position),
   );
-  const baseRadius = 5.5 + (robot.spawnIndex % 3) * 0.15;
+  const baseRadius = FORMATION_BASE_RADIUS + (robot.spawnIndex % 3) * FORMATION_RADIUS_VARIANCE;
   const strafe = robot.ai.strafeSign ?? 1;
   const angleOffset = ((robot.spawnIndex % 5) - 2) * 0.12 * strafe;
   const rotatedDirection = vec3(
@@ -106,6 +138,13 @@ export function buildFormationAnchor(
   );
 }
 
+/**
+ * Finds a defensive cover point for a robot.
+ *
+ * @param robot - The robot entity.
+ * @param enemyCentroid - The average position of enemies.
+ * @returns A position providing cover (relative to spawn center).
+ */
 export function findCoverPoint(robot: RobotEntity, enemyCentroid: Vec3 | null): Vec3 {
   const spawnCenter = TEAM_CONFIGS[robot.team].spawnCenter;
 
@@ -119,6 +158,13 @@ export function findCoverPoint(robot: RobotEntity, enemyCentroid: Vec3 | null): 
   return addVec3(spawnCenter, scaleVec3(direction, coverDistance));
 }
 
+/**
+ * Determines the primary target or focus point for a team.
+ * @param team - The team ID.
+ * @param robots - The list of all robots.
+ * @param targetId - Optional specific target ID.
+ * @returns The target entity or position.
+ */
 export function computeEnemyTarget(
   team: TeamId,
   robots: RobotEntity[],
@@ -132,6 +178,13 @@ export function computeEnemyTarget(
   return centroid ?? undefined;
 }
 
+/**
+ * Computes the anchor assignments (positions and directives) for all robots in the team.
+ * Coordinates the team's formation and strategy.
+ *
+ * @param robots - The list of all robots.
+ * @returns A map of assignments for each robot.
+ */
 export function computeTeamAnchors(robots: RobotEntity[]): TeamAnchorAssignments {
   const assignments: TeamAnchorAssignments = {};
   const directives = buildTeamDirectives(robots);

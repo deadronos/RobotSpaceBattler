@@ -1,16 +1,34 @@
 import { addVec3, Vec3, vec3 } from './math/vec3';
 
+/**
+ * Identifier for the teams.
+ */
 export type TeamId = 'red' | 'blue';
 
+/**
+ * Configuration data for a team.
+ */
 export interface TeamConfig {
+  /** The unique identifier for the team. */
   id: TeamId;
+  /** The display name of the team. */
   label: string;
+  /** The color associated with the team (hex string). */
   color: string;
+  /** The center point of the team's spawn area. */
   spawnCenter: Vec3;
+  /** The list of spawn points for individual robots. */
   spawnPoints: Vec3[];
+  /** The initial orientation (in radians) for robots on this team. */
   orientation: number;
 }
 
+/**
+ * Generates a random number within a range.
+ * @param min - The minimum value.
+ * @param max - The maximum value.
+ * @returns A random number between min and max.
+ */
 function randRange(min: number, max: number): number {
   return Math.random() * (max - min) + min;
 }
@@ -18,6 +36,15 @@ function randRange(min: number, max: number): number {
 /**
  * Create a grid of spawn points around `center` but with small random jitter
  * and an optional tiny rotation per-point so spawns are not perfectly symmetric.
+ *
+ * @param center - The center point of the grid.
+ * @param columns - Number of columns in the grid.
+ * @param rows - Number of rows in the grid.
+ * @param spacing - Spacing between points.
+ * @param pointJitter - Maximum random offset for each point (default 0.45).
+ * @param rotationJitter - Maximum random rotation angle for grid calculation (default 0.10).
+ * @param lateralBias - Bias to push outer columns outward (default 0).
+ * @returns An array of Vec3 spawn points.
  */
 function createSpawnGrid(
   center: Vec3,
@@ -76,6 +103,9 @@ function createSpawnGrid(
 const RED_CENTER = vec3(-40 + randRange(-2.0, 2.0), 0, randRange(-1.5, 1.5));
 const BLUE_CENTER = vec3(40 + randRange(-2.0, 2.0), 0, randRange(-1.5, 1.5));
 
+/**
+ * Configuration for both teams (red and blue).
+ */
 export const TEAM_CONFIGS: Record<TeamId, TeamConfig> = {
   red: {
     id: 'red',

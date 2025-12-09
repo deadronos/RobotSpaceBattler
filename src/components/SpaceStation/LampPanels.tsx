@@ -1,5 +1,5 @@
-import { Euler, Vector3 } from 'three';
 import { useMemo } from 'react';
+import { Euler, Vector3 } from 'three';
 
 type LampPanel = {
   position: Vector3;
@@ -7,6 +7,10 @@ type LampPanel = {
   color: string;
 };
 
+/**
+ * Renders decorative glowing lamp panels around the arena walls.
+ * Adds visual variety and color cues to the environment.
+ */
 export function LampPanels() {
   const lampPanels = useMemo<LampPanel[]>(
     () => [

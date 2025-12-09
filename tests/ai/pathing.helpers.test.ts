@@ -1,54 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { RobotEntity } from '../../src/ecs/world';
-import { TEAM_CONFIGS } from '../../src/lib/teamConfig';
+
 import { lengthVec3, Vec3 } from '../../src/lib/math/vec3';
+import { TEAM_CONFIGS } from '../../src/lib/teamConfig';
+import { AVOIDANCE_RADIUS } from '../../src/simulation/ai/pathing/avoidance';
 import {
   clampVelocity,
   computeForwardDirection,
   resolveSpawnCenter,
 } from '../../src/simulation/ai/pathing/helpers';
-
-function createRobot(overrides: Partial<RobotEntity> = {}): RobotEntity {
-  const base: RobotEntity = {
-    id: 'robot',
-    kind: 'robot',
-    team: 'red',
-    position: { x: 0, y: 0, z: 0 },
-    velocity: { x: 0, y: 0, z: 0 },
-    orientation: 0,
-    weapon: 'laser',
-    speed: 0,
-    fireCooldown: 0,
-    fireRate: 1,
-    health: 100,
-    maxHealth: 100,
-    ai: {
-      mode: 'seek',
-      targetId: undefined,
-      directive: 'balanced',
-      anchorPosition: null,
-      anchorDistance: null,
-      strafeSign: 1,
-      targetDistance: null,
-    },
-    kills: 0,
-    isCaptain: false,
-    spawnIndex: 0,
-    lastDamageTimestamp: 0,
-  };
-
-  return {
-    ...base,
-    ...overrides,
-    position: overrides.position ?? { ...base.position },
-    velocity: overrides.velocity ?? { ...base.velocity },
-    ai: { ...base.ai, ...(overrides.ai ?? {}) },
-  };
-}
+import { createTestRobot } from '../helpers/robotFactory';
 
 describe('pathing helpers', () => {
   it('uses the provided spawn center override', () => {
-    const robot = createRobot();
+    const robot = createTestRobot();
     const override: Vec3 = { x: 10, y: 0, z: -20 };
     const context = { spawnCenter: override };
 
@@ -56,7 +20,7 @@ describe('pathing helpers', () => {
   });
 
   it('falls back to the team config spawn center when no override is provided', () => {
-    const robot = createRobot({ team: 'blue' });
+    const robot = createTestRobot({ team: 'blue' });
     const expectedCenter = TEAM_CONFIGS.blue.spawnCenter;
 
     expect(resolveSpawnCenter(robot)).toBe(expectedCenter);
@@ -79,5 +43,12 @@ describe('pathing helpers', () => {
 
     expect(lengthVec3(clamped)).toBeCloseTo(5, 5);
     expect(clamped.z).toBeGreaterThan(0);
+  });
+});
+
+describe('avoidance constants', () => {
+  it('has increased AVOIDANCE_RADIUS for better wall awareness', () => {
+    // AVOIDANCE_RADIUS was increased from 3.0 to 4.5 for better wall detection
+    expect(AVOIDANCE_RADIUS).toBe(4.5);
   });
 });
