@@ -181,8 +181,26 @@ export interface ObstacleEntity {
   durability?: number;
   /** Optional max durability (if destructible). */
   maxDurability?: number;
-  /** Optional movement pattern reference id or inline pattern metadata (for movementSystem). */
-  movementPatternId?: string | null;
+  /** Optional movement pattern (inline). */
+  movementPattern?: {
+    patternType: 'linear' | 'rotation' | 'oscillate';
+    // linear
+    points?: Vec3[];
+    // rotation
+    pivot?: Vec3;
+    speed?: number; // units/sec or radians/sec for rotation
+    loop?: boolean;
+    pingPong?: boolean;
+    // deterministic offset (0..1) used to seed initial phase
+    phase?: number;
+    // internal: progress (0..1) and direction for ping-pong
+    progress?: number;
+    direction?: 1 | -1;
+  } | null;
+    /** Hazard schedule (for hazard obstacles) */
+    hazardSchedule?: { periodMs: number; activeMs: number; offsetMs?: number } | null;
+    /** Effects applied while hazard is active */
+    hazardEffects?: Array<{ kind: 'damage' | 'slow' | 'status'; amount: number; perSecond?: boolean; durationMs?: number }> | null;
 }
 
 /**
