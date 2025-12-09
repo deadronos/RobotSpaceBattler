@@ -156,6 +156,36 @@ export interface ProjectileEntity {
 }
 
 /**
+ * Entity representing a static or dynamic obstacle in the battle arena.
+ */
+export interface ObstacleEntity {
+  /** Unique identifier for the obstacle. */
+  id: string;
+  /** Entity kind discriminator. */
+  kind: 'obstacle';
+  /** Obstacle subtype. */
+  obstacleType: 'barrier' | 'hazard' | 'destructible';
+  /** Current position. */
+  position: Vec3;
+  /** Orientation (rotation around Y axis) in radians. */
+  orientation?: number;
+  /** Shape metadata for blocking checks (box/circle). */
+  shape?: { kind: 'box'; halfWidth: number; halfDepth: number } | { kind: 'circle'; radius: number };
+  /** Whether obstacle blocks line-of-sight. */
+  blocksVision?: boolean;
+  /** Whether obstacle blocks movement/traversal. */
+  blocksMovement?: boolean;
+  /** Current active state (hazard active/inactive or barrier present). */
+  active?: boolean;
+  /** Durability for destructible cover. */
+  durability?: number;
+  /** Optional max durability (if destructible). */
+  maxDurability?: number;
+  /** Optional movement pattern reference id or inline pattern metadata (for movementSystem). */
+  movementPatternId?: string | null;
+}
+
+/**
  * Types of visual effects.
  */
 export type EffectType = 'explosion' | 'impact' | 'laser-impact';
@@ -189,7 +219,7 @@ export interface EffectEntity {
 /**
  * Union type of all entities in the battle.
  */
-export type BattleEntity = RobotEntity | ProjectileEntity | EffectEntity;
+export type BattleEntity = RobotEntity | ProjectileEntity | EffectEntity | ObstacleEntity;
 
 /**
  * A store for holding entities of a specific type.
@@ -227,6 +257,8 @@ export interface BattleWorld {
   projectiles: Store<ProjectileEntity>;
   /** Store containing all effect entities. */
   effects: Store<EffectEntity>;
+  /** Store containing all obstacle entities. */
+  obstacles: Store<ObstacleEntity>;
   /** Configuration for teams. */
   teams: Record<TeamId, TeamConfig>;
   /** Global battle state. */
@@ -289,6 +321,10 @@ function isRobotEntity(entity: BattleEntity): entity is RobotEntity {
 
 function isProjectileEntity(entity: BattleEntity): entity is ProjectileEntity {
   return entity.kind === 'projectile';
+}
+
+function isObstacleEntity(entity: BattleEntity): entity is ObstacleEntity {
+  return entity.kind === 'obstacle';
 }
 
 function isEffectEntity(entity: BattleEntity): entity is EffectEntity {
@@ -377,6 +413,7 @@ export function createBattleWorld(): BattleWorld {
   const robots = createEntityStore(world, isRobotEntity, getRevision);
   const projectiles = createEntityStore(world, isProjectileEntity, getRevision);
   const effects = createEntityStore(world, isEffectEntity, getRevision);
+  const obstacles = createEntityStore(world, isObstacleEntity, getRevision);
 
   const state: BattleWorldState = {
     elapsedMs: 0,
@@ -400,6 +437,7 @@ export function createBattleWorld(): BattleWorld {
     robots,
     projectiles,
     effects,
+    obstacles,
     teams: TEAM_CONFIGS,
     state,
     visuals: {
