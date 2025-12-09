@@ -12,6 +12,10 @@ interface InstancedEffectsProps {
   currentTimeMs: number;
 }
 
+/**
+ * Renders multiple visual effects using hardware instancing for performance.
+ * Optimized for high-volume effects like particles and explosions.
+ */
 export function InstancedEffects({ effects, instanceManager, currentTimeMs }: InstancedEffectsProps) {
   const capacity = instanceManager.getCapacity('effects');
   const meshRef = useRef<InstancedMesh | null>(null);

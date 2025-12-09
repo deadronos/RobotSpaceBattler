@@ -1,4 +1,6 @@
+import type { World as RapierWorld } from '@dimforge/rapier3d-compat';
 import { useFrame } from '@react-three/fiber';
+import { useRapier } from '@react-three/rapier';
 import { MutableRefObject, useEffect, useMemo, useRef, useState } from 'react';
 
 import { BattleWorld } from '../ecs/world';
@@ -17,15 +19,30 @@ import { InstancedProjectiles } from './vfx/InstancedProjectiles';
 import { LaserBatchRenderer } from './vfx/LaserBatchRenderer';
 import { ProjectileVisual } from './vfx/ProjectileVisual';
 
+/**
+ * Props for the Simulation component.
+ */
 interface SimulationProps {
+  /** The BattleWorld instance containing simulation state. */
   battleWorld: BattleWorld;
+  /** The state machine managing match lifecycle. */
   matchMachine: MatchStateMachine;
+  /** Port for recording telemetry data. */
   telemetry: TelemetryPort;
+  /** Optional callback when the battle runner is initialized. */
   onRunnerReady?: (runner: BattleRunner) => void;
 }
 
 const FRAME_SAMPLE_INTERVAL = 1 / 30;
 
+/**
+ * The core simulation component.
+ * Integrates the ECS world, physics, and rendering.
+ * Manages the BattleRunner lifecycle and updates.
+ *
+ * @param props - Component props.
+ * @returns The Simulation component tree.
+ */
 export function Simulation({
   battleWorld,
   matchMachine,
@@ -61,12 +78,33 @@ interface SimulationContentProps {
   runnerRef: MutableRefObject<BattleRunner | null>;
 }
 
+/**
+ * Internal content of the simulation scene.
+ * Handles the game loop (useFrame), rendering of entities, and physics integration.
+ */
 function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
   const [, setVersion] = useState(0);
   const accumulator = useRef(0);
   const qualitySettings = useQualitySettings();
   const instancingEnabled = qualitySettings.visuals.instancing.enabled;
   const instanceManager = battleWorld.visuals.instanceManager;
+  const { world: rapierWorld } = useRapier();
+
+  // Pass Rapier world to BattleRunner for raycasting
+  // Note: Type assertion needed due to duplicate @dimforge/rapier3d-compat types
+  // between direct dependency and @react-three/rapier's bundled version
+  useEffect(() => {
+    const runner = runnerRef.current;
+    if (rapierWorld && runner) {
+      runner.setRapierWorld(rapierWorld as unknown as RapierWorld);
+    }
+    return () => {
+      // Cleanup on unmount - use captured runner reference
+      if (runner) {
+        runner.setRapierWorld(null);
+      }
+    };
+  }, [rapierWorld, runnerRef]);
 
   useFrame((state, delta) => {
     recordRendererFrame(state.gl, delta);

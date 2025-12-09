@@ -1,5 +1,10 @@
 import { useMemo } from 'react';
 
+/**
+ * A composite light rig for the space station arena.
+ * Includes a central light, corridor lights, and hover beacons.
+ * Creates atmosphere and visibility for the scene.
+ */
 export function ArenaLightRig() {
   const corridorLightPositions = useMemo(
     () => [

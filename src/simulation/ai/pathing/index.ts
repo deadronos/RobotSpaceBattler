@@ -9,13 +9,28 @@ import {
   computeOrientation,
   resolveSpawnCenter,
 } from './helpers';
+import { createPhysicsQueryService } from './physicsQueryService';
+import { computePredictiveAvoidance } from './predictiveAvoidance';
+import { shouldRaycastThisFrame } from './raycastScheduler';
 import { MovementContext, MovementPlan } from './types';
 
 const SEEK_SPEED = 6;
 const RETREAT_SPEED = 7;
 const STRAFE_SPEED = 4;
-const AVOIDANCE_STRENGTH = 1.2;
+/** Reactive avoidance strength multiplier (increased for better wall clearance) */
+const AVOIDANCE_STRENGTH = 1.8;
 
+/**
+ * Plans the movement for a robot based on its behavior mode, target, and environment.
+ * Combines steering behaviors: seeking, strafing, separation, and avoidance.
+ *
+ * @param robot - The robot entity.
+ * @param mode - The current behavior mode (Seek, Engage, Retreat).
+ * @param target - The current target robot (if any).
+ * @param spawnCenterOverride - Optional override for the team's spawn center.
+ * @param context - Additional movement context (neighbors, anchors, physics).
+ * @returns A MovementPlan containing the desired velocity and orientation.
+ */
 export function planRobotMovement(
   robot: RobotEntity,
   mode: RobotBehaviorMode,
@@ -67,12 +82,34 @@ export function planRobotMovement(
     desiredVelocity = scaleVec3(direction, SEEK_SPEED * 0.5);
   }
 
+  // Apply reactive avoidance (always runs)
   const avoidance = computeAvoidance(robot.position);
   if (lengthVec3(avoidance) > 0) {
     desiredVelocity = addVec3(
       desiredVelocity,
       scaleVec3(normalizeVec3(avoidance), SEEK_SPEED * AVOIDANCE_STRENGTH),
     );
+  }
+
+  // Apply predictive avoidance when Rapier world is available
+  // Only raycast on scheduled frames to distribute load across entities
+  if (context?.rapierWorld) {
+    const entityId = context.entityId ?? 0;
+    const frameCount = context.frameCount ?? 0;
+    
+    if (shouldRaycastThisFrame(entityId, frameCount)) {
+      const queryService = createPhysicsQueryService(context.rapierWorld);
+      const predictiveAvoidance = computePredictiveAvoidance(
+        robot.position,
+        desiredVelocity,
+        queryService,
+      );
+      
+      // Blend predictive avoidance with existing velocity
+      if (lengthVec3(predictiveAvoidance) > 0) {
+        desiredVelocity = addVec3(desiredVelocity, predictiveAvoidance);
+      }
+    }
   }
 
   desiredVelocity = applySeparation(desiredVelocity, robot, context?.neighbors);
@@ -86,6 +123,13 @@ export function planRobotMovement(
   };
 }
 
+/**
+ * Updates a position by integrating velocity over time.
+ * @param position - The current position.
+ * @param velocity - The velocity vector.
+ * @param deltaSeconds - Time step in seconds.
+ * @returns The new position.
+ */
 export function integrateMovement(position: Vec3, velocity: Vec3, deltaSeconds: number): Vec3 {
   const delta = scaleVec3(velocity, deltaSeconds);
   return addVec3(position, delta);

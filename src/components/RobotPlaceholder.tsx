@@ -2,11 +2,21 @@ import { RigidBody } from '@react-three/rapier';
 import { memo } from 'react';
 import { Color } from 'three';
 
+/**
+ * Props for the RobotPlaceholder component.
+ */
 interface RobotPlaceholderProps {
+  /** The primary color of the robot (hex string). */
   color?: string;
+  /** Initial position of the robot in the world. */
   position?: [number, number, number];
 }
 
+/**
+ * A simple visual representation of a robot in the 3D scene.
+ * Uses a cylinder for the body and a sphere for the head.
+ * Includes a kinematic rigid body for physics interactions.
+ */
 export const RobotPlaceholder = memo(function RobotPlaceholder({
   color = '#ff4d5a',
   position = [0, 0.8, 0],

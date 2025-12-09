@@ -19,6 +19,10 @@ interface LaserBatchRendererProps {
   instanceManager: VisualInstanceManager;
 }
 
+/**
+ * Renders multiple laser beams in a single draw call using Three.js LineSegments.
+ * Optimized for performance by reusing geometry buffers.
+ */
 export function LaserBatchRenderer({ projectiles, robotsById, instanceManager }: LaserBatchRendererProps) {
   const capacity = instanceManager.getCapacity('lasers');
   const geometry = useMemo(() => new BufferGeometry(), []);

@@ -6,8 +6,9 @@ import { Pillars } from './SpaceStation/Pillars';
 import { WallGroup } from './SpaceStation/WallGroup';
 
 /**
- * SpaceStation - A battle arena with corridors, walls, and obstacles
- * Physics-enabled with proper Rapier configuration
+ * SpaceStation - A battle arena with corridors, walls, and obstacles.
+ * Physics-enabled with proper Rapier configuration.
+ * Composes various sub-components to build the environment.
  */
 export function SpaceStation() {
   return (

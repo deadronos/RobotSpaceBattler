@@ -6,6 +6,9 @@ import type { SpawnZone } from '../../../src/types';
 export const INITIAL_HEALTH = 100;
 export const MIN_SPAWN_SPACING = 2.0;
 
+/**
+ * Spawn zone configuration for the Red team.
+ */
 export const RED_SPAWN_ZONE: SpawnZone = {
   center: { x: -30, y: 0, z: 0 },
   radius: 10,
@@ -23,6 +26,9 @@ export const RED_SPAWN_ZONE: SpawnZone = {
   ],
 };
 
+/**
+ * Spawn zone configuration for the Blue team.
+ */
 export const BLUE_SPAWN_ZONE: SpawnZone = {
   center: { x: 30, y: 0, z: 0 },
   radius: 10,
@@ -40,6 +46,9 @@ export const BLUE_SPAWN_ZONE: SpawnZone = {
   ],
 };
 
+/**
+ * Mapping of team IDs to their spawn zones.
+ */
 export const SPAWN_ZONES: Record<'red' | 'blue', SpawnZone> = {
   red: RED_SPAWN_ZONE,
   blue: BLUE_SPAWN_ZONE,

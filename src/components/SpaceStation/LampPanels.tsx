@@ -7,6 +7,10 @@ type LampPanel = {
   color: string;
 };
 
+/**
+ * Renders decorative glowing lamp panels around the arena walls.
+ * Adds visual variety and color cues to the environment.
+ */
 export function LampPanels() {
   const lampPanels = useMemo<LampPanel[]>(
     () => [

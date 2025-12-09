@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { lengthVec3, Vec3 } from '../../src/lib/math/vec3';
 import { TEAM_CONFIGS } from '../../src/lib/teamConfig';
+import { AVOIDANCE_RADIUS } from '../../src/simulation/ai/pathing/avoidance';
 import {
   clampVelocity,
   computeForwardDirection,
@@ -42,5 +43,12 @@ describe('pathing helpers', () => {
 
     expect(lengthVec3(clamped)).toBeCloseTo(5, 5);
     expect(clamped.z).toBeGreaterThan(0);
+  });
+});
+
+describe('avoidance constants', () => {
+  it('has increased AVOIDANCE_RADIUS for better wall awareness', () => {
+    // AVOIDANCE_RADIUS was increased from 3.0 to 4.5 for better wall detection
+    expect(AVOIDANCE_RADIUS).toBe(4.5);
   });
 });
