@@ -1,4 +1,5 @@
 import { Ray } from '@dimforge/rapier3d-compat';
+
 import { Vec3 } from '../../../lib/math/vec3';
 
 /** Minimal Rapier World interface for movement planning */

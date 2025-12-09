@@ -18,7 +18,7 @@ const DEBUG_LOGS_ENABLED = (() => {
     const params = new URLSearchParams(window.location.search || '');
     const v = params.get('debuglogs');
     return v === '1' || v === 'true';
-  } catch (e) {
+  } catch {
     return false;
   }
 })();

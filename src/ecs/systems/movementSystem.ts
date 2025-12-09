@@ -6,11 +6,11 @@ import {
   scaleVec3,
   Vec3,
 } from '../../lib/math/vec3';
-import { ROBOT_RADIUS } from '../../lib/robotHelpers';
 import {
   ARENA_BOUNDS,
   ARENA_PILLARS,
   ARENA_WALLS,
+  ROBOT_RADIUS,
 } from '../../simulation/environment/arenaGeometry';
 import { BattleWorld } from '../world';
 
