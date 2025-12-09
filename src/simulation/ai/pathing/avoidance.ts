@@ -1,5 +1,17 @@
-import { addVec3, normalizeVec3, scaleVec3, Vec3, vec3 } from '../../../lib/math/vec3';
-import { ARENA_PILLARS, ARENA_WALLS, ROBOT_RADIUS } from '../../environment/arenaGeometry';
+import { closestPointOnAABB } from '../../../lib/math/geometry';
+import {
+  addVec3,
+  distanceVec3,
+  normalizeVec3,
+  scaleVec3,
+  Vec3,
+  vec3,
+} from '../../../lib/math/vec3';
+import {
+  ARENA_PILLARS,
+  ARENA_WALLS,
+  ROBOT_RADIUS,
+} from '../../environment/arenaGeometry';
 
 /** Reactive avoidance detection radius (increased for better wall awareness) */
 export const AVOIDANCE_RADIUS = 4.5;
@@ -15,22 +27,28 @@ export function computeAvoidance(pos: Vec3): Vec3 {
   let avoid = vec3(0, 0, 0);
 
   for (const wall of ARENA_WALLS) {
-    const minX = wall.x - wall.halfWidth - ROBOT_RADIUS;
-    const maxX = wall.x + wall.halfWidth + ROBOT_RADIUS;
-    const minZ = wall.z - wall.halfDepth - ROBOT_RADIUS;
-    const maxZ = wall.z + wall.halfDepth + ROBOT_RADIUS;
+    const wallCenter = vec3(wall.x, 0, wall.z);
+    // Expand the wall bounds by robot radius to ensure we steer clear of the physical boundary
+    const closest = closestPointOnAABB(
+      pos,
+      wallCenter,
+      wall.halfWidth + ROBOT_RADIUS,
+      wall.halfDepth + ROBOT_RADIUS,
+    );
 
-    const closestX = Math.max(minX, Math.min(pos.x, maxX));
-    const closestZ = Math.max(minZ, Math.min(pos.z, maxZ));
-    const dx = pos.x - closestX;
-    const dz = pos.z - closestZ;
-    const dist = Math.sqrt(dx * dx + dz * dz);
+    const dist = distanceVec3(pos, closest);
+
     if (dist < AVOIDANCE_RADIUS) {
       const strength = (AVOIDANCE_RADIUS - Math.max(dist, 0)) / AVOIDANCE_RADIUS;
       let pushDir: Vec3;
+
       if (dist > 1e-6) {
+        // Push away from the closest point on the (expanded) wall
+        const dx = pos.x - closest.x;
+        const dz = pos.z - closest.z;
         pushDir = normalizeVec3({ x: dx, y: 0, z: dz });
       } else {
+        // Inside the expanded wall, push away from wall center
         pushDir = normalizeVec3({ x: pos.x - wall.x, y: 0, z: pos.z - wall.z });
       }
       avoid = addVec3(avoid, scaleVec3(pushDir, strength));
@@ -38,11 +56,14 @@ export function computeAvoidance(pos: Vec3): Vec3 {
   }
 
   for (const pillar of ARENA_PILLARS) {
-    const dx = pos.x - pillar.x;
-    const dz = pos.z - pillar.z;
-    const dist = Math.sqrt(dx * dx + dz * dz) - (pillar.radius + ROBOT_RADIUS);
+    const pillarCenter = vec3(pillar.x, 0, pillar.z);
+    const distToCenter = distanceVec3(pos, pillarCenter);
+    const dist = distToCenter - (pillar.radius + ROBOT_RADIUS);
+
     if (dist < AVOIDANCE_RADIUS) {
       const strength = (AVOIDANCE_RADIUS - Math.max(dist, 0)) / AVOIDANCE_RADIUS;
+      const dx = pos.x - pillar.x;
+      const dz = pos.z - pillar.z;
       const push = normalizeVec3({ x: dx, y: 0, z: dz });
       avoid = addVec3(avoid, scaleVec3(push, strength));
     }
