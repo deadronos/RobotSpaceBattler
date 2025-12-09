@@ -2,43 +2,10 @@ import { RobotEntity } from '../../ecs/world';
 import { distanceSquaredVec3 } from '../../lib/math/vec3';
 import { isActiveRobot } from '../../lib/robotHelpers';
 import { TEAM_CONFIGS } from '../../lib/teamConfig';
+import { findClosestEntity, sortEntities } from './targetingUtils';
 
-interface RankedTarget {
-  entity: RobotEntity;
-  distanceSq: number;
-  spawnDistanceSq: number;
-}
-
-function rankCandidates(seeker: RobotEntity, candidates: RobotEntity[]): RankedTarget[] {
-  const spawnCenter = TEAM_CONFIGS[candidates[0]?.team ?? 'blue'].spawnCenter;
-
-  return candidates.map((entity) => ({
-    entity,
-    distanceSq: distanceSquaredVec3(seeker.position, entity.position),
-    spawnDistanceSq: distanceSquaredVec3(entity.position, spawnCenter),
-  }));
-}
-
-function sortByPriority(a: RankedTarget, b: RankedTarget): number {
-  if (a.distanceSq !== b.distanceSq) {
-    return a.distanceSq - b.distanceSq;
-  }
-
-  if (b.entity.kills !== a.entity.kills) {
-    return b.entity.kills - a.entity.kills;
-  }
-
-  if (a.spawnDistanceSq !== b.spawnDistanceSq) {
-    return a.spawnDistanceSq - b.spawnDistanceSq;
-  }
-
-  return a.entity.id.localeCompare(b.entity.id);
-}
-
-function filterEnemies(seeker: RobotEntity, robots: RobotEntity[]): RobotEntity[] {
-  return robots.filter(
-    (robot) => robot.team !== seeker.team && isActiveRobot(robot) && robot.id !== seeker.id,
-  );
+function isEnemy(seeker: RobotEntity, target: RobotEntity): boolean {
+  return target.team !== seeker.team && isActiveRobot(target) && target.id !== seeker.id;
 }
 
 /**
@@ -56,42 +23,44 @@ export function findClosestEnemy(
   candidates?: RobotEntity[],
 ): RobotEntity | undefined {
   const pool = candidates ?? robots;
-  const enemies = filterEnemies(seeker, pool);
-  const ranked = rankCandidates(seeker, enemies);
-  ranked.sort(sortByPriority);
-  return ranked[0]?.entity;
-}
+  const enemies = pool.filter((robot) => isEnemy(seeker, robot));
 
-function sortCaptainTargets(
-  a: RankedTarget,
-  b: RankedTarget,
-): number {
-  if (b.entity.health !== a.entity.health) {
-    return b.entity.health - a.entity.health;
+  if (enemies.length === 0) {
+    return undefined;
   }
 
-  if (b.entity.kills !== a.entity.kills) {
-    return b.entity.kills - a.entity.kills;
-  }
+  // Use sortEntities to preserve tie-breaking logic (Health, Kills, SpawnDist, ID)
+  // Logic from original code: DistanceSq > Kills (desc) > SpawnDist (asc) > ID
+  // Wait, original sortByPriority:
+  // if (a.distanceSq !== b.distanceSq) return a.distanceSq - b.distanceSq;
+  // if (b.entity.kills !== a.entity.kills) return b.entity.kills - a.entity.kills;
+  // if (a.spawnDistanceSq !== b.spawnDistanceSq) return a.spawnDistanceSq - b.spawnDistanceSq;
+  // return a.entity.id.localeCompare(b.entity.id);
 
-  if (a.spawnDistanceSq !== b.spawnDistanceSq) {
-    return b.spawnDistanceSq - a.spawnDistanceSq;
-  }
+  const spawnCenter = TEAM_CONFIGS[enemies[0].team].spawnCenter;
 
-  return a.entity.id.localeCompare(b.entity.id);
-}
+  const sorted = sortEntities(
+    enemies,
+    (entity) => ({
+      entity,
+      distanceSq: distanceSquaredVec3(seeker.position, entity.position),
+      spawnDistanceSq: distanceSquaredVec3(entity.position, spawnCenter),
+    }),
+    (a, b) => {
+      if (a.distanceSq !== b.distanceSq) {
+        return a.distanceSq - b.distanceSq;
+      }
+      if (b.entity.kills !== a.entity.kills) {
+        return b.entity.kills - a.entity.kills;
+      }
+      if (a.spawnDistanceSq !== b.spawnDistanceSq) {
+        return a.spawnDistanceSq - b.spawnDistanceSq;
+      }
+      return a.entity.id.localeCompare(b.entity.id);
+    },
+  );
 
-function rankCaptainCandidates(
-  seeker: RobotEntity,
-  enemies: RobotEntity[],
-): RankedTarget[] {
-  const spawnCenter = TEAM_CONFIGS[enemies[0]?.team ?? 'blue'].spawnCenter;
-
-  return enemies.map((entity) => ({
-    entity,
-    distanceSq: distanceSquaredVec3(seeker.position, entity.position),
-    spawnDistanceSq: distanceSquaredVec3(entity.position, spawnCenter),
-  }));
+  return sorted[0];
 }
 
 /**
@@ -109,16 +78,66 @@ export function pickCaptainTarget(
   candidates?: RobotEntity[],
 ): RobotEntity | undefined {
   const pool = candidates ?? robots;
-  const enemies = filterEnemies(captain, pool);
-  const captains = enemies.filter((robot) => robot.isCaptain);
+  const enemies = pool.filter((robot) => isEnemy(captain, robot));
 
-  if (captains.length > 0) {
-    const ranked = rankCandidates(captain, captains);
-    ranked.sort(sortByPriority);
-    return ranked[0]?.entity;
+  // 1. Prefer closest enemy captain
+  const enemyCaptains = enemies.filter((robot) => robot.isCaptain);
+  if (enemyCaptains.length > 0) {
+    // Also use sortEntities here to be safe?
+    // Original code used rankCandidates which uses sortByPriority.
+    // So yes, captains also used the tie-breaker logic!
+    // rankCandidates(captain, captains).sort(sortByPriority)
+    const spawnCenter = TEAM_CONFIGS[enemies[0].team].spawnCenter;
+    const sortedCaptains = sortEntities(
+      enemyCaptains,
+      (entity) => ({
+        entity,
+        distanceSq: distanceSquaredVec3(captain.position, entity.position),
+        spawnDistanceSq: distanceSquaredVec3(entity.position, spawnCenter),
+      }),
+      (a, b) => {
+        if (a.distanceSq !== b.distanceSq) {
+            return a.distanceSq - b.distanceSq;
+        }
+        if (b.entity.kills !== a.entity.kills) {
+            return b.entity.kills - a.entity.kills;
+        }
+        if (a.spawnDistanceSq !== b.spawnDistanceSq) {
+            return a.spawnDistanceSq - b.spawnDistanceSq;
+        }
+        return a.entity.id.localeCompare(b.entity.id);
+      },
+    );
+    return sortedCaptains[0];
   }
 
-  const ranked = rankCaptainCandidates(captain, enemies);
-  ranked.sort(sortCaptainTargets);
-  return ranked[0]?.entity;
+  // 2. Rank enemies by strategic value (Health > Kills > SpawnDist > ID)
+  if (enemies.length === 0) {
+    return undefined;
+  }
+
+  // Determine enemy spawn center for scoring
+  const spawnCenter = TEAM_CONFIGS[enemies[0].team].spawnCenter;
+
+  const sorted = sortEntities(
+    enemies,
+    (entity) => ({
+      entity,
+      spawnDistanceSq: distanceSquaredVec3(entity.position, spawnCenter),
+    }),
+    (a, b) => {
+      if (b.entity.health !== a.entity.health) {
+        return b.entity.health - a.entity.health;
+      }
+      if (b.entity.kills !== a.entity.kills) {
+        return b.entity.kills - a.entity.kills;
+      }
+      if (a.spawnDistanceSq !== b.spawnDistanceSq) {
+        return b.spawnDistanceSq - a.spawnDistanceSq; // Descending (furthest first)
+      }
+      return a.entity.id.localeCompare(b.entity.id);
+    },
+  );
+
+  return sorted[0];
 }
