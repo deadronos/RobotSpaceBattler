@@ -171,3 +171,40 @@ export function isLineOfSightBlocked(start: Vec3, end: Vec3): boolean {
 
   return false;
 }
+
+/**
+ * Runtime-aware line-of-sight check that includes dynamic obstacles.
+ * If obstacles are not provided, this behaves like the static check.
+ */
+export function isLineOfSightBlockedRuntime(
+  start: Vec3,
+  end: Vec3,
+  options?: { obstacles?: Array<{ blocksVision?: boolean; active?: boolean; shape?: any }> },
+): boolean {
+  // First check static geometry
+  if (isLineOfSightBlocked(start, end)) return true;
+
+  if (options && Array.isArray(options.obstacles)) {
+    for (const obs of options.obstacles) {
+      if (!obs || obs.blocksVision === false) continue;
+      if (obs.active === false) continue;
+
+      const shape = obs.shape;
+      if (!shape) continue;
+
+      if (shape.kind === 'box') {
+        const cx = (shape.center && shape.center.x != null) ? shape.center.x : (obs as any).position?.x ?? 0;
+        const cz = (shape.center && shape.center.z != null) ? shape.center.z : (obs as any).position?.z ?? 0;
+        const wall = { x: cx, z: cz, halfWidth: shape.halfWidth, halfDepth: shape.halfDepth };
+        if (segmentIntersectsAabb2D(start, end, wall)) return true;
+      } else if (shape.kind === 'circle') {
+        const cx = (shape.center && shape.center.x != null) ? shape.center.x : (obs as any).position?.x ?? 0;
+        const cz = (shape.center && shape.center.z != null) ? shape.center.z : (obs as any).position?.z ?? 0;
+        const pillar = { x: cx, z: cz, radius: shape.radius };
+        if (segmentIntersectsCircle2D(start, end, pillar)) return true;
+      }
+    }
+  }
+
+  return false;
+}

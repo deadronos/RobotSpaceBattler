@@ -1,11 +1,11 @@
-import { EnemyMemoryEntry,RobotEntity } from '../../ecs/world';
+import { EnemyMemoryEntry, RobotEntity, BattleWorld } from '../../ecs/world';
 import {
   cloneVec3,
   distanceSquaredVec3,
   Vec3,
 } from '../../lib/math/vec3';
 import { isActiveRobot } from '../../lib/robotHelpers';
-import { isLineOfSightBlocked } from '../environment/arenaGeometry';
+import { isLineOfSightBlockedRuntime } from '../environment/arenaGeometry';
 
 const SENSOR_RANGE = 38;
 const SENSOR_RANGE_SQ = SENSOR_RANGE * SENSOR_RANGE;
@@ -61,6 +61,7 @@ export function updateRobotSensors(
   robot: RobotEntity,
   robots: RobotEntity[],
   timestampMs: number,
+  battleWorld?: BattleWorld,
 ): SensorSnapshot {
   const enemies = collectEnemies(robot, robots);
   const visible: RobotEntity[] = [];
@@ -72,7 +73,7 @@ export function updateRobotSensors(
       continue;
     }
 
-    if (!isLineOfSightBlocked(robot.position, enemy.position)) {
+    if (!isLineOfSightBlockedRuntime(robot.position, enemy.position, { obstacles: battleWorld?.obstacles?.entities })) {
       visible.push(enemy);
       continue;
     }

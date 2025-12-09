@@ -48,7 +48,7 @@ export function updateAISystem(battleWorld: BattleWorld, rng: () => number): voi
 
   robots.forEach((robot) => {
     const allies = robotsByTeam.get(robot.team) ?? [];
-    const { visibleEnemies } = updateRobotSensors(robot, robots, battleWorld.state.elapsedMs);
+    const { visibleEnemies } = updateRobotSensors(robot, robots, battleWorld.state.elapsedMs, battleWorld);
 
     let target: RobotEntity | undefined;
     if (robot.ai.targetId) {
