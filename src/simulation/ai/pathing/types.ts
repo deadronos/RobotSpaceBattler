@@ -29,4 +29,6 @@ export interface MovementContext {
   frameCount?: number;
   /** Entity ID for raycast scheduling (determines which frames this entity raycasts) */
   entityId?: number;
+  /** Optional runtime obstacles to consider for avoidance/LOS */
+  obstacles?: Array<{ position?: { x: number; y: number; z: number }; shape?: any; blocksMovement?: boolean; blocksVision?: boolean } | null>;
 }

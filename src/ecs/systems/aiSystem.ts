@@ -125,6 +125,7 @@ export function updateAISystem(battleWorld: BattleWorld, rng: () => number): voi
       formationAnchor: anchorCandidate ?? undefined,
       strafeSign: robot.ai.strafeSign ?? 1,
       neighbors: neighborPositions.length > 0 ? neighborPositions : undefined,
+      obstacles: battleWorld.obstacles.entities,
     };
 
     const movementPlan = planRobotMovement(

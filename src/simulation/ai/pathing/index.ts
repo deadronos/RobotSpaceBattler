@@ -82,8 +82,8 @@ export function planRobotMovement(
     desiredVelocity = scaleVec3(direction, SEEK_SPEED * 0.5);
   }
 
-  // Apply reactive avoidance (always runs)
-  const avoidance = computeAvoidance(robot.position);
+  // Apply reactive avoidance (always runs). Give computeAvoidance access to runtime obstacles.
+  const avoidance = computeAvoidance(robot.position, context?.obstacles);
   if (lengthVec3(avoidance) > 0) {
     desiredVelocity = addVec3(
       desiredVelocity,
