@@ -5,10 +5,21 @@ import { ReactNode, Suspense } from 'react';
 
 import { initializeRendererStats } from '../visuals/rendererStats';
 
+/**
+ * Props for the Scene component.
+ */
 interface SceneProps {
+  /** The 3D content to render inside the scene. */
   children?: ReactNode;
 }
 
+/**
+ * The main 3D scene container.
+ * Sets up the Canvas, lights, physics world, and camera controls.
+ *
+ * @param props - Component props.
+ * @returns The rendered scene.
+ */
 export function Scene({ children }: SceneProps) {
   return (
     <Canvas

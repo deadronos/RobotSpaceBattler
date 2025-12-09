@@ -1,5 +1,11 @@
 import { BattleWorld } from '../world';
 
+/**
+ * Updates the state of visual effects in the world.
+ * Removes effects that have exceeded their duration.
+ *
+ * @param world - The battle world containing the effects.
+ */
 export function updateEffectSystem(world: BattleWorld): void {
   const now = world.state.elapsedMs;
   const effects = world.effects.entities;

@@ -2,8 +2,13 @@ import { Sparkles } from '@react-three/drei';
 
 import { EffectEntity } from '../../ecs/world';
 
+/**
+ * Props for the EffectVisual component.
+ */
 interface EffectVisualProps {
+  /** The effect entity to render. */
   effect: EffectEntity;
+  /** Current simulation time in milliseconds. */
   currentTimeMs: number;
 }
 
@@ -98,6 +103,10 @@ function LaserImpactEffect({ effect, progress }: { effect: EffectEntity; progres
   );
 }
 
+/**
+ * Renders a visual effect (explosion, impact, etc.).
+ * Selects the appropriate sub-component based on effect type.
+ */
 export function EffectVisual({ effect, currentTimeMs }: EffectVisualProps) {
   const elapsed = Math.max(0, currentTimeMs - effect.createdAt);
   const progress = effect.duration > 0 ? Math.min(1, elapsed / effect.duration) : 1;

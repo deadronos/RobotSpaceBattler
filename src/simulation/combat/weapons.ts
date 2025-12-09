@@ -1,17 +1,32 @@
 import { WeaponType } from '../../ecs/world';
 
+/**
+ * Configuration profile for a weapon type.
+ */
 export interface WeaponProfile {
+  /** The type of weapon. */
   type: WeaponType;
+  /** Base damage per hit. */
   damage: number;
+  /** Shots per second. */
   fireRate: number;
+  /** Speed of the projectile in units per second. */
   projectileSpeed: number;
+  /** Maximum range in units. */
   range: number;
+  /** Visual size of the projectile. */
   projectileSize: number;
+  /** Color of the projectile. */
   projectileColor: string;
+  /** Color of the trail effect (optional). */
   trailColor?: string;
+  /** Radius of area-of-effect damage (optional). */
   aoeRadius?: number;
+  /** Duration of explosion visual effect (optional). */
   explosionDurationMs?: number;
+  /** Width of the beam visual (for lasers). */
   beamWidth?: number;
+  /** Duration of impact visual effect. */
   impactDurationMs?: number;
 }
 
@@ -70,14 +85,32 @@ const DAMAGE_MATRIX: Record<WeaponType, Record<WeaponType, number>> = {
   },
 };
 
+/**
+ * Retrieves the profile for a specific weapon type.
+ * @param type - The weapon type.
+ * @returns The WeaponProfile.
+ */
 export function getWeaponProfile(type: WeaponType): WeaponProfile {
   return WEAPON_PROFILES[type];
 }
 
+/**
+ * Calculates the damage multiplier based on the rock-paper-scissors mechanic.
+ * Laser > Gun > Rocket > Laser.
+ *
+ * @param attacker - The attacking weapon type.
+ * @param defender - The defending weapon type.
+ * @returns The damage multiplier.
+ */
 export function computeDamageMultiplier(attacker: WeaponType, defender: WeaponType): number {
   return DAMAGE_MATRIX[attacker][defender];
 }
 
+/**
+ * Computes the maximum lifetime of a projectile based on its range and speed.
+ * @param profile - The weapon profile.
+ * @returns Lifetime in seconds.
+ */
 export function computeProjectileLifetime(profile: WeaponProfile): number {
   return profile.range / profile.projectileSpeed;
 }

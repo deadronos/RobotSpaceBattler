@@ -2,7 +2,6 @@ import { applyCaptaincy } from '../../lib/captainElection';
 import {
   addInPlaceVec3,
   cloneVec3,
-  distanceSquaredVec3,
   distanceVec3,
   scaleVec3To,
   vec3,
@@ -10,6 +9,7 @@ import {
 import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
 import { isActiveRobot } from '../../lib/robotHelpers';
 import { TelemetryPort } from '../../runtime/simulation/ports';
+import { findClosestEntity } from '../../simulation/ai/targetingUtils';
 import { computeDamageMultiplier } from '../../simulation/combat/weapons';
 import { BattleWorld, EffectType, ProjectileEntity, RobotEntity } from '../world';
 
@@ -27,23 +27,11 @@ function findTarget(
     return direct;
   }
 
-  let best: RobotEntity | undefined;
-  let bestDistanceSq = Number.POSITIVE_INFINITY;
-
-  for (let i = 0; i < activeRobots.length; i += 1) {
-    const candidate = activeRobots[i];
-    if (candidate.team === projectile.team) {
-      continue;
-    }
-
-    const distanceSq = distanceSquaredVec3(candidate.position, projectile.position);
-    if (distanceSq < bestDistanceSq) {
-      bestDistanceSq = distanceSq;
-      best = candidate;
-    }
-  }
-
-  return best;
+  return findClosestEntity(
+    projectile.position,
+    activeRobots,
+    (candidate) => candidate.team !== projectile.team,
+  );
 }
 
 function spawnEffect(
@@ -201,6 +189,14 @@ function applyRocketExplosion(
   world.removeProjectile(projectile);
 }
 
+/**
+ * Updates the projectile simulation.
+ * Handles projectile movement, collision detection, and damage application.
+ *
+ * @param world - The battle world.
+ * @param deltaSeconds - Time elapsed since last update in seconds.
+ * @param telemetry - Port for recording telemetry events.
+ */
 export function updateProjectileSystem(
   world: BattleWorld,
   deltaSeconds: number,

@@ -7,6 +7,10 @@ import {
   TelemetryPort,
 } from './ports';
 
+/**
+ * Creates a TelemetryPort implementation that bridges simulation events to the Zustand store.
+ * @returns A TelemetryPort instance.
+ */
 export function createTelemetryPort(): TelemetryPort {
   let sequenceId = 0;
 

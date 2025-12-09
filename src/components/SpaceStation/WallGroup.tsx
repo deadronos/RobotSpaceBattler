@@ -1,6 +1,8 @@
 import { RigidBody } from '@react-three/rapier';
 import { useMemo } from 'react';
 
+import { CollisionGroup, interactionGroups } from '../../lib/physics/collisionGroups';
+
 type WallConfig = {
   pos: [number, number, number];
   dim: [number, number, number];
@@ -22,13 +24,25 @@ const WALL_GROUP: WallConfig[] = [
   { pos: [35, 2.5, 35], dim: [6, 5, 6] },
 ];
 
+/**
+ * Renders the static walls of the arena.
+ * Handles both visual representation and physics bodies.
+ */
 export function WallGroup() {
   const walls = useMemo(() => WALL_GROUP, []);
 
   return (
     <>
       {walls.map((wall, index) => (
-        <RigidBody key={index} type="fixed" colliders="cuboid">
+        <RigidBody
+          key={index}
+          type="fixed"
+          colliders="cuboid"
+          collisionGroups={interactionGroups(
+            CollisionGroup.WALL,
+            CollisionGroup.ROBOT | CollisionGroup.PROJECTILE
+          )}
+        >
           <mesh position={wall.pos} receiveShadow castShadow>
             <boxGeometry args={wall.dim} />
             <meshPhysicalMaterial color="#313c60" metalness={0.55} roughness={0.45} />

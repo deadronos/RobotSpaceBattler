@@ -18,7 +18,7 @@ const DEBUG_LOGS_ENABLED = (() => {
     const params = new URLSearchParams(window.location.search || '');
     const v = params.get('debuglogs');
     return v === '1' || v === 'true';
-  } catch (e) {
+  } catch {
     return false;
   }
 })();
@@ -50,6 +50,12 @@ function getGlobalStats(): RendererStatsGlobal | null {
   return stats;
 }
 
+/**
+ * Pushes a telemetry event to the global stats object for debugging/analysis.
+ * Maintains a fixed-size buffer of events.
+ *
+ * @param event - The event to record.
+ */
 export function pushVisualTelemetryEvent(event?: VisualInstanceTelemetryEvent): void {
   if (!event) {
     return;
@@ -70,6 +76,11 @@ export function pushVisualTelemetryEvent(event?: VisualInstanceTelemetryEvent): 
   }
 }
 
+/**
+ * Creates a telemetry emitter for visual systems.
+ *
+ * @returns A VisualInstanceTelemetryEmitter.
+ */
 export function createVisualTelemetryEmitter(): VisualInstanceTelemetryEmitter {
   return {
     emit: (event: VisualInstanceTelemetryEvent) => {
