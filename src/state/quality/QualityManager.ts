@@ -18,12 +18,17 @@ export interface InstancingQualityConfig {
   maxInstances: InstancingMaxInstancesConfig;
 }
 
+export interface ObstacleDebugConfig {
+  visualsEnabled: boolean;
+}
+
 /**
  * Global quality settings structure.
  */
 export interface QualitySettings {
   visuals: {
     instancing: InstancingQualityConfig;
+    obstacles: ObstacleDebugConfig;
   };
 }
 
@@ -33,6 +38,7 @@ type QualityOverrides = {
       enabled?: boolean;
       maxInstances?: Partial<InstancingMaxInstancesConfig>;
     };
+    obstacles?: Partial<ObstacleDebugConfig>;
   };
 };
 
@@ -79,6 +85,9 @@ const DEFAULT_SETTINGS: QualitySettings = {
         effects: 256,
       },
     },
+    obstacles: {
+      visualsEnabled: true,
+    },
   },
 };
 
@@ -89,6 +98,7 @@ function cloneSettings(settings: QualitySettings): QualitySettings {
         enabled: settings.visuals.instancing.enabled,
         maxInstances: { ...settings.visuals.instancing.maxInstances },
       },
+      obstacles: { ...settings.visuals.obstacles },
     },
   };
 }
@@ -108,6 +118,7 @@ export class QualityManager {
   private mergeSettings(base: QualitySettings, overrides: QualityOverrides): QualitySettings {
     const instancing = overrides.visuals?.instancing;
     const maxInstanceOverrides = instancing?.maxInstances ?? {};
+    const obstacles = overrides.visuals?.obstacles ?? {};
 
     return {
       visuals: {
@@ -119,6 +130,9 @@ export class QualityManager {
             lasers: maxInstanceOverrides.lasers ?? base.visuals.instancing.maxInstances.lasers,
             effects: maxInstanceOverrides.effects ?? base.visuals.instancing.maxInstances.effects,
           },
+        },
+        obstacles: {
+          visualsEnabled: obstacles.visualsEnabled ?? base.visuals.obstacles.visualsEnabled,
         },
       },
     };
@@ -149,6 +163,17 @@ export class QualityManager {
     this.settings = this.mergeSettings(this.settings, {
       visuals: { instancing: { enabled } },
     });
+    this.emit();
+  }
+
+  /**
+   * Toggles obstacle debug visuals.
+   */
+  setObstacleVisuals(enabled: boolean): void {
+    if (this.settings.visuals.obstacles.visualsEnabled === enabled) {
+      return;
+    }
+    this.settings = this.mergeSettings(this.settings, { visuals: { obstacles: { visualsEnabled: enabled } } });
     this.emit();
   }
 

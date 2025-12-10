@@ -15,6 +15,7 @@ import { ObstacleFixture } from './simulation/match/matchSpawner';
 import { useTelemetryStore } from './state/telemetryStore';
 import { ObstacleEditor } from './components/debug/ObstacleEditor';
 import { ObstacleSpawner } from './components/debug/ObstacleSpawner';
+import { PerfToggles } from './components/debug/PerfToggles';
 
 function formatStatus({
   phase,
@@ -150,6 +151,7 @@ export default function App() {
       >
         <ObstacleEditor world={battleWorld} sampleFixture={obstacleFixture} />
         <ObstacleSpawner world={battleWorld} />
+        <PerfToggles />
       </div>
       <div
         style={{

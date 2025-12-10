@@ -121,10 +121,6 @@ Goal: AI correctly treats dynamic obstacles as changing constraints and reroutes
 
 Independent Test: Headless match where a barrier moves to block the planned path and AI reroutes within bounded time.
 
-- [ ] T018 [US3] Add integration test: AI reroutes when path becomes blocked
-  - File: `tests/integration/ai-reroute.spec.ts`
-  - Verify: AI recomputes a new route within `<= 3` ticks or executes a fallback behaviour.
-
 - [x] T018 [US3] Add integration test: AI reroutes when path becomes blocked
   - File: `tests/integration/ai-reroute.spec.ts`
   - Verify: AI recomputes a new route within `<= 3` ticks or executes a fallback behaviour.
@@ -141,16 +137,16 @@ Independent Test: Headless match where a barrier moves to block the planned path
 
 ## Phase 6: Performance, Visuals & Validation (Parallellizable)
 
-- [ ] T021 [P] Add placeholder obstacle visuals and wire to existing render pipeline
+- [x] T021 [P] Add placeholder obstacle visuals and wire to existing render pipeline
   - Files: `src/visuals/ObstacleVisual.tsx`, `src/components/Simulation.tsx`
   - Outcome: Visual debugging for obstacles; can be toggled off for perf tests.
 
-- [ ] T022 [P] Add headless performance stress test for 50 active obstacles
+- [x] T022 [P] Add headless performance stress test for 50 active obstacles
   - Files: `tests/stress/obstacles.stress.spec.ts`, `scripts/perf/obstacle-stress.js`
   - Verify: baseline comparison vs main branch shows no more than 20% performance regression (adjust per baseline).
 
-- [ ] T023 [P] Add debug toggles & QualityManager controls for obstacle stress testing
-  - Files: `src/state/quality/QualityManager.ts`, `src/components/Debug/PerfToggles.tsx`
+- [x] T023 [P] Add debug toggles & QualityManager controls for obstacle stress testing
+  - Files: `src/state/quality/QualityManager.ts`, `src/components/debug/PerfToggles.tsx`
 
 ---
 
