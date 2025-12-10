@@ -10,11 +10,10 @@ import {
 import {
   ARENA_PILLARS,
   ARENA_WALLS,
-  ROBOT_RADIUS,
 } from "../../environment/arenaGeometry";
 
-/** Reactive avoidance detection radius (increased for better wall awareness) */
-export const AVOIDANCE_RADIUS = 4.5;
+/** Reactive avoidance detection radius - reduced for tight wall proximity */
+export const AVOIDANCE_RADIUS = 1.2;
 
 type RuntimeObstacle = {
   position?: { x: number; y: number; z: number };
@@ -40,12 +39,13 @@ export function computeAvoidance(
 
   for (const wall of ARENA_WALLS) {
     const wallCenter = vec3(wall.x, 0, wall.z);
-    // Expand the wall bounds by robot radius to ensure we steer clear of the physical boundary
+    // Add minimal safety margin (5cm) to wall bounds for avoidance calculation
+    const safetyMargin = 0.05;
     const closest = closestPointOnAABB(
       pos,
       wallCenter,
-      wall.halfWidth + ROBOT_RADIUS,
-      wall.halfDepth + ROBOT_RADIUS,
+      wall.halfWidth + safetyMargin,
+      wall.halfDepth + safetyMargin,
     );
 
     const dist = distanceVec3(pos, closest);
@@ -71,7 +71,9 @@ export function computeAvoidance(
   for (const pillar of ARENA_PILLARS) {
     const pillarCenter = vec3(pillar.x, 0, pillar.z);
     const distToCenter = distanceVec3(pos, pillarCenter);
-    const dist = distToCenter - (pillar.radius + ROBOT_RADIUS);
+    // Use minimal safety margin (5cm) instead of full robot radius
+    const safetyMargin = 0.05;
+    const dist = distToCenter - (pillar.radius + safetyMargin);
 
     if (dist < AVOIDANCE_RADIUS) {
       const strength =
@@ -93,7 +95,8 @@ export function computeAvoidance(
         const dx = pos.x - obsPos.x;
         const dz = pos.z - obsPos.z;
         const distToCenter = Math.sqrt(dx * dx + dz * dz);
-        const dist = distToCenter - ((obs.shape.radius ?? 0) + ROBOT_RADIUS);
+        const safetyMargin = 0.05;
+        const dist = distToCenter - ((obs.shape.radius ?? 0) + safetyMargin);
         if (dist < AVOIDANCE_RADIUS) {
           const strength =
             (AVOIDANCE_RADIUS - Math.max(dist, 0)) / AVOIDANCE_RADIUS;
@@ -101,11 +104,12 @@ export function computeAvoidance(
           avoid = addVec3(avoid, scaleVec3(push, strength));
         }
       } else if (obs.shape.kind === "box") {
+        const safetyMargin = 0.05;
         const closest = closestPointOnAABB(
           pos,
           { x: obsPos.x, y: 0, z: obsPos.z },
-          (obs.shape.halfWidth ?? 0) + ROBOT_RADIUS,
-          (obs.shape.halfDepth ?? 0) + ROBOT_RADIUS,
+          (obs.shape.halfWidth ?? 0) + safetyMargin,
+          (obs.shape.halfDepth ?? 0) + safetyMargin,
         );
 
         const dist = distanceVec3(pos, closest);

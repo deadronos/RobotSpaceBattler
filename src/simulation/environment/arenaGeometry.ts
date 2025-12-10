@@ -29,7 +29,8 @@ export interface ArenaBounds {
   max: Vec3;
 }
 
-export const ROBOT_RADIUS = 1.0;
+// Robot capsule collider radius: 0.891 (99% of 0.9m visual radius)
+export const ROBOT_RADIUS = 0.891;
 
 export const ARENA_BOUNDS: ArenaBounds = {
   min: vec3(-48, 0, -48),

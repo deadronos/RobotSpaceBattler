@@ -1,4 +1,4 @@
-import { RigidBody } from "@react-three/rapier";
+import { CapsuleCollider, RigidBody } from "@react-three/rapier";
 import { memo } from "react";
 import { Color } from "three";
 
@@ -25,7 +25,10 @@ export const RobotPlaceholder = memo(function RobotPlaceholder({
   const emissiveSecondary = new Color(color).multiplyScalar(0.25);
 
   return (
-    <RigidBody type="fixed" colliders="hull" position={position}>
+    <RigidBody type="fixed" colliders={false} position={position}>
+      {/* Capsule collider matches robot body: cylinder height 2.2/2=1.1 half-height, radius 0.95 (max of body)
+          Reduced to 99% for <1cm clearance: half-height 1.089 (99% of 1.1), radius 0.891 (99% of 0.9) */}
+      <CapsuleCollider args={[1.089, 0.891]} />
       <group>
         <mesh castShadow receiveShadow>
           <cylinderGeometry args={[0.9, 1, 2.2, 16]} />
