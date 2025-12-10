@@ -4,6 +4,7 @@
  */
 
 import { AStarSearch } from '../search/AStarSearch';
+import { PathOptimizer } from '../smoothing/PathOptimizer';
 import type { NavigationPath, PathStatus, Point2D, Point3D } from '../types';
 import type { NavMeshResource } from './NavMeshResource';
 import type { PathComponent } from './PathComponent';
@@ -13,9 +14,16 @@ import type { PathComponent } from './PathComponent';
  */
 export class PathfindingSystem {
   private astar: AStarSearch;
+  private optimizer: PathOptimizer;
+  private enableSmoothing: boolean;
 
-  constructor(private navMeshResource: NavMeshResource) {
+  constructor(
+    private navMeshResource: NavMeshResource,
+    options?: { enableSmoothing?: boolean },
+  ) {
     this.astar = new AStarSearch(navMeshResource.mesh);
+    this.optimizer = new PathOptimizer();
+    this.enableSmoothing = options?.enableSmoothing ?? true; // Enabled by default
   }
 
   /**
@@ -39,7 +47,12 @@ export class PathfindingSystem {
     };
 
     // Find path using A*
-    const waypoints2D = this.astar.findPath(start, target);
+    let waypoints2D = this.astar.findPath(start, target);
+
+    // Apply path smoothing if enabled
+    if (this.enableSmoothing && waypoints2D && waypoints2D.length > 2) {
+      waypoints2D = this.optimizer.smoothPath(waypoints2D);
+    }
 
     const endTime = performance.now();
     const calculationTime = endTime - startTime;

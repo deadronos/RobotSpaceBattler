@@ -92,7 +92,7 @@
 
 ---
 
-## Phase 4: User Story 2 - Smooth Natural Movement Paths (Priority: P2)
+## Phase 4: User Story 2 - Smooth Natural Movement Paths (Priority: P2) ✅ COMPLETE
 
 **Goal**: Robots follow smooth, natural-looking paths with curves around obstacles rather than zigzag grid patterns
 
@@ -100,21 +100,21 @@
 
 ### Tests for User Story 2 (TDD Required)
 
-- [ ] T036 [P] [US2] Unit test: StringPuller reduces waypoint count by >50% in tests/simulation/ai/pathfinding/smoothing/StringPuller.test.ts
-- [ ] T037 [P] [US2] Unit test: StringPuller maintains path validity (all waypoints walkable) in tests/simulation/ai/pathfinding/smoothing/StringPuller.test.ts
-- [ ] T038 [P] [US2] Unit test: PathOptimizer ensures heading changes <5° between segments in tests/simulation/ai/pathfinding/smoothing/PathOptimizer.test.ts
-- [ ] T039 [US2] Integration test: Paths around pillar form smooth arcs not rectangles in tests/integration/pathfinding-smoothing.test.ts
-- [ ] T040 [US2] Contract test: Smoothed path length ≤110% of pre-smoothed length in tests/simulation/ai/pathfinding/smoothing/StringPuller.test.ts
+- [X] T036 [P] [US2] Unit test: StringPuller reduces waypoint count by >50% in tests/simulation/ai/pathfinding/smoothing/StringPuller.test.ts
+- [X] T037 [P] [US2] Unit test: StringPuller maintains path validity (all waypoints walkable) in tests/simulation/ai/pathfinding/smoothing/StringPuller.test.ts
+- [X] T038 [P] [US2] Unit test: PathOptimizer ensures heading changes <5° between segments in tests/simulation/ai/pathfinding/smoothing/PathOptimizer.test.ts
+- [X] T039 [US2] Integration test: Paths around pillar form smooth arcs not rectangles in tests/integration/pathfinding-smoothing.test.ts
+- [X] T040 [US2] Contract test: Smoothed path length ≤110% of pre-smoothed length in tests/simulation/ai/pathfinding/smoothing/StringPuller.test.ts
 
 ### Implementation for User Story 2
 
-- [ ] T041 [P] [US2] Integrate navmesh funnel algorithm wrapper in src/simulation/ai/pathfinding/smoothing/StringPuller.ts
-- [ ] T042 [P] [US2] Implement PathOptimizer.smoothPath() to apply funnel algorithm in src/simulation/ai/pathfinding/smoothing/PathOptimizer.ts
-- [ ] T043 [US2] Extend PathfindingSystem.calculatePath() to apply path smoothing in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
-- [ ] T044 [US2] Add heading smoothness validation (max 5° turns) in src/simulation/ai/pathfinding/smoothing/PathOptimizer.ts
-- [ ] T045 [US2] Add path optimality validation (≤110% shortest) in src/simulation/ai/pathfinding/smoothing/PathOptimizer.ts
+- [X] T041 [P] [US2] Integrate navmesh funnel algorithm wrapper in src/simulation/ai/pathfinding/smoothing/StringPuller.ts
+- [X] T042 [P] [US2] Implement PathOptimizer.smoothPath() to apply funnel algorithm in src/simulation/ai/pathfinding/smoothing/PathOptimizer.ts
+- [X] T043 [US2] Extend PathfindingSystem.calculatePath() to apply path smoothing in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
+- [X] T044 [US2] Add heading smoothness validation (max 5° turns) in src/simulation/ai/pathfinding/smoothing/PathOptimizer.ts
+- [X] T045 [US2] Add path optimality validation (≤110% shortest) in src/simulation/ai/pathfinding/smoothing/PathOptimizer.ts
 
-**Checkpoint**: At this point, User Stories 1 AND 2 should both work - robots navigate smoothly with curved paths
+**Checkpoint**: ✅ At this point, User Stories 1 AND 2 should both work - robots navigate smoothly with curved paths
 
 ---
 

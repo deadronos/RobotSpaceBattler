@@ -17,20 +17,20 @@ export type {
 } from './types';
 export { ObstacleType,PathStatus } from './types';
 
-// NavMesh generation (to be implemented)
-// export { NavMeshGenerator } from './navmesh/NavMeshGenerator';
-// export { PolygonDecomposer } from './navmesh/PolygonDecomposer';
+// NavMesh generation
+export { extractArenaConfiguration } from './navmesh/ArenaGeometryExtractor';
+export { NavMeshGenerator } from './navmesh/NavMeshGenerator';
 
-// Pathfinding search (to be implemented)
-// export { AStarSearch } from './search/AStarSearch';
-// export { Heuristics } from './search/Heuristics';
-// export { PathCache } from './search/PathCache';
+// Pathfinding search
+export { AStarSearch } from './search/AStarSearch';
 
-// Path smoothing (to be implemented)
-// export { StringPuller } from './smoothing/StringPuller';
-// export { PathOptimizer } from './smoothing/PathOptimizer';
+// Path smoothing
+export { PathOptimizer } from './smoothing/PathOptimizer';
+export { StringPuller } from './smoothing/StringPuller';
 
-// ECS integration (to be implemented)
-// export { PathfindingSystem } from './integration/PathfindingSystem';
-// export { PathComponent } from './integration/PathComponent';
-// export { NavMeshResource } from './integration/NavMeshResource';
+// ECS integration
+export type { NavMeshResource } from './integration/NavMeshResource';
+export { createNavMeshResource } from './integration/NavMeshResource';
+export type { PathComponent } from './integration/PathComponent';
+export { createPathComponent } from './integration/PathComponent';
+export { PathfindingSystem } from './integration/PathfindingSystem';
