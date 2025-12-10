@@ -1,5 +1,6 @@
 import { BattleWorld, ObstacleEntity } from '../../ecs/world';
-import { Vec3, vec3, addVec3, subVec3, cloneVec3 } from '../../lib/math/vec3';
+import { updateRapierObstacleTransforms } from './rapierIntegration';
+import { Vec3, vec3, addVec3, subtractVec3, cloneVec3 } from '../../lib/math/vec3';
 
 function segmentLengths(points: Vec3[]): number[] {
   const lens: number[] = [];
@@ -42,7 +43,60 @@ export function updateObstacleMovement(world: BattleWorld, deltaMs: number): voi
 
   for (const obstacle of world.obstacles.entities) {
     const p = obstacle.movementPattern;
-    if (!p || p.patternType !== 'linear' || !p.points || p.points.length < 2) continue;
+      if (!p) continue;
+
+      // Rotation pattern: rotate around a pivot
+      if (p.patternType === 'rotation') {
+        if (!p.pivot) continue;
+
+        if (p.progress == null || Number.isNaN(p.progress)) p.progress = p.phase ?? 0;
+        if (p.direction == null) p.direction = 1;
+
+        const twoPi = Math.PI * 2;
+        const deltaSeconds = deltaMs / 1000;
+
+        // Initialize origin offset relative to pivot once
+        if (p.originOffset == null) {
+          p.originOffset = subtractVec3(obstacle.position, p.pivot);
+        }
+
+        const currentAngle = (p.progress ?? 0) * twoPi;
+        const deltaAngle = (p.direction ?? 1) * (p.speed ?? 0) * deltaSeconds;
+        let nextAngle = currentAngle + deltaAngle;
+
+        if (p.pingPong) {
+          // reflect between 0..2pi
+          if (nextAngle > twoPi) {
+            nextAngle = twoPi - (nextAngle - twoPi);
+            p.direction = -1;
+          } else if (nextAngle < 0) {
+            nextAngle = -nextAngle;
+            p.direction = 1;
+          }
+        } else if (p.loop) {
+          nextAngle = ((nextAngle % twoPi) + twoPi) % twoPi;
+        } else {
+          nextAngle = Math.max(0, Math.min(twoPi, nextAngle));
+        }
+
+        p.progress = nextAngle / twoPi;
+
+        const off = p.originOffset as any;
+        const pivot = p.pivot;
+        const cosA = Math.cos(nextAngle);
+        const sinA = Math.sin(nextAngle);
+        const x = pivot.x + (off.x * cosA - off.z * sinA);
+        const z = pivot.z + (off.x * sinA + off.z * cosA);
+        const prevY = obstacle.position?.y ?? 0;
+        obstacle.position = vec3(x, prevY, z);
+        // Update orientation if present
+        obstacle.orientation = ((obstacle.orientation ?? 0) + deltaAngle) % twoPi;
+        continue;
+      }
+
+      // Linear / oscillate path-following vehicles
+      if (p.patternType !== 'linear' && p.patternType !== 'oscillate') continue;
+      if (!p.points || p.points.length < 2) continue;
 
     // ensure pattern internals exist
     if (p.progress == null || Number.isNaN(p.progress)) p.progress = p.phase ?? 0;
@@ -78,5 +132,12 @@ export function updateObstacleMovement(world: BattleWorld, deltaMs: number): voi
     // update obstacle position (y stays same if set)
     const prevY = obstacle.position?.y ?? 0;
     obstacle.position = vec3(pos.x, prevY, pos.z);
+  }
+
+  // If a Rapier world is attached, sync obstacle transforms so physics queries see runtime geometry.
+  try {
+    updateRapierObstacleTransforms(world);
+  } catch (err) {
+    // Defensive: avoid throwing from movement update if Rapier binding throws for any reason
   }
 }

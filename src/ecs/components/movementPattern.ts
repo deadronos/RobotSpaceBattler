@@ -14,6 +14,7 @@ export interface MovementPattern {
   pingPong?: boolean;
   phase?: number; // 0..1 seed of progress
   progress?: number; // internal runtime progress (0..1)
+  originOffset?: Vec3; // internal runtime: vector from pivot/origin used by rotation
   direction?: 1 | -1;
 }
 

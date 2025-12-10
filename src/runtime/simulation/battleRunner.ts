@@ -8,6 +8,7 @@ import { updateProjectileSystem } from '../../ecs/systems/projectileSystem';
 import { spawnTeams } from '../../ecs/systems/spawnSystem';
 import { BattleWorld, resetBattleWorld, TeamId } from '../../ecs/world';
 import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
+import { syncObstaclesToRapier, clearRapierBindings } from '../../simulation/obstacles/rapierIntegration';
 import { createXorShift32 } from '../../lib/random/xorshift';
 import { isActiveRobot } from '../../lib/robotHelpers';
 import { MatchStateMachine } from '../state/matchStateMachine';
@@ -146,6 +147,8 @@ export function createBattleRunner(
     },
     setRapierWorld: (rapierWorld: RapierWorld | null) => {
       world.rapierWorld = rapierWorld ?? undefined;
+      if (rapierWorld) syncObstaclesToRapier(world);
+      else clearRapierBindings(world);
     },
     getRapierWorld: () => {
       return world.rapierWorld;

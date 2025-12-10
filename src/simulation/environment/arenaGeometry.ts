@@ -1,4 +1,5 @@
 import { Vec3, vec3 } from '../../lib/math/vec3';
+import { Ray } from '@dimforge/rapier3d-compat';
 
 /**
  * Definition of a rectangular arena wall.
@@ -179,10 +180,30 @@ export function isLineOfSightBlocked(start: Vec3, end: Vec3): boolean {
 export function isLineOfSightBlockedRuntime(
   start: Vec3,
   end: Vec3,
-  options?: { obstacles?: Array<{ blocksVision?: boolean; active?: boolean; shape?: any }> },
+  options?: {
+    obstacles?: Array<{ blocksVision?: boolean; active?: boolean; shape?: any }>;
+    rapierWorld?: any;
+  },
 ): boolean {
   // First check static geometry
   if (isLineOfSightBlocked(start, end)) return true;
+
+  // If a rapier world is provided prefer raycast checks against the physics world
+  const rapierWorld = (options && (options as any).rapierWorld) || undefined;
+  if (rapierWorld && typeof rapierWorld.castRayAndGetNormal === 'function') {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const dz = end.z - start.z;
+    const maxDist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (maxDist > EPSILON) {
+      const dir = { x: dx / maxDist, y: dy / maxDist, z: dz / maxDist };
+      // Use same defensive Ray creation as physicsQueryService
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ray = new (Ray as any)(start, dir);
+      const hit = rapierWorld.castRayAndGetNormal(ray, maxDist, true, undefined, undefined);
+      if (hit) return true;
+    }
+  }
 
   if (options && Array.isArray(options.obstacles)) {
     for (const obs of options.obstacles) {

@@ -33,11 +33,11 @@ Purpose: Create types, fixtures and test harness updates required to implement d
 
 Purpose: Implement deterministic runtime behaviour (movement, runtime LOS, hazard schedules, destruction) and expose test hooks.
 
-- [ ] T004 [P] Add rotation & oscillation movement patterns to movement system
+  - [x] T004 [P] Add rotation & oscillation movement patterns to movement system
   - Files: `src/simulation/obstacles/movementSystem.ts`, tests: `tests/simulation/obstaclesMovementRotation.spec.ts`
   - Outcome: Movement patterns support `rotation` and `oscillate` and are deterministic on tick stepping.
 
-- [ ] T005 [P] Sync obstacle transforms into Rapier as kinematic colliders when rapier world present
+ - [x] T005 [P] Sync obstacle transforms into Rapier as kinematic colliders when rapier world present
   - Files: `src/simulation/obstacles/rapierIntegration.ts`, update `battleRunner`/world Rapier binding
   - Outcome: Rapier world has kinematic colliders for obstacles so raycasts and physics queries see runtime geometry.
 
