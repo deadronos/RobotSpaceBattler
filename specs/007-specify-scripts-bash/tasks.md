@@ -188,15 +188,20 @@
 
 ---
 
-## Phase 8: Integration & AI Behavior Coordination
+## Phase 8: Integration & AI Behavior Coordination ✅
 
-**Purpose**: Integrate pathfinding with existing AI systems using concurrent execution model
+**Purpose**: Integrate pathfinding with existing AI systems using concurrent execution model  
+**Status**: COMPLETE (2025-12-10)
 
-- [ ] T072 Unit test: Pathfinding outputs movement desire vector (not direct position update) in tests/simulation/ai/pathfinding/integration/PathfindingSystem.test.ts
-- [ ] T073 Refactor PathfindingSystem to emit movement desire instead of direct movement in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
-- [ ] T074 Integrate pathfinding desire with existing AI behavior blending system in src/simulation/ai/coordination/BehaviorBlender.ts
-- [ ] T075 Define weighted blending priorities (retreat > combat > pathfinding > idle) in src/simulation/ai/coordination/BehaviorBlender.ts
-- [ ] T076 Integration test: Pathfinding blends correctly with combat behavior in tests/integration/ai-behavior-blending.test.ts
+- [x] T072 Unit test: Pathfinding outputs movement desire vector (not direct position update) in tests/simulation/ai/pathfinding/integration/movement-desire.test.ts
+- [x] T073 Refactor PathfindingSystem to emit movement desire instead of direct movement
+  (already implemented - waypoint-based output)
+- [x] T074 Integrate pathfinding desire with existing AI behavior blending system in src/simulation/ai/coordination/BehaviorBlender.ts
+- [x] T075 Define weighted blending priorities (retreat > combat > pathfinding > idle) in src/simulation/ai/coordination/BehaviorBlender.ts
+- [x] T076 Integration test: Pathfinding blends correctly with combat behavior in tests/integration/ai-behavior-blending.test.ts
+
+**Test Results**: 18/18 tests passing (5 movement desire + 13 behavior blending)  
+**Checkpoint**: All 55 tests passing (37 pathfinding + 18 Phase 8)
 
 ---
 
