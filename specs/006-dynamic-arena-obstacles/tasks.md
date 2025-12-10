@@ -79,15 +79,15 @@ Independent Test: Headless integration verifying a moving barrier blocks LOS and
 
 ### Implementation
 
-- [ ] T012 [US1] [P] Add obstacle spawn from fixture into match start flow
+- [x] T012 [US1] [P] Add obstacle spawn from fixture into match start flow
   - File: `src/simulation/match/matchSpawner.ts` (or spawnTeams placement), tests/integration
   - Outcome: Matches can be seeded with obstacles defined in fixture JSON.
 
-- [ ] T013 [US1] [P] Add runtime demo / debug UI for manual playtesting
+- [x] T013 [US1] [P] Add runtime demo / debug UI for manual playtesting
   - File: `src/components/debug/ObstacleSpawner.tsx` and register in dev view
   - Outcome: Designers/testers can place and manipulate obstacles at runtime in dev server.
 
-- [ ] T014 [US1] Add MatchTrace verification test for obstacle events
+- [x] T014 [US1] Add MatchTrace verification test for obstacle events
   - File: `tests/integration/matchTrace.obstacles.spec.ts`
   - Verify: MatchTrace contains obstacle move/activation/destroy events with deterministic ordering.
 
@@ -183,4 +183,3 @@ Independent Test: Headless match where a barrier moves to block the planned path
 ---
 
 All tasks follow the required checklist format: each line starts with `- [ ] T###` and includes an exact file path.
-

@@ -13,6 +13,7 @@ import {
 } from './runtime/state/matchStateMachine';
 import { ObstacleFixture } from './simulation/match/matchSpawner';
 import { useTelemetryStore } from './state/telemetryStore';
+import { ObstacleSpawner } from './components/debug/ObstacleSpawner';
 
 function formatStatus({
   phase,
@@ -134,6 +135,17 @@ export default function App() {
           obstacleFixture={obstacleFixture}
         />
       </Suspense>
+      <div
+        style={{
+          position: 'absolute',
+          left: 16,
+          top: 72,
+          maxWidth: 380,
+          zIndex: 2,
+        }}
+      >
+        <ObstacleSpawner world={battleWorld} />
+      </div>
       <div
         style={{
           position: 'absolute',
