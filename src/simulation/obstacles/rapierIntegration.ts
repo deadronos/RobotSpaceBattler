@@ -97,8 +97,8 @@ export function clearRapierBindings(world: BattleWorld) {
   if (!map) return;
   const rapierWorld = world.rapierWorld as RapierObstacleApi | undefined;
   // Allow removal if rapierWorld offers it
-  for (const id of map.keys()) {
-    if (typeof rapierWorld.removeObstacle === 'function') {
+  if (rapierWorld && typeof rapierWorld.removeObstacle === 'function') {
+    for (const id of map.keys()) {
       rapierWorld.removeObstacle(id);
     }
   }

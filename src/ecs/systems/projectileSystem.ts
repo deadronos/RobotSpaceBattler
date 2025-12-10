@@ -237,11 +237,19 @@ export function updateProjectileSystem(
       const projPos = projectile.position;
 
       if (obs.shape && obs.shape.kind === 'box') {
-          const center = (obs.shape.center && { x: obs.shape.center.x, y: projPos.y, z: obs.shape.center.z }) || obs.position;
-          const gapSq = distanceSquaredPointToAABB(projPos, center, obs.shape.halfWidth, obs.shape.halfDepth);
-          collided = gapSq <= 0.000001;
-        } else if (obs.shape && obs.shape.kind === 'circle') {
-          const center = (obs.shape.center && { x: obs.shape.center.x, y: projPos.y, z: obs.shape.center.z }) || obs.position;
+        const center = {
+          x: obs.shape.center?.x ?? obs.position?.x ?? 0,
+          y: projPos.y,
+          z: obs.shape.center?.z ?? obs.position?.z ?? 0,
+        };
+        const gapSq = distanceSquaredPointToAABB(projPos, center, obs.shape.halfWidth, obs.shape.halfDepth);
+        collided = gapSq <= 0.000001;
+      } else if (obs.shape && obs.shape.kind === 'circle') {
+        const center = {
+          x: obs.shape.center?.x ?? obs.position?.x ?? 0,
+          y: projPos.y,
+          z: obs.shape.center?.z ?? obs.position?.z ?? 0,
+        };
         const gapSq = distanceSquaredPointToCircle(projPos, center, obs.shape.radius);
         collided = gapSq <= 0.000001;
       }

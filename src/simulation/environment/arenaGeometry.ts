@@ -208,7 +208,7 @@ export function isLineOfSightBlockedRuntime(
     if (maxDist > EPSILON) {
       const dir = { x: dx / maxDist, y: dy / maxDist, z: dz / maxDist };
       const ray = new Ray(start, dir);
-      const hit = rapierWorld.castRayAndGetNormal(ray, maxDist, true, undefined, undefined);
+      const hit = rapierWorld.castRayAndGetNormal(ray, maxDist, true);
       if (hit) return true;
     }
   }

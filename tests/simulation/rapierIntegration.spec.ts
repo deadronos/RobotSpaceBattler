@@ -14,7 +14,7 @@ describe('Rapier integration for obstacles', () => {
       kind: 'obstacle' as const,
       obstacleType: 'barrier' as const,
       position: vec3(1, 0, 0),
-      shape: { kind: 'box', halfWidth: 1, halfDepth: 1 },
+      shape: { kind: 'box' as const, halfWidth: 1, halfDepth: 1 },
       blocksMovement: true,
       blocksVision: true,
     };
@@ -43,7 +43,12 @@ describe('Rapier integration for obstacles', () => {
       position: vec3(-2, 0, 0),
       blocksMovement: true,
       blocksVision: true,
-      movementPattern: { patternType: 'linear' as const, points: [vec3(-2,0,0), vec3(2,0,0)], speed: 1, loop: false },
+      movementPattern: {
+        patternType: 'linear' as const,
+        points: [vec3(-2, 0, 0), vec3(2, 0, 0)],
+        speed: 1,
+        loop: false,
+      },
     };
 
     world.world.add(obstacle);

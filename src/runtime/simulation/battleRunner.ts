@@ -143,6 +143,7 @@ export function createBattleRunner(
         spawnMatch();
       }
 
+      world.state.frameIndex += 1;
       perfMarkEnd('battleRunner.step');
     },
     reset: () => {

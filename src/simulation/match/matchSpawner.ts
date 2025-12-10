@@ -4,8 +4,15 @@ import { Vec3, vec3 } from '../../lib/math/vec3';
 
 type Vec3Input = Vec3 | [number, number, number] | { x: number; y: number; z: number } | undefined;
 
-export interface ObstacleFixtureEntry extends Partial<ObstacleEntity> {
+export interface ObstacleFixtureEntry {
+  id?: string;
+  obstacleType?: ObstacleEntity['obstacleType'];
   position?: Vec3Input;
+  orientation?: number;
+  shape?: ObstacleEntity['shape'];
+  blocksVision?: boolean;
+  blocksMovement?: boolean;
+  active?: boolean;
   movementPattern?:
     | (ObstacleEntity['movementPattern'] & {
         /** Legacy alias for patternType in fixtures. */
@@ -15,6 +22,10 @@ export interface ObstacleFixtureEntry extends Partial<ObstacleEntity> {
       })
     | undefined
     | null;
+  hazardSchedule?: ObstacleEntity['hazardSchedule'] | null;
+  hazardEffects?: ObstacleEntity['hazardEffects'] | null;
+  durability?: number;
+  maxDurability?: number;
 }
 
 export interface ObstacleFixture {

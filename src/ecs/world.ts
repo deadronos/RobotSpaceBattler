@@ -176,7 +176,9 @@ export interface ObstacleEntity {
   /** Orientation (rotation around Y axis) in radians. */
   orientation?: number;
   /** Shape metadata for blocking checks (box/circle). */
-  shape?: { kind: 'box'; halfWidth: number; halfDepth: number } | { kind: 'circle'; radius: number };
+  shape?:
+    | { kind: 'box'; halfWidth: number; halfDepth: number; center?: { x: number; z: number } }
+    | { kind: 'circle'; radius: number; center?: { x: number; z: number } };
   /** Whether obstacle blocks line-of-sight. */
   blocksVision?: boolean;
   /** Whether obstacle blocks movement/traversal. */
@@ -202,6 +204,8 @@ export interface ObstacleEntity {
     // internal: progress (0..1) and direction for ping-pong
     progress?: number;
     direction?: 1 | -1;
+    /** Cached offset from pivot for rotation patterns. */
+    originOffset?: Vec3;
   } | null;
     /** Hazard schedule (for hazard obstacles) */
     hazardSchedule?: { periodMs: number; activeMs: number; offsetMs?: number } | null;
@@ -266,6 +270,8 @@ export interface BattleWorldState {
   nextEffectId: number;
   /** Random seed for the battle. */
   seed: number;
+  /** Frame counter for telemetry. */
+  frameIndex: number;
 }
 
 /**
@@ -444,6 +450,7 @@ export function createBattleWorld(): BattleWorld {
     nextProjectileId: 0,
     nextEffectId: 0,
     seed: Date.now(),
+    frameIndex: 0,
   };
 
   const instancingConfig = qualityManager.getInstancingConfig();
@@ -524,6 +531,7 @@ export function createBattleWorld(): BattleWorld {
 export function resetBattleWorld(world: BattleWorld): void {
   world.clear();
   world.state.elapsedMs = 0;
+  world.state.frameIndex = 0;
 }
 
 /**

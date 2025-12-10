@@ -16,15 +16,14 @@ import {
 /** Reactive avoidance detection radius (increased for better wall awareness) */
 export const AVOIDANCE_RADIUS = 4.5;
 
-type RuntimeObstacle =
-  | {
-      position?: { x: number; y: number; z: number };
-      shape: { kind: 'circle'; radius: number };
-    }
-  | {
-      position?: { x: number; y: number; z: number };
-      shape: { kind: 'box'; halfWidth: number; halfDepth: number };
-    };
+type RuntimeObstacle = {
+  position?: { x: number; y: number; z: number };
+  shape?:
+    | { kind: 'circle'; radius: number }
+    | { kind: 'box'; halfWidth: number; halfDepth: number };
+  blocksMovement?: boolean;
+  blocksVision?: boolean;
+};
 
 /**
  * Computes an avoidance force vector based on proximity to static obstacles.
