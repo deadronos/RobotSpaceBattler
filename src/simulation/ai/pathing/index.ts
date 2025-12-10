@@ -29,6 +29,11 @@ const RETREAT_SPEED = 7;
 const STRAFE_SPEED = 4;
 /** Reactive avoidance strength multiplier (increased for better wall clearance) */
 const AVOIDANCE_STRENGTH = 1.8;
+// Prefer Vite's import.meta.env for web builds, fallback to process.env in Node
+const viteEnv = (import.meta as unknown as { env?: Record<string, string> }).env;
+const DEBUG_AI = Boolean(
+  viteEnv?.VITE_DEBUG_AI ?? (typeof process !== 'undefined' && process.env?.DEBUG_AI),
+);
 
 /**
  * Plans the movement for a robot based on its behavior mode, target, and environment.
@@ -148,7 +153,7 @@ export function planRobotMovement(
   }
 
   // If path is blocked by dynamic obstacle, force a reroute by steering perpendicular to target vector.
-  if (process.env.DEBUG_AI) {
+  if (DEBUG_AI) {
     // Debug helper showing whether LOS detection considers obstacles as blocking
     // This is opt-in via DEBUG_AI environment variable during test runs.
     console.log("planRobotMovement", {
