@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createBattleWorld } from '../../src/ecs/world';
 import { vec3 } from '../../src/lib/math/vec3';
 import { updateProjectileSystem } from '../../src/ecs/systems/projectileSystem';
+import { distanceSquaredPointToAABB } from '../../src/lib/math/geometry';
 import { updateObstacleMovement } from '../../src/simulation/obstacles/movementSystem';
 import { isLineOfSightBlockedRuntime } from '../../src/simulation/environment/arenaGeometry';
 
@@ -20,22 +21,22 @@ describe('Integration: moving barrier blocks LOS and projectiles', () => {
   it('barrier moving into path blocks line-of-sight at runtime', () => {
     const world = createBattleWorld();
 
-    const start = vec3(0, 0, 0);
-    const end = vec3(6, 0, 0);
+    const start = vec3(0, 0, 40);
+    const end = vec3(6, 0, 40);
 
     // Add a moving barrier that starts out of the way (x=100) and will move to x=3
     const barrier = {
       id: 'moving-barrier-1',
       kind: 'obstacle' as const,
       obstacleType: 'barrier' as const,
-      position: vec3(100, 0, 0),
+      position: vec3(100, 0, 40),
       shape: { kind: 'box', halfWidth: 1.5, halfDepth: 1.5 },
       blocksVision: true,
       blocksMovement: true,
       active: true,
       movementPattern: {
         patternType: 'linear' as const,
-        points: [vec3(100, 0, 0), vec3(3, 0, 0)],
+        points: [vec3(100, 0, 40), vec3(3, 0, 40)],
         speed: 10000, // move quickly in a single update call
       },
     } as any;
@@ -62,7 +63,7 @@ describe('Integration: moving barrier blocks LOS and projectiles', () => {
       id: 'shooter-1',
       kind: 'robot' as const,
       team: 'red' as const,
-      position: vec3(0, 0, 0),
+      position: vec3(0, 0, 40),
       velocity: vec3(0, 0, 0),
       orientation: 0,
       weapon: 'gun' as const,
@@ -82,7 +83,7 @@ describe('Integration: moving barrier blocks LOS and projectiles', () => {
       id: 'target-1',
       kind: 'robot' as const,
       team: 'blue' as const,
-      position: vec3(6, 0, 0),
+      position: vec3(6, 0, 40),
       velocity: vec3(0, 0, 0),
       orientation: 0,
       weapon: 'laser' as const,
@@ -106,7 +107,7 @@ describe('Integration: moving barrier blocks LOS and projectiles', () => {
       id: 'moving-barrier-2',
       kind: 'obstacle' as const,
       obstacleType: 'barrier' as const,
-      position: vec3(3, 0, 0),
+      position: vec3(3, 0, 40),
       shape: { kind: 'box', halfWidth: 1.5, halfDepth: 1.5 },
       blocksVision: true,
       blocksMovement: true,
@@ -125,8 +126,8 @@ describe('Integration: moving barrier blocks LOS and projectiles', () => {
       team: 'red' as const,
       shooterId: shooter.id,
       weapon: 'gun' as const,
-      position: vec3(0, 0, 0),
-      velocity: vec3(1, 0, 0),
+      position: vec3(0, 0, 40),
+      velocity: vec3(3, 0, 0),
       damage: 10,
       speed: 3,
       maxLifetime: 10000,
@@ -137,15 +138,21 @@ describe('Integration: moving barrier blocks LOS and projectiles', () => {
 
     world.world.add(proj1);
 
+    const removeSpy = vi.spyOn(world as any, 'removeProjectile');
+
     updateProjectileSystem(world, 1, telemetry);
 
+    // We don't assert on exact projectile position here because the projectile is removed immediately on collision.
+    // Confirm the projectile removal was invoked and target remained unharmed.
+
     // projectile should be removed and target unchanged
+    expect(removeSpy).toHaveBeenCalled();
     expect(world.projectiles.entities.find((p) => p.id === proj1.id)).toBeUndefined();
     expect(target.health).toBe(100);
     expect(telemetry.recordDamage).not.toHaveBeenCalled();
 
     // Move barrier out of the way (place far away)
-    barrier.position = vec3(100, 0, 0);
+    barrier.position = vec3(100, 0, 40);
 
     // Fire a new projectile that should reach the target after two updates
     const proj2 = {
@@ -154,8 +161,8 @@ describe('Integration: moving barrier blocks LOS and projectiles', () => {
       team: 'red' as const,
       shooterId: shooter.id,
       weapon: 'gun' as const,
-      position: vec3(0, 0, 0),
-      velocity: vec3(1, 0, 0),
+      position: vec3(0, 0, 40),
+      velocity: vec3(3, 0, 0),
       damage: 10,
       speed: 3,
       maxLifetime: 10000,

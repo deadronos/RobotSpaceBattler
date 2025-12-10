@@ -73,7 +73,7 @@ Independent Test: Headless integration verifying a moving barrier blocks LOS and
   - File: `tests/integration/movingBarrierBlock.spec.ts`
   - Verify: a projectile fired across a barrier is blocked while barrier intersects the shot path; recorded via telemetry.
 
-- [ ] T011 [US1] [P] Add integration test: hazard active window applies effects to units inside
+- [x] T011 [US1] [P] Add integration test: hazard active window applies effects to units inside
   - File: `tests/integration/hazardWindow.spec.ts`
   - Verify: unit inside hazard receives damage/slow only during active windows.
 
