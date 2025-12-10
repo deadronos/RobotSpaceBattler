@@ -23,6 +23,7 @@ export { NavMeshGenerator } from './navmesh/NavMeshGenerator';
 
 // Pathfinding search
 export { AStarSearch } from './search/AStarSearch';
+export { NearestAccessiblePoint } from './search/NearestAccessiblePoint';
 export { PathCache } from './search/PathCache';
 
 // Path smoothing

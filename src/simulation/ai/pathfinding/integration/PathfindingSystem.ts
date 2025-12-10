@@ -4,6 +4,7 @@
  */
 
 import { AStarSearch } from '../search/AStarSearch';
+import { NearestAccessiblePoint } from '../search/NearestAccessiblePoint';
 import { PathCache } from '../search/PathCache';
 import { PathOptimizer } from '../smoothing/PathOptimizer';
 import type { NavigationPath, Point2D, Point3D } from '../types';
@@ -16,6 +17,9 @@ interface PathfindingSystemOptions {
   maxCacheSize?: number;
   throttleInterval?: number; // ms between recalculations per robot
   frameBudget?: number; // ms budget per frame
+  enableTimeout?: boolean; // Enable timeout fallback
+  timeoutMs?: number; // Timeout threshold (default: 100ms)
+  enableNearestFallback?: boolean; // Enable nearest accessible point fallback
 }
 
 /**
@@ -25,10 +29,14 @@ interface PathfindingSystemOptions {
 export class PathfindingSystem {
   private astar: AStarSearch;
   private optimizer: PathOptimizer;
+  private nearestFinder: NearestAccessiblePoint;
   private cache?: PathCache;
   private enableSmoothing: boolean;
   private throttleInterval: number;
   private frameBudget: number;
+  private enableTimeout: boolean;
+  private timeoutMs: number;
+  private enableNearestFallback: boolean;
   private lastCalculationTimes: Map<string, number> = new Map();
 
   constructor(
@@ -37,9 +45,13 @@ export class PathfindingSystem {
   ) {
     this.astar = new AStarSearch(navMeshResource.mesh);
     this.optimizer = new PathOptimizer();
+    this.nearestFinder = new NearestAccessiblePoint(navMeshResource.mesh);
     this.enableSmoothing = options?.enableSmoothing ?? true;
     this.throttleInterval = options?.throttleInterval ?? 333; // Default: max 3 per second
     this.frameBudget = options?.frameBudget ?? 2.4; // Default: 2.4ms per frame
+    this.enableTimeout = options?.enableTimeout ?? false;
+    this.timeoutMs = options?.timeoutMs ?? 100;
+    this.enableNearestFallback = options?.enableNearestFallback ?? true;
 
     if (options?.enableCaching ?? true) {
       this.cache = new PathCache({
@@ -142,10 +154,56 @@ export class PathfindingSystem {
       pathComponent.status = 'valid';
       pathComponent.lastCalculationTime = Date.now();
     } else {
-      // No path found
+      // No path found - try nearest accessible point fallback
+      if (this.enableNearestFallback) {
+        const nearestPoint = this.nearestFinder.findNearest(target, start);
+        
+        if (nearestPoint) {
+          // Try pathfinding to nearest accessible point
+          const nearestTarget2D: Point2D = { x: nearestPoint.x, z: nearestPoint.z };
+          let fallbackWaypoints = this.astar.findPath(start2D, nearestTarget2D);
+          
+          if (this.enableSmoothing && fallbackWaypoints && fallbackWaypoints.length > 2) {
+            fallbackWaypoints = this.optimizer.smoothPath(fallbackWaypoints);
+          }
+          
+          if (fallbackWaypoints && fallbackWaypoints.length > 0) {
+            const waypoints3D: Point3D[] = fallbackWaypoints.map((wp) => ({
+              x: wp.x,
+              y: start.y,
+              z: wp.z,
+            }));
+            
+            let pathLength = 0;
+            for (let i = 1; i < waypoints3D.length; i++) {
+              const dx = waypoints3D[i].x - waypoints3D[i - 1].x;
+              const dz = waypoints3D[i].z - waypoints3D[i - 1].z;
+              pathLength += Math.sqrt(dx * dx + dz * dz);
+            }
+            
+            path = {
+              waypoints: waypoints3D,
+              totalDistance: pathLength,
+              smoothed: this.enableSmoothing,
+            };
+            
+            pathComponent.path = path;
+            pathComponent.status = 'valid';
+            pathComponent.lastCalculationTime = Date.now();
+            
+            // Log fallback usage
+            console.warn(`Pathfinding: No path to target, using nearest accessible point at (${nearestPoint.x.toFixed(1)}, ${nearestPoint.z.toFixed(1)})`);
+            return;
+          }
+        }
+      }
+      
+      // Complete failure - no path found even to nearest point
       pathComponent.path = null;
       pathComponent.status = 'failed';
       pathComponent.lastCalculationTime = Date.now();
+      
+      console.error(`Pathfinding failed: No path from (${start.x.toFixed(1)}, ${start.z.toFixed(1)}) to (${target.x.toFixed(1)}, ${target.z.toFixed(1)})`);
     }
   }
 

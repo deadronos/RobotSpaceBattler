@@ -151,20 +151,22 @@
 
 **Purpose**: Handle edge cases identified in specification
 
-- [ ] T059 [P] Unit test: No path exists → robot moves to nearest accessible point in tests/simulation/ai/pathfinding/integration/PathfindingSystem.test.ts
-- [ ] T060 [P] Unit test: Narrow passage → robots queue without clustering in tests/integration/pathfinding-narrow-passage.test.ts
-- [ ] T061 [P] Unit test: Path recalculation timeout (>100ms) → fallback to stale path in tests/simulation/ai/pathfinding/integration/PathfindingSystem.test.ts
-- [ ] T062 [P] Unit test: Robot spawns in corner → initial path includes maneuvering in tests/integration/pathfinding-spawn-corner.test.ts
-- [ ] T062a Implement nearest accessible point finder algorithm in
+- [X] T059 [P] Unit test: No path exists → robot moves to nearest accessible point in tests/simulation/ai/pathfinding/edge-cases.test.ts
+- [X] T060 [P] Unit test: Narrow passage → robots queue without clustering in tests/integration/pathfinding-narrow-passage.test.ts
+- [X] T061 [P] Unit test: Path recalculation timeout (>100ms) → fallback to stale path in tests/simulation/ai/pathfinding/edge-cases.test.ts
+- [X] T062 [P] Unit test: Robot spawns in corner → initial path includes maneuvering in tests/simulation/ai/pathfinding/edge-cases.test.ts
+- [X] T062a Implement nearest accessible point finder algorithm in
   src/simulation/ai/pathfinding/search/NearestAccessiblePoint.ts (for FR-006: when no path exists,
   calculate closest walkable location using distance-to-NavMesh query)
-- [ ] T063 Integrate nearest accessible point fallback into PathfindingSystem (call
+- [X] T063 Integrate nearest accessible point fallback into PathfindingSystem (call
   NearestAccessiblePoint when A* returns null) in
   src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
-- [ ] T064 Implement timeout handling (>100ms) with stale path fallback in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
-- [ ] T065 Implement narrow passage detection and queueing logic in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
-- [ ] T066 Add error logging for pathfinding failures (no path, timeout, invalid geometry) and
+- [X] T064 Implement timeout handling (>100ms) with stale path fallback in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
+- [X] T065 Implement narrow passage detection and queueing logic in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
+- [X] T066 Add error logging for pathfinding failures (no path, timeout, invalid geometry) and
   degraded behavior flags in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
+
+**Checkpoint**: ✅ Edge cases handled with graceful fallbacks and error recovery
 
 ---
 
@@ -231,7 +233,8 @@
 
 - **User Story 1 (P1)**: Can start after Foundational (Phase 2) - No dependencies on other stories
 - **User Story 2 (P2)**: Can start after US1 core implementation (T022-T035) - Extends US1 paths with smoothing
-- **User Story 3 (P3)**: Can start after US1 core implementation (T022-T035) - Adds caching and performance optimization to US1
+- **User Story 3 (P3)**: Can start after US1 core implementation (T022-T035) - Adds caching and
+  performance optimization to US1
 
 ### Within Each User Story
 
