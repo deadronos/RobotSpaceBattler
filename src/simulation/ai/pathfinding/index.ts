@@ -36,4 +36,8 @@ export { createNavMeshResource } from './integration/NavMeshResource';
 export type { PathComponent } from './integration/PathComponent';
 export type { PathComponentStatus } from './integration/PathComponent';
 export { createPathComponent } from './integration/PathComponent';
+export type {
+  PathfindingTelemetryCallback,
+  PathfindingTelemetryEvent,
+} from './integration/PathfindingSystem';
 export { PathfindingSystem } from './integration/PathfindingSystem';

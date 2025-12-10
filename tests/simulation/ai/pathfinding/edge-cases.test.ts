@@ -41,7 +41,7 @@ describe('PathfindingSystem Edge Cases', () => {
       const startPosition = { x: 20, y: 0, z: 20 };
 
       // Act: Calculate path (should succeed in MVP with simple mesh)
-      system.calculatePath(startPosition, pathComponent.requestedTarget!, pathComponent);
+      system.calculatePath(startPosition, pathComponent);
 
       // Assert: Should have a valid path
       expect(pathComponent.path).not.toBeNull();
@@ -78,7 +78,7 @@ describe('PathfindingSystem Edge Cases', () => {
       const emptySystem = new PathfindingSystem(emptyResource);
 
       // Act
-      emptySystem.calculatePath({ x: 0, y: 0, z: 0 }, pathComponent.requestedTarget!, pathComponent);
+      emptySystem.calculatePath({ x: 0, y: 0, z: 0 }, pathComponent);
 
       // Assert: Should fail gracefully
       expect(pathComponent.status).toBe('failed');
@@ -144,7 +144,7 @@ describe('PathfindingSystem Edge Cases', () => {
       const cornerSpawn = { x: 2, y: 0, z: 2 };
 
       // Act
-      system.calculatePath(cornerSpawn, pathComponent.requestedTarget!, pathComponent);
+      system.calculatePath(cornerSpawn, pathComponent);
 
       // Assert: Should have valid path
       expect(pathComponent.path).not.toBeNull();

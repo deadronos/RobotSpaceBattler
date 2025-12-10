@@ -170,17 +170,21 @@
 
 ---
 
-## Phase 7: Observability & Debug Tooling
+## Phase 7: Observability & Debug Tooling ✅
 
-**Purpose**: Add instrumentation and visualization for debugging
+**Purpose**: Add instrumentation and visualization for debugging  
+**Status**: COMPLETE (2025-01-XX)
 
-- [ ] T067 [P] Implement structured telemetry logging for path calculation events
+- [x] T067 [P] Implement structured telemetry logging for path calculation events
   (start/complete, timing, cache hits) in
   src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
-- [ ] T068 [P] Add debug visualization component for NavMesh polygons in src/visuals/debug/NavMeshDebugger.tsx
-- [ ] T069 [P] Add debug visualization component for active paths in src/visuals/debug/PathDebugger.tsx
-- [ ] T070 Add metrics export to NavMeshResource (averageCalculationTime, cacheHitRate, etc.) in src/simulation/ai/pathfinding/integration/NavMeshResource.ts
-- [ ] T071 Create toggle for debug visualization (DEBUG env var check) in src/App.tsx
+- [x] T068 [P] Add debug visualization component for NavMesh polygons in src/visuals/debug/NavMeshDebugger.tsx
+- [x] T069 [P] Add debug visualization component for active paths in src/visuals/debug/PathDebugger.tsx
+- [x] T070 Add metrics export to NavMeshResource (averageCalculationTime, cacheHitRate, etc.) in src/simulation/ai/pathfinding/integration/NavMeshResource.ts
+- [x] T071 Create toggle for debug visualization (DEBUG env var check) in src/App.tsx
+
+**Test Results**: 15/15 tests passing (5 observability + 4 NavMeshDebugger + 6 PathDebugger)  
+**Checkpoint**: All 42 pathfinding tests passing (27 prior + 15 Phase 7)
 
 ---
 

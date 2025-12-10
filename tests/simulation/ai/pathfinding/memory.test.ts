@@ -76,7 +76,8 @@ describe('PathfindingSystem Memory', () => {
 
     // Additional check: NavMeshResource should track memory usage
     const metrics = navMeshResource.getMetrics();
-    expect(metrics.memoryUsageMB).toBeDefined();
-    expect(metrics.memoryUsageMB).toBeLessThan(5);
+    expect(metrics.memoryUsageBytes).toBeDefined();
+    // Memory usage in bytes should be less than 5MB
+    expect(metrics.memoryUsageBytes).toBeLessThan(5 * 1024 * 1024);
   });
 });

@@ -40,7 +40,6 @@ describe('PathfindingSystem Performance', () => {
     robots.forEach(robot => {
       system.calculatePath(
         robot.position,
-        robot.pathComponent.requestedTarget!,
         robot.pathComponent
       );
     });
@@ -73,7 +72,7 @@ describe('PathfindingSystem Performance', () => {
       const start = { x: Math.random() * 80 + 10, y: 0, z: Math.random() * 80 + 10 };
       
       const startTime = performance.now();
-      system.calculatePath(start, pathComponent.requestedTarget!, pathComponent);
+      system.calculatePath(start, pathComponent);
       const endTime = performance.now();
       
       measurements.push(endTime - startTime);
@@ -133,7 +132,6 @@ describe('PathfindingSystem Performance', () => {
       robot.pathComponent.status = 'pending' as PathComponentStatus;
       system.calculatePath(
         robot.position,
-        robot.pathComponent.requestedTarget!,
         robot.pathComponent
       );
     });

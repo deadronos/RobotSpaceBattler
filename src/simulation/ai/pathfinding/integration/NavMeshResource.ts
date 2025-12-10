@@ -8,10 +8,11 @@ import type NavMesh from 'navmesh';
 import type { NavigationMesh, NavigationPath } from '../types';
 
 interface PerformanceMetrics {
-  totalPathsCalculated: number;
-  averageCalculationTime: number;
+  totalCalculations: number;
+  averageCalculationTimeMs: number;
+  maxCalculationTimeMs: number;
   cacheHitRate: number;
-  memoryUsageMB: number;
+  memoryUsageBytes: number;
 }
 
 /**
@@ -31,10 +32,11 @@ export class NavMeshResource {
     // For tests that don't provide meshInstance
     this._meshInstance = meshInstance || ({} as NavMesh);
     this._metrics = {
-      totalPathsCalculated: 0,
-      averageCalculationTime: 0,
+      totalCalculations: 0,
+      averageCalculationTimeMs: 0,
+      maxCalculationTimeMs: 0,
       cacheHitRate: 0,
-      memoryUsageMB: 0,
+      memoryUsageBytes: 0,
     };
     this._pathCache = new Map();
   }
@@ -71,7 +73,7 @@ export class NavMeshResource {
    * Records a path calculation for metrics tracking
    */
   recordCalculation(calculationTimeMs: number): void {
-    this._metrics.totalPathsCalculated++;
+    this._metrics.totalCalculations++;
     
     // Track calculation times for rolling average
     this._calculationTimes.push(calculationTimeMs);
@@ -79,9 +81,10 @@ export class NavMeshResource {
       this._calculationTimes.shift();
     }
 
-    // Update average calculation time
+    // Update average and max calculation time
     const sum = this._calculationTimes.reduce((acc, time) => acc + time, 0);
-    this._metrics.averageCalculationTime = sum / this._calculationTimes.length;
+    this._metrics.averageCalculationTimeMs = sum / this._calculationTimes.length;
+    this._metrics.maxCalculationTimeMs = Math.max(...this._calculationTimes);
 
     // Update memory estimate (rough approximation)
     this.updateMemoryUsage();
@@ -119,7 +122,7 @@ export class NavMeshResource {
       }
     }
 
-    this._metrics.memoryUsageMB = totalBytes / 1024 / 1024;
+    this._metrics.memoryUsageBytes = totalBytes;
   }
 }
 

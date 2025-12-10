@@ -22,6 +22,22 @@ interface PathfindingSystemOptions {
   enableNearestFallback?: boolean; // Enable nearest accessible point fallback
 }
 
+export interface PathfindingTelemetryEvent {
+  type: 'path-calculation-start' | 'path-calculation-complete' | 'path-calculation-failed';
+  entityId?: string;
+  timestamp: number;
+  from?: Point3D;
+  to?: Point3D;
+  success?: boolean;
+  durationMs?: number;
+  pathLength?: number;
+  waypointCount?: number;
+  fromCache?: boolean;
+  error?: string;
+}
+
+export type PathfindingTelemetryCallback = (event: PathfindingTelemetryEvent) => void;
+
 /**
  * ECS system that calculates and manages navigation paths for robots
  * Includes caching, throttling, and frame budget enforcement
@@ -38,6 +54,7 @@ export class PathfindingSystem {
   private timeoutMs: number;
   private enableNearestFallback: boolean;
   private lastCalculationTimes: Map<string, number> = new Map();
+  private telemetryCallbacks: PathfindingTelemetryCallback[] = [];
 
   constructor(
     private navMeshResource: NavMeshResource,
@@ -61,18 +78,50 @@ export class PathfindingSystem {
   }
 
   /**
+   * Register a callback to receive telemetry events
+   */
+  onTelemetry(callback: PathfindingTelemetryCallback): void {
+    this.telemetryCallbacks.push(callback);
+  }
+
+  /**
+   * Emit a telemetry event to all registered callbacks
+   */
+  private emitTelemetry(event: PathfindingTelemetryEvent): void {
+    for (const callback of this.telemetryCallbacks) {
+      try {
+        callback(event);
+      } catch (error) {
+        console.error('Telemetry callback error:', error);
+      }
+    }
+  }
+
+  /**
    * Calculate path between two positions with caching and throttling
    * @param start - Starting position
-   * @param target - Target position
-   * @param pathComponent - Robot's path component to update
-   * @param robotId - Optional robot ID for throttling
+   * @param pathComponent - Robot's path component to update (contains target)
+   * @param robotId - Optional robot ID for throttling and telemetry
    */
   calculatePath(
     start: Point3D,
-    target: Point3D,
     pathComponent: PathComponent,
     robotId?: string,
   ): void {
+    const target = pathComponent.requestedTarget;
+    if (!target) {
+      return; // No target specified
+    }
+
+    // Emit start telemetry
+    this.emitTelemetry({
+      type: 'path-calculation-start',
+      entityId: robotId,
+      timestamp: Date.now(),
+      from: start,
+      to: target,
+    });
+
     // Throttle check: max recalculations per robot
     if (robotId) {
       const lastCalc = this.lastCalculationTimes.get(robotId) || 0;
@@ -95,9 +144,27 @@ export class PathfindingSystem {
         pathComponent.status = 'valid';
         pathComponent.lastCalculationTime = Date.now();
         
+        // Record cache hit as calculation (with minimal time)
+        const endTime = performance.now();
+        const cacheLookupTime = endTime - startTime;
+        this.navMeshResource.recordCalculation(cacheLookupTime);
+        
         // Update cache hit rate
         const stats = this.cache.getStats();
         this.navMeshResource.updateCacheHitRate(stats.hitRate);
+
+        // Emit completion telemetry for cache hit
+        this.emitTelemetry({
+          type: 'path-calculation-complete',
+          entityId: robotId,
+          timestamp: Date.now(),
+          success: true,
+          durationMs: cacheLookupTime,
+          pathLength: path.totalDistance,
+          waypointCount: path.waypoints.length,
+          fromCache: true,
+        });
+        
         return;
       }
     }
@@ -153,6 +220,18 @@ export class PathfindingSystem {
       pathComponent.path = path;
       pathComponent.status = 'valid';
       pathComponent.lastCalculationTime = Date.now();
+
+      // Emit success telemetry
+      this.emitTelemetry({
+        type: 'path-calculation-complete',
+        entityId: robotId,
+        timestamp: Date.now(),
+        success: true,
+        durationMs: calculationTime,
+        pathLength: path.totalDistance,
+        waypointCount: path.waypoints.length,
+        fromCache: false,
+      });
     } else {
       // No path found - try nearest accessible point fallback
       if (this.enableNearestFallback) {
@@ -193,6 +272,19 @@ export class PathfindingSystem {
             
             // Log fallback usage
             console.warn(`Pathfinding: No path to target, using nearest accessible point at (${nearestPoint.x.toFixed(1)}, ${nearestPoint.z.toFixed(1)})`);
+
+            // Emit success telemetry for fallback path
+            this.emitTelemetry({
+              type: 'path-calculation-complete',
+              entityId: robotId,
+              timestamp: Date.now(),
+              success: true,
+              durationMs: calculationTime,
+              pathLength: path.totalDistance,
+              waypointCount: path.waypoints.length,
+              fromCache: false,
+            });
+            
             return;
           }
         }
@@ -204,6 +296,16 @@ export class PathfindingSystem {
       pathComponent.lastCalculationTime = Date.now();
       
       console.error(`Pathfinding failed: No path from (${start.x.toFixed(1)}, ${start.z.toFixed(1)}) to (${target.x.toFixed(1)}, ${target.z.toFixed(1)})`);
+
+      // Emit failure telemetry
+      this.emitTelemetry({
+        type: 'path-calculation-failed',
+        entityId: robotId,
+        timestamp: Date.now(),
+        success: false,
+        durationMs: calculationTime,
+        error: 'No path found to target or nearest accessible point',
+      });
     }
   }
 
@@ -226,7 +328,6 @@ export class PathfindingSystem {
       if (robot.pathComponent.status === 'pending' && robot.pathComponent.requestedTarget) {
         this.calculatePath(
           robot.position,
-          robot.pathComponent.requestedTarget,
           robot.pathComponent,
           robot.id
         );

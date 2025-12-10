@@ -60,7 +60,7 @@ describe('T060: Narrow Passage Navigation', () => {
     const startPosition = { x: 20, y: 0, z: 20 }; // Start position
 
     // Act
-    system.calculatePath(startPosition, pathComponent.requestedTarget!, pathComponent);
+    system.calculatePath(startPosition, pathComponent);
 
     // Assert: Should have valid path (MVP creates simple mesh, so path is direct)
     expect(pathComponent.path).not.toBeNull();
@@ -88,7 +88,6 @@ describe('T060: Narrow Passage Navigation', () => {
     robots.forEach(robot => {
       system.calculatePath(
         robot.position,
-        robot.pathComponent.requestedTarget!,
         robot.pathComponent,
         robot.id
       );

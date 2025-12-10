@@ -59,7 +59,7 @@ describe('PathfindingSystem', () => {
   it('[T018] calculates path for robot with target', () => {
     const robotPosition = { x: 0, y: 0, z: 0 };
     
-    system.calculatePath(robotPosition, mockPathComponent.requestedTarget!, mockPathComponent);
+    system.calculatePath(robotPosition, mockPathComponent);
     
     // Path should be calculated
     expect(mockPathComponent.path).not.toBeNull();
@@ -74,7 +74,7 @@ describe('PathfindingSystem', () => {
     
     for (let i = 0; i < iterations; i++) {
       const start = performance.now();
-      system.calculatePath(robotPosition, mockPathComponent.requestedTarget!, mockPathComponent);
+      system.calculatePath(robotPosition, mockPathComponent);
       const end = performance.now();
       times.push(end - start);
       
@@ -108,7 +108,7 @@ describe('PathfindingSystem', () => {
     const start = performance.now();
     // Execute system for all robots
     for (const robot of robots) {
-      system.calculatePath(robot.position, robot.pathComponent.requestedTarget!, robot.pathComponent, robot.id);
+      system.calculatePath(robot.position, robot.pathComponent, robot.id);
     }
     const end = performance.now();
     const executionTime = end - start;
