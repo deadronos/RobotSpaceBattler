@@ -2,7 +2,9 @@ import { applyCaptaincy } from '../../lib/captainElection';
 import { createXorShift32 } from '../../lib/random/xorshift';
 import { TEAM_CONFIGS, TeamId } from '../../lib/teamConfig';
 import { getWeaponProfile, WeaponProfile } from '../../simulation/combat/weapons';
-import { BattleWorld, RobotEntity, toVec3, WeaponType } from '../world';
+import { BattleWorld, RobotEntity, toVec3, WeaponType, ObstacleEntity } from '../world';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Options for spawning robots.
@@ -12,6 +14,8 @@ export interface SpawnOptions {
   seed?: number;
   /** Callback triggered when a robot is spawned. */
   onRobotSpawn?: (robot: RobotEntity) => void;
+  /** Optional path to obstacles fixture JSON (relative to project root). */
+  obstacles?: string;
 }
 
 const WEAPON_ROTATION: WeaponType[] = ['laser', 'gun', 'rocket'];
@@ -130,4 +134,35 @@ export function spawnTeams(battleWorld: BattleWorld, options: SpawnOptions = {})
 
   spawnTeamRobots(battleWorld, 'red', baseSeed ^ 0x9e3779b9, options);
   spawnTeamRobots(battleWorld, 'blue', baseSeed ^ 0x4f1bbcdc, options);
+
+  // Load and spawn obstacles from fixture if provided
+  if (options.obstacles) {
+    const fixturePath = path.join(process.cwd(), options.obstacles);
+    if (fs.existsSync(fixturePath)) {
+      const raw = fs.readFileSync(fixturePath, 'utf8');
+      const fixture = JSON.parse(raw) as { obstacles: Partial<ObstacleEntity>[] };
+      
+      for (const o of fixture.obstacles) {
+        // Ensure required fields exist
+        const obstacle: ObstacleEntity = {
+          id: o.id ?? `fixture-${Math.random().toString(36).slice(2, 9)}`,
+          kind: 'obstacle',
+          obstacleType: (o.obstacleType as any) ?? 'barrier',
+          position: (o.position as any) ?? { x: 0, y: 0, z: 0 },
+          orientation: o.orientation ?? 0,
+          shape: (o.shape as any) ?? { kind: 'box', halfWidth: 1, halfDepth: 1 },
+          blocksVision: o.blocksVision ?? true,
+          blocksMovement: o.blocksMovement ?? true,
+          active: o.active ?? true,
+          movementPattern: (o as any).movementPattern ?? null,
+          hazardSchedule: (o as any).hazardSchedule ?? null,
+          hazardEffects: (o as any).hazardEffects ?? null,
+          durability: o.durability as any,
+          maxDurability: o.maxDurability as any,
+        } as ObstacleEntity;
+
+        battleWorld.world.add(obstacle);
+      }
+    }
+  }
 }
