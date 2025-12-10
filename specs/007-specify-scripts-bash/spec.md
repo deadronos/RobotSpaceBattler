@@ -105,7 +105,9 @@ As a system administrator, I want pathfinding to operate efficiently with minima
 - **SC-001**: 95% of path calculations from any valid start point to any valid end point complete within 5 milliseconds
 - **SC-002**: Robots successfully reach their targets in 90% of navigation scenarios without manual intervention or getting permanently stuck
 - **SC-003**: Path quality metrics show less than 10% path length overhead compared to theoretical optimal distance
-- **SC-004**: In 10v10 matches, pathfinding operations consume less than 15% of total frame time during peak simultaneous calculations
+- **SC-004**: In 10v10 matches, pathfinding operations consume less than 15% of total frame time
+  during peak simultaneous calculations (Target: PathfindingSystem.execute() <2.4ms per frame,
+  cumulative with other systems <16ms/frame at 60fps)
 - **SC-005**: Memory usage for pathfinding data structures remains under 5MB regardless of arena complexity
 - **SC-006**: Robots navigate around common obstacle patterns (corners, corridors, pillar clusters) with zero permanent deadlock scenarios in 100 test runs
 - **SC-007**: Path recalculation in response to dynamic obstacles completes within 100ms, maintaining fluid robot movement

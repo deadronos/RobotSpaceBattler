@@ -17,7 +17,9 @@ Implement Navigation Mesh (NavMesh) pathfinding system that enables robots to na
 **Testing**: Vitest (unit tests), Playwright (E2E), Testing Library (component tests)  
 **Target Platform**: Modern Chromium browsers (Chrome 120+, Edge 120+), WebGL 2.0  
 **Project Type**: Web application (single-page 3D simulation)  
-**Performance Goals**: 60 fps for 10v10 matches, <5ms path calculation, <10% CPU overhead for pathfinding, <15% frame budget for peak simultaneous calculations  
+**Performance Goals**: 60 fps for 10v10 matches, <5ms path calculation (individual), <2.4ms
+PathfindingSystem.execute() per frame, <16ms total frame budget (all systems), <10% CPU overhead
+for pathfinding, <15% frame budget for peak simultaneous calculations  
 **Constraints**: <5MB memory for pathfinding data, <100ms path recalculation on dynamic obstacles, 0.95m clearance radius for robot navigation, browser JavaScript execution (no native/WASM initially), event-driven path recalculation (not continuous polling)  
 **Scale/Scope**: 20 simultaneous robots, 100x100m arena, 10-15 major structural elements (walls, pillars, obstacles)
 
@@ -74,7 +76,9 @@ specs/[###-feature]/
 ### Source Code (repository root)
 
 ```text
-src/simulation/ai/pathfinding/
+src/simulation/
+├── systems.ts                    # ECS system registration (existing file - add PathfindingSystem here)
+└── ai/pathfinding/
 ├── navmesh/
 │   ├── NavMeshGenerator.ts      # Convex polygon decomposition of walkable space
 │   ├── NavMeshTypes.ts          # Type definitions for mesh data structures

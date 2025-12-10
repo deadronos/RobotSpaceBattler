@@ -66,8 +66,8 @@
 - [ ] T017 [P] [US1] Unit test: AStarSearch finds path around single wall obstacle in tests/simulation/ai/pathfinding/search/AStarSearch.test.ts
 - [ ] T018 [P] [US1] Integration test: PathfindingSystem calculates path for robot with target in tests/simulation/ai/pathfinding/integration/PathfindingSystem.test.ts
 - [ ] T019 [P] [US1] Integration test: Robot navigates around wall cluster in tests/integration/pathfinding-navigation.test.ts
-- [ ] T020 [US1] Contract test: Path calculation completes within 5ms in 95% of cases in tests/simulation/ai/pathfinding/PathfindingSystem.test.ts
-- [ ] T021 [US1] Contract test: PathfindingSystem.execute() completes within 2.4ms with 20 robots in tests/simulation/ai/pathfinding/PathfindingSystem.test.ts
+- [ ] T020 [US1] Contract test: Path calculation completes within 5ms in 95% of cases in tests/simulation/ai/pathfinding/integration/PathfindingSystem.test.ts
+- [ ] T021 [US1] Contract test: PathfindingSystem.execute() completes within 2.4ms with 20 robots in tests/simulation/ai/pathfinding/integration/PathfindingSystem.test.ts
 
 ### Implementation for User Story 1
 
@@ -82,6 +82,8 @@
 - [ ] T030 [US1] Implement PathfindingSystem.calculatePath() wrapper for navmesh library in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
 - [ ] T031 [US1] Implement PathfindingSystem.execute() to query robots needing recalculation in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
 - [ ] T032 [US1] Add PathfindingSystem to ECS world registration in src/simulation/systems.ts
+  (NOTE: systems.ts is existing ECS orchestration file - register pathfinding alongside targeting,
+  combat, movement systems)
 - [ ] T033 [US1] Implement event-driven path invalidation on obstacle spawn events in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
 - [ ] T034 [US1] Add performance instrumentation (performance.now() timing) in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
 - [ ] T035 [US1] Add error handling with PathfindingError types in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
@@ -153,10 +155,16 @@
 - [ ] T060 [P] Unit test: Narrow passage → robots queue without clustering in tests/integration/pathfinding-narrow-passage.test.ts
 - [ ] T061 [P] Unit test: Path recalculation timeout (>100ms) → fallback to stale path in tests/simulation/ai/pathfinding/integration/PathfindingSystem.test.ts
 - [ ] T062 [P] Unit test: Robot spawns in corner → initial path includes maneuvering in tests/integration/pathfinding-spawn-corner.test.ts
-- [ ] T063 Implement fallback behavior for no path exists (nearest accessible point) in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
+- [ ] T062a Implement nearest accessible point finder algorithm in
+  src/simulation/ai/pathfinding/search/NearestAccessiblePoint.ts (for FR-006: when no path exists,
+  calculate closest walkable location using distance-to-NavMesh query)
+- [ ] T063 Integrate nearest accessible point fallback into PathfindingSystem (call
+  NearestAccessiblePoint when A* returns null) in
+  src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
 - [ ] T064 Implement timeout handling (>100ms) with stale path fallback in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
 - [ ] T065 Implement narrow passage detection and queueing logic in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
-- [ ] T066 Add logging for pathfinding failures and degraded behavior in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
+- [ ] T066 Add error logging for pathfinding failures (no path, timeout, invalid geometry) and
+  degraded behavior flags in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
 
 ---
 
@@ -164,7 +172,9 @@
 
 **Purpose**: Add instrumentation and visualization for debugging
 
-- [ ] T067 [P] Implement structured logging for path calculation events in src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
+- [ ] T067 [P] Implement structured telemetry logging for path calculation events
+  (start/complete, timing, cache hits) in
+  src/simulation/ai/pathfinding/integration/PathfindingSystem.ts
 - [ ] T068 [P] Add debug visualization component for NavMesh polygons in src/visuals/debug/NavMeshDebugger.tsx
 - [ ] T069 [P] Add debug visualization component for active paths in src/visuals/debug/PathDebugger.tsx
 - [ ] T070 Add metrics export to NavMeshResource (averageCalculationTime, cacheHitRate, etc.) in src/simulation/ai/pathfinding/integration/NavMeshResource.ts
@@ -307,7 +317,7 @@ With multiple developers after Foundational phase:
 
 ## Task Summary
 
-- **Total Tasks**: 88
+- **Total Tasks**: 90
 - **User Story 1 (P1)**: 23 tasks (T013-T035)
 - **User Story 2 (P2)**: 10 tasks (T036-T045)
 - **User Story 3 (P3)**: 13 tasks (T046-T058)
@@ -318,12 +328,15 @@ With multiple developers after Foundational phase:
 - **Parallel Opportunities**: 35 tasks marked [P] (40% parallelizable)
 
 ### MVP Scope (Recommended)
+
 - Phase 1: Setup (5 tasks)
 - Phase 2: Foundational (7 tasks)
 - Phase 3: User Story 1 (23 tasks)
-- **Total MVP**: 35 tasks
+- Phase 6: Edge Cases (1 critical task: T062a)
+- **Total MVP**: 36 tasks
 
 ### Suggested Timeline
+
 - MVP (US1 only): 1-2 weeks
 - With US2 (smooth paths): 2-3 weeks
 - With US3 (performance): 3-4 weeks
