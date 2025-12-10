@@ -65,6 +65,10 @@ export function updateAISystem(battleWorld: BattleWorld, rng: () => number): voi
       target = findClosestEnemy(robot, robots, visibleEnemies) ?? undefined;
     }
 
+    if (!target) {
+      target = findClosestEnemy(robot, robots) ?? undefined;
+    }
+
     if (target) {
       robot.ai.targetId = target.id;
       robot.ai.searchPosition = null;

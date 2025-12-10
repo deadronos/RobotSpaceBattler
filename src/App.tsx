@@ -13,6 +13,9 @@ import {
 } from './runtime/state/matchStateMachine';
 import { ObstacleFixture } from './simulation/match/matchSpawner';
 import { useTelemetryStore } from './state/telemetryStore';
+import { ObstacleEditor } from './components/debug/ObstacleEditor';
+import { ObstacleSpawner } from './components/debug/ObstacleSpawner';
+import { PerfToggles } from './components/debug/PerfToggles';
 
 function formatStatus({
   phase,
@@ -36,6 +39,11 @@ function formatStatus({
 export default function App() {
   const battleWorld = useMemo(() => createBattleWorld(), []);
   const telemetryPort = useMemo(() => createTelemetryPort(), []);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__battleWorld = battleWorld;
+    }
+  }, [battleWorld]);
   const [matchSnapshot, setMatchSnapshot] = useState<MatchStateSnapshot>({
     phase: 'initializing',
     elapsedMs: 0,
@@ -134,6 +142,22 @@ export default function App() {
           obstacleFixture={obstacleFixture}
         />
       </Suspense>
+      <div
+        style={{
+          position: 'absolute',
+          left: 16,
+          top: 72,
+          maxWidth: 440,
+          zIndex: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+        }}
+      >
+        <ObstacleEditor world={battleWorld} sampleFixture={obstacleFixture} />
+        <ObstacleSpawner world={battleWorld} />
+        <PerfToggles />
+      </div>
       <div
         style={{
           position: 'absolute',

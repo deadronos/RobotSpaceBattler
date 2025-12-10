@@ -18,6 +18,7 @@ import { InstancedEffects } from './vfx/InstancedEffects';
 import { InstancedProjectiles } from './vfx/InstancedProjectiles';
 import { LaserBatchRenderer } from './vfx/LaserBatchRenderer';
 import { ProjectileVisual } from './vfx/ProjectileVisual';
+import { ObstacleVisual } from '../visuals/ObstacleVisual';
 
 /**
  * Props for the Simulation component.
@@ -123,6 +124,7 @@ function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
   const robots = battleWorld.robots.entities;
   const projectiles = battleWorld.projectiles.entities;
   const effects = battleWorld.effects.entities;
+  const obstacles = battleWorld.obstacles.entities;
   const robotsById = useMemo(() => new Map(robots.map((robot) => [robot.id, robot])), [robots]);
   const currentTimeMs = battleWorld.state.elapsedMs;
   const fallbackProjectiles = useMemo(() => {
@@ -141,6 +143,9 @@ function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
   return (
     <>
       <SpaceStation />
+      {qualitySettings.visuals.obstacles.visualsEnabled
+        ? obstacles.map((obstacle) => <ObstacleVisual key={obstacle.id} obstacle={obstacle} />)
+        : null}
       {robots.map((robot) => (
         <RobotPlaceholder
           key={robot.id}

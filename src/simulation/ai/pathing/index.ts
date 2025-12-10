@@ -13,6 +13,7 @@ import { createPhysicsQueryService } from './physicsQueryService';
 import { computePredictiveAvoidance } from './predictiveAvoidance';
 import { shouldRaycastThisFrame } from './raycastScheduler';
 import { MovementContext, MovementPlan } from './types';
+import { isLineOfSightBlockedRuntime } from '../../environment/arenaGeometry';
 
 const SEEK_SPEED = 6;
 const RETREAT_SPEED = 7;
@@ -82,6 +83,11 @@ export function planRobotMovement(
     desiredVelocity = scaleVec3(direction, SEEK_SPEED * 0.5);
   }
 
+  const pathBlocked =
+    !!target &&
+    context?.obstacles &&
+    isLineOfSightBlockedRuntime(robot.position, target.position, { obstacles: context.obstacles });
+
   // Apply reactive avoidance (always runs). Give computeAvoidance access to runtime obstacles.
   const avoidance = computeAvoidance(robot.position, context?.obstacles);
   if (lengthVec3(avoidance) > 0) {
@@ -110,6 +116,21 @@ export function planRobotMovement(
         desiredVelocity = addVec3(desiredVelocity, predictiveAvoidance);
       }
     }
+  }
+
+  // If path is blocked by dynamic obstacle, force a reroute by steering perpendicular to target vector.
+  if (pathBlocked && target) {
+    const forward = computeForwardDirection(robot.position, target.position);
+    const lateral = normalizeVec3({ x: forward.z, y: 0, z: -forward.x });
+    desiredVelocity = scaleVec3(lateral, SEEK_SPEED * 0.9);
+    robot.ai.blockedFrames = (robot.ai.blockedFrames ?? 0) + 1;
+  } else {
+    robot.ai.blockedFrames = 0;
+  }
+
+  if (robot.ai.blockedFrames && robot.ai.blockedFrames >= 3) {
+    // After repeated blockage, pause movement to avoid deadlock and let avoidance push us free.
+    desiredVelocity = { x: 0, y: 0, z: 0 };
   }
 
   desiredVelocity = applySeparation(desiredVelocity, robot, context?.neighbors);

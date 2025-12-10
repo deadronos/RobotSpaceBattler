@@ -63,6 +63,8 @@ export interface RobotAIState {
   roamTarget?: Vec3 | null;
   /** Timestamp when the current roaming behavior expires. */
   roamUntil?: number | null;
+  /** Consecutive frames where movement toward target was blocked. */
+  blockedFrames?: number;
 }
 
 /**

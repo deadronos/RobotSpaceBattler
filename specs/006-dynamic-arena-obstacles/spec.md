@@ -153,3 +153,4 @@ AI-controlled units and pathfinding systems must reliably treat dynamic obstacle
 - Treat dynamic arena objects as first-class environment elements with changeable state and clear instrumentation to support deterministic validation and replay.
 - Prefer movement and activation patterns that are predictable and configurable; provide means to evaluate schedules deterministically for automated validation.
 - Designers should be able to tune durability and effect values through authoring tools without engineering intervention.
+- Dev/debug tooling: expose a simple obstacle editor + spawner in the dev UI (with an optional visuals toggle) so designers can tweak movement speed/paths, hazard schedules, and durability and immediately observe runtime changes; keep this behind the dev server only.
