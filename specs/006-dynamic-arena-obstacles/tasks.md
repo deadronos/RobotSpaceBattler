@@ -14,16 +14,16 @@ title: "Tasks — Dynamic Arena Obstacles (006)"
 
 Purpose: Create types, fixtures and test harness updates required to implement dynamic obstacles.
 
-- [ ] T001 [P] Create ECS component types for dynamic obstacles
+- [x] T001 [P] Create ECS component types for dynamic obstacles
   - Files: `src/ecs/components/dynamicObstacle.ts`, `src/ecs/components/movementPattern.ts`,
     `src/ecs/components/hazardZone.ts`, `src/ecs/components/destructibleCover.ts`
   - Outcome: Type-only files that export canonical structures matching `data-model.md`.
 
-- [ ] T002 [P] Add debug fixture and example authoring JSON
+- [x] T002 [P] Add debug fixture and example authoring JSON
   - File: `specs/fixtures/dynamic-arena-sample.json`
   - Outcome: Example obstacles (moving barrier, hazard, destructible cover) which can be loaded by tests and editor.
 
-- [ ] T003 [P] Extend test harness to support obstacle fixtures and Rapier mock
+- [x] T003 [P] Extend test harness to support obstacle fixtures and Rapier mock
   - Files: `tests/setup.ts`, add helpers under `tests/helpers/obstacleFixtures.ts`
   - Outcome: Unit tests can load obstacle fixtures deterministically without a real Rapier instance.
 
