@@ -6,6 +6,11 @@
 import type { NavigationPath, Point3D } from '../types';
 
 /**
+ * Path calculation status
+ */
+export type PathComponentStatus = 'pending' | 'valid' | 'invalid' | 'failed';
+
+/**
  * ECS component storing navigation path for a robot entity
  * Attached to robot entities that need pathfinding
  */
@@ -16,26 +21,30 @@ export interface PathComponent {
   path: NavigationPath | null;
 
   /**
-   * Whether path recalculation is needed
-   * Set to true when target changes or obstacles move
+   * Current path status
    */
-  needsRecalculation: boolean;
+  status: PathComponentStatus;
 
   /**
-   * Target position for pathfinding
+   * Target position for current path request
    */
-  targetPosition: Point3D | null;
+  requestedTarget: Point3D | null;
+
+  /**
+   * Current waypoint index for path following
+   */
+  currentWaypointIndex: number;
 
   /**
    * Last path calculation timestamp (Date.now())
    */
-  lastCalculatedAt: number;
+  lastCalculationTime: number;
 
-  /**
-   * Number of path recalculations this frame
-   * Used to prevent infinite recalculation loops
-   */
-  recalculationCount: number;
+  // Legacy fields for backward compatibility
+  needsRecalculation?: boolean;
+  targetPosition?: Point3D | null;
+  lastCalculatedAt?: number;
+  recalculationCount?: number;
 }
 
 /**
@@ -44,6 +53,10 @@ export interface PathComponent {
 export function createPathComponent(): PathComponent {
   return {
     path: null,
+    status: 'pending',
+    requestedTarget: null,
+    currentWaypointIndex: 0,
+    lastCalculationTime: 0,
     needsRecalculation: false,
     targetPosition: null,
     lastCalculatedAt: 0,

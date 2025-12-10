@@ -23,14 +23,16 @@ export { NavMeshGenerator } from './navmesh/NavMeshGenerator';
 
 // Pathfinding search
 export { AStarSearch } from './search/AStarSearch';
+export { PathCache } from './search/PathCache';
 
 // Path smoothing
 export { PathOptimizer } from './smoothing/PathOptimizer';
 export { StringPuller } from './smoothing/StringPuller';
 
 // ECS integration
-export type { NavMeshResource } from './integration/NavMeshResource';
+export { NavMeshResource } from './integration/NavMeshResource';
 export { createNavMeshResource } from './integration/NavMeshResource';
 export type { PathComponent } from './integration/PathComponent';
+export type { PathComponentStatus } from './integration/PathComponent';
 export { createPathComponent } from './integration/PathComponent';
 export { PathfindingSystem } from './integration/PathfindingSystem';

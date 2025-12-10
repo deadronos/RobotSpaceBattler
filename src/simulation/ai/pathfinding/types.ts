@@ -70,14 +70,18 @@ export interface PathNode {
 
 /**
  * Navigation path for a single robot
+ * Supports both simplified (cache) and full (ECS component) formats
  */
 export interface NavigationPath {
-  readonly id: string;
-  readonly robotId: string;
   readonly waypoints: ReadonlyArray<Point3D>;
-  currentIndex: number;
-  status: PathStatus;
-  readonly metadata: {
+  readonly totalDistance?: number; // Simplified format (used in cache)
+  readonly smoothed?: boolean; // Simplified format (used in cache)
+  readonly id?: string; // Full format (used in ECS)
+  readonly robotId?: string; // Full format (used in ECS)
+  currentIndex?: number; // Full format (used in ECS)
+  status?: PathStatus; // Full format (used in ECS)
+  readonly metadata?: {
+    // Full format (used in ECS)
     readonly generatedAt: number;
     readonly calculationTime: number;
     readonly pathLength: number;
