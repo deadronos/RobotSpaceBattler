@@ -1,29 +1,35 @@
 /**
  * BehaviorBlender - Blends multiple AI behavior desires into single movement output
- * 
+ *
  * T074: Integrate pathfinding desire with existing AI behavior blending system
  * T075: Define weighted blending priorities (retreat > combat > pathfinding > idle)
  * T076: Integration test: Pathfinding blends correctly with combat behavior
- * 
+ *
  * Phase 8 - Integration & AI Behavior Coordination
- * 
+ *
  * @module ai/coordination
  */
 
-import { addVec3, lengthVec3, normalizeVec3, scaleVec3, type Vec3 } from '../../../lib/math/vec3';
-import type { MovementDesire, PriorityWeights } from './types';
+import {
+  addVec3,
+  lengthVec3,
+  normalizeVec3,
+  scaleVec3,
+  type Vec3,
+} from "../../../lib/math/vec3";
+import type { MovementDesire, PriorityWeights } from "./types";
 
 /**
  * Default priority multipliers for behavior blending.
  * Higher values mean higher priority (more influence on final movement).
- * 
+ *
  * Priority order: retreat > combat > pathfinding > idle
  */
 const DEFAULT_PRIORITY_WEIGHTS: PriorityWeights = {
-  retreat: 2.0,     // Highest priority - survival
-  combat: 1.5,      // High priority - tactical positioning
+  retreat: 2.0, // Highest priority - survival
+  combat: 1.5, // High priority - tactical positioning
   pathfinding: 1.0, // Medium priority - navigation
-  idle: 0.5,        // Low priority - default/fallback behavior
+  idle: 0.5, // Low priority - default/fallback behavior
 };
 
 /** Maximum blended velocity magnitude */
@@ -31,19 +37,19 @@ const MAX_SPEED = 10.0;
 
 /**
  * Blends multiple AI behavior movement desires into a single output velocity.
- * 
+ *
  * Uses weighted additive blending where each desire contributes proportionally
  * to its priority and weight. Higher priority behaviors have more influence.
- * 
+ *
  * @example
  * ```typescript
  * const blender = new BehaviorBlender();
- * 
+ *
  * const desires: MovementDesire[] = [
  *   { velocity: {x:1, y:0, z:0}, priority: 'pathfinding', weight: 0.5 },
  *   { velocity: {x:0, y:0, z:1}, priority: 'combat', weight: 0.8 }
  * ];
- * 
+ *
  * const blended = blender.blend(desires); // Combines both with priority weighting
  * ```
  */
@@ -52,7 +58,7 @@ export class BehaviorBlender {
 
   /**
    * Creates a new BehaviorBlender with optional custom priority weights.
-   * 
+   *
    * @param priorityWeights - Custom priority multipliers (optional)
    */
   constructor(priorityWeights?: PriorityWeights) {
@@ -61,14 +67,14 @@ export class BehaviorBlender {
 
   /**
    * Blends multiple movement desires into a single output velocity.
-   * 
+   *
    * Algorithm:
    * 1. Calculate effective weight for each desire: baseWeight * priorityMultiplier
    * 2. Weight each velocity vector by its effective weight
    * 3. Sum all weighted vectors
    * 4. Normalize the result
    * 5. Clamp to MAX_SPEED
-   * 
+   *
    * @param desires - Array of movement desires from different AI behaviors
    * @returns Blended velocity vector
    */
@@ -86,11 +92,11 @@ export class BehaviorBlender {
       // Effective weight = base weight * priority multiplier
       const priorityMultiplier = this.priorityWeights[desire.priority];
       const effectiveWeight = desire.weight * priorityMultiplier;
-      
+
       // Add weighted velocity to sum
       const weightedVelocity = scaleVec3(desire.velocity, effectiveWeight);
       weightedSum = addVec3(weightedSum, weightedVelocity);
-      
+
       totalWeight += effectiveWeight;
     }
 
@@ -114,7 +120,7 @@ export class BehaviorBlender {
 
   /**
    * Gets the current priority weights configuration.
-   * 
+   *
    * @returns Current priority multipliers
    */
   getPriorityWeights(): Readonly<PriorityWeights> {

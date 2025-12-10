@@ -3,10 +3,10 @@
  * T068: Phase 7 - Observability
  */
 
-import { Line } from '@react-three/drei';
-import React, { useMemo } from 'react';
+import { Line } from "@react-three/drei";
+import React, { useMemo } from "react";
 
-import type { NavigationMesh } from '@/simulation/ai/pathfinding/types';
+import type { NavigationMesh } from "@/simulation/ai/pathfinding/types";
 
 interface NavMeshDebuggerProps {
   navMesh: NavigationMesh;
@@ -20,7 +20,7 @@ interface NavMeshDebuggerProps {
 export function NavMeshDebugger({
   navMesh,
   visible = true,
-  color = '#00ff00',
+  color = "#00ff00",
 }: NavMeshDebuggerProps) {
   const edgeLines = useMemo(() => {
     if (!navMesh.polygons || navMesh.polygons.length === 0) {

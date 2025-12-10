@@ -3,13 +3,13 @@
  * @module ai/coordination
  */
 
-import type { Vec3 } from '../../../lib/math/vec3';
+import type { Vec3 } from "../../../lib/math/vec3";
 
 /**
  * Priority levels for behavior blending.
  * Higher priority behaviors have more influence on final movement.
  */
-export type BehaviorPriority = 'retreat' | 'combat' | 'pathfinding' | 'idle';
+export type BehaviorPriority = "retreat" | "combat" | "pathfinding" | "idle";
 
 /**
  * A movement desire from a specific AI behavior system.
@@ -18,10 +18,10 @@ export type BehaviorPriority = 'retreat' | 'combat' | 'pathfinding' | 'idle';
 export interface MovementDesire {
   /** Desired velocity vector */
   velocity: Vec3;
-  
+
   /** Priority level of this behavior */
   priority: BehaviorPriority;
-  
+
   /** Weight/strength of this desire (0-1) */
   weight: number;
 }

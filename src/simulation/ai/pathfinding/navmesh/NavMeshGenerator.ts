@@ -3,7 +3,12 @@
  * @module pathfinding/navmesh
  */
 
-import type { ArenaConfiguration, ConvexPolygon, NavigationMesh, Point2D } from '../types';
+import type {
+  ArenaConfiguration,
+  ConvexPolygon,
+  NavigationMesh,
+  Point2D,
+} from "../types";
 
 /**
  * Generates navigation meshes from arena configuration
@@ -148,7 +153,9 @@ export class NavMeshGenerator {
   /**
    * Build adjacency graph connecting neighboring polygons
    */
-  private buildAdjacencyGraph(polygons: ConvexPolygon[]): Map<number, number[]> {
+  private buildAdjacencyGraph(
+    polygons: ConvexPolygon[],
+  ): Map<number, number[]> {
     const adjacency = new Map<number, number[]>();
 
     // Simplified: connect adjacent quadrants

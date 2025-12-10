@@ -107,9 +107,9 @@ Light positions, colors, and shadow settings are hardcoded. Consider extracting 
 ```typescript
 // src/lib/sceneConfig.ts
 export const SCENE_LIGHTS = {
-  ambient: { intensity: 0.6, color: '#4a517a' },
+  ambient: { intensity: 0.6, color: "#4a517a" },
   directional: [
-    { position: [25, 32, 18], intensity: 1.5, color: '#f3f0ff' },
+    { position: [25, 32, 18], intensity: 1.5, color: "#f3f0ff" },
     // ...
   ],
 };
@@ -189,13 +189,13 @@ self.onmessage = (e) => {
 
 ## Quick Wins (Low Effort, High Impact)
 
-| Action                       | Effort  | Impact                      |
-| ---------------------------- | ------- | --------------------------- |
-| Add Error Boundary           | 1 hour  | Prevents full-app crashes   |
-| Add `aria-live` to status    | 30 min  | Accessibility improvement   |
-| Extract scene lighting config | 1 hour  | Better maintainability      |
-| Add CI size check            | 1 hour  | Enforces constitution       |
-| Increase AI pathing coverage | 2 hours | Reduces regression risk     |
+| Action                        | Effort  | Impact                    |
+| ----------------------------- | ------- | ------------------------- |
+| Add Error Boundary            | 1 hour  | Prevents full-app crashes |
+| Add `aria-live` to status     | 30 min  | Accessibility improvement |
+| Extract scene lighting config | 1 hour  | Better maintainability    |
+| Add CI size check             | 1 hour  | Enforces constitution     |
+| Increase AI pathing coverage  | 2 hours | Reduces regression risk   |
 
 ---
 

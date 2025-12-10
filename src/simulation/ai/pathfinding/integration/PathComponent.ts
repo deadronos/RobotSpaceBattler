@@ -3,12 +3,12 @@
  * @module pathfinding/integration
  */
 
-import type { NavigationPath, Point3D } from '../types';
+import type { NavigationPath, Point3D } from "../types";
 
 /**
  * Path calculation status
  */
-export type PathComponentStatus = 'pending' | 'valid' | 'invalid' | 'failed';
+export type PathComponentStatus = "pending" | "valid" | "invalid" | "failed";
 
 /**
  * ECS component storing navigation path for a robot entity
@@ -53,7 +53,7 @@ export interface PathComponent {
 export function createPathComponent(): PathComponent {
   return {
     path: null,
-    status: 'pending',
+    status: "pending",
     requestedTarget: null,
     currentWaypointIndex: 0,
     lastCalculationTime: 0,

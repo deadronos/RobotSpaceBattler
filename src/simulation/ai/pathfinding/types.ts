@@ -50,12 +50,12 @@ export interface NavigationMesh {
  * Path status enumeration
  */
 export enum PathStatus {
-  ACTIVE = 'active',
-  COMPLETED = 'completed',
-  INVALIDATED = 'invalidated',
-  NO_PATH = 'no_path',
-  CALCULATING = 'calculating',
-  FAILED = 'failed',
+  ACTIVE = "active",
+  COMPLETED = "completed",
+  INVALIDATED = "invalidated",
+  NO_PATH = "no_path",
+  CALCULATING = "calculating",
+  FAILED = "failed",
 }
 
 /**
@@ -97,10 +97,10 @@ export interface NavigationPath {
  * Obstacle type enumeration
  */
 export enum ObstacleType {
-  WALL = 'wall',
-  PILLAR = 'pillar',
-  CENTRAL_OBSTACLE = 'central_obstacle',
-  ARENA_BOUNDARY = 'arena_boundary',
+  WALL = "wall",
+  PILLAR = "pillar",
+  CENTRAL_OBSTACLE = "central_obstacle",
+  ARENA_BOUNDARY = "arena_boundary",
 }
 
 /**

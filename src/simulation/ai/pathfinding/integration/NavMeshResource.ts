@@ -3,9 +3,9 @@
  * @module pathfinding/integration
  */
 
-import type NavMesh from 'navmesh';
+import type NavMesh from "navmesh";
 
-import type { NavigationMesh, NavigationPath } from '../types';
+import type { NavigationMesh, NavigationPath } from "../types";
 
 interface PerformanceMetrics {
   totalCalculations: number;
@@ -74,7 +74,7 @@ export class NavMeshResource {
    */
   recordCalculation(calculationTimeMs: number): void {
     this._metrics.totalCalculations++;
-    
+
     // Track calculation times for rolling average
     this._calculationTimes.push(calculationTimeMs);
     if (this._calculationTimes.length > this._maxCalculationHistory) {
@@ -83,7 +83,8 @@ export class NavMeshResource {
 
     // Update average and max calculation time
     const sum = this._calculationTimes.reduce((acc, time) => acc + time, 0);
-    this._metrics.averageCalculationTimeMs = sum / this._calculationTimes.length;
+    this._metrics.averageCalculationTimeMs =
+      sum / this._calculationTimes.length;
     this._metrics.maxCalculationTimeMs = Math.max(...this._calculationTimes);
 
     // Update memory estimate (rough approximation)

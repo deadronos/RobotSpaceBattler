@@ -54,7 +54,13 @@ export function WallGroup() {
               CollisionGroup.ROBOT | CollisionGroup.PROJECTILE,
             )}
           >
-            <CuboidCollider args={[colliderDim[0] / 2, colliderDim[1] / 2, colliderDim[2] / 2]} />
+            <CuboidCollider
+              args={[
+                colliderDim[0] / 2,
+                colliderDim[1] / 2,
+                colliderDim[2] / 2,
+              ]}
+            />
             <mesh receiveShadow castShadow>
               <boxGeometry args={wall.dim} />
               <meshPhysicalMaterial

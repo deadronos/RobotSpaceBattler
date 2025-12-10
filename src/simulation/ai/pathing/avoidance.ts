@@ -7,10 +7,7 @@ import {
   Vec3,
   vec3,
 } from "../../../lib/math/vec3";
-import {
-  ARENA_PILLARS,
-  ARENA_WALLS,
-} from "../../environment/arenaGeometry";
+import { ARENA_PILLARS, ARENA_WALLS } from "../../environment/arenaGeometry";
 
 /** Reactive avoidance detection radius - reduced for tight wall proximity */
 export const AVOIDANCE_RADIUS = 0.1;

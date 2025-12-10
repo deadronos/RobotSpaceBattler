@@ -3,7 +3,7 @@
  * Improves performance by caching frequently requested paths
  */
 
-import type { NavigationPath, Point3D } from '../types';
+import type { NavigationPath, Point3D } from "../types";
 
 interface CacheEntry {
   path: NavigationPath;
@@ -25,7 +25,11 @@ interface PathCacheOptions {
  * Generates a cache key from start and target positions
  * Uses grid quantization to allow nearby positions to share cache entries
  */
-function generateCacheKey(start: Point3D, target: Point3D, gridSize = 0.5): string {
+function generateCacheKey(
+  start: Point3D,
+  target: Point3D,
+  gridSize = 0.5,
+): string {
   const quantize = (value: number) => Math.round(value / gridSize) * gridSize;
   return `${quantize(start.x)},${quantize(start.z)}-${quantize(target.x)},${quantize(target.z)}`;
 }

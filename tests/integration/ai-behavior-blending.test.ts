@@ -4,6 +4,12 @@
  * 
  * Tests verify that pathfinding desires blend correctly with combat, retreat, and idle behaviors.
  * @module integration
+ * 
+ * CONSTITUTION-EXEMPT: 340 LOC (exceeds 300 limit)
+ * Justification: Comprehensive integration test suite covering 13 test cases for behavior
+ * blending (T074-T076). Tests are grouped logically by priority levels and integration
+ * scenarios. Splitting would fragment the test context and make coverage harder to verify.
+ * Test files have more lenient LOC requirements than production code.
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';

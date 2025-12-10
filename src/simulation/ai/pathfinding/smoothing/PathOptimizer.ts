@@ -3,7 +3,7 @@
  * @module pathfinding/smoothing
  */
 
-import type { Point2D } from '../types';
+import type { Point2D } from "../types";
 
 /**
  * Optimizes paths for smooth movement with minimal heading changes
@@ -14,7 +14,7 @@ export class PathOptimizer {
    * - Remove colinear points
    * - Minimize heading changes
    * - Maintain path length within 110% of original
-   * 
+   *
    * @param path - Input path waypoints
    * @returns Optimized path
    */

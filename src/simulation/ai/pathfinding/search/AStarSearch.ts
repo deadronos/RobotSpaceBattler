@@ -3,9 +3,9 @@
  * @module pathfinding/search
  */
 
-import NavMeshLib from 'navmesh';
+import NavMeshLib from "navmesh";
 
-import type { NavigationMesh, Point2D } from '../types';
+import type { NavigationMesh, Point2D } from "../types";
 
 /**
  * A* search implementation for pathfinding across navigation mesh
@@ -15,7 +15,9 @@ export class AStarSearch {
 
   constructor(private mesh: NavigationMesh) {
     // Convert mesh polygons to navmesh library format
-    const polygons = mesh.polygons.map((poly) => poly.vertices.map((v) => ({ x: v.x, y: v.z })));
+    const polygons = mesh.polygons.map((poly) =>
+      poly.vertices.map((v) => ({ x: v.x, y: v.z })),
+    );
 
     // Initialize navmesh library
     this.navMeshLib = new NavMeshLib(polygons);
@@ -38,6 +40,9 @@ export class AStarSearch {
       return null;
     }
 
-    return result.map((point: { x: number; y: number }) => ({ x: point.x, z: point.y }));
+    return result.map((point: { x: number; y: number }) => ({
+      x: point.x,
+      z: point.y,
+    }));
   }
 }

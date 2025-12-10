@@ -9,8 +9,13 @@ import {
   ARENA_WALLS,
   type ArenaPillar,
   type ArenaWall,
-} from '../../../environment/arenaGeometry';
-import { ArenaConfiguration, ObstacleGeometry, ObstacleType, Point2D } from '../types';
+} from "../../../environment/arenaGeometry";
+import {
+  ArenaConfiguration,
+  ObstacleGeometry,
+  ObstacleType,
+  Point2D,
+} from "../types";
 
 /**
  * Convert arena wall to obstacle geometry

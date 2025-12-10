@@ -4,7 +4,7 @@
  * @module pathfinding/smoothing
  */
 
-import type { Point2D } from '../types';
+import type { Point2D } from "../types";
 
 /**
  * Implements string pulling (funnel algorithm) to smooth paths
@@ -14,7 +14,7 @@ export class StringPuller {
   /**
    * Smooth a path by removing unnecessary waypoints
    * Uses line-of-sight simplification
-   * 
+   *
    * @param path - Array of 2D waypoints
    * @returns Smoothed path with fewer waypoints
    */
@@ -30,7 +30,11 @@ export class StringPuller {
       // Try to skip as many waypoints as possible
       let farthestIndex = currentIndex + 1;
 
-      for (let testIndex = currentIndex + 2; testIndex < path.length; testIndex++) {
+      for (
+        let testIndex = currentIndex + 2;
+        testIndex < path.length;
+        testIndex++
+      ) {
         // Check if we can go directly from current to test point
         // Simplified: assume straight-line paths are valid
         // Real implementation would check against NavMesh polygons
