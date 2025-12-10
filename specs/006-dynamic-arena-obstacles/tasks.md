@@ -6,85 +6,181 @@ title: "Tasks — Dynamic Arena Obstacles (006)"
 
 **Input**: `specs/006-dynamic-arena-obstacles/spec.md` and `plan.md` (Phase 0–2)
 
-**Prerequisites**: Phase 0 research and Phase 1 design artifacts must be present. Blocking tasks are marked with `[P]`.
+**Prerequisites**: `plan.md` and `spec.md` exist. Foundational tasks (Phase 2) block story work.
 
 ---
 
-## Phase 1: Setup & Scaffolding
+## Phase 1: Setup (Shared infra & scaffolding)
 
-Purpose: Introduce component types, fixtures and test harness updates required by the feature.
+Purpose: Create types, fixtures and test harness updates required to implement dynamic obstacles.
 
-- [ ] T001 [P] Add component type definitions for dynamic obstacles
-  - Files: `src/ecs/components/dynamicObstacle.ts`, `src/ecs/components/movementPattern.ts`, `src/ecs/components/hazardZone.ts`, `src/ecs/components/destructibleCover.ts`
-  - Acceptance: Type definitions exist and are covered by unit tests validating defaults and serialization.
+- [ ] T001 [P] Create ECS component types for dynamic obstacles
+  - Files: `src/ecs/components/dynamicObstacle.ts`, `src/ecs/components/movementPattern.ts`,
+    `src/ecs/components/hazardZone.ts`, `src/ecs/components/destructibleCover.ts`
+  - Outcome: Type-only files that export canonical structures matching `data-model.md`.
 
-- [ ] T002 [P] Test harness: ensure Rapier runtime mock support and obstacle fixtures
-  - Files: `tests/fixtures/dynamic-arena-sample.json`, update `tests/setup.ts` if necessary
-  - Acceptance: Unit tests can instantiate obstacles without a real Rapier world; a Rapier-aware path exists for integration tests.
+- [ ] T002 [P] Add debug fixture and example authoring JSON
+  - File: `specs/fixtures/dynamic-arena-sample.json`
+  - Outcome: Example obstacles (moving barrier, hazard, destructible cover) which can be loaded by tests and editor.
 
----
-
-## Phase 2: Core Systems (Blocking)
-
-Purpose: Implement the core runtime behaviour required to make obstacles affect LOS and movement deterministically.
-
-- [ ] T003 [P] Implement `movementSystem` for MovementPattern-driven motion
-  - Files: `src/simulation/obstacles/movementSystem.ts`
-  - Acceptance: Unit tests step the system and assert deterministic positions for linear and rotational patterns.
-
-- [ ] T004 [P] Extend LOS checks to be runtime-aware
-  - Files: `src/simulation/environment/arenaGeometry.ts` (extend function signatures or add runtime helper), and new `src/simulation/environment/runtime-geometry.ts` helper
-  - Acceptance: Unit + integration tests demonstrate `isLineOfSightBlocked` can detect runtime obstacles when enabled and still work for static geometry.
-
-- [ ] T005 [P] Implement `hazardSystem` with deterministic schedule processing
-  - Files: `src/simulation/obstacles/hazardSystem.ts`
-  - Acceptance: Unit tests ensure scheduled activation windows and effect application orders are deterministic.
-
-- [ ] T006 [P] Implement `destructibleSystem` for cover durability and removal
-  - Files: `src/simulation/obstacles/destructibleSystem.ts`
-  - Acceptance: Tests confirm damage reduces durability and removal emits `cover:destroyed` event that updates LOS/pathing.
+- [ ] T003 [P] Extend test harness to support obstacle fixtures and Rapier mock
+  - Files: `tests/setup.ts`, add helpers under `tests/helpers/obstacleFixtures.ts`
+  - Outcome: Unit tests can load obstacle fixtures deterministically without a real Rapier instance.
 
 ---
 
-## Phase 3: AI & Pathfinding Integration
+## Phase 2: Foundational (Blocking — must finish before user stories)
 
-- [ ] T007 [P] Update AI sensors and avoidance systems to re-evaluate blocking at runtime
-  - Files: `src/simulation/ai/sensors.ts`, `src/simulation/ai/pathing/*`
-  - Acceptance: Integration test validates AI reroutes within 3 ticks or executes fallback behaviour when blocked.
+Purpose: Implement deterministic runtime behaviour (movement, runtime LOS, hazard schedules, destruction) and expose test hooks.
 
-- [ ] T008 [ ] Add integration tests verifying AI behavior under dynamic obstacles
-  - Files: `tests/ai/pathing.dynamic.spec.ts` — scenarios: moving barrier blocks route; hazard zone forces route change or avoidance.
+- [ ] T004 [P] Add rotation & oscillation movement patterns to movement system
+  - Files: `src/simulation/obstacles/movementSystem.ts`, tests: `tests/simulation/obstaclesMovementRotation.spec.ts`
+  - Outcome: Movement patterns support `rotation` and `oscillate` and are deterministic on tick stepping.
 
----
+- [ ] T005 [P] Sync obstacle transforms into Rapier as kinematic colliders when rapier world present
+  - Files: `src/simulation/obstacles/rapierIntegration.ts`, update `battleRunner`/world Rapier binding
+  - Outcome: Rapier world has kinematic colliders for obstacles so raycasts and physics queries see runtime geometry.
 
-## Phase 4: Designer Tooling & Instrumentation
+- [ ] T006 [P] Support Rapier-backed LOS checks and keep static fallback
+  - Files: `src/simulation/environment/arenaGeometry.ts`, tests: `tests/simulation/arenaGeometryRapier.spec.ts`
+  - Outcome: `isLineOfSightBlockedRuntime` prefers Rapier raycasts when `rapierWorld` available; falls back to fast geometry checks.
 
-- [ ] T009 [ ] Expose obstacle authoring fixtures and editor bindings (non-blocking)
-  - Files: `specs/fixtures/dynamic-arena-sample.json`, editor inspector hooks (if present)
-  - Acceptance: Designers can load sample fixtures in dev server and see obstacles following patterns.
+- [ ] T007 [P] Integrate destructible cover into projectile/combat pipeline
+  - Files: `src/ecs/systems/projectileSystem.ts`, `src/simulation/obstacles/destructibleSystem.ts`, tests: `tests/simulation/projectileCoverInteraction.spec.ts`
+  - Outcome: Projectile impacts reduce cover durability, emit `cover:damaged`/`cover:destroyed` events and update LOS/pathing.
 
-- [ ] T010 [ ] Emit telemetry/match trace events for critical obstacle events
-  - Files: `src/telemetry/obstacles.ts` or integrate with existing telemetry aggregator
-  - Acceptance: Tests assert `obstacle:move`, `hazard:activate/deactivate`, `cover:destroyed` events recorded with `frameIndex` and `timestampMs`.
+- [ ] T008 [P] Extend hazard system to apply slow/status effects (in addition to damage)
+  - Files: `src/simulation/obstacles/hazardSystem.ts`, tests: `tests/simulation/hazardSlow.spec.ts`
+  - Outcome: Hazard schedule supports damage and slow/status effects with deterministic timing.
 
----
+- [ ] T009 [P] Instrument telemetry for obstacle lifecycle events
+  - Files: `src/runtime/simulation/ports.ts`, `src/runtime/simulation/telemetry/obstacleTelemetry.ts`, tests: `tests/simulation/telemetry.obstacles.spec.ts`
+  - Outcome: `obstacle:move`, `hazard:activate`, `hazard:deactivate`, and `cover:destroyed` events are recorded with `frameIndex` and `timestampMs`.
 
-## Phase 5: Performance & Validation
-
-- [ ] T011 [ ] Add stress/perf tests for 50 active dynamic obstacles
-  - Files: `tests/stress/obstacles.stress.spec.ts`
-  - Acceptance: CI shows not less than 80% of baseline performance (baseline measured without obstacles) under comparable environment.
-
-- [ ] T012 [ ] Final docs, quickstart and PR prep
-  - Files: Update `specs/006-dynamic-arena-obstacles/quickstart.md` with any new commands and create PR with `CONSTITUTION-CHECK` and testing summary.
+**Checkpoint**: After Phase 2, simulation supports runtime obstacles, deterministic movement, LOS, hazards and destruction.
 
 ---
 
-## Notes
+## Phase 3: User Story 1 - Player Experience (Priority: P1) 🎯 MVP
 
-- All tasks MUST follow TDD: add failing tests first describing the desired outcome then implement minimal code to turn green.  
-- Keep task code changes small (<300 LOC) and include unit tests + at least one integration test per FR.  
+Goal: Players experience moving barriers, timed hazards and destructible cover in matches.
+
+Independent Test: Headless integration verifying a moving barrier blocks LOS and that units cannot shoot through it.
+
+### Tests
+
+- [ ] T010 [US1] [P] Add integration test: moving barrier blocks LOS and projectiles
+  - File: `tests/integration/movingBarrierBlock.spec.ts`
+  - Verify: a projectile fired across a barrier is blocked while barrier intersects the shot path; recorded via telemetry.
+
+- [ ] T011 [US1] [P] Add integration test: hazard active window applies effects to units inside
+  - File: `tests/integration/hazardWindow.spec.ts`
+  - Verify: unit inside hazard receives damage/slow only during active windows.
+
+### Implementation
+
+- [ ] T012 [US1] [P] Add obstacle spawn from fixture into match start flow
+  - File: `src/simulation/match/matchSpawner.ts` (or spawnTeams placement), tests/integration
+  - Outcome: Matches can be seeded with obstacles defined in fixture JSON.
+
+- [ ] T013 [US1] [P] Add runtime demo / debug UI for manual playtesting
+  - File: `src/components/debug/ObstacleSpawner.tsx` and register in dev view
+  - Outcome: Designers/testers can place and manipulate obstacles at runtime in dev server.
+
+- [ ] T014 [US1] Add MatchTrace verification test for obstacle events
+  - File: `tests/integration/matchTrace.obstacles.spec.ts`
+  - Verify: MatchTrace contains obstacle move/activation/destroy events with deterministic ordering.
+
+Checkpoint: US1 can be validated end-to-end against integration tests.
 
 ---
 
-End of generated task list for `006-dynamic-arena-obstacles`.
+## Phase 4: User Story 2 - Designer / Level Authoring (Priority: P2)
+
+Goal: Designers can place and configure dynamic obstacles via fixtures and editor controls.
+
+Independent Test: Developer loads sample fixture, modifies obstacle parameters, and sees corresponding runtime behaviour.
+
+- [ ] T015 [US2] [P] Add Obstacle Inspector UI for authoring obstacle parameters
+  - Files: `src/ui/inspector/ObstacleInspector.tsx`, `src/components/Debug/ObstacleEditor.tsx`
+  - Outcome: Designer can edit movement pattern, hazard schedule, durability in-the-browser.
+
+- [ ] T016 [US2] [P] Add fixture load/save integration for the editor
+  - Files: `src/ui/fixtureLoader.ts`, `specs/fixtures/dynamic-arena-sample.json`
+  - Outcome: Editor can load/save obstacle configurations used by match spawner.
+
+- [ ] T017 [US2] [P] Playwright E2E: verify editor changes affect runtime obstacle behaviour
+  - File: `playwright/tests/obstacle-editor.spec.ts`
+  - Verify: change movement params → runtime motion changes in dev server preview.
+
+---
+
+## Phase 5: User Story 3 - AI / Pathfinding & Reliability (Priority: P3)
+
+Goal: AI correctly treats dynamic obstacles as changing constraints and reroutes or falls back.
+
+Independent Test: Headless match where a barrier moves to block the planned path and AI reroutes within bounded time.
+
+- [ ] T018 [US3] Add integration test: AI reroutes when path becomes blocked
+  - File: `tests/integration/ai-reroute.spec.ts`
+  - Verify: AI recomputes a new route within `<= 3` ticks or executes a fallback behaviour.
+
+- [ ] T019 [US3] Implement re-evaluation & pathfinder hook for dynamic obstacles
+  - Files: `src/simulation/ai/pathing/*` (planner adjustments or service), tests/integration
+  - Outcome: AI will not remain permanently stuck — chooses alternate route or fallback.
+
+- [ ] T020 [US3] Add deadlock detection integration test (multi-obstacle timing)
+  - File: `tests/integration/ai-deadlock.spec.ts`
+  - Verify: Scenes that temporarily trap robots resolve or trigger fallback, avoiding permanent deadlocks.
+
+---
+
+## Phase 6: Performance, Visuals & Validation (Parallellizable)
+
+- [ ] T021 [P] Add placeholder obstacle visuals and wire to existing render pipeline
+  - Files: `src/visuals/ObstacleVisual.tsx`, `src/components/Simulation.tsx`
+  - Outcome: Visual debugging for obstacles; can be toggled off for perf tests.
+
+- [ ] T022 [P] Add headless performance stress test for 50 active obstacles
+  - Files: `tests/stress/obstacles.stress.spec.ts`, `scripts/perf/obstacle-stress.js`
+  - Verify: baseline comparison vs main branch shows no more than 20% performance regression (adjust per baseline).
+
+- [ ] T023 [P] Add debug toggles & QualityManager controls for obstacle stress testing
+  - Files: `src/state/quality/QualityManager.ts`, `src/components/Debug/PerfToggles.tsx`
+
+---
+
+## Final Phase: Polish, Docs & PR
+
+- [ ] T024 [P] Update spec docs, quickstart and fixtures with final instructions
+  - Files: `specs/006-dynamic-arena-obstacles/spec.md`, `quickstart.md`, `specs/fixtures/` updates
+
+- [ ] T025 [P] Create PR, add `CONSTITUTION-CHECK` notes, test run summary and a short exec summary
+  - Files: PR description + `specs/006-dynamic-arena-obstacles/` artifacts
+
+---
+
+## Dependencies & Execution Order
+
+- Phase 1 (Setup) tasks are parallelizable and can run concurrently (T001..T003).
+- Phase 2 (Foundational) tasks must complete before story work begins (T004..T009). These are blocking.
+- User stories (Phase 3..5) can be implemented in parallel once foundational tasks complete, but MVP should focus on US1.
+- Performance/visuals & polish tasks can be executed in parallel by separate engineers.
+
+---
+
+## Metrics & MVP
+
+- Total tasks: 25 (T001..T025)
+- Tasks per user story:
+  - US1 (Player Experience): 5 tasks (T010..T014)
+  - US2 (Designer Authoring): 3 tasks (T015..T017)
+  - US3 (AI/Pathfinding): 3 tasks (T018..T020)
+- Parallel opportunities: Many (T001/T002/T003), core foundational tasks are [P]. Visuals and perf tasks are independent.
+- Independent test criteria: included above under each story (integration tests enumerated).
+- Suggested MVP: complete Phase 1 + Phase 2, then deliver US1 (T010..T014) and validate in CI before moving to US2/US3.
+
+---
+
+All tasks follow the required checklist format: each line starts with `- [ ] T###` and includes an exact file path.
+
