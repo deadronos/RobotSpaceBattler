@@ -1,21 +1,35 @@
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
-import { ObstacleEditor } from './components/debug/ObstacleEditor';
-import { ObstacleSpawner } from './components/debug/ObstacleSpawner';
-import { PerfToggles } from './components/debug/PerfToggles';
-import { Simulation } from './components/Simulation';
-import { createBattleWorld } from './ecs/world';
-import { AUTO_RESTART_DELAY_MS, VICTORY_OVERLAY_BACKGROUND } from './lib/constants';
-import { isActiveRobot } from './lib/robotHelpers';
-import { TEAM_CONFIGS } from './lib/teamConfig';
-import { BattleRunner } from './runtime/simulation/battleRunner';
-import { createTelemetryPort } from './runtime/simulation/telemetryAdapter';
+// Import the sample fixture directly so the dev server doesn't need to serve
+// the file path for tests and local development. This provides a robust
+// default while still allowing live updates via fetch.
+import sampleObstacleFixture from "../specs/fixtures/dynamic-arena-sample.json";
+import { ObstacleEditor } from "./components/debug/ObstacleEditor";
+import { ObstacleSpawner } from "./components/debug/ObstacleSpawner";
+import { PerfToggles } from "./components/debug/PerfToggles";
+import { Simulation } from "./components/Simulation";
+import { createBattleWorld } from "./ecs/world";
+import {
+  AUTO_RESTART_DELAY_MS,
+  VICTORY_OVERLAY_BACKGROUND,
+} from "./lib/constants";
+import { isActiveRobot } from "./lib/robotHelpers";
+import { TEAM_CONFIGS } from "./lib/teamConfig";
+import { BattleRunner } from "./runtime/simulation/battleRunner";
+import { createTelemetryPort } from "./runtime/simulation/telemetryAdapter";
 import {
   createMatchStateMachine,
   MatchStateSnapshot,
-} from './runtime/state/matchStateMachine';
-import { ObstacleFixture } from './simulation/match/matchSpawner';
-import { useTelemetryStore } from './state/telemetryStore';
+} from "./runtime/state/matchStateMachine";
+import { ObstacleFixture } from "./simulation/match/matchSpawner";
+import { useTelemetryStore } from "./state/telemetryStore";
 
 function formatStatus({
   phase,
@@ -23,16 +37,17 @@ function formatStatus({
   restartTimerMs,
 }: MatchStateSnapshot): string {
   switch (phase) {
-    case 'running':
-      return 'Battle in progress';
-    case 'paused':
-      return 'Simulation paused';
-    case 'victory': {
-      const countdown = restartTimerMs != null ? Math.ceil(restartTimerMs / 1000) : null;
-      return `Victory: ${winner ?? 'unknown'}${countdown != null ? ` · restart in ${countdown}s` : ''}`;
+    case "running":
+      return "Battle in progress";
+    case "paused":
+      return "Simulation paused";
+    case "victory": {
+      const countdown =
+        restartTimerMs != null ? Math.ceil(restartTimerMs / 1000) : null;
+      return `Victory: ${winner ?? "unknown"}${countdown != null ? ` · restart in ${countdown}s` : ""}`;
     }
     default:
-      return 'Initializing space match...';
+      return "Initializing space match...";
   }
 }
 
@@ -40,18 +55,27 @@ export default function App() {
   const battleWorld = useMemo(() => createBattleWorld(), []);
   const telemetryPort = useMemo(() => createTelemetryPort(), []);
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      (window as Window & { __battleWorld?: ReturnType<typeof createBattleWorld> }).__battleWorld =
-        battleWorld;
+    if (typeof window !== "undefined") {
+      (
+        window as Window & {
+          __battleWorld?: ReturnType<typeof createBattleWorld>;
+        }
+      ).__battleWorld = battleWorld;
     }
   }, [battleWorld]);
   const [matchSnapshot, setMatchSnapshot] = useState<MatchStateSnapshot>({
-    phase: 'initializing',
+    phase: "initializing",
     elapsedMs: 0,
     restartTimerMs: null,
     winner: null,
   });
-  const [obstacleFixture, setObstacleFixture] = useState<ObstacleFixture | undefined>(undefined);
+  const [obstacleFixture, setObstacleFixture] = useState<
+    ObstacleFixture | undefined
+  >(
+    // Use the compiled-in sample fixture as the initial state to ensure the
+    // world has obstacles even if the network fetch fails in some environments.
+    sampleObstacleFixture as unknown as ObstacleFixture,
+  );
 
   const matchMachine = useMemo(
     () =>
@@ -68,16 +92,22 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/specs/fixtures/dynamic-arena-sample.json')
+    fetch("/specs/fixtures/dynamic-arena-sample.json")
       .then(async (res) => {
-        if (!res.ok) throw new Error(`Failed to load obstacle fixture: ${res.status}`);
+        if (!res.ok)
+          throw new Error(`Failed to load obstacle fixture: ${res.status}`);
         return (await res.json()) as ObstacleFixture;
       })
       .then((fixture) => {
         if (!cancelled) setObstacleFixture(fixture);
       })
       .catch(() => {
-        if (!cancelled) setObstacleFixture(undefined);
+        // Keep the compiled-in sample fixture if the network fetch fails in
+        // this environment (e.g., Playwright dev server path differences).
+        if (!cancelled) {
+          // Optional: preserve existing fixture state. Log for debug.
+          // console.warn('Obstacle fixture fetch failed, using default sample fixture', err);
+        }
       });
 
     return () => {
@@ -105,9 +135,9 @@ export default function App() {
 
   const handlePauseResume = useCallback(() => {
     const snapshot = matchMachine.getSnapshot();
-    if (snapshot.phase === 'running') {
+    if (snapshot.phase === "running") {
       matchMachine.pause();
-    } else if (snapshot.phase === 'paused') {
+    } else if (snapshot.phase === "paused") {
       matchMachine.resume();
     }
   }, [matchMachine]);
@@ -117,20 +147,20 @@ export default function App() {
   }, []);
 
   const statusText = formatStatus(matchSnapshot);
-  const pauseLabel = matchSnapshot.phase === 'paused' ? 'Resume' : 'Pause';
+  const pauseLabel = matchSnapshot.phase === "paused" ? "Resume" : "Pause";
 
   const winnerLabel =
-    matchSnapshot.phase === 'victory' && matchSnapshot.winner
+    matchSnapshot.phase === "victory" && matchSnapshot.winner
       ? TEAM_CONFIGS[matchSnapshot.winner].label
       : null;
 
   const restartSeconds =
-    matchSnapshot.phase === 'victory' && matchSnapshot.restartTimerMs != null
+    matchSnapshot.phase === "victory" && matchSnapshot.restartTimerMs != null
       ? Math.ceil(matchSnapshot.restartTimerMs / 1000)
       : null;
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <div id="status" className="match-status" role="status">
         {statusText}
       </div>
@@ -145,13 +175,13 @@ export default function App() {
       </Suspense>
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: 16,
           top: 72,
           maxWidth: 440,
           zIndex: 2,
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           gap: 12,
         }}
       >
@@ -161,37 +191,39 @@ export default function App() {
       </div>
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 16,
           right: 16,
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           gap: 4,
-          alignItems: 'flex-end',
+          alignItems: "flex-end",
         }}
       >
         <div style={{ fontWeight: 600, fontSize: 14 }}>Alive</div>
         <div>{`${TEAM_CONFIGS.red.label}: ${aliveCounts.red}`}</div>
         <div>{`${TEAM_CONFIGS.blue.label}: ${aliveCounts.blue}`}</div>
       </div>
-      {matchSnapshot.phase === 'victory' && winnerLabel ? (
+      {matchSnapshot.phase === "victory" && winnerLabel ? (
         <div
           style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            padding: '24px 32px',
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            padding: "24px 32px",
             borderRadius: 12,
             background: VICTORY_OVERLAY_BACKGROUND,
-            color: '#f7f8ff',
-            textAlign: 'center',
-            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.45)',
+            color: "#f7f8ff",
+            textAlign: "center",
+            boxShadow: "0 12px 32px rgba(0, 0, 0, 0.45)",
           }}
         >
           <h2 style={{ margin: 0, fontSize: 22 }}>{winnerLabel} Triumphs!</h2>
           {restartSeconds != null ? (
-            <p style={{ margin: '12px 0 0 0' }}>{`Restarting in ${restartSeconds}s`}</p>
+            <p
+              style={{ margin: "12px 0 0 0" }}
+            >{`Restarting in ${restartSeconds}s`}</p>
           ) : null}
           <button
             type="button"
@@ -206,11 +238,11 @@ export default function App() {
       ) : null}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           bottom: 16,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
+          left: "50%",
+          transform: "translateX(-50%)",
+          display: "flex",
           gap: 12,
         }}
       >

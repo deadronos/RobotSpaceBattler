@@ -1,4 +1,4 @@
-import { RobotEntity, TeamId, WeaponType } from '../../ecs/world';
+import { RobotEntity, TeamId, WeaponType } from "../../ecs/world";
 
 /**
  * Data payload for a weapon fire event.
@@ -47,11 +47,30 @@ export interface TelemetryPort {
   /** Records a robot death event. */
   recordDeath: (event: DeathEventInput) => void;
   /** Records an obstacle move event. */
-  recordObstacleMove?: (event: { frameIndex: number; timestampMs: number; obstacleId: string; position?: { x: number; y: number; z: number }; orientation?: number }) => void;
+  recordObstacleMove?: (event: {
+    frameIndex: number;
+    timestampMs: number;
+    obstacleId: string;
+    position?: { x: number; y: number; z: number };
+    orientation?: number;
+  }) => void;
   /** Records a hazard activate event. */
-  recordHazardActivate?: (event: { frameIndex: number; timestampMs: number; obstacleId: string }) => void;
+  recordHazardActivate?: (event: {
+    frameIndex: number;
+    timestampMs: number;
+    obstacleId: string;
+  }) => void;
   /** Records a hazard deactivate event. */
-  recordHazardDeactivate?: (event: { frameIndex: number; timestampMs: number; obstacleId: string }) => void;
+  recordHazardDeactivate?: (event: {
+    frameIndex: number;
+    timestampMs: number;
+    obstacleId: string;
+  }) => void;
   /** Records a destructible cover destroyed event. */
-  recordCoverDestroyed?: (event: { frameIndex: number; timestampMs: number; obstacleId: string; destroyedBy?: string }) => void;
+  recordCoverDestroyed?: (event: {
+    frameIndex: number;
+    timestampMs: number;
+    obstacleId: string;
+    destroyedBy?: string;
+  }) => void;
 }

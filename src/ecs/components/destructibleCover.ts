@@ -1,14 +1,16 @@
 export interface DestructibleCover {
   maxDurability: number;
   durability: number;
-  removalPolicy: 'permanent' | { respawnSeconds: number };
+  removalPolicy: "permanent" | { respawnSeconds: number };
 }
 
-export function createDefaultDestructibleCover(overrides: Partial<DestructibleCover> = {}) {
+export function createDefaultDestructibleCover(
+  overrides: Partial<DestructibleCover> = {},
+) {
   return {
     maxDurability: 10,
     durability: 10,
-    removalPolicy: 'permanent',
+    removalPolicy: "permanent",
     ...overrides,
   } as DestructibleCover;
 }

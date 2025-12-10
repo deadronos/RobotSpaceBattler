@@ -1,6 +1,6 @@
-import { Vec3 } from '../../lib/math/vec3';
+import { Vec3 } from "../../lib/math/vec3";
 
-export type MovementPatternType = 'linear' | 'rotation' | 'oscillate';
+export type MovementPatternType = "linear" | "rotation" | "oscillate";
 
 export interface MovementPattern {
   patternType: MovementPatternType;
@@ -18,9 +18,11 @@ export interface MovementPattern {
   direction?: 1 | -1;
 }
 
-export function createDefaultMovementPattern(overrides: Partial<MovementPattern> = {}): MovementPattern {
+export function createDefaultMovementPattern(
+  overrides: Partial<MovementPattern> = {},
+): MovementPattern {
   return {
-    patternType: 'linear',
+    patternType: "linear",
     points: [],
     pivot: undefined,
     speed: 1,

@@ -1,4 +1,4 @@
-import { WeaponType } from '../../ecs/world';
+import { WeaponType } from "../../ecs/world";
 
 /**
  * Configuration profile for a weapon type.
@@ -32,35 +32,35 @@ export interface WeaponProfile {
 
 const WEAPON_PROFILES: Record<WeaponType, WeaponProfile> = {
   laser: {
-    type: 'laser',
+    type: "laser",
     damage: 14,
     fireRate: 1.8,
     projectileSpeed: 32,
     range: 28,
     projectileSize: 0.18,
-    projectileColor: '#7fffd4',
+    projectileColor: "#7fffd4",
     beamWidth: 0.08,
     impactDurationMs: 280,
   },
   gun: {
-    type: 'gun',
+    type: "gun",
     damage: 16,
     fireRate: 1.4,
     projectileSpeed: 26,
     range: 24,
     projectileSize: 0.14,
-    projectileColor: '#ffe08a',
+    projectileColor: "#ffe08a",
     impactDurationMs: 220,
   },
   rocket: {
-    type: 'rocket',
+    type: "rocket",
     damage: 24,
     fireRate: 0.9,
     projectileSpeed: 22,
     range: 34,
     projectileSize: 0.32,
-    projectileColor: '#ff9d5c',
-    trailColor: '#ffbe76',
+    projectileColor: "#ff9d5c",
+    trailColor: "#ffbe76",
     aoeRadius: 2.5,
     explosionDurationMs: 720,
     impactDurationMs: 360,
@@ -102,7 +102,10 @@ export function getWeaponProfile(type: WeaponType): WeaponProfile {
  * @param defender - The defending weapon type.
  * @returns The damage multiplier.
  */
-export function computeDamageMultiplier(attacker: WeaponType, defender: WeaponType): number {
+export function computeDamageMultiplier(
+  attacker: WeaponType,
+  defender: WeaponType,
+): number {
   return DAMAGE_MATRIX[attacker][defender];
 }
 

@@ -1,7 +1,7 @@
 import {
   closestPointOnAABB,
   distanceSquaredPointToAABB,
-} from '../../lib/math/geometry';
+} from "../../lib/math/geometry";
 import {
   addInPlaceVec3,
   clampVec3,
@@ -11,14 +11,14 @@ import {
   scaleVec3,
   Vec3,
   vec3,
-} from '../../lib/math/vec3';
+} from "../../lib/math/vec3";
 import {
   ARENA_BOUNDS,
   ARENA_PILLARS,
   ARENA_WALLS,
   ROBOT_RADIUS,
-} from '../../simulation/environment/arenaGeometry';
-import { BattleWorld } from '../world';
+} from "../../simulation/environment/arenaGeometry";
+import { BattleWorld } from "../world";
 
 const FRICTION = 0.92;
 const { min: MIN_BOUNDS, max: MAX_BOUNDS } = ARENA_BOUNDS;
@@ -29,9 +29,22 @@ function resolveCollision(pos: Vec3): void {
     const wallCenter = vec3(wall.x, 0, wall.z);
 
     // Check for collision using squared distance for efficiency
-    if (distanceSquaredPointToAABB(pos, wallCenter, wall.halfWidth, wall.halfDepth) < ROBOT_RADIUS * ROBOT_RADIUS) {
+    if (
+      distanceSquaredPointToAABB(
+        pos,
+        wallCenter,
+        wall.halfWidth,
+        wall.halfDepth,
+      ) <
+      ROBOT_RADIUS * ROBOT_RADIUS
+    ) {
       // Resolve collision
-      const closest = closestPointOnAABB(pos, wallCenter, wall.halfWidth, wall.halfDepth);
+      const closest = closestPointOnAABB(
+        pos,
+        wallCenter,
+        wall.halfWidth,
+        wall.halfDepth,
+      );
       const dist = distanceVec3(pos, closest);
 
       if (dist > 0) {
@@ -72,7 +85,10 @@ function resolveCollision(pos: Vec3): void {
  * @param world - The battle world state.
  * @param deltaSeconds - The time elapsed since the last update in seconds.
  */
-export function updateMovementSystem(world: BattleWorld, deltaSeconds: number): void {
+export function updateMovementSystem(
+  world: BattleWorld,
+  deltaSeconds: number,
+): void {
   const { robots } = world;
 
   robots.entities.forEach((robot) => {

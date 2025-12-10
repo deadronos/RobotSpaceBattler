@@ -1,6 +1,6 @@
-import { RigidBody } from '@react-three/rapier';
-import { memo } from 'react';
-import { Color } from 'three';
+import { RigidBody } from "@react-three/rapier";
+import { memo } from "react";
+import { Color } from "three";
 
 /**
  * Props for the RobotPlaceholder component.
@@ -18,7 +18,7 @@ interface RobotPlaceholderProps {
  * Includes a kinematic rigid body for physics interactions.
  */
 export const RobotPlaceholder = memo(function RobotPlaceholder({
-  color = '#ff4d5a',
+  color = "#ff4d5a",
   position = [0, 0.8, 0],
 }: RobotPlaceholderProps) {
   const emissivePrimary = new Color(color).multiplyScalar(0.2);

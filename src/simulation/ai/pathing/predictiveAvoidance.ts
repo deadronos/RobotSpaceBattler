@@ -4,8 +4,8 @@
  * @module predictiveAvoidance
  */
 
-import { CollisionGroup } from '../../../lib/physics/collisionGroups';
-import { PhysicsQueryService, Vec3Like } from './physicsQueryService';
+import { CollisionGroup } from "../../../lib/physics/collisionGroups";
+import { PhysicsQueryService, Vec3Like } from "./physicsQueryService";
 
 /** Configuration for predictive avoidance behavior */
 export interface PredictiveAvoidanceConfig {
@@ -60,7 +60,7 @@ export function computePredictiveAvoidance(
   position: Vec3Like,
   velocity: Vec3Like,
   queryService: PhysicsQueryService,
-  config?: Partial<PredictiveAvoidanceConfig>
+  config?: Partial<PredictiveAvoidanceConfig>,
 ): Vec3Like {
   const cfg = { ...DEFAULT_AVOIDANCE_CONFIG, ...config };
 
@@ -89,7 +89,7 @@ export function computePredictiveAvoidance(
     position,
     directions,
     cfg.lookaheadDistance,
-    CollisionGroup.STATIC_GEOMETRY
+    CollisionGroup.STATIC_GEOMETRY,
   );
 
   // Accumulate avoidance vector

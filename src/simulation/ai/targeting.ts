@@ -1,11 +1,15 @@
-import { RobotEntity } from '../../ecs/world';
-import { distanceSquaredVec3 } from '../../lib/math/vec3';
-import { isActiveRobot } from '../../lib/robotHelpers';
-import { TEAM_CONFIGS } from '../../lib/teamConfig';
-import { sortEntities } from './targetingUtils';
+import { RobotEntity } from "../../ecs/world";
+import { distanceSquaredVec3 } from "../../lib/math/vec3";
+import { isActiveRobot } from "../../lib/robotHelpers";
+import { TEAM_CONFIGS } from "../../lib/teamConfig";
+import { sortEntities } from "./targetingUtils";
 
 function isEnemy(seeker: RobotEntity, target: RobotEntity): boolean {
-  return target.team !== seeker.team && isActiveRobot(target) && target.id !== seeker.id;
+  return (
+    target.team !== seeker.team &&
+    isActiveRobot(target) &&
+    target.id !== seeker.id
+  );
 }
 
 /**
@@ -97,13 +101,13 @@ export function pickCaptainTarget(
       }),
       (a, b) => {
         if (a.distanceSq !== b.distanceSq) {
-            return a.distanceSq - b.distanceSq;
+          return a.distanceSq - b.distanceSq;
         }
         if (b.entity.kills !== a.entity.kills) {
-            return b.entity.kills - a.entity.kills;
+          return b.entity.kills - a.entity.kills;
         }
         if (a.spawnDistanceSq !== b.spawnDistanceSq) {
-            return a.spawnDistanceSq - b.spawnDistanceSq;
+          return a.spawnDistanceSq - b.spawnDistanceSq;
         }
         return a.entity.id.localeCompare(b.entity.id);
       },

@@ -21,7 +21,7 @@ export interface RaycastCache {
 export function shouldRaycastThisFrame(
   entityId: number,
   frameCount: number,
-  staggerInterval: number = 3
+  staggerInterval: number = 3,
 ): boolean {
   return entityId % staggerInterval === frameCount % staggerInterval;
 }

@@ -1,4 +1,4 @@
-import { BattleWorld } from '../world';
+import { BattleWorld } from "../world";
 
 /**
  * Updates the state of visual effects in the world.

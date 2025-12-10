@@ -1,5 +1,5 @@
-import { vec3 } from '../../lib/math/vec3';
-import { EffectEntity } from '../world';
+import { vec3 } from "../../lib/math/vec3";
+import { EffectEntity } from "../world";
 
 /**
  * Statistics for effect pool usage.
@@ -36,12 +36,12 @@ export interface EffectPool {
  */
 function createEmptyEffect(): EffectEntity {
   return {
-    id: '',
-    kind: 'effect',
-    effectType: 'impact',
+    id: "",
+    kind: "effect",
+    effectType: "impact",
     position: vec3(),
     radius: 0,
-    color: '#ffffff',
+    color: "#ffffff",
     createdAt: 0,
     duration: 0,
   };
@@ -78,12 +78,12 @@ export function createEffectPool(initialSize = 64): EffectPool {
 
   function release(effect: EffectEntity): void {
     effect.instanceIndex = undefined;
-    effect.id = '';
+    effect.id = "";
     effect.secondaryColor = undefined;
-    effect.effectType = 'impact';
+    effect.effectType = "impact";
     effect.position = vec3();
     effect.radius = 0;
-    effect.color = '#ffffff';
+    effect.color = "#ffffff";
     effect.createdAt = 0;
     effect.duration = 0;
     stats.released += 1;

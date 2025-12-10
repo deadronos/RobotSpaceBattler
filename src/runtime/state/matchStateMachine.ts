@@ -1,9 +1,13 @@
-import { TeamId } from '../../lib/teamConfig';
+import { TeamId } from "../../lib/teamConfig";
 
 /**
  * Enumeration of possible phases in a match lifecycle.
  */
-export type MatchRuntimePhase = 'initializing' | 'running' | 'paused' | 'victory';
+export type MatchRuntimePhase =
+  | "initializing"
+  | "running"
+  | "paused"
+  | "victory";
 
 /**
  * Snapshot of the current match state.
@@ -59,7 +63,7 @@ export interface MatchStateMachine {
 }
 
 const INITIAL_STATE: MatchStateSnapshot = {
-  phase: 'initializing',
+  phase: "initializing",
   elapsedMs: 0,
   restartTimerMs: null,
   winner: null,
@@ -70,7 +74,9 @@ const INITIAL_STATE: MatchStateSnapshot = {
  * @param options - Configuration options.
  * @returns A MatchStateMachine instance.
  */
-export function createMatchStateMachine(options: MatchStateOptions = {}): MatchStateMachine {
+export function createMatchStateMachine(
+  options: MatchStateOptions = {},
+): MatchStateMachine {
   const autoRestartDelayMs = options.autoRestartDelayMs ?? 2000;
   let current: MatchStateSnapshot = { ...INITIAL_STATE };
 
@@ -86,23 +92,23 @@ export function createMatchStateMachine(options: MatchStateOptions = {}): MatchS
   return {
     start: () => {
       transition({
-        phase: 'running',
+        phase: "running",
         restartTimerMs: null,
       });
     },
     pause: () => {
-      if (current.phase === 'running') {
-        transition({ phase: 'paused' });
+      if (current.phase === "running") {
+        transition({ phase: "paused" });
       }
     },
     resume: () => {
-      if (current.phase === 'paused') {
-        transition({ phase: 'running' });
+      if (current.phase === "paused") {
+        transition({ phase: "running" });
       }
     },
     declareVictory: (winner, restartDelayMs) => {
       transition({
-        phase: 'victory',
+        phase: "victory",
         winner,
         restartTimerMs: restartDelayMs ?? autoRestartDelayMs,
       });
@@ -112,7 +118,7 @@ export function createMatchStateMachine(options: MatchStateOptions = {}): MatchS
       emit();
     },
     tick: (deltaMs: number) => {
-      if (current.phase === 'running') {
+      if (current.phase === "running") {
         current = {
           ...current,
           elapsedMs: current.elapsedMs + deltaMs,
@@ -121,7 +127,7 @@ export function createMatchStateMachine(options: MatchStateOptions = {}): MatchS
         return false;
       }
 
-      if (current.phase === 'victory' && current.restartTimerMs != null) {
+      if (current.phase === "victory" && current.restartTimerMs != null) {
         const nextTimer = current.restartTimerMs - deltaMs;
         if (nextTimer > 0) {
           current = {

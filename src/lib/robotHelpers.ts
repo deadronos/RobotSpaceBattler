@@ -1,4 +1,4 @@
-import { RobotEntity } from '../ecs/world';
+import { RobotEntity } from "../ecs/world";
 
 /**
  * Type guard and utility functions for robot entities.

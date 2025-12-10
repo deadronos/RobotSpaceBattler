@@ -1,6 +1,9 @@
-import { RigidBody } from '@react-three/rapier';
+import { RigidBody } from "@react-three/rapier";
 
-import { CollisionGroup, interactionGroups } from '../../lib/physics/collisionGroups';
+import {
+  CollisionGroup,
+  interactionGroups,
+} from "../../lib/physics/collisionGroups";
 
 const PILLAR_POSITIONS: [number, number, number][] = [
   [-30, 1.5, -30],
@@ -37,7 +40,7 @@ function Pillar({ position }: PillarProps) {
       colliders="hull"
       collisionGroups={interactionGroups(
         CollisionGroup.PILLAR,
-        CollisionGroup.ROBOT | CollisionGroup.PROJECTILE
+        CollisionGroup.ROBOT | CollisionGroup.PROJECTILE,
       )}
     >
       <mesh position={position} receiveShadow castShadow>

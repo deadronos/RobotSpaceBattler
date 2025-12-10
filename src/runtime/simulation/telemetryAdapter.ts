@@ -1,11 +1,11 @@
-import { RobotEntity } from '../../ecs/world';
-import { TelemetryEvent, useTelemetryStore } from '../../state/telemetryStore';
+import { RobotEntity } from "../../ecs/world";
+import { TelemetryEvent, useTelemetryStore } from "../../state/telemetryStore";
 import {
   DamageEventInput,
   DeathEventInput,
   FireEventInput,
   TelemetryPort,
-} from './ports';
+} from "./ports";
 
 /**
  * Creates a TelemetryPort implementation that bridges simulation events to the Zustand store.
@@ -26,7 +26,7 @@ export function createTelemetryPort(): TelemetryPort {
     },
     recordSpawn: (robot: RobotEntity, timestampMs: number) => {
       useTelemetryStore.getState().recordEvent({
-        type: 'spawn',
+        type: "spawn",
         timestampMs,
         sequenceId: nextSequence(),
         entityId: robot.id,
@@ -35,7 +35,7 @@ export function createTelemetryPort(): TelemetryPort {
     },
     recordFire: (event: FireEventInput) => {
       useTelemetryStore.getState().recordEvent({
-        type: 'fire',
+        type: "fire",
         timestampMs: event.timestampMs,
         sequenceId: nextSequence(),
         entityId: event.entityId,
@@ -44,7 +44,7 @@ export function createTelemetryPort(): TelemetryPort {
     },
     recordDamage: (event: DamageEventInput) => {
       useTelemetryStore.getState().recordEvent({
-        type: 'damage',
+        type: "damage",
         timestampMs: event.timestampMs,
         sequenceId: nextSequence(),
         attackerId: event.attackerId,
@@ -55,7 +55,7 @@ export function createTelemetryPort(): TelemetryPort {
     },
     recordDeath: (event: DeathEventInput) => {
       useTelemetryStore.getState().recordEvent({
-        type: 'death',
+        type: "death",
         timestampMs: event.timestampMs,
         sequenceId: nextSequence(),
         entityId: event.entityId,
@@ -65,7 +65,7 @@ export function createTelemetryPort(): TelemetryPort {
     },
     recordObstacleMove: (event) => {
       const telemetryEvent: TelemetryEvent = {
-        type: 'obstacle:move',
+        type: "obstacle:move",
         timestampMs: event.timestampMs,
         sequenceId: nextSequence(),
         frameIndex: event.frameIndex,
@@ -77,7 +77,7 @@ export function createTelemetryPort(): TelemetryPort {
     },
     recordHazardActivate: (event) => {
       const telemetryEvent: TelemetryEvent = {
-        type: 'hazard:activate',
+        type: "hazard:activate",
         timestampMs: event.timestampMs,
         sequenceId: nextSequence(),
         frameIndex: event.frameIndex,
@@ -87,7 +87,7 @@ export function createTelemetryPort(): TelemetryPort {
     },
     recordHazardDeactivate: (event) => {
       const telemetryEvent: TelemetryEvent = {
-        type: 'hazard:deactivate',
+        type: "hazard:deactivate",
         timestampMs: event.timestampMs,
         sequenceId: nextSequence(),
         frameIndex: event.frameIndex,
@@ -97,7 +97,7 @@ export function createTelemetryPort(): TelemetryPort {
     },
     recordCoverDestroyed: (event) => {
       const telemetryEvent: TelemetryEvent = {
-        type: 'cover:destroyed',
+        type: "cover:destroyed",
         timestampMs: event.timestampMs,
         sequenceId: nextSequence(),
         frameIndex: event.frameIndex,

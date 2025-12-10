@@ -1,6 +1,6 @@
-import { Ray } from '@dimforge/rapier3d-compat';
+import { Ray } from "@dimforge/rapier3d-compat";
 
-import { Vec3, vec3 } from '../../lib/math/vec3';
+import { Vec3, vec3 } from "../../lib/math/vec3";
 
 /**
  * Definition of a rectangular arena wall.
@@ -65,7 +65,11 @@ export const ARENA_PILLARS: readonly ArenaPillar[] = Object.freeze([
 
 const EPSILON = 1e-3;
 
-function segmentIntersectsAabb2D(start: Vec3, end: Vec3, wall: ArenaWall): boolean {
+function segmentIntersectsAabb2D(
+  start: Vec3,
+  end: Vec3,
+  wall: ArenaWall,
+): boolean {
   const dirX = end.x - start.x;
   const dirZ = end.z - start.z;
 
@@ -116,7 +120,11 @@ function segmentIntersectsAabb2D(start: Vec3, end: Vec3, wall: ArenaWall): boole
   return tMax > EPSILON && tMin < 1 - EPSILON;
 }
 
-function segmentIntersectsCircle2D(start: Vec3, end: Vec3, pillar: ArenaPillar): boolean {
+function segmentIntersectsCircle2D(
+  start: Vec3,
+  end: Vec3,
+  pillar: ArenaPillar,
+): boolean {
   const dx = end.x - start.x;
   const dz = end.z - start.z;
   const fx = start.x - pillar.x;
@@ -186,12 +194,24 @@ export function isLineOfSightBlockedRuntime(
       blocksVision?: boolean;
       active?: boolean;
       shape?:
-        | { kind: 'box'; halfWidth: number; halfDepth: number; center?: { x: number; z: number } }
-        | { kind: 'circle'; radius: number; center?: { x: number; z: number } };
+        | {
+            kind: "box";
+            halfWidth: number;
+            halfDepth: number;
+            center?: { x: number; z: number };
+          }
+        | { kind: "circle"; radius: number; center?: { x: number; z: number } };
       position?: { x: number; y?: number; z: number };
     }>;
     rapierWorld?: {
-      castRayAndGetNormal?: (ray: Ray, maxToi: number, solid: boolean) => { toi: number } | null;
+      castRayAndGetNormal?: (
+        ray: Ray,
+        maxToi: number,
+        solid: boolean,
+      ) => {
+        timeOfImpact: number;
+        normal: { x: number; y: number; z: number };
+      } | null;
     };
   },
 ): boolean {
@@ -200,7 +220,7 @@ export function isLineOfSightBlockedRuntime(
 
   // If a rapier world is provided prefer raycast checks against the physics world
   const rapierWorld = options?.rapierWorld;
-  if (rapierWorld && typeof rapierWorld.castRayAndGetNormal === 'function') {
+  if (rapierWorld && typeof rapierWorld.castRayAndGetNormal === "function") {
     const dx = end.x - start.x;
     const dy = end.y - start.y;
     const dz = end.z - start.z;
@@ -221,12 +241,94 @@ export function isLineOfSightBlockedRuntime(
       const shape = obs.shape;
       if (!shape) continue;
 
-      if (shape.kind === 'box') {
+      if (shape.kind === "box") {
         const cx = shape.center?.x ?? obs.position?.x ?? 0;
         const cz = shape.center?.z ?? obs.position?.z ?? 0;
-        const wall = { x: cx, z: cz, halfWidth: shape.halfWidth, halfDepth: shape.halfDepth };
+        const wall = {
+          x: cx,
+          z: cz,
+          halfWidth: shape.halfWidth,
+          halfDepth: shape.halfDepth,
+        };
         if (segmentIntersectsAabb2D(start, end, wall)) return true;
-      } else if (shape.kind === 'circle') {
+      } else if (shape.kind === "circle") {
+        const cx = shape.center?.x ?? obs.position?.x ?? 0;
+        const cz = shape.center?.z ?? obs.position?.z ?? 0;
+        const pillar = { x: cx, z: cz, radius: shape.radius };
+        if (segmentIntersectsCircle2D(start, end, pillar)) return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Checks if the line between two points is blocked by dynamic obstacles that block movement.
+ * This is a movement-aware complement to the vision-based LOS checks above.
+ */
+export function isPathBlockedByMovementRuntime(
+  start: Vec3,
+  end: Vec3,
+  options?: {
+    obstacles?: Array<{
+      blocksMovement?: boolean;
+      active?: boolean;
+      shape?:
+        | {
+            kind: "box";
+            halfWidth: number;
+            halfDepth: number;
+            center?: { x: number; z: number };
+          }
+        | { kind: "circle"; radius: number; center?: { x: number; z: number } };
+      position?: { x: number; y?: number; z: number };
+    }>;
+    rapierWorld?: {
+      castRayAndGetNormal?: (
+        ray: Ray,
+        maxToi: number,
+        solid: boolean,
+      ) => {
+        timeOfImpact: number;
+        normal: { x: number; y: number; z: number };
+      } | null;
+    };
+  },
+): boolean {
+  const rapierWorld = options?.rapierWorld;
+  if (rapierWorld && typeof rapierWorld.castRayAndGetNormal === "function") {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const dz = end.z - start.z;
+    const maxDist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (maxDist > EPSILON) {
+      const dir = { x: dx / maxDist, y: dy / maxDist, z: dz / maxDist };
+      const ray = new Ray(start, dir);
+      const hit = rapierWorld.castRayAndGetNormal(ray, maxDist, true);
+      if (hit) return true;
+    }
+  }
+
+  if (options && Array.isArray(options.obstacles)) {
+    for (const obs of options.obstacles) {
+      if (!obs || obs.blocksMovement === false) continue;
+      if (obs.active === false) continue;
+
+      const shape = obs.shape;
+      if (!shape) continue;
+
+      if (shape.kind === "box") {
+        const cx = shape.center?.x ?? obs.position?.x ?? 0;
+        const cz = shape.center?.z ?? obs.position?.z ?? 0;
+        const wall = {
+          x: cx,
+          z: cz,
+          halfWidth: shape.halfWidth,
+          halfDepth: shape.halfDepth,
+        };
+        if (segmentIntersectsAabb2D(start, end, wall)) return true;
+      } else if (shape.kind === "circle") {
         const cx = shape.center?.x ?? obs.position?.x ?? 0;
         const cz = shape.center?.z ?? obs.position?.z ?? 0;
         const pillar = { x: cx, z: cz, radius: shape.radius };
