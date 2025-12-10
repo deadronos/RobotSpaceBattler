@@ -15,17 +15,29 @@ describe('PathfindingSystem', () => {
   let mockPathComponent: PathComponent;
 
   beforeEach(() => {
-    // Setup mock NavMeshResource
+    // Setup mock NavMeshResource with single polygon
     mockNavMeshResource = {
       mesh: {
         id: 'test-mesh',
-        polygons: [],
+        polygons: [
+          {
+            index: 0,
+            vertices: [
+              { x: 0, z: 0 },
+              { x: 100, z: 0 },
+              { x: 100, z: 100 },
+              { x: 0, z: 100 },
+            ],
+            centroid: { x: 50, z: 50 },
+            area: 10000,
+          },
+        ],
         adjacency: new Map(),
         clearanceRadius: 0.95,
         metadata: {
           generatedAt: Date.now(),
           arenaSize: { width: 100, depth: 100 },
-          polygonCount: 0,
+          polygonCount: 1,
           memorySize: 1024,
         },
       },

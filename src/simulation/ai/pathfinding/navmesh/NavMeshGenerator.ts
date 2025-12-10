@@ -74,10 +74,13 @@ export class NavMeshGenerator {
   /**
    * Generate polygons with obstacles subtracted
    * Simplified implementation for MVP - creates coarse mesh
+   * TODO: Implement proper obstacle avoidance and polygon decomposition
    */
   private generatePolygonsWithObstacles(
     size: { width: number; depth: number },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _obstacles: readonly { footprint: readonly Point2D[] }[],
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _clearanceRadius: number,
   ): ConvexPolygon[] {
     // Simplified: divide arena into quadrants and avoid obstacle areas
