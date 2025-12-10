@@ -39,6 +39,11 @@ function formatStatus({
 export default function App() {
   const battleWorld = useMemo(() => createBattleWorld(), []);
   const telemetryPort = useMemo(() => createTelemetryPort(), []);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__battleWorld = battleWorld;
+    }
+  }, [battleWorld]);
   const [matchSnapshot, setMatchSnapshot] = useState<MatchStateSnapshot>({
     phase: 'initializing',
     elapsedMs: 0,

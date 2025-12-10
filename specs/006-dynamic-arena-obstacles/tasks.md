@@ -109,7 +109,7 @@ Independent Test: Developer loads sample fixture, modifies obstacle parameters, 
   - Files: `src/ui/fixtureLoader.ts`, `specs/fixtures/dynamic-arena-sample.json`
   - Outcome: Editor can load/save obstacle configurations used by match spawner.
 
-- [ ] T017 [US2] [P] Playwright E2E: verify editor changes affect runtime obstacle behaviour
+- [x] T017 [US2] [P] Playwright E2E: verify editor changes affect runtime obstacle behaviour
   - File: `playwright/tests/obstacle-editor.spec.ts`
   - Verify: change movement params → runtime motion changes in dev server preview.
 
@@ -152,7 +152,7 @@ Independent Test: Headless match where a barrier moves to block the planned path
 
 ## Final Phase: Polish, Docs & PR
 
-- [ ] T024 [P] Update spec docs, quickstart and fixtures with final instructions
+- [x] T024 [P] Update spec docs, quickstart and fixtures with final instructions
   - Files: `specs/006-dynamic-arena-obstacles/spec.md`, `quickstart.md`, `specs/fixtures/` updates
 
 - [ ] T025 [P] Create PR, add `CONSTITUTION-CHECK` notes, test run summary and a short exec summary
