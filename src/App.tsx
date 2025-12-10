@@ -7,11 +7,11 @@ import { isActiveRobot } from './lib/robotHelpers';
 import { TEAM_CONFIGS } from './lib/teamConfig';
 import { BattleRunner } from './runtime/simulation/battleRunner';
 import { createTelemetryPort } from './runtime/simulation/telemetryAdapter';
-import { ObstacleFixture } from './simulation/match/matchSpawner';
 import {
   createMatchStateMachine,
   MatchStateSnapshot,
 } from './runtime/state/matchStateMachine';
+import { ObstacleFixture } from './simulation/match/matchSpawner';
 import { useTelemetryStore } from './state/telemetryStore';
 
 function formatStatus({

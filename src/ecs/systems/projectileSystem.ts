@@ -1,4 +1,5 @@
 import { applyCaptaincy } from '../../lib/captainElection';
+import { distanceSquaredPointToAABB, distanceSquaredPointToCircle } from '../../lib/math/geometry';
 import {
   addInPlaceVec3,
   cloneVec3,
@@ -6,14 +7,13 @@ import {
   scaleVec3To,
   vec3,
 } from '../../lib/math/vec3';
-import { distanceSquaredPointToAABB, distanceSquaredPointToCircle } from '../../lib/math/geometry';
-import { applyDamageToObstacle } from '../../simulation/obstacles/destructibleSystem';
 import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
 import { isActiveRobot } from '../../lib/robotHelpers';
 import { TelemetryPort } from '../../runtime/simulation/ports';
 import { findClosestEntity } from '../../simulation/ai/targetingUtils';
 import { computeDamageMultiplier } from '../../simulation/combat/weapons';
-import { BattleWorld, EffectType, ProjectileEntity, RobotEntity } from '../world';
+import { applyDamageToObstacle } from '../../simulation/obstacles/destructibleSystem';
+import { BattleWorld, EffectType, ObstacleEntity, ProjectileEntity, RobotEntity } from '../world';
 
 const activeRobotsScratch: RobotEntity[] = [];
 const robotsByIdScratch = new Map<string, RobotEntity>();
@@ -230,18 +230,18 @@ export function updateProjectileSystem(
     const ageMs = world.state.elapsedMs - projectile.spawnTime;
     // Check collision with obstacles first
     for (let oi = 0; oi < world.obstacles.entities.length; oi += 1) {
-      const obs = world.obstacles.entities[oi] as any;
+      const obs = world.obstacles.entities[oi] as ObstacleEntity;
       if (!obs || obs.active === false) continue;
 
       let collided = false;
       const projPos = projectile.position;
 
       if (obs.shape && obs.shape.kind === 'box') {
-        const center = (obs.shape.center && { x: obs.shape.center.x, y: projPos.y, z: obs.shape.center.z }) || obs.position;
-        const gapSq = distanceSquaredPointToAABB(projPos, center, obs.shape.halfWidth, obs.shape.halfDepth);
-        collided = gapSq <= 0.000001;
-      } else if (obs.shape && obs.shape.kind === 'circle') {
-        const center = (obs.shape.center && { x: obs.shape.center.x, y: projPos.y, z: obs.shape.center.z }) || obs.position;
+          const center = (obs.shape.center && { x: obs.shape.center.x, y: projPos.y, z: obs.shape.center.z }) || obs.position;
+          const gapSq = distanceSquaredPointToAABB(projPos, center, obs.shape.halfWidth, obs.shape.halfDepth);
+          collided = gapSq <= 0.000001;
+        } else if (obs.shape && obs.shape.kind === 'circle') {
+          const center = (obs.shape.center && { x: obs.shape.center.x, y: projPos.y, z: obs.shape.center.z }) || obs.position;
         const gapSq = distanceSquaredPointToCircle(projPos, center, obs.shape.radius);
         collided = gapSq <= 0.000001;
       }
@@ -290,7 +290,7 @@ export function updateProjectileSystem(
         if (radius > 0) {
           
           for (let oi = 0; oi < world.obstacles.entities.length; oi += 1) {
-            const obs = world.obstacles.entities[oi] as any;
+            const obs = world.obstacles.entities[oi] as ObstacleEntity;
             if (!obs) continue;
             const dist = distanceVec3(obs.position, explosionCenter);
             

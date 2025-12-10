@@ -1,6 +1,6 @@
-import { spawnTeams, SpawnOptions } from '../../ecs/systems/spawnSystem';
+import { SpawnOptions,spawnTeams } from '../../ecs/systems/spawnSystem';
 import { BattleWorld, ObstacleEntity, resetBattleWorld } from '../../ecs/world';
-import { vec3, Vec3 } from '../../lib/math/vec3';
+import { Vec3, vec3 } from '../../lib/math/vec3';
 
 type Vec3Input = Vec3 | [number, number, number] | { x: number; y: number; z: number } | undefined;
 
@@ -42,7 +42,9 @@ function toVec3(value: Vec3Input): Vec3 {
 
 function normalizeMovementPattern(pattern: ObstacleFixtureEntry['movementPattern']): ObstacleEntity['movementPattern'] {
   if (!pattern) return null;
-  const patternType = pattern.patternType ?? (pattern as any).kind;
+  const patternType =
+    pattern.patternType ??
+    (pattern as { kind?: 'linear' | 'rotation' | 'oscillate' }).kind;
   if (patternType !== 'linear' && patternType !== 'rotation' && patternType !== 'oscillate') return null;
 
   const normalized: ObstacleEntity['movementPattern'] = {
@@ -50,7 +52,7 @@ function normalizeMovementPattern(pattern: ObstacleFixtureEntry['movementPattern
     speed: pattern.speed,
     loop: pattern.loop,
     pingPong: pattern.pingPong,
-    phase: pattern.phase ?? (pattern as any).phaseOffset,
+    phase: pattern.phase ?? (pattern as { phaseOffset?: number }).phaseOffset,
   };
 
   if (patternType === 'rotation') {
@@ -58,15 +60,29 @@ function normalizeMovementPattern(pattern: ObstacleFixtureEntry['movementPattern
     return normalized;
   }
 
-  const legacyPath = (pattern as any).path ?? (pattern as any).segments;
-  const hasTarget = (pattern as any).targetPosition ?? (pattern as any).to ?? (pattern as any).end;
+  const legacyPath = (pattern as { path?: Vec3Input[]; segments?: Vec3Input[] })?.path ??
+    (pattern as { path?: Vec3Input[]; segments?: Vec3Input[] })?.segments;
+  const hasTarget =
+    (pattern as { targetPosition?: Vec3Input; to?: Vec3Input; end?: Vec3Input }).targetPosition ??
+    (pattern as { targetPosition?: Vec3Input; to?: Vec3Input; end?: Vec3Input }).to ??
+    (pattern as { targetPosition?: Vec3Input; to?: Vec3Input; end?: Vec3Input }).end;
   const points =
     pattern.points ??
     legacyPath ??
     (hasTarget
       ? [
-          toVec3((pattern as any).start ?? (pattern as any).from ?? (pattern as any).origin ?? vec3()),
-          toVec3((pattern as any).targetPosition ?? (pattern as any).to ?? (pattern as any).end ?? vec3()),
+          toVec3(
+            (pattern as { start?: Vec3Input; from?: Vec3Input; origin?: Vec3Input }).start ??
+              (pattern as { start?: Vec3Input; from?: Vec3Input; origin?: Vec3Input }).from ??
+              (pattern as { start?: Vec3Input; from?: Vec3Input; origin?: Vec3Input }).origin ??
+              vec3(),
+          ),
+          toVec3(
+            (pattern as { targetPosition?: Vec3Input; to?: Vec3Input; end?: Vec3Input }).targetPosition ??
+              (pattern as { targetPosition?: Vec3Input; to?: Vec3Input; end?: Vec3Input }).to ??
+              (pattern as { targetPosition?: Vec3Input; to?: Vec3Input; end?: Vec3Input }).end ??
+              vec3(),
+          ),
         ]
       : undefined);
 
@@ -99,8 +115,8 @@ function normalizeObstacle(entry: ObstacleFixtureEntry, index: number): Obstacle
     blocksMovement: entry.blocksMovement ?? !isHazard,
     active: entry.active ?? !isHazard,
     movementPattern: normalizeMovementPattern(entry.movementPattern),
-    hazardSchedule: (entry as any).schedule ?? entry.hazardSchedule ?? null,
-    hazardEffects: (entry as any).effects ?? entry.hazardEffects ?? null,
+    hazardSchedule: (entry as { schedule?: ObstacleEntity['hazardSchedule'] }).schedule ?? entry.hazardSchedule ?? null,
+    hazardEffects: (entry as { effects?: ObstacleEntity['hazardEffects'] }).effects ?? entry.hazardEffects ?? null,
     durability: entry.durability,
     maxDurability: entry.maxDurability,
   };

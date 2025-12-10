@@ -15,7 +15,7 @@ export function applyDamageToObstacle(world: BattleWorld, obstacleId: string, am
 
   if (obs.durability <= 0) {
     // Remove obstacle from world (it will be absent from obstacles store)
-    world.world.remove(obs as any);
+    world.world.remove(obs);
     telemetry?.recordCoverDestroyed?.({
       frameIndex: world.state.frameIndex ?? 0,
       timestampMs: world.state.elapsedMs,

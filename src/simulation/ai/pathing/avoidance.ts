@@ -16,6 +16,16 @@ import {
 /** Reactive avoidance detection radius (increased for better wall awareness) */
 export const AVOIDANCE_RADIUS = 4.5;
 
+type RuntimeObstacle =
+  | {
+      position?: { x: number; y: number; z: number };
+      shape: { kind: 'circle'; radius: number };
+    }
+  | {
+      position?: { x: number; y: number; z: number };
+      shape: { kind: 'box'; halfWidth: number; halfDepth: number };
+    };
+
 /**
  * Computes an avoidance force vector based on proximity to static obstacles.
  * Uses a simple reactive model: if close to a wall/pillar, push away.
@@ -23,7 +33,7 @@ export const AVOIDANCE_RADIUS = 4.5;
  * @param pos - The current position of the entity.
  * @returns A force vector to steer away from obstacles.
  */
-export function computeAvoidance(pos: Vec3, obstacles?: Array<{ position?: { x: number; y: number; z: number }; shape?: any } | null>): Vec3 {
+export function computeAvoidance(pos: Vec3, obstacles?: Array<RuntimeObstacle | null>): Vec3 {
   let avoid = vec3(0, 0, 0);
 
   for (const wall of ARENA_WALLS) {

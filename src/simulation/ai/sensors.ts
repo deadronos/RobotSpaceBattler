@@ -1,11 +1,7 @@
-import { EnemyMemoryEntry, RobotEntity, BattleWorld } from '../../ecs/world';
-import {
-  cloneVec3,
-  distanceSquaredVec3,
-  Vec3,
-} from '../../lib/math/vec3';
+import { BattleWorld, EnemyMemoryEntry, RobotEntity } from '../../ecs/world';
+import { cloneVec3, distanceSquaredVec3,Vec3 } from '../../lib/math/vec3';
 import { isActiveRobot } from '../../lib/robotHelpers';
-import { isLineOfSightBlockedRuntime } from '../environment/arenaGeometry';
+import { isLineOfSightBlocked, isLineOfSightBlockedRuntime } from '../environment/arenaGeometry';
 
 const SENSOR_RANGE = 38;
 const SENSOR_RANGE_SQ = SENSOR_RANGE * SENSOR_RANGE;

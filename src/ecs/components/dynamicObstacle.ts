@@ -1,7 +1,6 @@
 import { Vec3, vec3 } from '../../lib/math/vec3';
+import { HazardEffect,HazardSchedule } from './hazardZone';
 import { MovementPattern } from './movementPattern';
-import { HazardSchedule, HazardEffect } from './hazardZone';
-import { DestructibleCover } from './destructibleCover';
 
 export type ObstacleShape =
   | { kind: 'box'; halfWidth: number; halfDepth: number; center?: Vec3 }

@@ -41,9 +41,6 @@ export interface DeathEvent {
   attackerId?: string;
 }
 
-/** Union of all possible telemetry events. */
-export type TelemetryEvent = SpawnEvent | FireEvent | DamageEvent | DeathEvent;
-
 /** Event for obstacle movement */
 export interface ObstacleMoveEvent {
   type: 'obstacle:move';

@@ -1,5 +1,6 @@
-import { Vec3, vec3 } from '../../lib/math/vec3';
 import { Ray } from '@dimforge/rapier3d-compat';
+
+import { Vec3, vec3 } from '../../lib/math/vec3';
 
 /**
  * Definition of a rectangular arena wall.
@@ -181,15 +182,24 @@ export function isLineOfSightBlockedRuntime(
   start: Vec3,
   end: Vec3,
   options?: {
-    obstacles?: Array<{ blocksVision?: boolean; active?: boolean; shape?: any }>;
-    rapierWorld?: any;
+    obstacles?: Array<{
+      blocksVision?: boolean;
+      active?: boolean;
+      shape?:
+        | { kind: 'box'; halfWidth: number; halfDepth: number; center?: { x: number; z: number } }
+        | { kind: 'circle'; radius: number; center?: { x: number; z: number } };
+      position?: { x: number; y?: number; z: number };
+    }>;
+    rapierWorld?: {
+      castRayAndGetNormal?: (ray: Ray, maxToi: number, solid: boolean) => { toi: number } | null;
+    };
   },
 ): boolean {
   // First check static geometry
   if (isLineOfSightBlocked(start, end)) return true;
 
   // If a rapier world is provided prefer raycast checks against the physics world
-  const rapierWorld = (options && (options as any).rapierWorld) || undefined;
+  const rapierWorld = options?.rapierWorld;
   if (rapierWorld && typeof rapierWorld.castRayAndGetNormal === 'function') {
     const dx = end.x - start.x;
     const dy = end.y - start.y;
@@ -197,9 +207,7 @@ export function isLineOfSightBlockedRuntime(
     const maxDist = Math.sqrt(dx * dx + dy * dy + dz * dz);
     if (maxDist > EPSILON) {
       const dir = { x: dx / maxDist, y: dy / maxDist, z: dz / maxDist };
-      // Use same defensive Ray creation as physicsQueryService
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ray = new (Ray as any)(start, dir);
+      const ray = new Ray(start, dir);
       const hit = rapierWorld.castRayAndGetNormal(ray, maxDist, true, undefined, undefined);
       if (hit) return true;
     }
@@ -214,13 +222,13 @@ export function isLineOfSightBlockedRuntime(
       if (!shape) continue;
 
       if (shape.kind === 'box') {
-        const cx = (shape.center && shape.center.x != null) ? shape.center.x : (obs as any).position?.x ?? 0;
-        const cz = (shape.center && shape.center.z != null) ? shape.center.z : (obs as any).position?.z ?? 0;
+        const cx = shape.center?.x ?? obs.position?.x ?? 0;
+        const cz = shape.center?.z ?? obs.position?.z ?? 0;
         const wall = { x: cx, z: cz, halfWidth: shape.halfWidth, halfDepth: shape.halfDepth };
         if (segmentIntersectsAabb2D(start, end, wall)) return true;
       } else if (shape.kind === 'circle') {
-        const cx = (shape.center && shape.center.x != null) ? shape.center.x : (obs as any).position?.x ?? 0;
-        const cz = (shape.center && shape.center.z != null) ? shape.center.z : (obs as any).position?.z ?? 0;
+        const cx = shape.center?.x ?? obs.position?.x ?? 0;
+        const cz = shape.center?.z ?? obs.position?.z ?? 0;
         const pillar = { x: cx, z: cz, radius: shape.radius };
         if (segmentIntersectsCircle2D(start, end, pillar)) return true;
       }

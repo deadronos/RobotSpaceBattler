@@ -1,5 +1,5 @@
 import { RobotEntity } from '../../ecs/world';
-import { useTelemetryStore } from '../../state/telemetryStore';
+import { TelemetryEvent, useTelemetryStore } from '../../state/telemetryStore';
 import {
   DamageEventInput,
   DeathEventInput,
@@ -64,7 +64,7 @@ export function createTelemetryPort(): TelemetryPort {
       });
     },
     recordObstacleMove: (event) => {
-      useTelemetryStore.getState().recordEvent({
+      const telemetryEvent: TelemetryEvent = {
         type: 'obstacle:move',
         timestampMs: event.timestampMs,
         sequenceId: nextSequence(),
@@ -72,35 +72,39 @@ export function createTelemetryPort(): TelemetryPort {
         obstacleId: event.obstacleId,
         position: event.position,
         orientation: event.orientation,
-      } as any);
+      };
+      useTelemetryStore.getState().recordEvent(telemetryEvent);
     },
     recordHazardActivate: (event) => {
-      useTelemetryStore.getState().recordEvent({
+      const telemetryEvent: TelemetryEvent = {
         type: 'hazard:activate',
         timestampMs: event.timestampMs,
         sequenceId: nextSequence(),
         frameIndex: event.frameIndex,
         obstacleId: event.obstacleId,
-      } as any);
+      };
+      useTelemetryStore.getState().recordEvent(telemetryEvent);
     },
     recordHazardDeactivate: (event) => {
-      useTelemetryStore.getState().recordEvent({
+      const telemetryEvent: TelemetryEvent = {
         type: 'hazard:deactivate',
         timestampMs: event.timestampMs,
         sequenceId: nextSequence(),
         frameIndex: event.frameIndex,
         obstacleId: event.obstacleId,
-      } as any);
+      };
+      useTelemetryStore.getState().recordEvent(telemetryEvent);
     },
     recordCoverDestroyed: (event) => {
-      useTelemetryStore.getState().recordEvent({
+      const telemetryEvent: TelemetryEvent = {
         type: 'cover:destroyed',
         timestampMs: event.timestampMs,
         sequenceId: nextSequence(),
         frameIndex: event.frameIndex,
         obstacleId: event.obstacleId,
         destroyedBy: event.destroyedBy,
-      } as any);
+      };
+      useTelemetryStore.getState().recordEvent(telemetryEvent);
     },
   };
 }

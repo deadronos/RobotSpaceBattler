@@ -1,6 +1,5 @@
 import { BattleWorld } from '../../ecs/world';
 import { TelemetryPort } from '../../runtime/simulation/ports';
-import { distanceSquaredVec3 } from '../../lib/math/vec3';
 
 export function updateHazardSystem(world: BattleWorld, deltaMs: number, telemetry?: TelemetryPort): void {
   const now = world.state.elapsedMs;
@@ -60,7 +59,7 @@ export function updateHazardSystem(world: BattleWorld, deltaMs: number, telemetr
         // check containment in XZ plane
         let inside = false;
         const robPos = robot.position;
-        const obsPos = (obstacle as any).position || { x: 0, z: 0 };
+        const obsPos = obstacle.position ?? { x: 0, y: 0, z: 0 };
 
         if (obstacle.shape.kind === 'circle') {
           const dx = robPos.x - obsPos.x;

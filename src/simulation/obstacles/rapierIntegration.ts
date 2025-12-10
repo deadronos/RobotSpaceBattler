@@ -1,12 +1,38 @@
 import { BattleWorld, ObstacleEntity } from '../../ecs/world';
 
+type RapierObstacleApi = Partial<{
+  createObstacleCollider: (
+    id: string,
+    shape: ObstacleEntity['shape'],
+    position: ObstacleEntity['position'],
+    orientation: number,
+  ) => unknown;
+  createKinematicBody: (
+    id: string,
+    shape: ObstacleEntity['shape'],
+    position: ObstacleEntity['position'],
+    orientation: number,
+  ) => unknown;
+  updateObstacleTransform: (
+    id: string,
+    position: ObstacleEntity['position'],
+    orientation: number,
+  ) => void;
+  setKinematicBodyTransform: (
+    id: string,
+    position: ObstacleEntity['position'],
+    orientation: number,
+  ) => void;
+  removeObstacle: (id: string) => void;
+}>;
+
 // Use a weak map to avoid mutating BattleWorld runtime types.
-const bindings = new WeakMap<BattleWorld, Map<string, any>>();
+const bindings = new WeakMap<BattleWorld, Map<string, unknown>>();
 
 export function getRapierBindings(world: BattleWorld) {
   let map = bindings.get(world);
   if (!map) {
-    map = new Map<string, any>();
+    map = new Map<string, unknown>();
     bindings.set(world, map);
   }
   return map;
@@ -18,7 +44,7 @@ export function getRapierBindings(world: BattleWorld) {
  * to avoid hard dependencies on Rapier's concrete API in tests.
  */
 export function syncObstaclesToRapier(world: BattleWorld) {
-  const rapierWorld = world.rapierWorld as any;
+  const rapierWorld = world.rapierWorld as RapierObstacleApi | undefined;
   if (!rapierWorld) return;
 
   const map = getRapierBindings(world);
@@ -48,7 +74,7 @@ export function syncObstaclesToRapier(world: BattleWorld) {
  * tries common Rapier-style callbacks when found.
  */
 export function updateRapierObstacleTransforms(world: BattleWorld) {
-  const rapierWorld = world.rapierWorld as any;
+  const rapierWorld = world.rapierWorld as RapierObstacleApi | undefined;
   if (!rapierWorld) return;
 
   const map = getRapierBindings(world);
@@ -69,7 +95,7 @@ export function updateRapierObstacleTransforms(world: BattleWorld) {
 export function clearRapierBindings(world: BattleWorld) {
   const map = bindings.get(world);
   if (!map) return;
-  const rapierWorld = world.rapierWorld as any;
+  const rapierWorld = world.rapierWorld as RapierObstacleApi | undefined;
   // Allow removal if rapierWorld offers it
   for (const id of map.keys()) {
     if (typeof rapierWorld.removeObstacle === 'function') {

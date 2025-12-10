@@ -1,7 +1,7 @@
-import { BattleWorld, ObstacleEntity } from '../../ecs/world';
+import { BattleWorld } from '../../ecs/world';
+import { cloneVec3, subtractVec3, Vec3, vec3 } from '../../lib/math/vec3';
 import { TelemetryPort } from '../../runtime/simulation/ports';
 import { updateRapierObstacleTransforms } from './rapierIntegration';
-import { Vec3, vec3, addVec3, subtractVec3, cloneVec3 } from '../../lib/math/vec3';
 
 function segmentLengths(points: Vec3[]): number[] {
   const lens: number[] = [];
@@ -57,11 +57,9 @@ export function updateObstacleMovement(world: BattleWorld, deltaMs: number, tele
         const deltaSeconds = deltaMs / 1000;
 
         // Initialize origin offset relative to pivot once
-        if (p.originOffset == null) {
-          p.originOffset = subtractVec3(obstacle.position, p.pivot);
-        }
+        p.originOffset = p.originOffset ?? subtractVec3(obstacle.position, p.pivot);
 
-        const currentAngle = (p.progress ?? 0) * twoPi;
+        const currentAngle = p.progress * twoPi;
         const deltaAngle = (p.direction ?? 1) * (p.speed ?? 0) * deltaSeconds;
         let nextAngle = currentAngle + deltaAngle;
 
@@ -82,7 +80,7 @@ export function updateObstacleMovement(world: BattleWorld, deltaMs: number, tele
 
         p.progress = nextAngle / twoPi;
 
-        const off = p.originOffset as any;
+        const off = p.originOffset;
         const pivot = p.pivot;
         const cosA = Math.cos(nextAngle);
         const sinA = Math.sin(nextAngle);
@@ -165,7 +163,7 @@ export function updateObstacleMovement(world: BattleWorld, deltaMs: number, tele
   // If a Rapier world is attached, sync obstacle transforms so physics queries see runtime geometry.
   try {
     updateRapierObstacleTransforms(world);
-  } catch (err) {
+  } catch {
     // Defensive: avoid throwing from movement update if Rapier binding throws for any reason
   }
 }
