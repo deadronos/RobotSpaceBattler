@@ -63,6 +63,17 @@ As a system administrator, I want pathfinding to operate efficiently with minima
 - What happens when no valid path exists to the target? (Robot should move to nearest accessible point with line-of-sight to target)
 - How does the system handle robots spawning in corners or tight spaces? (Initial path should include local maneuvering to exit tight spaces)
 - What happens when dynamic obstacles block all paths to a target? (Robot should adopt fallback behavior like returning to spawn or defensive positioning)
+- What happens if path recalculation exceeds the 100ms threshold? (Robot continues using stale path, marks behavior as degraded, retries recalculation on next event)
+
+## Clarifications
+
+### Session 2025-12-10
+
+- Q: How should the pathfinding system detect when a path needs recalculation? → A: Reactive (event-driven) - Recalculate only when obstacle movement/spawn events occur
+- Q: How should the 5MB memory budget be allocated across pathfinding data structures? → A: Dynamic allocation based on arena complexity, but total ≤5MB
+- Q: How should pathfinding coordinate with conflicting AI behaviors? → A: Concurrent execution - All behaviors run simultaneously, final movement is weighted blend
+- Q: What should happen if path recalculation exceeds 100ms threshold? → A: Fallback to stale path, continue using old path, mark as degraded behavior
+- Q: What clearance radius should be used for path generation given robot collision radius of 0.891m? → A: 0.95m
 
 ## Requirements *(mandatory)*
 
@@ -71,12 +82,12 @@ As a system administrator, I want pathfinding to operate efficiently with minima
 - **FR-001**: System MUST calculate navigation paths for robots that avoid static arena geometry (walls, pillars, central obstacles)
 - **FR-002**: System MUST find the shortest valid path between any two walkable locations in the arena
 - **FR-003**: System MUST generate smooth, curved paths around obstacles rather than grid-based right-angle movements
-- **FR-004**: System MUST recalculate paths when obstacles block the current route or target location changes
+- **FR-004**: System MUST recalculate paths reactively when obstacle movement/spawn events occur or target location changes (event-driven invalidation, not continuous polling)
 - **FR-005**: System MUST support simultaneous path calculations for up to 20 robots without exceeding performance budgets
 - **FR-006**: System MUST handle scenarios where no direct path exists by selecting the nearest accessible location
-- **FR-007**: System MUST prevent robots from attempting to path through solid obstacles or out of arena bounds
-- **FR-008**: Pathfinding data MUST be memory efficient, consuming less than 5MB of runtime memory
-- **FR-009**: System MUST integrate with existing robot AI behaviors (targeting, combat, retreat)
+- **FR-007**: System MUST prevent robots from attempting to path through solid obstacles or out of arena bounds (using 0.95m clearance radius for path validation)
+- **FR-008**: Pathfinding data MUST be memory efficient, consuming less than 5MB of runtime memory (allocated dynamically based on arena complexity across mesh, paths, and cache)
+- **FR-009**: System MUST integrate with existing robot AI behaviors (targeting, combat, retreat) using concurrent execution where all behaviors contribute to final movement as a weighted blend
 - **FR-010**: System MUST detect and resolve situations where multiple robots compete for the same narrow passage
 
 ### Key Entities *(include if feature involves data)*
@@ -103,7 +114,7 @@ As a system administrator, I want pathfinding to operate efficiently with minima
 ## Assumptions *(document reasonable defaults)*
 
 - Arena geometry is known at match start and remains static (walls, pillars, bounds)
-- Robots have a standard collision radius of 0.891m for path clearance calculations
+- Robots have a standard collision radius of 0.891m; navigation mesh uses 0.95m clearance radius for path generation (includes safety margin)
 - Dynamic obstacles (moving barriers, hazards) will trigger path recalculation but are not part of the base navigation mesh
 - Target frame rate is 60fps, allocating approximately 16ms per frame budget
 - Path calculations may be distributed across multiple frames if needed, with stale paths remaining valid for up to 500ms
