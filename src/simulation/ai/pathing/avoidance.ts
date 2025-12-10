@@ -16,6 +16,15 @@ import {
 /** Reactive avoidance detection radius (increased for better wall awareness) */
 export const AVOIDANCE_RADIUS = 4.5;
 
+type RuntimeObstacle = {
+  position?: { x: number; y: number; z: number };
+  shape?:
+    | { kind: 'circle'; radius: number }
+    | { kind: 'box'; halfWidth: number; halfDepth: number };
+  blocksMovement?: boolean;
+  blocksVision?: boolean;
+};
+
 /**
  * Computes an avoidance force vector based on proximity to static obstacles.
  * Uses a simple reactive model: if close to a wall/pillar, push away.
@@ -23,7 +32,7 @@ export const AVOIDANCE_RADIUS = 4.5;
  * @param pos - The current position of the entity.
  * @returns A force vector to steer away from obstacles.
  */
-export function computeAvoidance(pos: Vec3): Vec3 {
+export function computeAvoidance(pos: Vec3, obstacles?: Array<RuntimeObstacle | null>): Vec3 {
   let avoid = vec3(0, 0, 0);
 
   for (const wall of ARENA_WALLS) {
@@ -66,6 +75,50 @@ export function computeAvoidance(pos: Vec3): Vec3 {
       const dz = pos.z - pillar.z;
       const push = normalizeVec3({ x: dx, y: 0, z: dz });
       avoid = addVec3(avoid, scaleVec3(push, strength));
+    }
+  }
+
+  // Consider runtime obstacles if provided
+  if (obstacles && obstacles.length > 0) {
+    for (const obs of obstacles) {
+      if (!obs || !obs.shape) continue;
+      const obsPos = obs.position ?? { x: 0, y: 0, z: 0 };
+
+      if (obs.shape.kind === 'circle') {
+        const dx = pos.x - obsPos.x;
+        const dz = pos.z - obsPos.z;
+        const distToCenter = Math.sqrt(dx * dx + dz * dz);
+        const dist = distToCenter - ((obs.shape.radius ?? 0) + ROBOT_RADIUS);
+        if (dist < AVOIDANCE_RADIUS) {
+          const strength = (AVOIDANCE_RADIUS - Math.max(dist, 0)) / AVOIDANCE_RADIUS;
+          const push = normalizeVec3({ x: dx, y: 0, z: dz });
+          avoid = addVec3(avoid, scaleVec3(push, strength));
+        }
+      } else if (obs.shape.kind === 'box') {
+        const closest = closestPointOnAABB(
+          pos,
+          { x: obsPos.x, y: 0, z: obsPos.z },
+          (obs.shape.halfWidth ?? 0) + ROBOT_RADIUS,
+          (obs.shape.halfDepth ?? 0) + ROBOT_RADIUS,
+        );
+
+        const dist = distanceVec3(pos, closest);
+
+        if (dist < AVOIDANCE_RADIUS) {
+          const strength = (AVOIDANCE_RADIUS - Math.max(dist, 0)) / AVOIDANCE_RADIUS;
+          let pushDir: Vec3;
+
+          if (dist > 1e-6) {
+            const dx = pos.x - closest.x;
+            const dz = pos.z - closest.z;
+            pushDir = normalizeVec3({ x: dx, y: 0, z: dz });
+          } else {
+            pushDir = normalizeVec3({ x: pos.x - obsPos.x, y: 0, z: pos.z - obsPos.z });
+          }
+
+          avoid = addVec3(avoid, scaleVec3(pushDir, strength));
+        }
+      }
     }
   }
 

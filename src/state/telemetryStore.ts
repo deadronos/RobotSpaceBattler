@@ -41,8 +41,54 @@ export interface DeathEvent {
   attackerId?: string;
 }
 
-/** Union of all possible telemetry events. */
-export type TelemetryEvent = SpawnEvent | FireEvent | DamageEvent | DeathEvent;
+/** Event for obstacle movement */
+export interface ObstacleMoveEvent {
+  type: 'obstacle:move';
+  timestampMs: number;
+  sequenceId: number;
+  frameIndex?: number;
+  obstacleId: string;
+  position?: { x: number; y: number; z: number };
+  orientation?: number;
+}
+
+/** Event for hazard activation */
+export interface HazardActivateEvent {
+  type: 'hazard:activate';
+  timestampMs: number;
+  sequenceId: number;
+  frameIndex?: number;
+  obstacleId: string;
+}
+
+/** Event for hazard deactivation */
+export interface HazardDeactivateEvent {
+  type: 'hazard:deactivate';
+  timestampMs: number;
+  sequenceId: number;
+  frameIndex?: number;
+  obstacleId: string;
+}
+
+/** Event for destructible cover destroyed */
+export interface CoverDestroyedEvent {
+  type: 'cover:destroyed';
+  timestampMs: number;
+  sequenceId: number;
+  frameIndex?: number;
+  obstacleId: string;
+  destroyedBy?: string;
+}
+
+export type TelemetryEvent =
+  | SpawnEvent
+  | FireEvent
+  | DamageEvent
+  | DeathEvent
+  | ObstacleMoveEvent
+  | HazardActivateEvent
+  | HazardDeactivateEvent
+  | CoverDestroyedEvent;
 
 /** Aggregated stats for a single robot. */
 export interface RobotTelemetryStats {
@@ -194,6 +240,12 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
           }
           break;
         }
+        case 'obstacle:move':
+        case 'hazard:activate':
+        case 'hazard:deactivate':
+        case 'cover:destroyed':
+          // These events are recorded but do not affect robot/team aggregates
+          break;
         default:
           break;
       }

@@ -78,7 +78,8 @@ export function updateMovementSystem(world: BattleWorld, deltaSeconds: number): 
   robots.entities.forEach((robot) => {
     robot.fireCooldown = Math.max(0, robot.fireCooldown - deltaSeconds);
 
-    const displacement = scaleVec3(robot.velocity, deltaSeconds);
+    const multiplier = robot.slowMultiplier ?? 1;
+    const displacement = scaleVec3(robot.velocity, deltaSeconds * multiplier);
     addInPlaceVec3(robot.position, displacement);
 
     // Apply collision detection
@@ -88,6 +89,6 @@ export function updateMovementSystem(world: BattleWorld, deltaSeconds: number): 
     robot.position.y = 0;
 
     scaleInPlaceVec3(robot.velocity, FRICTION);
-    robot.speed = lengthVec3(robot.velocity);
+    robot.speed = lengthVec3(robot.velocity) * multiplier;
   });
 }
