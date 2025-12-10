@@ -5,14 +5,14 @@ import { updateCombatSystem } from '../../ecs/systems/combatSystem';
 import { updateEffectSystem } from '../../ecs/systems/effectSystem';
 import { updateMovementSystem } from '../../ecs/systems/movementSystem';
 import { updateProjectileSystem } from '../../ecs/systems/projectileSystem';
-import { spawnTeams } from '../../ecs/systems/spawnSystem';
-import { BattleWorld, resetBattleWorld, TeamId } from '../../ecs/world';
+import { BattleWorld, TeamId } from '../../ecs/world';
 import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
 import { syncObstaclesToRapier, clearRapierBindings } from '../../simulation/obstacles/rapierIntegration';
 import { createXorShift32 } from '../../lib/random/xorshift';
 import { isActiveRobot } from '../../lib/robotHelpers';
 import { MatchStateMachine } from '../state/matchStateMachine';
 import { TelemetryPort } from './ports';
+import { spawnMatch as spawnMatchWithFixture, MatchSpawnOptions } from '../../simulation/match/matchSpawner';
 
 const VICTORY_DELAY_MS = 5000;
 
@@ -26,6 +26,8 @@ export interface BattleRunnerOptions {
   telemetry: TelemetryPort;
   /** State machine managing match lifecycle. */
   matchMachine: MatchStateMachine;
+  /** Optional obstacle fixture data to seed matches. */
+  obstacleFixture?: MatchSpawnOptions['obstacleFixture'];
 }
 
 /**
@@ -94,9 +96,10 @@ export function createBattleRunner(
   function spawnMatch(nextSeed?: number) {
     const matchSeed = nextSeed ?? Math.floor(rng.next() * 0xffffffff);
     telemetry.reset(`match-${matchSeed}`);
-    resetBattleWorld(world);
-    spawnTeams(world, {
+    spawnMatchWithFixture(world, {
       seed: matchSeed,
+      resetWorld: true,
+      obstacleFixture: options.obstacleFixture,
       onRobotSpawn: (robot) => telemetry.recordSpawn(robot, world.state.elapsedMs),
     });
     matchMachine.reset();

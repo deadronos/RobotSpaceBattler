@@ -7,6 +7,7 @@ import { isActiveRobot } from './lib/robotHelpers';
 import { TEAM_CONFIGS } from './lib/teamConfig';
 import { BattleRunner } from './runtime/simulation/battleRunner';
 import { createTelemetryPort } from './runtime/simulation/telemetryAdapter';
+import { ObstacleFixture } from './simulation/match/matchSpawner';
 import {
   createMatchStateMachine,
   MatchStateSnapshot,
@@ -41,6 +42,7 @@ export default function App() {
     restartTimerMs: null,
     winner: null,
   });
+  const [obstacleFixture, setObstacleFixture] = useState<ObstacleFixture | undefined>(undefined);
 
   const matchMachine = useMemo(
     () =>
@@ -54,6 +56,25 @@ export default function App() {
   useEffect(() => {
     setMatchSnapshot(matchMachine.getSnapshot());
   }, [matchMachine]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/specs/fixtures/dynamic-arena-sample.json')
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`Failed to load obstacle fixture: ${res.status}`);
+        return (await res.json()) as ObstacleFixture;
+      })
+      .then((fixture) => {
+        if (!cancelled) setObstacleFixture(fixture);
+      })
+      .catch(() => {
+        if (!cancelled) setObstacleFixture(undefined);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const runnerRef = useRef<BattleRunner | null>(null);
   const telemetryEvents = useTelemetryStore((state) => state.events);
@@ -110,6 +131,7 @@ export default function App() {
           matchMachine={matchMachine}
           telemetry={telemetryPort}
           onRunnerReady={handleRunnerReady}
+          obstacleFixture={obstacleFixture}
         />
       </Suspense>
       <div
