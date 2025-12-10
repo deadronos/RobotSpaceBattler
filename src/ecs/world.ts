@@ -103,6 +103,12 @@ export interface RobotEntity {
   spawnIndex: number;
   /** Timestamp of the last damage received. */
   lastDamageTimestamp: number;
+  /** Optional movement slow multiplier applied to the robot (1.0 = normal speed). */
+  slowMultiplier?: number;
+  /** Optional status flags applied to the robot (e.g., 'stunned', 'hazard:<id>'). */
+  statusFlags?: string[];
+  /** Optional per-flag expiry timers. Each entry expires at expiresAt (ms) and is removed automatically. */
+  statusExpirations?: Array<{ flag: string; expiresAt: number }>;
 }
 
 /**

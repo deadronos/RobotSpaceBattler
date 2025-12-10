@@ -249,7 +249,7 @@ export function updateProjectileSystem(
       if (collided) {
         // Apply damage to destructible cover on hit
         if (obs.obstacleType === 'destructible') {
-          applyDamageToObstacle(world, obs.id, projectile.damage);
+          applyDamageToObstacle(world, obs.id, projectile.damage, telemetry);
         }
 
         world.removeProjectile(projectile);
@@ -300,7 +300,7 @@ export function updateProjectileSystem(
                 const falloff = Math.max(0, 1 - dist / radius);
                 const baseDamage = savedProjectileDamage * falloff;
                 
-                applyDamageToObstacle(world, obs.id, baseDamage);
+                applyDamageToObstacle(world, obs.id, baseDamage, telemetry);
               }
             }
           }

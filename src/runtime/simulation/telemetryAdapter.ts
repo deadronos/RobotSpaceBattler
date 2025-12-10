@@ -63,5 +63,44 @@ export function createTelemetryPort(): TelemetryPort {
         teamId: event.teamId,
       });
     },
+    recordObstacleMove: (event) => {
+      useTelemetryStore.getState().recordEvent({
+        type: 'obstacle:move',
+        timestampMs: event.timestampMs,
+        sequenceId: nextSequence(),
+        frameIndex: event.frameIndex,
+        obstacleId: event.obstacleId,
+        position: event.position,
+        orientation: event.orientation,
+      } as any);
+    },
+    recordHazardActivate: (event) => {
+      useTelemetryStore.getState().recordEvent({
+        type: 'hazard:activate',
+        timestampMs: event.timestampMs,
+        sequenceId: nextSequence(),
+        frameIndex: event.frameIndex,
+        obstacleId: event.obstacleId,
+      } as any);
+    },
+    recordHazardDeactivate: (event) => {
+      useTelemetryStore.getState().recordEvent({
+        type: 'hazard:deactivate',
+        timestampMs: event.timestampMs,
+        sequenceId: nextSequence(),
+        frameIndex: event.frameIndex,
+        obstacleId: event.obstacleId,
+      } as any);
+    },
+    recordCoverDestroyed: (event) => {
+      useTelemetryStore.getState().recordEvent({
+        type: 'cover:destroyed',
+        timestampMs: event.timestampMs,
+        sequenceId: nextSequence(),
+        frameIndex: event.frameIndex,
+        obstacleId: event.obstacleId,
+        destroyedBy: event.destroyedBy,
+      } as any);
+    },
   };
 }

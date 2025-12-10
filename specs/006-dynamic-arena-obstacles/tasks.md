@@ -33,7 +33,7 @@ Purpose: Create types, fixtures and test harness updates required to implement d
 
 Purpose: Implement deterministic runtime behaviour (movement, runtime LOS, hazard schedules, destruction) and expose test hooks.
 
-  - [x] T004 [P] Add rotation & oscillation movement patterns to movement system
+ - [x] T004 [P] Add rotation & oscillation movement patterns to movement system
   - Files: `src/simulation/obstacles/movementSystem.ts`, tests: `tests/simulation/obstaclesMovementRotation.spec.ts`
   - Outcome: Movement patterns support `rotation` and `oscillate` and are deterministic on tick stepping.
 
@@ -41,19 +41,19 @@ Purpose: Implement deterministic runtime behaviour (movement, runtime LOS, hazar
   - Files: `src/simulation/obstacles/rapierIntegration.ts`, update `battleRunner`/world Rapier binding
   - Outcome: Rapier world has kinematic colliders for obstacles so raycasts and physics queries see runtime geometry.
 
-- [ ] T006 [P] Support Rapier-backed LOS checks and keep static fallback
+ - [x] T006 [P] Support Rapier-backed LOS checks and keep static fallback
   - Files: `src/simulation/environment/arenaGeometry.ts`, tests: `tests/simulation/arenaGeometryRapier.spec.ts`
   - Outcome: `isLineOfSightBlockedRuntime` prefers Rapier raycasts when `rapierWorld` available; falls back to fast geometry checks.
 
-- [ ] T007 [P] Integrate destructible cover into projectile/combat pipeline
+ - [x] T007 [P] Integrate destructible cover into projectile/combat pipeline
   - Files: `src/ecs/systems/projectileSystem.ts`, `src/simulation/obstacles/destructibleSystem.ts`, tests: `tests/simulation/projectileCoverInteraction.spec.ts`
   - Outcome: Projectile impacts reduce cover durability, emit `cover:damaged`/`cover:destroyed` events and update LOS/pathing.
 
-- [ ] T008 [P] Extend hazard system to apply slow/status effects (in addition to damage)
+- [x] T008 [P] Extend hazard system to apply slow/status effects (in addition to damage)
   - Files: `src/simulation/obstacles/hazardSystem.ts`, tests: `tests/simulation/hazardSlow.spec.ts`
   - Outcome: Hazard schedule supports damage and slow/status effects with deterministic timing.
 
-- [ ] T009 [P] Instrument telemetry for obstacle lifecycle events
+ - [x] T009 [P] Instrument telemetry for obstacle lifecycle events
   - Files: `src/runtime/simulation/ports.ts`, `src/runtime/simulation/telemetry/obstacleTelemetry.ts`, tests: `tests/simulation/telemetry.obstacles.spec.ts`
   - Outcome: `obstacle:move`, `hazard:activate`, `hazard:deactivate`, and `cover:destroyed` events are recorded with `frameIndex` and `timestampMs`.
 
@@ -69,7 +69,7 @@ Independent Test: Headless integration verifying a moving barrier blocks LOS and
 
 ### Tests
 
-- [ ] T010 [US1] [P] Add integration test: moving barrier blocks LOS and projectiles
+- [x] T010 [US1] [P] Add integration test: moving barrier blocks LOS and projectiles
   - File: `tests/integration/movingBarrierBlock.spec.ts`
   - Verify: a projectile fired across a barrier is blocked while barrier intersects the shot path; recorded via telemetry.
 
