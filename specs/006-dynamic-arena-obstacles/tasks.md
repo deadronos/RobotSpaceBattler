@@ -101,11 +101,11 @@ Goal: Designers can place and configure dynamic obstacles via fixtures and edito
 
 Independent Test: Developer loads sample fixture, modifies obstacle parameters, and sees corresponding runtime behaviour.
 
-- [ ] T015 [US2] [P] Add Obstacle Inspector UI for authoring obstacle parameters
-  - Files: `src/ui/inspector/ObstacleInspector.tsx`, `src/components/Debug/ObstacleEditor.tsx`
+- [x] T015 [US2] [P] Add Obstacle Inspector UI for authoring obstacle parameters
+  - Files: `src/ui/inspector/ObstacleInspector.tsx`, `src/components/debug/ObstacleEditor.tsx`
   - Outcome: Designer can edit movement pattern, hazard schedule, durability in-the-browser.
 
-- [ ] T016 [US2] [P] Add fixture load/save integration for the editor
+- [x] T016 [US2] [P] Add fixture load/save integration for the editor
   - Files: `src/ui/fixtureLoader.ts`, `specs/fixtures/dynamic-arena-sample.json`
   - Outcome: Editor can load/save obstacle configurations used by match spawner.
 

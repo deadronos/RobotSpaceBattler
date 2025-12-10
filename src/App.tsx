@@ -13,6 +13,7 @@ import {
 } from './runtime/state/matchStateMachine';
 import { ObstacleFixture } from './simulation/match/matchSpawner';
 import { useTelemetryStore } from './state/telemetryStore';
+import { ObstacleEditor } from './components/debug/ObstacleEditor';
 import { ObstacleSpawner } from './components/debug/ObstacleSpawner';
 
 function formatStatus({
@@ -140,10 +141,14 @@ export default function App() {
           position: 'absolute',
           left: 16,
           top: 72,
-          maxWidth: 380,
+          maxWidth: 440,
           zIndex: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
         }}
       >
+        <ObstacleEditor world={battleWorld} sampleFixture={obstacleFixture} />
         <ObstacleSpawner world={battleWorld} />
       </div>
       <div
