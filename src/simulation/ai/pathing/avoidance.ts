@@ -13,7 +13,7 @@ import {
 } from "../../environment/arenaGeometry";
 
 /** Reactive avoidance detection radius - reduced for tight wall proximity */
-export const AVOIDANCE_RADIUS = 1.2;
+export const AVOIDANCE_RADIUS = 0.1;
 
 type RuntimeObstacle = {
   position?: { x: number; y: number; z: number };

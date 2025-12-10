@@ -1,5 +1,9 @@
 AI: Roaming & Wall-Awareness
 
+> **Physics Scale Reference**: See
+> [006-dynamic-arena-obstacles/spec.md](../006-dynamic-arena-obstacles/spec.md#physics-scale--collider-design-decisions-2025-12-10)
+> for world unit scale (1:1 meters) and collider sizing decisions.
+
 Status: Implemented (merged into core AI systems)
 
 ## Summary

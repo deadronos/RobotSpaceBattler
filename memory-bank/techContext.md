@@ -22,3 +22,4 @@ Known constraints
 
 - Rapier APIs differ between test harness and runtime — code is defensive
 - Determinism requires avoiding Date.now()/Math.random() outside the seeded RNG
+- **Physics Scale**: 1 Rapier world unit = 1 meter (1:1 scale). See `specs/006-dynamic-arena-obstacles/spec.md` for collider sizing decisions.
