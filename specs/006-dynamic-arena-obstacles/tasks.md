@@ -125,11 +125,15 @@ Independent Test: Headless match where a barrier moves to block the planned path
   - File: `tests/integration/ai-reroute.spec.ts`
   - Verify: AI recomputes a new route within `<= 3` ticks or executes a fallback behaviour.
 
-- [ ] T019 [US3] Implement re-evaluation & pathfinder hook for dynamic obstacles
+- [x] T018 [US3] Add integration test: AI reroutes when path becomes blocked
+  - File: `tests/integration/ai-reroute.spec.ts`
+  - Verify: AI recomputes a new route within `<= 3` ticks or executes a fallback behaviour.
+
+- [x] T019 [US3] Implement re-evaluation & pathfinder hook for dynamic obstacles
   - Files: `src/simulation/ai/pathing/*` (planner adjustments or service), tests/integration
   - Outcome: AI will not remain permanently stuck — chooses alternate route or fallback.
 
-- [ ] T020 [US3] Add deadlock detection integration test (multi-obstacle timing)
+- [x] T020 [US3] Add deadlock detection integration test (multi-obstacle timing)
   - File: `tests/integration/ai-deadlock.spec.ts`
   - Verify: Scenes that temporarily trap robots resolve or trigger fallback, avoiding permanent deadlocks.
 
