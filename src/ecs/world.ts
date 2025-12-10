@@ -103,6 +103,12 @@ export interface RobotEntity {
   spawnIndex: number;
   /** Timestamp of the last damage received. */
   lastDamageTimestamp: number;
+  /** Optional movement slow multiplier applied to the robot (1.0 = normal speed). */
+  slowMultiplier?: number;
+  /** Optional status flags applied to the robot (e.g., 'stunned', 'hazard:<id>'). */
+  statusFlags?: string[];
+  /** Optional per-flag expiry timers. Each entry expires at expiresAt (ms) and is removed automatically. */
+  statusExpirations?: Array<{ flag: string; expiresAt: number }>;
 }
 
 /**
@@ -156,6 +162,58 @@ export interface ProjectileEntity {
 }
 
 /**
+ * Entity representing a static or dynamic obstacle in the battle arena.
+ */
+export interface ObstacleEntity {
+  /** Unique identifier for the obstacle. */
+  id: string;
+  /** Entity kind discriminator. */
+  kind: 'obstacle';
+  /** Obstacle subtype. */
+  obstacleType: 'barrier' | 'hazard' | 'destructible';
+  /** Current position. */
+  position: Vec3;
+  /** Orientation (rotation around Y axis) in radians. */
+  orientation?: number;
+  /** Shape metadata for blocking checks (box/circle). */
+  shape?:
+    | { kind: 'box'; halfWidth: number; halfDepth: number; center?: { x: number; z: number } }
+    | { kind: 'circle'; radius: number; center?: { x: number; z: number } };
+  /** Whether obstacle blocks line-of-sight. */
+  blocksVision?: boolean;
+  /** Whether obstacle blocks movement/traversal. */
+  blocksMovement?: boolean;
+  /** Current active state (hazard active/inactive or barrier present). */
+  active?: boolean;
+  /** Durability for destructible cover. */
+  durability?: number;
+  /** Optional max durability (if destructible). */
+  maxDurability?: number;
+  /** Optional movement pattern (inline). */
+  movementPattern?: {
+    patternType: 'linear' | 'rotation' | 'oscillate';
+    // linear
+    points?: Vec3[];
+    // rotation
+    pivot?: Vec3;
+    speed?: number; // units/sec or radians/sec for rotation
+    loop?: boolean;
+    pingPong?: boolean;
+    // deterministic offset (0..1) used to seed initial phase
+    phase?: number;
+    // internal: progress (0..1) and direction for ping-pong
+    progress?: number;
+    direction?: 1 | -1;
+    /** Cached offset from pivot for rotation patterns. */
+    originOffset?: Vec3;
+  } | null;
+    /** Hazard schedule (for hazard obstacles) */
+    hazardSchedule?: { periodMs: number; activeMs: number; offsetMs?: number } | null;
+    /** Effects applied while hazard is active */
+    hazardEffects?: Array<{ kind: 'damage' | 'slow' | 'status'; amount: number; perSecond?: boolean; durationMs?: number }> | null;
+}
+
+/**
  * Types of visual effects.
  */
 export type EffectType = 'explosion' | 'impact' | 'laser-impact';
@@ -189,7 +247,7 @@ export interface EffectEntity {
 /**
  * Union type of all entities in the battle.
  */
-export type BattleEntity = RobotEntity | ProjectileEntity | EffectEntity;
+export type BattleEntity = RobotEntity | ProjectileEntity | EffectEntity | ObstacleEntity;
 
 /**
  * A store for holding entities of a specific type.
@@ -212,6 +270,8 @@ export interface BattleWorldState {
   nextEffectId: number;
   /** Random seed for the battle. */
   seed: number;
+  /** Frame counter for telemetry. */
+  frameIndex: number;
 }
 
 /**
@@ -227,6 +287,8 @@ export interface BattleWorld {
   projectiles: Store<ProjectileEntity>;
   /** Store containing all effect entities. */
   effects: Store<EffectEntity>;
+  /** Store containing all obstacle entities. */
+  obstacles: Store<ObstacleEntity>;
   /** Configuration for teams. */
   teams: Record<TeamId, TeamConfig>;
   /** Global battle state. */
@@ -289,6 +351,10 @@ function isRobotEntity(entity: BattleEntity): entity is RobotEntity {
 
 function isProjectileEntity(entity: BattleEntity): entity is ProjectileEntity {
   return entity.kind === 'projectile';
+}
+
+function isObstacleEntity(entity: BattleEntity): entity is ObstacleEntity {
+  return entity.kind === 'obstacle';
 }
 
 function isEffectEntity(entity: BattleEntity): entity is EffectEntity {
@@ -377,12 +443,14 @@ export function createBattleWorld(): BattleWorld {
   const robots = createEntityStore(world, isRobotEntity, getRevision);
   const projectiles = createEntityStore(world, isProjectileEntity, getRevision);
   const effects = createEntityStore(world, isEffectEntity, getRevision);
+  const obstacles = createEntityStore(world, isObstacleEntity, getRevision);
 
   const state: BattleWorldState = {
     elapsedMs: 0,
     nextProjectileId: 0,
     nextEffectId: 0,
     seed: Date.now(),
+    frameIndex: 0,
   };
 
   const instancingConfig = qualityManager.getInstancingConfig();
@@ -400,6 +468,7 @@ export function createBattleWorld(): BattleWorld {
     robots,
     projectiles,
     effects,
+    obstacles,
     teams: TEAM_CONFIGS,
     state,
     visuals: {
@@ -462,6 +531,7 @@ export function createBattleWorld(): BattleWorld {
 export function resetBattleWorld(world: BattleWorld): void {
   world.clear();
   world.state.elapsedMs = 0;
+  world.state.frameIndex = 0;
 }
 
 /**

@@ -1,5 +1,5 @@
 import { RobotEntity } from '../../ecs/world';
-import { useTelemetryStore } from '../../state/telemetryStore';
+import { TelemetryEvent, useTelemetryStore } from '../../state/telemetryStore';
 import {
   DamageEventInput,
   DeathEventInput,
@@ -62,6 +62,49 @@ export function createTelemetryPort(): TelemetryPort {
         attackerId: event.attackerId,
         teamId: event.teamId,
       });
+    },
+    recordObstacleMove: (event) => {
+      const telemetryEvent: TelemetryEvent = {
+        type: 'obstacle:move',
+        timestampMs: event.timestampMs,
+        sequenceId: nextSequence(),
+        frameIndex: event.frameIndex,
+        obstacleId: event.obstacleId,
+        position: event.position,
+        orientation: event.orientation,
+      };
+      useTelemetryStore.getState().recordEvent(telemetryEvent);
+    },
+    recordHazardActivate: (event) => {
+      const telemetryEvent: TelemetryEvent = {
+        type: 'hazard:activate',
+        timestampMs: event.timestampMs,
+        sequenceId: nextSequence(),
+        frameIndex: event.frameIndex,
+        obstacleId: event.obstacleId,
+      };
+      useTelemetryStore.getState().recordEvent(telemetryEvent);
+    },
+    recordHazardDeactivate: (event) => {
+      const telemetryEvent: TelemetryEvent = {
+        type: 'hazard:deactivate',
+        timestampMs: event.timestampMs,
+        sequenceId: nextSequence(),
+        frameIndex: event.frameIndex,
+        obstacleId: event.obstacleId,
+      };
+      useTelemetryStore.getState().recordEvent(telemetryEvent);
+    },
+    recordCoverDestroyed: (event) => {
+      const telemetryEvent: TelemetryEvent = {
+        type: 'cover:destroyed',
+        timestampMs: event.timestampMs,
+        sequenceId: nextSequence(),
+        frameIndex: event.frameIndex,
+        obstacleId: event.obstacleId,
+        destroyedBy: event.destroyedBy,
+      };
+      useTelemetryStore.getState().recordEvent(telemetryEvent);
     },
   };
 }

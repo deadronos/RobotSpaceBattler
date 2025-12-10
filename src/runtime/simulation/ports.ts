@@ -46,4 +46,12 @@ export interface TelemetryPort {
   recordDamage: (event: DamageEventInput) => void;
   /** Records a robot death event. */
   recordDeath: (event: DeathEventInput) => void;
+  /** Records an obstacle move event. */
+  recordObstacleMove?: (event: { frameIndex: number; timestampMs: number; obstacleId: string; position?: { x: number; y: number; z: number }; orientation?: number }) => void;
+  /** Records a hazard activate event. */
+  recordHazardActivate?: (event: { frameIndex: number; timestampMs: number; obstacleId: string }) => void;
+  /** Records a hazard deactivate event. */
+  recordHazardDeactivate?: (event: { frameIndex: number; timestampMs: number; obstacleId: string }) => void;
+  /** Records a destructible cover destroyed event. */
+  recordCoverDestroyed?: (event: { frameIndex: number; timestampMs: number; obstacleId: string; destroyedBy?: string }) => void;
 }

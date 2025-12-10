@@ -5,11 +5,12 @@ import { updateCombatSystem } from '../../ecs/systems/combatSystem';
 import { updateEffectSystem } from '../../ecs/systems/effectSystem';
 import { updateMovementSystem } from '../../ecs/systems/movementSystem';
 import { updateProjectileSystem } from '../../ecs/systems/projectileSystem';
-import { spawnTeams } from '../../ecs/systems/spawnSystem';
-import { BattleWorld, resetBattleWorld, TeamId } from '../../ecs/world';
+import { BattleWorld, TeamId } from '../../ecs/world';
 import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
 import { createXorShift32 } from '../../lib/random/xorshift';
 import { isActiveRobot } from '../../lib/robotHelpers';
+import { MatchSpawnOptions,spawnMatch as spawnMatchWithFixture } from '../../simulation/match/matchSpawner';
+import { clearRapierBindings,syncObstaclesToRapier } from '../../simulation/obstacles/rapierIntegration';
 import { MatchStateMachine } from '../state/matchStateMachine';
 import { TelemetryPort } from './ports';
 
@@ -25,6 +26,8 @@ export interface BattleRunnerOptions {
   telemetry: TelemetryPort;
   /** State machine managing match lifecycle. */
   matchMachine: MatchStateMachine;
+  /** Optional obstacle fixture data to seed matches. */
+  obstacleFixture?: MatchSpawnOptions['obstacleFixture'];
 }
 
 /**
@@ -93,9 +96,10 @@ export function createBattleRunner(
   function spawnMatch(nextSeed?: number) {
     const matchSeed = nextSeed ?? Math.floor(rng.next() * 0xffffffff);
     telemetry.reset(`match-${matchSeed}`);
-    resetBattleWorld(world);
-    spawnTeams(world, {
+    spawnMatchWithFixture(world, {
       seed: matchSeed,
+      resetWorld: true,
+      obstacleFixture: options.obstacleFixture,
       onRobotSpawn: (robot) => telemetry.recordSpawn(robot, world.state.elapsedMs),
     });
     matchMachine.reset();
@@ -139,6 +143,7 @@ export function createBattleRunner(
         spawnMatch();
       }
 
+      world.state.frameIndex += 1;
       perfMarkEnd('battleRunner.step');
     },
     reset: () => {
@@ -146,6 +151,8 @@ export function createBattleRunner(
     },
     setRapierWorld: (rapierWorld: RapierWorld | null) => {
       world.rapierWorld = rapierWorld ?? undefined;
+      if (rapierWorld) syncObstaclesToRapier(world);
+      else clearRapierBindings(world);
     },
     getRapierWorld: () => {
       return world.rapierWorld;

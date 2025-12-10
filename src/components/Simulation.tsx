@@ -31,6 +31,8 @@ interface SimulationProps {
   telemetry: TelemetryPort;
   /** Optional callback when the battle runner is initialized. */
   onRunnerReady?: (runner: BattleRunner) => void;
+  /** Optional obstacle fixture to seed matches in dev mode. */
+  obstacleFixture?: Parameters<typeof createBattleRunner>[1]['obstacleFixture'];
 }
 
 const FRAME_SAMPLE_INTERVAL = 1 / 30;
@@ -48,6 +50,7 @@ export function Simulation({
   matchMachine,
   telemetry,
   onRunnerReady,
+  obstacleFixture,
 }: SimulationProps) {
   const runnerRef = useRef<BattleRunner | null>(null);
 
@@ -56,6 +59,7 @@ export function Simulation({
       seed: battleWorld.state.seed,
       matchMachine,
       telemetry,
+      obstacleFixture,
     });
 
     runnerRef.current = runner;
@@ -64,7 +68,7 @@ export function Simulation({
     return () => {
       runnerRef.current = null;
     };
-  }, [battleWorld, matchMachine, telemetry, onRunnerReady]);
+  }, [battleWorld, matchMachine, telemetry, onRunnerReady, obstacleFixture]);
 
   return (
     <Scene>

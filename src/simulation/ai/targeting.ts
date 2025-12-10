@@ -2,7 +2,7 @@ import { RobotEntity } from '../../ecs/world';
 import { distanceSquaredVec3 } from '../../lib/math/vec3';
 import { isActiveRobot } from '../../lib/robotHelpers';
 import { TEAM_CONFIGS } from '../../lib/teamConfig';
-import { findClosestEntity, sortEntities } from './targetingUtils';
+import { sortEntities } from './targetingUtils';
 
 function isEnemy(seeker: RobotEntity, target: RobotEntity): boolean {
   return target.team !== seeker.team && isActiveRobot(target) && target.id !== seeker.id;
