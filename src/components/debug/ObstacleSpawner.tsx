@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
+
 import { BattleWorld, ObstacleEntity } from '../../ecs/world';
 import { vec3 } from '../../lib/math/vec3';
 import {
@@ -122,7 +123,7 @@ const initialForm: FormState = {
 export function ObstacleSpawner({ world, onSpawn }: ObstacleSpawnerProps) {
   const [form, setForm] = useState<FormState>(initialForm);
   const [, forceRefresh] = useState(0);
-  const obstacles = useMemo(() => world.obstacles.entities, [world, world.state.frameIndex, form.id, form.counter]);
+  const obstacles = world.obstacles.entities;
   const updateForm = (patch: Partial<FormState>) => setForm((prev) => ({ ...prev, ...patch }));
   const refresh = () => forceRefresh((v) => v + 1);
   const handleSpawn = () => {

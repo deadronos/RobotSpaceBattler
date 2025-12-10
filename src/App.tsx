@@ -1,5 +1,8 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { ObstacleEditor } from './components/debug/ObstacleEditor';
+import { ObstacleSpawner } from './components/debug/ObstacleSpawner';
+import { PerfToggles } from './components/debug/PerfToggles';
 import { Simulation } from './components/Simulation';
 import { createBattleWorld } from './ecs/world';
 import { AUTO_RESTART_DELAY_MS, VICTORY_OVERLAY_BACKGROUND } from './lib/constants';
@@ -13,9 +16,6 @@ import {
 } from './runtime/state/matchStateMachine';
 import { ObstacleFixture } from './simulation/match/matchSpawner';
 import { useTelemetryStore } from './state/telemetryStore';
-import { ObstacleEditor } from './components/debug/ObstacleEditor';
-import { ObstacleSpawner } from './components/debug/ObstacleSpawner';
-import { PerfToggles } from './components/debug/PerfToggles';
 
 function formatStatus({
   phase,
@@ -41,7 +41,8 @@ export default function App() {
   const telemetryPort = useMemo(() => createTelemetryPort(), []);
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      (window as any).__battleWorld = battleWorld;
+      (window as Window & { __battleWorld?: ReturnType<typeof createBattleWorld> }).__battleWorld =
+        battleWorld;
     }
   }, [battleWorld]);
   const [matchSnapshot, setMatchSnapshot] = useState<MatchStateSnapshot>({

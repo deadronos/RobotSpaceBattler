@@ -1,5 +1,6 @@
 import { RobotEntity } from '../../../ecs/world';
-import { addVec3, lengthVec3, normalizeVec3, scaleVec3,Vec3 } from '../../../lib/math/vec3';
+import { addVec3, lengthVec3, normalizeVec3, scaleVec3, Vec3 } from '../../../lib/math/vec3';
+import { isLineOfSightBlockedRuntime } from '../../environment/arenaGeometry';
 import { RobotBehaviorMode } from '../behaviorState';
 import { computeAvoidance } from './avoidance';
 import {
@@ -13,7 +14,6 @@ import { createPhysicsQueryService } from './physicsQueryService';
 import { computePredictiveAvoidance } from './predictiveAvoidance';
 import { shouldRaycastThisFrame } from './raycastScheduler';
 import { MovementContext, MovementPlan } from './types';
-import { isLineOfSightBlockedRuntime } from '../../environment/arenaGeometry';
 
 const SEEK_SPEED = 6;
 const RETREAT_SPEED = 7;
@@ -86,7 +86,9 @@ export function planRobotMovement(
   const pathBlocked =
     !!target &&
     context?.obstacles &&
-    isLineOfSightBlockedRuntime(robot.position, target.position, { obstacles: context.obstacles });
+    isLineOfSightBlockedRuntime(robot.position, target.position, {
+      obstacles: context.obstacles.filter((o): o is NonNullable<typeof o> => !!o),
+    });
 
   // Apply reactive avoidance (always runs). Give computeAvoidance access to runtime obstacles.
   const avoidance = computeAvoidance(robot.position, context?.obstacles);

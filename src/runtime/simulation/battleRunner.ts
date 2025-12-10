@@ -9,10 +9,10 @@ import { BattleWorld, TeamId } from '../../ecs/world';
 import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
 import { createXorShift32 } from '../../lib/random/xorshift';
 import { isActiveRobot } from '../../lib/robotHelpers';
-import { MatchSpawnOptions,spawnMatch as spawnMatchWithFixture } from '../../simulation/match/matchSpawner';
+import { MatchSpawnOptions, spawnMatch as spawnMatchWithFixture } from '../../simulation/match/matchSpawner';
 import { updateHazardSystem } from '../../simulation/obstacles/hazardSystem';
-import { clearRapierBindings,syncObstaclesToRapier } from '../../simulation/obstacles/rapierIntegration';
 import { updateObstacleMovement } from '../../simulation/obstacles/movementSystem';
+import { clearRapierBindings, syncObstaclesToRapier } from '../../simulation/obstacles/rapierIntegration';
 import { MatchStateMachine } from '../state/matchStateMachine';
 import { TelemetryPort } from './ports';
 

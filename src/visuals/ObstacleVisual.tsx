@@ -1,11 +1,10 @@
+/* eslint-disable react/no-unknown-property */
+import { ThreeElements } from '@react-three/fiber';
 import { Color } from 'three';
-import { GroupProps } from '@react-three/fiber';
 
 import { ObstacleEntity } from '../ecs/world';
 
-interface ObstacleVisualProps extends GroupProps {
-  obstacle: ObstacleEntity;
-}
+type ObstacleVisualProps = ThreeElements['group'] & { obstacle: ObstacleEntity };
 
 const barrierColor = new Color('#7dd3ff');
 const hazardColor = new Color('#ff8f7a');

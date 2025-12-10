@@ -47,7 +47,7 @@ describe('fixtureLoader', () => {
           id: 'new-obs',
           obstacleType: 'hazard' as const,
           position: vec3(5, 0, 5),
-          shape: { kind: 'circle', radius: 2 },
+          shape: { kind: 'circle' as const, radius: 2 },
           hazardSchedule: { periodMs: 2000, activeMs: 500, offsetMs: 0 },
           hazardEffects: [{ kind: 'damage' as const, amount: 1, perSecond: true }],
         },

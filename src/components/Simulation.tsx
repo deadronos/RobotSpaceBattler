@@ -9,6 +9,7 @@ import { BattleRunner, createBattleRunner } from '../runtime/simulation/battleRu
 import { TelemetryPort } from '../runtime/simulation/ports';
 import { MatchStateMachine } from '../runtime/state/matchStateMachine';
 import { useQualitySettings } from '../state/quality/QualityManager';
+import { ObstacleVisual } from '../visuals/ObstacleVisual';
 import { recordRendererFrame } from '../visuals/rendererStats';
 import { RobotPlaceholder } from './RobotPlaceholder';
 import { Scene } from './Scene';
@@ -18,7 +19,6 @@ import { InstancedEffects } from './vfx/InstancedEffects';
 import { InstancedProjectiles } from './vfx/InstancedProjectiles';
 import { LaserBatchRenderer } from './vfx/LaserBatchRenderer';
 import { ProjectileVisual } from './vfx/ProjectileVisual';
-import { ObstacleVisual } from '../visuals/ObstacleVisual';
 
 /**
  * Props for the Simulation component.

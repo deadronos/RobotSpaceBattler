@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { BattleWorld, ObstacleEntity } from '../../ecs/world';
 import {
@@ -25,7 +25,7 @@ export function ObstacleEditor({ world, sampleFixture }: ObstacleEditorProps) {
   const [fixtureText, setFixtureText] = useState(() => serializeObstacleFixture(exportObstacleFixture(world)));
   const [status, setStatus] = useState<string | null>(null);
 
-  const obstacles = useMemo(() => world.obstacles.entities, [world, world.state.frameIndex, selectedId]);
+  const obstacles = world.obstacles.entities;
   const selected = obstacles.find((o) => o.id === selectedId) ?? null;
 
   const selectFirstIfMissing = () => {
