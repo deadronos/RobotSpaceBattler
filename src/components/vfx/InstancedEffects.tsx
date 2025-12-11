@@ -1,10 +1,10 @@
-import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
-import { Color, InstancedMesh, Object3D } from 'three';
+import { useFrame } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
+import { Color, InstancedMesh, Object3D } from "three";
 
-import { EffectEntity } from '../../ecs/world';
-import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
-import { VisualInstanceManager } from '../../visuals/VisualInstanceManager';
+import { EffectEntity } from "../../ecs/world";
+import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
+import { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
 
 interface InstancedEffectsProps {
   effects: EffectEntity[];
@@ -16,12 +16,16 @@ interface InstancedEffectsProps {
  * Renders multiple visual effects using hardware instancing for performance.
  * Optimized for high-volume effects like particles and explosions.
  */
-export function InstancedEffects({ effects, instanceManager, currentTimeMs }: InstancedEffectsProps) {
-  const capacity = instanceManager.getCapacity('effects');
+export function InstancedEffects({
+  effects,
+  instanceManager,
+  currentTimeMs,
+}: InstancedEffectsProps) {
+  const capacity = instanceManager.getCapacity("effects");
   const meshRef = useRef<InstancedMesh | null>(null);
   const dummy = useMemo(() => new Object3D(), []);
   const color = useMemo(() => new Color(), []);
-  const hiddenColor = useMemo(() => new Color('#000000'), []);
+  const hiddenColor = useMemo(() => new Color("#000000"), []);
   const activeIndicesRef = useRef<Set<number>>(new Set());
   const previousActiveIndicesRef = useRef<Set<number>>(new Set());
   const dirtyIndicesRef = useRef<Set<number>>(new Set());
@@ -38,10 +42,10 @@ export function InstancedEffects({ effects, instanceManager, currentTimeMs }: In
   }, [capacity]);
 
   useFrame(() => {
-    perfMarkStart('InstancedEffects.useFrame');
+    perfMarkStart("InstancedEffects.useFrame");
     const mesh = meshRef.current;
     if (!mesh) {
-      perfMarkEnd('InstancedEffects.useFrame');
+      perfMarkEnd("InstancedEffects.useFrame");
       return;
     }
 
@@ -55,7 +59,8 @@ export function InstancedEffects({ effects, instanceManager, currentTimeMs }: In
 
     for (let i = 0; i < effects.length; i += 1) {
       const effect = effects[i];
-      const index = effect.instanceIndex ?? instanceManager.getIndex('effects', effect.id);
+      const index =
+        effect.instanceIndex ?? instanceManager.getIndex("effects", effect.id);
       if (index === null || index === undefined || index >= capacity) {
         continue;
       }
@@ -63,14 +68,19 @@ export function InstancedEffects({ effects, instanceManager, currentTimeMs }: In
       activeIndices.add(index);
 
       const elapsed = Math.max(0, now - effect.createdAt);
-      const progress = effect.duration > 0 ? Math.min(1, elapsed / effect.duration) : 1;
+      const progress =
+        effect.duration > 0 ? Math.min(1, elapsed / effect.duration) : 1;
       const baseScale = Math.max(0.1, effect.radius || 0.6);
       const fade = Math.max(0.05, 1 - progress * 0.85);
 
-      dummy.position.set(effect.position.x, effect.position.y, effect.position.z);
-      if (effect.effectType === 'explosion') {
+      dummy.position.set(
+        effect.position.x,
+        effect.position.y,
+        effect.position.z,
+      );
+      if (effect.effectType === "explosion") {
         dummy.scale.setScalar(baseScale * (0.6 + 0.6 * progress));
-      } else if (effect.effectType === 'laser-impact') {
+      } else if (effect.effectType === "laser-impact") {
         dummy.scale.setScalar(baseScale * (0.4 + 0.5 * progress));
       } else {
         dummy.scale.setScalar(baseScale * (0.5 + 0.4 * progress));
@@ -108,7 +118,7 @@ export function InstancedEffects({ effects, instanceManager, currentTimeMs }: In
     previousActiveIndicesRef.current = activeIndices;
     activeIndicesRef.current = previousIndices;
 
-    perfMarkEnd('InstancedEffects.useFrame');
+    perfMarkEnd("InstancedEffects.useFrame");
   });
 
   if (capacity === 0) {
@@ -116,7 +126,11 @@ export function InstancedEffects({ effects, instanceManager, currentTimeMs }: In
   }
 
   return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, capacity]} frustumCulled={false}>
+    <instancedMesh
+      ref={meshRef}
+      args={[undefined, undefined, capacity]}
+      frustumCulled={false}
+    >
       <sphereGeometry args={[0.9, 16, 16]} />
       <meshStandardMaterial
         vertexColors

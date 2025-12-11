@@ -1,6 +1,10 @@
 
 # Feature Specification: 3D Team Fight — Extend 001 & 002
 
+> **Physics Scale Reference**: See
+> [006-dynamic-arena-obstacles/spec.md](../006-dynamic-arena-obstacles/spec.md#physics-scale--collider-design-decisions-2025-12-10)
+> for world unit scale (1:1 meters) and collider sizing decisions.
+
 **Feature Branch**: `003-extend-placeholder-create`  
 **Created**: 2025-10-17  
 **Status**: Draft  

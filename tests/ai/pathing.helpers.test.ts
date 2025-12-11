@@ -47,8 +47,10 @@ describe('pathing helpers', () => {
 });
 
 describe('avoidance constants', () => {
-  it('has increased AVOIDANCE_RADIUS for better wall awareness', () => {
-    // AVOIDANCE_RADIUS was increased from 3.0 to 4.5 for better wall detection
-    expect(AVOIDANCE_RADIUS).toBe(4.5);
+  it('has AVOIDANCE_RADIUS for reactive steering (legacy)', () => {
+    // NOTE: This tests legacy reactive steering system (src/simulation/ai/pathing/avoidance.ts)
+    // which is being phased out in favor of NavMesh pathfinding.
+    // Current value is 0.1; NavMesh uses clearanceRadius in NavMeshGenerator instead.
+    expect(AVOIDANCE_RADIUS).toBe(0.1);
   });
 });

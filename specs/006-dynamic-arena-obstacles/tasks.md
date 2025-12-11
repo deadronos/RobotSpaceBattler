@@ -79,15 +79,15 @@ Independent Test: Headless integration verifying a moving barrier blocks LOS and
 
 ### Implementation
 
-- [ ] T012 [US1] [P] Add obstacle spawn from fixture into match start flow
+- [x] T012 [US1] [P] Add obstacle spawn from fixture into match start flow
   - File: `src/simulation/match/matchSpawner.ts` (or spawnTeams placement), tests/integration
   - Outcome: Matches can be seeded with obstacles defined in fixture JSON.
 
-- [ ] T013 [US1] [P] Add runtime demo / debug UI for manual playtesting
+- [x] T013 [US1] [P] Add runtime demo / debug UI for manual playtesting
   - File: `src/components/debug/ObstacleSpawner.tsx` and register in dev view
   - Outcome: Designers/testers can place and manipulate obstacles at runtime in dev server.
 
-- [ ] T014 [US1] Add MatchTrace verification test for obstacle events
+- [x] T014 [US1] Add MatchTrace verification test for obstacle events
   - File: `tests/integration/matchTrace.obstacles.spec.ts`
   - Verify: MatchTrace contains obstacle move/activation/destroy events with deterministic ordering.
 
@@ -101,15 +101,15 @@ Goal: Designers can place and configure dynamic obstacles via fixtures and edito
 
 Independent Test: Developer loads sample fixture, modifies obstacle parameters, and sees corresponding runtime behaviour.
 
-- [ ] T015 [US2] [P] Add Obstacle Inspector UI for authoring obstacle parameters
-  - Files: `src/ui/inspector/ObstacleInspector.tsx`, `src/components/Debug/ObstacleEditor.tsx`
+- [x] T015 [US2] [P] Add Obstacle Inspector UI for authoring obstacle parameters
+  - Files: `src/ui/inspector/ObstacleInspector.tsx`, `src/components/debug/ObstacleEditor.tsx`
   - Outcome: Designer can edit movement pattern, hazard schedule, durability in-the-browser.
 
-- [ ] T016 [US2] [P] Add fixture load/save integration for the editor
+- [x] T016 [US2] [P] Add fixture load/save integration for the editor
   - Files: `src/ui/fixtureLoader.ts`, `specs/fixtures/dynamic-arena-sample.json`
   - Outcome: Editor can load/save obstacle configurations used by match spawner.
 
-- [ ] T017 [US2] [P] Playwright E2E: verify editor changes affect runtime obstacle behaviour
+- [x] T017 [US2] [P] Playwright E2E: verify editor changes affect runtime obstacle behaviour
   - File: `playwright/tests/obstacle-editor.spec.ts`
   - Verify: change movement params → runtime motion changes in dev server preview.
 
@@ -121,15 +121,15 @@ Goal: AI correctly treats dynamic obstacles as changing constraints and reroutes
 
 Independent Test: Headless match where a barrier moves to block the planned path and AI reroutes within bounded time.
 
-- [ ] T018 [US3] Add integration test: AI reroutes when path becomes blocked
+- [x] T018 [US3] Add integration test: AI reroutes when path becomes blocked
   - File: `tests/integration/ai-reroute.spec.ts`
   - Verify: AI recomputes a new route within `<= 3` ticks or executes a fallback behaviour.
 
-- [ ] T019 [US3] Implement re-evaluation & pathfinder hook for dynamic obstacles
+- [x] T019 [US3] Implement re-evaluation & pathfinder hook for dynamic obstacles
   - Files: `src/simulation/ai/pathing/*` (planner adjustments or service), tests/integration
   - Outcome: AI will not remain permanently stuck — chooses alternate route or fallback.
 
-- [ ] T020 [US3] Add deadlock detection integration test (multi-obstacle timing)
+- [x] T020 [US3] Add deadlock detection integration test (multi-obstacle timing)
   - File: `tests/integration/ai-deadlock.spec.ts`
   - Verify: Scenes that temporarily trap robots resolve or trigger fallback, avoiding permanent deadlocks.
 
@@ -137,22 +137,22 @@ Independent Test: Headless match where a barrier moves to block the planned path
 
 ## Phase 6: Performance, Visuals & Validation (Parallellizable)
 
-- [ ] T021 [P] Add placeholder obstacle visuals and wire to existing render pipeline
+- [x] T021 [P] Add placeholder obstacle visuals and wire to existing render pipeline
   - Files: `src/visuals/ObstacleVisual.tsx`, `src/components/Simulation.tsx`
   - Outcome: Visual debugging for obstacles; can be toggled off for perf tests.
 
-- [ ] T022 [P] Add headless performance stress test for 50 active obstacles
+- [x] T022 [P] Add headless performance stress test for 50 active obstacles
   - Files: `tests/stress/obstacles.stress.spec.ts`, `scripts/perf/obstacle-stress.js`
   - Verify: baseline comparison vs main branch shows no more than 20% performance regression (adjust per baseline).
 
-- [ ] T023 [P] Add debug toggles & QualityManager controls for obstacle stress testing
-  - Files: `src/state/quality/QualityManager.ts`, `src/components/Debug/PerfToggles.tsx`
+- [x] T023 [P] Add debug toggles & QualityManager controls for obstacle stress testing
+  - Files: `src/state/quality/QualityManager.ts`, `src/components/debug/PerfToggles.tsx`
 
 ---
 
 ## Final Phase: Polish, Docs & PR
 
-- [ ] T024 [P] Update spec docs, quickstart and fixtures with final instructions
+- [x] T024 [P] Update spec docs, quickstart and fixtures with final instructions
   - Files: `specs/006-dynamic-arena-obstacles/spec.md`, `quickstart.md`, `specs/fixtures/` updates
 
 - [ ] T025 [P] Create PR, add `CONSTITUTION-CHECK` notes, test run summary and a short exec summary
@@ -183,4 +183,3 @@ Independent Test: Headless match where a barrier moves to block the planned path
 ---
 
 All tasks follow the required checklist format: each line starts with `- [ ] T###` and includes an exact file path.
-

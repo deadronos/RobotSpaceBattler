@@ -99,6 +99,32 @@ AI-controlled units and pathfinding systems must reliably treat dynamic obstacle
 
 - **FR-008**: Dynamic obstacles are scoped to local/single-instance simulation for this feature (no multiplayer replication or authoritative server behaviour for dynamic obstacle state at this time).
 - **FR-009**: Destructible cover is removed permanently for the duration of a match when its durability reaches zero (no automatic respawn within a match). Designers may create new cover via level spawn logic across matches in separate flows.
+
+## Physics Scale & Collider Design Decisions (2025-12-10)
+
+**World Unit Scale**: 1 Rapier world unit = 1 meter (1:1 scale)
+
+**Collider Sizing Philosophy**:
+- All physics colliders are sized at **99% of their visual mesh dimensions** to allow ~1cm clearance before collision
+- This provides tight collision detection while maintaining visual accuracy
+- Example: Robot capsule collider radius 0.891m (99% of 0.9m visual)
+
+**Robot Physics Constants**:
+- `ROBOT_RADIUS`: 0.891m (matches actual capsule collider radius)
+- `AVOIDANCE_RADIUS`: 0.1m (robots begin steering away from obstacles at this distance)
+- Safety margins in avoidance: 0.05m (5cm) added to obstacle bounds for steering calculations
+
+**Collider Types**:
+- **Robots**: `CapsuleCollider` (half-height: 1.089m, radius: 0.891m)
+- **Pillars**: `CylinderCollider` (half-height: 1.485m, radius: 1.188m)
+- **Walls**: `CuboidCollider` (99% of mesh dimensions)
+
+**Navigation Behavior**:
+- Collision resolution occurs at ~1cm from visual geometry
+- AI steering begins at 0.1m from obstacles (down from previous 4.5m)
+- Allows robots to navigate within ~10-20cm of walls before collision
+
+**References**: See specs 001-005 for related physics and navigation implementation details.
 - **FR-010**: Moving obstacles act as strict blockers and do not displace or push units on collision. Units must path around or wait for obstacle movement; obstacle collisions do not change unit positions.
 
 ### Key Entities *(include if feature involves data)*
@@ -153,3 +179,4 @@ AI-controlled units and pathfinding systems must reliably treat dynamic obstacle
 - Treat dynamic arena objects as first-class environment elements with changeable state and clear instrumentation to support deterministic validation and replay.
 - Prefer movement and activation patterns that are predictable and configurable; provide means to evaluate schedules deterministically for automated validation.
 - Designers should be able to tune durability and effect values through authoring tools without engineering intervention.
+- Dev/debug tooling: expose a simple obstacle editor + spawner in the dev UI (with an optional visuals toggle) so designers can tweak movement speed/paths, hazard schedules, and durability and immediately observe runtime changes; keep this behind the dev server only.

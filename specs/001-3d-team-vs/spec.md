@@ -1,4 +1,6 @@
-# Feature Specification: 3D Team vs Team Autobattler Game Simulation
+# Feature Specification: 3D Team vs Team Autobattler
+
+> **Physics Scale Reference**: See [006-dynamic-arena-obstacles/spec.md](../006-dynamic-arena-obstacles/spec.md#physics-scale--collider-design-decisions-2025-12-10) for world unit scale (1:1 meters) and collider sizing decisions. Game Simulation
 
 **Feature Branch**: `001-3d-team-vs`  
 **Created**: 2025-10-06  

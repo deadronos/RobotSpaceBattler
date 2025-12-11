@@ -1,5 +1,5 @@
-import { vec3 } from '../../lib/math/vec3';
-import { ProjectileEntity } from '../world';
+import { vec3 } from "../../lib/math/vec3";
+import { ProjectileEntity } from "../world";
 
 /**
  * Statistics for projectile pool usage.
@@ -36,11 +36,11 @@ export interface ProjectilePool {
  */
 function createEmptyProjectile(): ProjectileEntity {
   return {
-    id: '',
-    kind: 'projectile',
-    team: 'red',
-    shooterId: '',
-    weapon: 'gun',
+    id: "",
+    kind: "projectile",
+    team: "red",
+    shooterId: "",
+    weapon: "gun",
     position: vec3(),
     velocity: vec3(),
     damage: 0,
@@ -84,10 +84,10 @@ export function createProjectilePool(initialSize = 64): ProjectilePool {
 
   function release(projectile: ProjectileEntity): void {
     projectile.instanceIndex = undefined;
-    projectile.id = '';
-    projectile.team = 'red';
-    projectile.shooterId = '';
-    projectile.weapon = 'gun';
+    projectile.id = "";
+    projectile.team = "red";
+    projectile.shooterId = "";
+    projectile.weapon = "gun";
     projectile.targetId = undefined;
     projectile.projectileSize = undefined;
     projectile.projectileColor = undefined;

@@ -451,7 +451,7 @@ if (replayMode === ReplayMode.Deterministic) {
   - **All passing, 0 failures**
 
 - ✅ T047: Linting
-  - ESLint: 0 errors, 1 deprecation warning (.eslintignore)
+  - ESLint: 0 errors, 0 deprecation warnings (ignore patterns migrated to eslint.config.cjs)
   - Prettier: all files formatted
   - TypeScript: full type safety
 

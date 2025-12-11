@@ -1,7 +1,10 @@
-import type { RendererStatsSnapshot } from './rendererStats';
-import type { VisualInstanceTelemetryEmitter, VisualInstanceTelemetryEvent } from './VisualInstanceManager';
+import type { RendererStatsSnapshot } from "./rendererStats";
+import type {
+  VisualInstanceTelemetryEmitter,
+  VisualInstanceTelemetryEvent,
+} from "./VisualInstanceManager";
 
-const GLOBAL_KEY = '__rendererStats';
+const GLOBAL_KEY = "__rendererStats";
 
 interface RendererStatsGlobal extends RendererStatsSnapshot {
   instancingTelemetry?: VisualInstanceTelemetryEvent[];
@@ -14,22 +17,22 @@ type RendererStatsWindow = Window & {
 // Determine once whether debug logs are enabled via URL flag, e.g. /?debuglogs=1
 const DEBUG_LOGS_ENABLED = (() => {
   try {
-    if (typeof window === 'undefined' || !window.location) return false;
-    const params = new URLSearchParams(window.location.search || '');
-    const v = params.get('debuglogs');
-    return v === '1' || v === 'true';
+    if (typeof window === "undefined" || !window.location) return false;
+    const params = new URLSearchParams(window.location.search || "");
+    const v = params.get("debuglogs");
+    return v === "1" || v === "true";
   } catch {
     return false;
   }
 })();
 function getGlobalStats(): RendererStatsGlobal | null {
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return null;
   }
 
   const statsWindow = window as RendererStatsWindow;
   const existing = statsWindow[GLOBAL_KEY];
-  if (existing && typeof existing === 'object') {
+  if (existing && typeof existing === "object") {
     if (!existing.instancingTelemetry) {
       existing.instancingTelemetry = [];
     }
@@ -56,7 +59,9 @@ function getGlobalStats(): RendererStatsGlobal | null {
  *
  * @param event - The event to record.
  */
-export function pushVisualTelemetryEvent(event?: VisualInstanceTelemetryEvent): void {
+export function pushVisualTelemetryEvent(
+  event?: VisualInstanceTelemetryEvent,
+): void {
   if (!event) {
     return;
   }
@@ -85,7 +90,11 @@ export function createVisualTelemetryEmitter(): VisualInstanceTelemetryEmitter {
   return {
     emit: (event: VisualInstanceTelemetryEvent) => {
       pushVisualTelemetryEvent(event);
-      if (DEBUG_LOGS_ENABLED && typeof console !== 'undefined' && console.debug) {
+      if (
+        DEBUG_LOGS_ENABLED &&
+        typeof console !== "undefined" &&
+        console.debug
+      ) {
         console.debug(`[${event.type}]`, event);
       }
     },

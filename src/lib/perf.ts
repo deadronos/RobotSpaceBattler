@@ -5,7 +5,11 @@ const PERF_DEV = Boolean(import.meta.env?.VITE_PERF_DEV);
  * @returns True if performance API is available and PERF_DEV is true.
  */
 function canMeasure(): boolean {
-  return PERF_DEV && typeof performance !== 'undefined' && typeof performance.mark === 'function';
+  return (
+    PERF_DEV &&
+    typeof performance !== "undefined" &&
+    typeof performance.mark === "function"
+  );
 }
 
 /**
@@ -31,7 +35,8 @@ export function perfMarkEnd(label: string): void {
 
   const startLabel = `${label}-start`;
   const endLabel = `${label}-end`;
-  const hasStartMark = performance.getEntriesByName(startLabel, 'mark').length > 0;
+  const hasStartMark =
+    performance.getEntriesByName(startLabel, "mark").length > 0;
 
   if (!hasStartMark) {
     return;

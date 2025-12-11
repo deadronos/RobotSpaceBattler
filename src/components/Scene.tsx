@@ -1,9 +1,9 @@
-import { OrbitControls, Stars } from '@react-three/drei';
-import { Canvas } from '@react-three/fiber';
-import { Physics } from '@react-three/rapier';
-import { ReactNode, Suspense } from 'react';
+import { OrbitControls, Stars } from "@react-three/drei";
+import { Canvas } from "@react-three/fiber";
+import { Physics } from "@react-three/rapier";
+import { ReactNode, Suspense } from "react";
 
-import { initializeRendererStats } from '../visuals/rendererStats';
+import { initializeRendererStats } from "../visuals/rendererStats";
 
 /**
  * Props for the Scene component.
@@ -29,7 +29,7 @@ export function Scene({ children }: SceneProps) {
       gl={{ antialias: true }}
       onCreated={({ gl }) => initializeRendererStats(gl)}
     >
-      <color attach="background" args={['#020310']} />
+      <color attach="background" args={["#020310"]} />
       <ambientLight intensity={0.6} color="#4a517a" />
       <hemisphereLight
         groundColor="#0a0b18"

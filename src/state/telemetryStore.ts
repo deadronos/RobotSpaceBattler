@@ -1,10 +1,10 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
-import { TeamId } from '../lib/teamConfig';
+import { TeamId } from "../lib/teamConfig";
 
 /** Event representing a robot spawn. */
 export interface SpawnEvent {
-  type: 'spawn';
+  type: "spawn";
   timestampMs: number;
   sequenceId: number;
   entityId: string;
@@ -13,7 +13,7 @@ export interface SpawnEvent {
 
 /** Event representing a weapon fire. */
 export interface FireEvent {
-  type: 'fire';
+  type: "fire";
   timestampMs: number;
   sequenceId: number;
   entityId: string;
@@ -22,7 +22,7 @@ export interface FireEvent {
 
 /** Event representing damage dealt. */
 export interface DamageEvent {
-  type: 'damage';
+  type: "damage";
   timestampMs: number;
   sequenceId: number;
   attackerId: string;
@@ -33,7 +33,7 @@ export interface DamageEvent {
 
 /** Event representing a robot death. */
 export interface DeathEvent {
-  type: 'death';
+  type: "death";
   timestampMs: number;
   sequenceId: number;
   entityId: string;
@@ -43,7 +43,7 @@ export interface DeathEvent {
 
 /** Event for obstacle movement */
 export interface ObstacleMoveEvent {
-  type: 'obstacle:move';
+  type: "obstacle:move";
   timestampMs: number;
   sequenceId: number;
   frameIndex?: number;
@@ -54,7 +54,7 @@ export interface ObstacleMoveEvent {
 
 /** Event for hazard activation */
 export interface HazardActivateEvent {
-  type: 'hazard:activate';
+  type: "hazard:activate";
   timestampMs: number;
   sequenceId: number;
   frameIndex?: number;
@@ -63,7 +63,7 @@ export interface HazardActivateEvent {
 
 /** Event for hazard deactivation */
 export interface HazardDeactivateEvent {
-  type: 'hazard:deactivate';
+  type: "hazard:deactivate";
   timestampMs: number;
   sequenceId: number;
   frameIndex?: number;
@@ -72,7 +72,7 @@ export interface HazardDeactivateEvent {
 
 /** Event for destructible cover destroyed */
 export interface CoverDestroyedEvent {
-  type: 'cover:destroyed';
+  type: "cover:destroyed";
   timestampMs: number;
   sequenceId: number;
   frameIndex?: number;
@@ -142,8 +142,20 @@ function createRobotStats(id: string, teamId: TeamId): RobotTelemetryStats {
 
 function createTeamTotals(): Record<TeamId, TeamTelemetryTotals> {
   return {
-    red: { spawns: 0, shotsFired: 0, damageDealt: 0, damageTaken: 0, deaths: 0 },
-    blue: { spawns: 0, shotsFired: 0, damageDealt: 0, damageTaken: 0, deaths: 0 },
+    red: {
+      spawns: 0,
+      shotsFired: 0,
+      damageDealt: 0,
+      damageTaken: 0,
+      deaths: 0,
+    },
+    blue: {
+      spawns: 0,
+      shotsFired: 0,
+      damageDealt: 0,
+      damageTaken: 0,
+      deaths: 0,
+    },
   };
 }
 
@@ -189,12 +201,12 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
       };
 
       switch (event.type) {
-        case 'spawn': {
+        case "spawn": {
           ensureRobot(event.entityId, event.teamId);
           teamTotals[event.teamId].spawns += 1;
           break;
         }
-        case 'fire': {
+        case "fire": {
           const robot = ensureRobot(event.entityId, event.teamId);
           robots[event.entityId] = {
             ...robot,
@@ -203,7 +215,7 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
           teamTotals[event.teamId].shotsFired += 1;
           break;
         }
-        case 'damage': {
+        case "damage": {
           const attacker = ensureRobot(event.attackerId, event.teamId);
           robots[event.attackerId] = {
             ...attacker,
@@ -221,7 +233,7 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
           }
           break;
         }
-        case 'death': {
+        case "death": {
           const deceased = ensureRobot(event.entityId, event.teamId);
           robots[event.entityId] = {
             ...deceased,
@@ -240,10 +252,10 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
           }
           break;
         }
-        case 'obstacle:move':
-        case 'hazard:activate':
-        case 'hazard:deactivate':
-        case 'cover:destroyed':
+        case "obstacle:move":
+        case "hazard:activate":
+        case "hazard:deactivate":
+        case "cover:destroyed":
           // These events are recorded but do not affect robot/team aggregates
           break;
         default:

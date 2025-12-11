@@ -1,17 +1,20 @@
-import { useFrame } from '@react-three/fiber';
-import { MutableRefObject, useEffect, useMemo, useRef } from 'react';
-import { Color, InstancedMesh, Object3D, Vector3 } from 'three';
+import { useFrame } from "@react-three/fiber";
+import { MutableRefObject, useEffect, useMemo, useRef } from "react";
+import { Color, InstancedMesh, Object3D, Vector3 } from "three";
 
-import { ProjectileEntity } from '../../ecs/world';
-import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
-import { VisualInstanceManager } from '../../visuals/VisualInstanceManager';
+import { ProjectileEntity } from "../../ecs/world";
+import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
+import { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
 
 interface InstancedProjectilesProps {
   projectiles: ProjectileEntity[];
   instanceManager: VisualInstanceManager;
 }
 
-function useResizeInstanceCount(ref: MutableRefObject<InstancedMesh | null>, capacity: number) {
+function useResizeInstanceCount(
+  ref: MutableRefObject<InstancedMesh | null>,
+  capacity: number,
+) {
   useEffect(() => {
     if (ref.current) {
       ref.current.count = capacity;
@@ -23,9 +26,12 @@ function useResizeInstanceCount(ref: MutableRefObject<InstancedMesh | null>, cap
  * Renders bullet and rocket projectiles using instanced rendering.
  * Efficiently handles high projectile counts.
  */
-export function InstancedProjectiles({ projectiles, instanceManager }: InstancedProjectilesProps) {
-  const bulletCapacity = instanceManager.getCapacity('bullets');
-  const rocketCapacity = instanceManager.getCapacity('rockets');
+export function InstancedProjectiles({
+  projectiles,
+  instanceManager,
+}: InstancedProjectilesProps) {
+  const bulletCapacity = instanceManager.getCapacity("bullets");
+  const rocketCapacity = instanceManager.getCapacity("rockets");
   const shouldRenderBullets = bulletCapacity > 0;
   const shouldRenderRockets = rocketCapacity > 0;
 
@@ -35,7 +41,7 @@ export function InstancedProjectiles({ projectiles, instanceManager }: Instanced
   const velocity = useMemo(() => new Vector3(), []);
   const lookTarget = useMemo(() => new Vector3(), []);
   const color = useMemo(() => new Color(), []);
-  const hiddenColor = useMemo(() => new Color('#000000'), []);
+  const hiddenColor = useMemo(() => new Color("#000000"), []);
   const bulletActiveRef = useRef<Set<number>>(new Set());
   const rocketActiveRef = useRef<Set<number>>(new Set());
   const previousBulletActiveRef = useRef<Set<number>>(new Set());
@@ -47,11 +53,11 @@ export function InstancedProjectiles({ projectiles, instanceManager }: Instanced
   useResizeInstanceCount(rocketMeshRef, rocketCapacity);
 
   useFrame(() => {
-    perfMarkStart('InstancedProjectiles.useFrame');
+    perfMarkStart("InstancedProjectiles.useFrame");
     const bulletMesh = bulletMeshRef.current;
     const rocketMesh = rocketMeshRef.current;
     if (!bulletMesh && !rocketMesh) {
-      perfMarkEnd('InstancedProjectiles.useFrame');
+      perfMarkEnd("InstancedProjectiles.useFrame");
       return;
     }
 
@@ -69,34 +75,46 @@ export function InstancedProjectiles({ projectiles, instanceManager }: Instanced
 
     for (let i = 0; i < projectiles.length; i += 1) {
       const projectile = projectiles[i];
-      if (projectile.weapon === 'laser') {
+      if (projectile.weapon === "laser") {
         continue;
       }
 
-      const category = projectile.weapon === 'rocket' ? 'rockets' : 'bullets';
-      const mesh = category === 'rockets' ? rocketMesh : bulletMesh;
+      const category = projectile.weapon === "rocket" ? "rockets" : "bullets";
+      const mesh = category === "rockets" ? rocketMesh : bulletMesh;
       if (!mesh) {
         continue;
       }
 
-      const capacity = category === 'rockets' ? rocketCapacity : bulletCapacity;
+      const capacity = category === "rockets" ? rocketCapacity : bulletCapacity;
       if (capacity === 0) {
         continue;
       }
 
-      const index = projectile.instanceIndex ?? instanceManager.getIndex(category, projectile.id);
+      const index =
+        projectile.instanceIndex ??
+        instanceManager.getIndex(category, projectile.id);
       if (index === null || index === undefined || index >= capacity) {
         continue;
       }
 
-      const seen = category === 'rockets' ? currentRocketActive : currentBulletActive;
-      const dirty = category === 'rockets' ? currentRocketDirty : currentBulletDirty;
+      const seen =
+        category === "rockets" ? currentRocketActive : currentBulletActive;
+      const dirty =
+        category === "rockets" ? currentRocketDirty : currentBulletDirty;
       seen.add(index);
 
-      dummy.position.set(projectile.position.x, projectile.position.y, projectile.position.z);
+      dummy.position.set(
+        projectile.position.x,
+        projectile.position.y,
+        projectile.position.z,
+      );
       const scale = Math.max(0.05, projectile.projectileSize ?? 0.14);
-      if (category === 'rockets') {
-        velocity.set(projectile.velocity.x, projectile.velocity.y, projectile.velocity.z);
+      if (category === "rockets") {
+        velocity.set(
+          projectile.velocity.x,
+          projectile.velocity.y,
+          projectile.velocity.z,
+        );
         if (velocity.lengthSq() > 1e-6) {
           lookTarget.copy(dummy.position).add(velocity);
           dummy.lookAt(lookTarget);
@@ -110,7 +128,9 @@ export function InstancedProjectiles({ projectiles, instanceManager }: Instanced
       dummy.updateMatrix();
       mesh.setMatrixAt(index, dummy.matrix);
 
-      const colorHex = projectile.projectileColor ?? (category === 'rockets' ? '#ff955c' : '#ffe08a');
+      const colorHex =
+        projectile.projectileColor ??
+        (category === "rockets" ? "#ff955c" : "#ffe08a");
       color.set(colorHex);
       mesh.setColorAt(index, color);
 
@@ -157,7 +177,6 @@ export function InstancedProjectiles({ projectiles, instanceManager }: Instanced
           rocketMesh.instanceColor.needsUpdate = true;
         }
       }
-
     }
 
     previousBulletActiveRef.current = currentBulletActive;
@@ -166,7 +185,7 @@ export function InstancedProjectiles({ projectiles, instanceManager }: Instanced
     previousRocketActiveRef.current = currentRocketActive;
     rocketActiveRef.current = lastRocketActive;
 
-    perfMarkEnd('InstancedProjectiles.useFrame');
+    perfMarkEnd("InstancedProjectiles.useFrame");
   });
 
   if (!shouldRenderBullets && !shouldRenderRockets) {
@@ -176,15 +195,29 @@ export function InstancedProjectiles({ projectiles, instanceManager }: Instanced
   return (
     <group>
       {shouldRenderBullets ? (
-        <instancedMesh ref={bulletMeshRef} args={[undefined, undefined, bulletCapacity]}>
+        <instancedMesh
+          ref={bulletMeshRef}
+          args={[undefined, undefined, bulletCapacity]}
+        >
           <sphereGeometry args={[0.12, 12, 12]} />
-          <meshStandardMaterial vertexColors emissiveIntensity={1.05} toneMapped={false} />
+          <meshStandardMaterial
+            vertexColors
+            emissiveIntensity={1.05}
+            toneMapped={false}
+          />
         </instancedMesh>
       ) : null}
       {shouldRenderRockets ? (
-        <instancedMesh ref={rocketMeshRef} args={[undefined, undefined, rocketCapacity]}>
+        <instancedMesh
+          ref={rocketMeshRef}
+          args={[undefined, undefined, rocketCapacity]}
+        >
           <cylinderGeometry args={[0.08, 0.12, 0.9, 10]} />
-          <meshStandardMaterial vertexColors emissiveIntensity={1.1} toneMapped={false} />
+          <meshStandardMaterial
+            vertexColors
+            emissiveIntensity={1.1}
+            toneMapped={false}
+          />
         </instancedMesh>
       ) : null}
     </group>
@@ -194,7 +227,11 @@ export function InstancedProjectiles({ projectiles, instanceManager }: Instanced
 /**
  * Demo wrapper for testing InstancedProjectiles independently.
  */
-export function InstancedProjectilesDemo({ projectiles }: { projectiles: ProjectileEntity[] }) {
+export function InstancedProjectilesDemo({
+  projectiles,
+}: {
+  projectiles: ProjectileEntity[];
+}) {
   // Simple passthrough demo component for storybook/dev harness compatibility.
   const manager = useMemo(
     () =>
@@ -203,5 +240,7 @@ export function InstancedProjectilesDemo({ projectiles }: { projectiles: Project
       }),
     [],
   );
-  return <InstancedProjectiles projectiles={projectiles} instanceManager={manager} />;
+  return (
+    <InstancedProjectiles projectiles={projectiles} instanceManager={manager} />
+  );
 }

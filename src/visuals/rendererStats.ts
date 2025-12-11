@@ -1,6 +1,6 @@
-import type { WebGLRenderer } from 'three';
+import type { WebGLRenderer } from "three";
 
-const GLOBAL_KEY = '__rendererStats';
+const GLOBAL_KEY = "__rendererStats";
 
 type RendererStatsWindow = Window & {
   [GLOBAL_KEY]?: RendererStatsSnapshot;
@@ -30,13 +30,13 @@ const defaultSnapshot: RendererStatsSnapshot = {
 };
 
 function ensureGlobalSnapshot(): RendererStatsSnapshot | null {
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return null;
   }
 
   const statsWindow = window as RendererStatsWindow;
   const existing = statsWindow[GLOBAL_KEY];
-  if (existing && typeof existing === 'object') {
+  if (existing && typeof existing === "object") {
     return existing;
   }
 
@@ -67,7 +67,10 @@ export function initializeRendererStats(renderer: WebGLRenderer): void {
  * @param renderer - The Three.js WebGLRenderer.
  * @param delta - The time elapsed for this frame in seconds.
  */
-export function recordRendererFrame(renderer: WebGLRenderer, delta: number): void {
+export function recordRendererFrame(
+  renderer: WebGLRenderer,
+  delta: number,
+): void {
   const snapshot = ensureGlobalSnapshot();
   if (!snapshot) {
     return;

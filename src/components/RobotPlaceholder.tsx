@@ -1,6 +1,6 @@
-import { RigidBody } from '@react-three/rapier';
-import { memo } from 'react';
-import { Color } from 'three';
+import { CapsuleCollider, RigidBody } from "@react-three/rapier";
+import { memo } from "react";
+import { Color } from "three";
 
 /**
  * Props for the RobotPlaceholder component.
@@ -18,14 +18,17 @@ interface RobotPlaceholderProps {
  * Includes a kinematic rigid body for physics interactions.
  */
 export const RobotPlaceholder = memo(function RobotPlaceholder({
-  color = '#ff4d5a',
+  color = "#ff4d5a",
   position = [0, 0.8, 0],
 }: RobotPlaceholderProps) {
   const emissivePrimary = new Color(color).multiplyScalar(0.2);
   const emissiveSecondary = new Color(color).multiplyScalar(0.25);
 
   return (
-    <RigidBody type="fixed" colliders="hull" position={position}>
+    <RigidBody type="fixed" colliders={false} position={position}>
+      {/* Capsule collider matches robot body: cylinder height 2.2/2=1.1 half-height, radius 0.95 (max of body)
+          Reduced to 99% for <1cm clearance: half-height 1.089 (99% of 1.1), radius 0.891 (99% of 0.9) */}
+      <CapsuleCollider args={[1.089, 0.891]} />
       <group>
         <mesh castShadow receiveShadow>
           <cylinderGeometry args={[0.9, 1, 2.2, 16]} />

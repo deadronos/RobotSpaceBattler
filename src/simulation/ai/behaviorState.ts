@@ -1,4 +1,4 @@
-import { RobotEntity } from '../../ecs/world';
+import { RobotEntity } from "../../ecs/world";
 
 const DEFAULT_ENGAGE_DISTANCE = 18;
 const DEFAULT_RETREAT_HEALTH_RATIO = 0.3;
@@ -8,9 +8,9 @@ const SAFE_ANCHOR_DISTANCE = 4;
  * Enumeration of possible robot behavior modes.
  */
 export enum RobotBehaviorMode {
-  Seek = 'seek',
-  Engage = 'engage',
-  Retreat = 'retreat',
+  Seek = "seek",
+  Engage = "engage",
+  Retreat = "retreat",
 }
 
 /**
@@ -45,9 +45,11 @@ export function nextBehaviorState(
   snapshot: RobotBehaviorSnapshot,
   context: RobotBehaviorContext,
 ): RobotBehaviorMode {
-  const retreatRatio = context.retreatHealthRatio ?? DEFAULT_RETREAT_HEALTH_RATIO;
+  const retreatRatio =
+    context.retreatHealthRatio ?? DEFAULT_RETREAT_HEALTH_RATIO;
   const threatRadius = context.threatRadius ?? 12;
-  const currentRatio = snapshot.maxHealth > 0 ? snapshot.health / snapshot.maxHealth : 0;
+  const currentRatio =
+    snapshot.maxHealth > 0 ? snapshot.health / snapshot.maxHealth : 0;
   const engageDistance = DEFAULT_ENGAGE_DISTANCE;
 
   if (context.targetDistance == null) {
@@ -71,7 +73,9 @@ export function nextBehaviorState(
   }
 
   if (Math.abs(context.targetDistance - engageDistance) < 1e-3) {
-    return context.rng() >= 0.5 ? RobotBehaviorMode.Engage : RobotBehaviorMode.Seek;
+    return context.rng() >= 0.5
+      ? RobotBehaviorMode.Engage
+      : RobotBehaviorMode.Seek;
   }
 
   if (snapshot.mode === RobotBehaviorMode.Retreat) {
@@ -88,9 +92,9 @@ export function nextBehaviorState(
  */
 export function describeBehavior(robot: RobotEntity): RobotBehaviorMode {
   switch (robot.ai.mode) {
-    case 'engage':
+    case "engage":
       return RobotBehaviorMode.Engage;
-    case 'retreat':
+    case "retreat":
       return RobotBehaviorMode.Retreat;
     default:
       return RobotBehaviorMode.Seek;

@@ -5,10 +5,10 @@ import {
   scaleVec3,
   subtractVec3,
   vec3,
-} from '../../lib/math/vec3';
-import { TelemetryPort } from '../../runtime/simulation/ports';
-import { getWeaponProfile } from '../../simulation/combat/weapons';
-import { BattleWorld, ProjectileEntity, RobotEntity } from '../world';
+} from "../../lib/math/vec3";
+import { TelemetryPort } from "../../runtime/simulation/ports";
+import { getWeaponProfile } from "../../simulation/combat/weapons";
+import { BattleWorld, ProjectileEntity, RobotEntity } from "../world";
 
 const robotsByIdScratch = new Map<string, RobotEntity>();
 
@@ -35,19 +35,22 @@ function createProjectile(
   }
 
   const profile = getWeaponProfile(shooter.weapon);
-  const direction = normalizeVec3(subtractVec3(target.position, shooter.position));
+  const direction = normalizeVec3(
+    subtractVec3(target.position, shooter.position),
+  );
 
   if (direction.x === 0 && direction.y === 0 && direction.z === 0) {
     return null;
   }
 
   const velocity = scaleVec3(direction, profile.projectileSpeed);
-  const maxLifetime = Math.max(1, profile.range / profile.projectileSpeed) * 1000;
+  const maxLifetime =
+    Math.max(1, profile.range / profile.projectileSpeed) * 1000;
 
   const projectile = world.pools.projectiles.acquire();
 
   projectile.id = createProjectileId(world);
-  projectile.kind = 'projectile';
+  projectile.kind = "projectile";
   projectile.team = shooter.team;
   projectile.shooterId = shooter.id;
   projectile.weapon = shooter.weapon;
@@ -79,7 +82,10 @@ function createProjectile(
  * @param world - The battle world state.
  * @param telemetry - Port for recording telemetry events (e.g., shots fired).
  */
-export function updateCombatSystem(world: BattleWorld, telemetry: TelemetryPort): void {
+export function updateCombatSystem(
+  world: BattleWorld,
+  telemetry: TelemetryPort,
+): void {
   const robots = world.robots.entities;
   if (robots.length === 0) {
     return;
@@ -97,11 +103,13 @@ export function updateCombatSystem(world: BattleWorld, telemetry: TelemetryPort)
       continue;
     }
 
-    if (robot.fireCooldown > 0 || robot.ai.mode === 'retreat') {
+    if (robot.fireCooldown > 0 || robot.ai.mode === "retreat") {
       continue;
     }
 
-    const target = robot.ai.targetId ? robotsByIdScratch.get(robot.ai.targetId) : undefined;
+    const target = robot.ai.targetId
+      ? robotsByIdScratch.get(robot.ai.targetId)
+      : undefined;
     if (!target || target.health <= 0) {
       continue;
     }
