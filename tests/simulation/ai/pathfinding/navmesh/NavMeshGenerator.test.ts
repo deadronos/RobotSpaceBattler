@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import { NavMeshGenerator } from '@/simulation/ai/pathfinding/navmesh/NavMeshGenerator';
 import type { ArenaConfiguration } from '@/simulation/ai/pathfinding/types';
+import { ObstacleType } from '@/simulation/ai/pathfinding/types';
 
 describe('NavMeshGenerator', () => {
   it('[T013] creates valid mesh from empty arena', () => {
@@ -34,7 +35,7 @@ describe('NavMeshGenerator', () => {
       obstacles: [
         {
           id: 'test-wall',
-          type: 0, // ObstacleType.WALL
+          type: 0 as any, // ObstacleType.WALL
           footprint: [
             { x: 40, z: 40 },
             { x: 60, z: 40 },
@@ -62,14 +63,14 @@ describe('NavMeshGenerator', () => {
       obstacles: [
         {
           id: 'pillar-1',
-          type: 1, // ObstacleType.PILLAR
+          type: 1 as any, // ObstacleType.PILLAR
           footprint: [], // Will be populated with octagon vertices
           height: 2.5,
           passable: false,
         },
         {
           id: 'pillar-2',
-          type: 1, // ObstacleType.PILLAR
+          type: 1 as any, // ObstacleType.PILLAR
           footprint: [],
           height: 2.5,
           passable: false,

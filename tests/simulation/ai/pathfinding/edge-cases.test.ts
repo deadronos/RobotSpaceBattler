@@ -119,7 +119,7 @@ describe('PathfindingSystem Edge Cases', () => {
       
       // Mock a slow calculation by running it multiple times
       const startTime = Date.now();
-      systemWithTimeout.calculatePath(start, target, pathComponent);
+      systemWithTimeout.calculatePath(start, pathComponent, 'robot1');
       const elapsed = Date.now() - startTime;
 
       // Assert: Should complete quickly and maintain valid path

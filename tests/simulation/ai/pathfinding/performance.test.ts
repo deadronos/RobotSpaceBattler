@@ -4,6 +4,7 @@ import { NavMeshGenerator } from '@/simulation/ai/pathfinding/navmesh/NavMeshGen
 import { NavMeshResource } from '@/simulation/ai/pathfinding/integration/NavMeshResource';
 import type { PathComponent, PathComponentStatus } from '@/simulation/ai/pathfinding/integration/PathComponent';
 import type { NavigationMesh } from '@/simulation/ai/pathfinding/types';
+import { ObstacleType } from '@/simulation/ai/pathfinding/types';
 
 describe('PathfindingSystem Performance', () => {
   let system: PathfindingSystem;
@@ -114,14 +115,14 @@ describe('PathfindingSystem Performance', () => {
     const newNavMesh = generator.generateFromArena({
       size: { width: 100, depth: 100 },
       obstacles: [{
-        type: 'wall' as const,
+        type: 'wall' as any,
         polygon: [
           { x: 45, z: 45 },
           { x: 55, z: 45 },
           { x: 55, z: 55 },
           { x: 45, z: 55 }
         ]
-      }]
+      }] as any // Test uses older polygon API
     });
     
     navMeshResource.updateMesh(newNavMesh);

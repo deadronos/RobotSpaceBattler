@@ -60,9 +60,9 @@ describe('PathfindingSystem Memory', () => {
           z: 80 - Math.floor(i / 10) * 8
         };
         system.calculatePath(
-          robot.position,
-          robot.pathComponent.requestedTarget,
-          robot.pathComponent
+          robot.position as any,
+          robot.pathComponent,
+          'robot1'
         );
       });
     }

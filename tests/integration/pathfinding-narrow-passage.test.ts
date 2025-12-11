@@ -9,6 +9,7 @@ import { NavMeshGenerator } from '@/simulation/ai/pathfinding/navmesh/NavMeshGen
 import { NavMeshResource } from '@/simulation/ai/pathfinding/integration/NavMeshResource';
 import { PathfindingSystem } from '@/simulation/ai/pathfinding/integration/PathfindingSystem';
 import type { PathComponent } from '@/simulation/ai/pathfinding/integration/PathComponent';
+import { ObstacleType } from '@/simulation/ai/pathfinding/types';
 
 describe('T060: Narrow Passage Navigation', () => {
   let system: PathfindingSystem;
@@ -32,7 +33,7 @@ describe('T060: Narrow Passage Navigation', () => {
         },
         // Right wall of corridor
         {
-          type: 'wall',
+          type: 'wall' as any,
           polygon: [
             { x: 0, z: 55 },
             { x: 40, z: 55 },
@@ -40,7 +41,7 @@ describe('T060: Narrow Passage Navigation', () => {
             { x: 0, z: 60 }
           ]
         }
-      ]
+      ] as any
     });
 
     navMeshResource = new NavMeshResource(narrowPassageMesh);
