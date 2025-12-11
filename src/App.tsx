@@ -15,6 +15,7 @@ import { ObstacleEditor } from "./components/debug/ObstacleEditor";
 import { ObstacleSpawner } from "./components/debug/ObstacleSpawner";
 import { PerfToggles } from "./components/debug/PerfToggles";
 import { Simulation } from "./components/Simulation";
+import { SettingsModal } from "./components/ui/SettingsModal";
 import { createBattleWorld } from "./ecs/world";
 import {
   AUTO_RESTART_DELAY_MS,
@@ -69,6 +70,9 @@ export default function App() {
     restartTimerMs: null,
     winner: null,
   });
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showDebugUI, setShowDebugUI] = useState(false);
+
   const [obstacleFixture, setObstacleFixture] = useState<
     ObstacleFixture | undefined
   >(
@@ -164,6 +168,35 @@ export default function App() {
       <div id="status" className="match-status" role="status">
         {statusText}
       </div>
+
+      <button
+        className="settings-button"
+        onClick={() => setIsSettingsOpen(true)}
+        aria-label="Open settings"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        showDebugUI={showDebugUI}
+        onToggleDebugUI={setShowDebugUI}
+      />
+
       <Suspense fallback={<div className="match-status">Loading arena...</div>}>
         <Simulation
           battleWorld={battleWorld}
@@ -173,22 +206,24 @@ export default function App() {
           obstacleFixture={obstacleFixture}
         />
       </Suspense>
-      <div
-        style={{
-          position: "absolute",
-          left: 16,
-          top: 72,
-          maxWidth: 440,
-          zIndex: 2,
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-        }}
-      >
-        <ObstacleEditor world={battleWorld} sampleFixture={obstacleFixture} />
-        <ObstacleSpawner world={battleWorld} />
-        <PerfToggles />
-      </div>
+      {showDebugUI && (
+        <div
+          style={{
+            position: "absolute",
+            left: 16,
+            top: 72,
+            maxWidth: 440,
+            zIndex: 2,
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+          }}
+        >
+          <ObstacleEditor world={battleWorld} sampleFixture={obstacleFixture} />
+          <ObstacleSpawner world={battleWorld} />
+          <PerfToggles />
+        </div>
+      )}
       <div
         style={{
           position: "absolute",
