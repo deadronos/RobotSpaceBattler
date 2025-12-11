@@ -4,6 +4,16 @@ test.describe('Obstacle editor', () => {
   test('changing movement speed affects runtime position', async ({ page }) => {
     await page.goto('/');
 
+    // Ensure the app has loaded and network activity has finished
+    await page.waitForLoadState('networkidle');
+
+    // Open settings to enable Debug UI so the Obstacle Editor is visible
+    await page.getByRole('button', { name: 'Open settings' }).click();
+    await page.getByLabel('Show Debug UI').check();
+    // Close settings by clicking the close button
+    await page.getByRole('button', { name: 'Close settings' }).click();
+
+    // Now wait for the Obstacle Editor to appear
     await page.getByText('Obstacle Editor').waitFor();
 
     await page.waitForFunction(() => {
