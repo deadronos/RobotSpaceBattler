@@ -1,20 +1,26 @@
-import type { World as RapierWorld } from '@dimforge/rapier3d-compat';
+import type { World as RapierWorld } from "@dimforge/rapier3d-compat";
 
-import { updateAISystem } from '../../ecs/systems/aiSystem';
-import { updateCombatSystem } from '../../ecs/systems/combatSystem';
-import { updateEffectSystem } from '../../ecs/systems/effectSystem';
-import { updateMovementSystem } from '../../ecs/systems/movementSystem';
-import { updateProjectileSystem } from '../../ecs/systems/projectileSystem';
-import { BattleWorld, TeamId } from '../../ecs/world';
-import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
-import { createXorShift32 } from '../../lib/random/xorshift';
-import { isActiveRobot } from '../../lib/robotHelpers';
-import { MatchSpawnOptions,spawnMatch as spawnMatchWithFixture } from '../../simulation/match/matchSpawner';
-import { updateHazardSystem } from '../../simulation/obstacles/hazardSystem';
-import { clearRapierBindings,syncObstaclesToRapier } from '../../simulation/obstacles/rapierIntegration';
-import { updateObstacleMovement } from '../../simulation/obstacles/movementSystem';
-import { MatchStateMachine } from '../state/matchStateMachine';
-import { TelemetryPort } from './ports';
+import { updateAISystem } from "../../ecs/systems/aiSystem";
+import { updateCombatSystem } from "../../ecs/systems/combatSystem";
+import { updateEffectSystem } from "../../ecs/systems/effectSystem";
+import { updateMovementSystem } from "../../ecs/systems/movementSystem";
+import { updateProjectileSystem } from "../../ecs/systems/projectileSystem";
+import { BattleWorld, TeamId } from "../../ecs/world";
+import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
+import { createXorShift32 } from "../../lib/random/xorshift";
+import { isActiveRobot } from "../../lib/robotHelpers";
+import {
+  MatchSpawnOptions,
+  spawnMatch as spawnMatchWithFixture,
+} from "../../simulation/match/matchSpawner";
+import { updateHazardSystem } from "../../simulation/obstacles/hazardSystem";
+import { updateObstacleMovement } from "../../simulation/obstacles/movementSystem";
+import {
+  clearRapierBindings,
+  syncObstaclesToRapier,
+} from "../../simulation/obstacles/rapierIntegration";
+import { MatchStateMachine } from "../state/matchStateMachine";
+import { TelemetryPort } from "./ports";
 
 const VICTORY_DELAY_MS = 5000;
 
@@ -29,7 +35,7 @@ export interface BattleRunnerOptions {
   /** State machine managing match lifecycle. */
   matchMachine: MatchStateMachine;
   /** Optional obstacle fixture data to seed matches. */
-  obstacleFixture?: MatchSpawnOptions['obstacleFixture'];
+  obstacleFixture?: MatchSpawnOptions["obstacleFixture"];
 }
 
 /**
@@ -53,9 +59,12 @@ export interface BattleRunner {
   getRapierWorld: () => RapierWorld | undefined;
 }
 
-function evaluateVictory(world: BattleWorld, matchMachine: MatchStateMachine): void {
+function evaluateVictory(
+  world: BattleWorld,
+  matchMachine: MatchStateMachine,
+): void {
   const snapshot = matchMachine.getSnapshot();
-  if (snapshot.phase !== 'running') {
+  if (snapshot.phase !== "running") {
     return;
   }
 
@@ -69,14 +78,14 @@ function evaluateVictory(world: BattleWorld, matchMachine: MatchStateMachine): v
     { red: 0, blue: 0 },
   );
 
-  const teams: TeamId[] = ['red', 'blue'];
+  const teams: TeamId[] = ["red", "blue"];
   const defeated = teams.filter((team) => alive[team] === 0);
 
   if (defeated.length === 0 || defeated.length === teams.length) {
     return;
   }
 
-  const winner = defeated[0] === 'red' ? 'blue' : 'red';
+  const winner = defeated[0] === "red" ? "blue" : "red";
   matchMachine.declareVictory(winner, VICTORY_DELAY_MS);
 }
 
@@ -102,7 +111,8 @@ export function createBattleRunner(
       seed: matchSeed,
       resetWorld: true,
       obstacleFixture: options.obstacleFixture,
-      onRobotSpawn: (robot) => telemetry.recordSpawn(robot, world.state.elapsedMs),
+      onRobotSpawn: (robot) =>
+        telemetry.recordSpawn(robot, world.state.elapsedMs),
     });
     matchMachine.reset();
     matchMachine.start();
@@ -112,7 +122,7 @@ export function createBattleRunner(
 
   return {
     step: (deltaSeconds: number) => {
-      perfMarkStart('battleRunner.step');
+      perfMarkStart("battleRunner.step");
       const deltaMs = deltaSeconds * 1000;
       world.state.elapsedMs += deltaMs;
 
@@ -121,24 +131,24 @@ export function createBattleRunner(
 
       const snapshot = matchMachine.getSnapshot();
 
-      if (snapshot.phase === 'running') {
-        perfMarkStart('updateAISystem');
+      if (snapshot.phase === "running") {
+        perfMarkStart("updateAISystem");
         updateAISystem(world, () => rng.next());
-        perfMarkEnd('updateAISystem');
+        perfMarkEnd("updateAISystem");
 
-        perfMarkStart('updateCombatSystem');
+        perfMarkStart("updateCombatSystem");
         updateCombatSystem(world, telemetry);
-        perfMarkEnd('updateCombatSystem');
+        perfMarkEnd("updateCombatSystem");
 
-        perfMarkStart('updateMovementSystem');
+        perfMarkStart("updateMovementSystem");
         updateMovementSystem(world, deltaSeconds);
-        perfMarkEnd('updateMovementSystem');
+        perfMarkEnd("updateMovementSystem");
 
         updateProjectileSystem(world, deltaSeconds, telemetry);
 
-        perfMarkStart('updateEffectSystem');
+        perfMarkStart("updateEffectSystem");
         updateEffectSystem(world);
-        perfMarkEnd('updateEffectSystem');
+        perfMarkEnd("updateEffectSystem");
 
         evaluateVictory(world, matchMachine);
       }
@@ -149,7 +159,7 @@ export function createBattleRunner(
       }
 
       world.state.frameIndex += 1;
-      perfMarkEnd('battleRunner.step');
+      perfMarkEnd("battleRunner.step");
     },
     reset: () => {
       spawnMatch();

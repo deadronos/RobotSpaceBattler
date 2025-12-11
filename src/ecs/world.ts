@@ -1,5 +1,5 @@
-import type { World as RapierWorld } from '@dimforge/rapier3d-compat';
-import { World } from 'miniplex';
+import type { World as RapierWorld } from "@dimforge/rapier3d-compat";
+import { World } from "miniplex";
 
 import {
   addVec3,
@@ -7,23 +7,23 @@ import {
   distanceSquaredVec3,
   Vec3,
   vec3,
-} from '../lib/math/vec3';
-import { TEAM_CONFIGS, TeamConfig, TeamId } from '../lib/teamConfig';
-import { qualityManager } from '../state/quality/QualityManager';
+} from "../lib/math/vec3";
+import { TEAM_CONFIGS, TeamConfig, TeamId } from "../lib/teamConfig";
+import { qualityManager } from "../state/quality/QualityManager";
 import {
   createVisualInstanceManager,
   VisualInstanceCategory,
   VisualInstanceManager,
-} from '../visuals/VisualInstanceManager';
-import { createEffectPool, EffectPool } from './pools/EffectPool';
-import { createProjectilePool, ProjectilePool } from './pools/ProjectilePool';
+} from "../visuals/VisualInstanceManager";
+import { createEffectPool, EffectPool } from "./pools/EffectPool";
+import { createProjectilePool, ProjectilePool } from "./pools/ProjectilePool";
 
-export type { TeamId } from '../lib/teamConfig';
+export type { TeamId } from "../lib/teamConfig";
 
 /**
  * Supported weapon types.
  */
-export type WeaponType = 'laser' | 'gun' | 'rocket';
+export type WeaponType = "laser" | "gun" | "rocket";
 
 /**
  * Represents a memory of an enemy's position.
@@ -40,11 +40,11 @@ export interface EnemyMemoryEntry {
  */
 export interface RobotAIState {
   /** The current behavioral mode. */
-  mode: 'seek' | 'engage' | 'retreat';
+  mode: "seek" | "engage" | "retreat";
   /** The ID of the current target entity. */
   targetId?: string;
   /** The strategic directive assigned to the robot. */
-  directive?: 'offense' | 'defense' | 'balanced';
+  directive?: "offense" | "defense" | "balanced";
   /** The anchor position for defensive or holding behaviors. */
   anchorPosition?: Vec3 | null;
   /** Maximum distance allowed from the anchor position. */
@@ -74,7 +74,7 @@ export interface RobotEntity {
   /** Unique identifier for the robot. */
   id: string;
   /** Entity kind discriminator. */
-  kind: 'robot';
+  kind: "robot";
   /** The team the robot belongs to. */
   team: TeamId;
   /** Current position of the robot. */
@@ -120,7 +120,7 @@ export interface ProjectileEntity {
   /** Unique identifier for the projectile. */
   id: string;
   /** Entity kind discriminator. */
-  kind: 'projectile';
+  kind: "projectile";
   /** The team that fired the projectile. */
   team: TeamId;
   /** The ID of the robot that fired the projectile. */
@@ -170,17 +170,22 @@ export interface ObstacleEntity {
   /** Unique identifier for the obstacle. */
   id: string;
   /** Entity kind discriminator. */
-  kind: 'obstacle';
+  kind: "obstacle";
   /** Obstacle subtype. */
-  obstacleType: 'barrier' | 'hazard' | 'destructible';
+  obstacleType: "barrier" | "hazard" | "destructible";
   /** Current position. */
   position: Vec3;
   /** Orientation (rotation around Y axis) in radians. */
   orientation?: number;
   /** Shape metadata for blocking checks (box/circle). */
   shape?:
-    | { kind: 'box'; halfWidth: number; halfDepth: number; center?: { x: number; z: number } }
-    | { kind: 'circle'; radius: number; center?: { x: number; z: number } };
+    | {
+        kind: "box";
+        halfWidth: number;
+        halfDepth: number;
+        center?: { x: number; z: number };
+      }
+    | { kind: "circle"; radius: number; center?: { x: number; z: number } };
   /** Whether obstacle blocks line-of-sight. */
   blocksVision?: boolean;
   /** Whether obstacle blocks movement/traversal. */
@@ -193,7 +198,7 @@ export interface ObstacleEntity {
   maxDurability?: number;
   /** Optional movement pattern (inline). */
   movementPattern?: {
-    patternType: 'linear' | 'rotation' | 'oscillate';
+    patternType: "linear" | "rotation" | "oscillate";
     // linear
     points?: Vec3[];
     // rotation
@@ -209,16 +214,25 @@ export interface ObstacleEntity {
     /** Cached offset from pivot for rotation patterns. */
     originOffset?: Vec3;
   } | null;
-    /** Hazard schedule (for hazard obstacles) */
-    hazardSchedule?: { periodMs: number; activeMs: number; offsetMs?: number } | null;
-    /** Effects applied while hazard is active */
-    hazardEffects?: Array<{ kind: 'damage' | 'slow' | 'status'; amount: number; perSecond?: boolean; durationMs?: number }> | null;
+  /** Hazard schedule (for hazard obstacles) */
+  hazardSchedule?: {
+    periodMs: number;
+    activeMs: number;
+    offsetMs?: number;
+  } | null;
+  /** Effects applied while hazard is active */
+  hazardEffects?: Array<{
+    kind: "damage" | "slow" | "status";
+    amount: number;
+    perSecond?: boolean;
+    durationMs?: number;
+  }> | null;
 }
 
 /**
  * Types of visual effects.
  */
-export type EffectType = 'explosion' | 'impact' | 'laser-impact';
+export type EffectType = "explosion" | "impact" | "laser-impact";
 
 /**
  * Entity representing a visual effect.
@@ -227,7 +241,7 @@ export interface EffectEntity {
   /** Unique identifier for the effect. */
   id: string;
   /** Entity kind discriminator. */
-  kind: 'effect';
+  kind: "effect";
   /** The type of visual effect. */
   effectType: EffectType;
   /** Position of the effect. */
@@ -249,7 +263,11 @@ export interface EffectEntity {
 /**
  * Union type of all entities in the battle.
  */
-export type BattleEntity = RobotEntity | ProjectileEntity | EffectEntity | ObstacleEntity;
+export type BattleEntity =
+  | RobotEntity
+  | ProjectileEntity
+  | EffectEntity
+  | ObstacleEntity;
 
 /**
  * A store for holding entities of a specific type.
@@ -348,19 +366,19 @@ export function toVec3(x = 0, y = 0, z = 0): Vec3 {
 }
 
 function isRobotEntity(entity: BattleEntity): entity is RobotEntity {
-  return entity.kind === 'robot';
+  return entity.kind === "robot";
 }
 
 function isProjectileEntity(entity: BattleEntity): entity is ProjectileEntity {
-  return entity.kind === 'projectile';
+  return entity.kind === "projectile";
 }
 
 function isObstacleEntity(entity: BattleEntity): entity is ObstacleEntity {
-  return entity.kind === 'obstacle';
+  return entity.kind === "obstacle";
 }
 
 function isEffectEntity(entity: BattleEntity): entity is EffectEntity {
-  return entity.kind === 'effect';
+  return entity.kind === "effect";
 }
 
 /**
@@ -396,14 +414,16 @@ function createEntityStore<T extends BattleEntity>(
   };
 }
 
-function mapProjectileToCategory(projectile: ProjectileEntity): VisualInstanceCategory {
-  if (projectile.weapon === 'rocket') {
-    return 'rockets';
+function mapProjectileToCategory(
+  projectile: ProjectileEntity,
+): VisualInstanceCategory {
+  if (projectile.weapon === "rocket") {
+    return "rockets";
   }
-  if (projectile.weapon === 'laser') {
-    return 'lasers';
+  if (projectile.weapon === "laser") {
+    return "lasers";
   }
-  return 'bullets';
+  return "bullets";
 }
 
 /**
@@ -461,7 +481,8 @@ export function createBattleWorld(): BattleWorld {
   });
 
   const projectilePool = createProjectilePool(
-    instancingConfig.maxInstances.bullets + instancingConfig.maxInstances.rockets,
+    instancingConfig.maxInstances.bullets +
+      instancingConfig.maxInstances.rockets,
   );
   const effectPool = createEffectPool(instancingConfig.maxInstances.effects);
 
@@ -512,11 +533,11 @@ export function createBattleWorld(): BattleWorld {
     },
     addEffect: (effect: EffectEntity) => {
       world.add(effect);
-      const index = instanceManager.allocateIndex('effects', effect.id);
+      const index = instanceManager.allocateIndex("effects", effect.id);
       effect.instanceIndex = index ?? undefined;
     },
     removeEffect: (effect: EffectEntity) => {
-      instanceManager.releaseIndex('effects', effect.id);
+      instanceManager.releaseIndex("effects", effect.id);
       world.remove(effect);
       effectPool.release(effect);
     },

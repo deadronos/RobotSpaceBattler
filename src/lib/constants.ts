@@ -31,4 +31,4 @@ export const ROBOT_SEPARATION_DISTANCE = 1.5;
 /**
  * UI styling constants
  */
-export const VICTORY_OVERLAY_BACKGROUND = 'rgba(12, 14, 32, 0.85)';
+export const VICTORY_OVERLAY_BACKGROUND = "rgba(12, 14, 32, 0.85)";

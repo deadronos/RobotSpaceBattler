@@ -1,4 +1,6 @@
-# Feature Specification: Weapon Diversity — 10v10 Simulation (Observer)
+# Feature Specification: Weapon Diversity
+
+> **Physics Scale Reference**: See [006-dynamic-arena-obstacles/spec.md](../006-dynamic-arena-obstacles/spec.md#physics-scale--collider-design-decisions-2025-12-10) for world unit scale (1:1 meters) and collider sizing decisions. — 10v10 Simulation (Observer)
 
 **Feature Branch**: `005-weapon-diversity`
 **Created**: 2025-11-12

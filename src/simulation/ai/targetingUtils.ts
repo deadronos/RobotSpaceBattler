@@ -1,4 +1,4 @@
-import { distanceSquaredVec3, Vec3 } from '../../lib/math/vec3';
+import { distanceSquaredVec3, Vec3 } from "../../lib/math/vec3";
 
 /**
  * Interface for entities with a position.

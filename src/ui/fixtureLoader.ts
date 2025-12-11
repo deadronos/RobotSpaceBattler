@@ -1,9 +1,9 @@
-import { BattleWorld, ObstacleEntity } from '../ecs/world';
+import { BattleWorld, ObstacleEntity } from "../ecs/world";
 import {
   ObstacleFixture,
   ObstacleFixtureEntry,
   spawnObstaclesFromFixture,
-} from '../simulation/match/matchSpawner';
+} from "../simulation/match/matchSpawner";
 
 function toFixtureEntry(obstacle: ObstacleEntity): ObstacleFixtureEntry {
   const entry: ObstacleFixtureEntry = {
@@ -34,7 +34,7 @@ export function exportObstacleFixture(world: BattleWorld): ObstacleFixture {
 export function parseObstacleFixture(json: string): ObstacleFixture {
   const parsed = JSON.parse(json) as ObstacleFixture;
   if (!parsed || !Array.isArray(parsed.obstacles)) {
-    throw new Error('Invalid obstacle fixture payload');
+    throw new Error("Invalid obstacle fixture payload");
   }
   return parsed;
 }
@@ -43,7 +43,10 @@ export function serializeObstacleFixture(fixture: ObstacleFixture): string {
   return JSON.stringify(fixture, null, 2);
 }
 
-export function replaceObstaclesFromFixture(world: BattleWorld, fixture: ObstacleFixture): void {
+export function replaceObstaclesFromFixture(
+  world: BattleWorld,
+  fixture: ObstacleFixture,
+): void {
   // Remove existing obstacles only (keep robots/projectiles intact)
   const existing = [...world.obstacles.entities];
   existing.forEach((obs) => world.world.remove(obs));

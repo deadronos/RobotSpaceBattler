@@ -1,9 +1,13 @@
-import { createVisualTelemetryEmitter } from './telemetry';
+import { createVisualTelemetryEmitter } from "./telemetry";
 
 /**
  * Category of visual instances managed by the system.
  */
-export type VisualInstanceCategory = 'bullets' | 'rockets' | 'lasers' | 'effects';
+export type VisualInstanceCategory =
+  | "bullets"
+  | "rockets"
+  | "lasers"
+  | "effects";
 
 /**
  * Configuration for the visual instance manager.
@@ -17,9 +21,9 @@ export interface VisualInstanceManagerConfig {
  * Event types for visual instancing telemetry.
  */
 export type VisualInstanceTelemetryEventType =
-  | 'VFX:Instancing:Alloc'
-  | 'VFX:Instancing:Release'
-  | 'VFX:Instancing:Fallback';
+  | "VFX:Instancing:Alloc"
+  | "VFX:Instancing:Release"
+  | "VFX:Instancing:Fallback";
 
 /**
  * Telemetry event for visual instancing.
@@ -68,7 +72,10 @@ export class VisualInstanceManager {
   private createState(capacity: number): InstanceState {
     return {
       capacity,
-      freeIndices: Array.from({ length: capacity }, (_, index) => capacity - index - 1),
+      freeIndices: Array.from(
+        { length: capacity },
+        (_, index) => capacity - index - 1,
+      ),
       allocations: new Map(),
     };
   }
@@ -79,7 +86,10 @@ export class VisualInstanceManager {
    * @param entityId - The ID of the entity.
    * @returns The allocated index, or null if capacity is exhausted.
    */
-  allocateIndex(category: VisualInstanceCategory, entityId: string): number | null {
+  allocateIndex(
+    category: VisualInstanceCategory,
+    entityId: string,
+  ): number | null {
     const state = this.states[category];
     if (!state) {
       return null;
@@ -92,18 +102,18 @@ export class VisualInstanceManager {
     const index = state.freeIndices.pop();
     if (index === undefined) {
       this.telemetry.emit({
-        type: 'VFX:Instancing:Fallback',
+        type: "VFX:Instancing:Fallback",
         category,
         entityId,
         timestamp: Date.now(),
-        details: { reason: 'capacity-exhausted' },
+        details: { reason: "capacity-exhausted" },
       });
       return null;
     }
 
     state.allocations.set(entityId, index);
     this.telemetry.emit({
-      type: 'VFX:Instancing:Alloc',
+      type: "VFX:Instancing:Alloc",
       category,
       entityId,
       index,
@@ -145,7 +155,7 @@ export class VisualInstanceManager {
     state.allocations.delete(entityId);
     state.freeIndices.push(index);
     this.telemetry.emit({
-      type: 'VFX:Instancing:Release',
+      type: "VFX:Instancing:Release",
       category,
       entityId,
       index,
@@ -166,11 +176,16 @@ export class VisualInstanceManager {
    * Resets all allocations (e.g., when resetting the match).
    */
   reset(): void {
-    (Object.keys(this.states) as VisualInstanceCategory[]).forEach((category) => {
-      const state = this.states[category];
-      state.allocations.clear();
-      state.freeIndices = Array.from({ length: state.capacity }, (_, index) => state.capacity - index - 1);
-    });
+    (Object.keys(this.states) as VisualInstanceCategory[]).forEach(
+      (category) => {
+        const state = this.states[category];
+        state.allocations.clear();
+        state.freeIndices = Array.from(
+          { length: state.capacity },
+          (_, index) => state.capacity - index - 1,
+        );
+      },
+    );
   }
 }
 

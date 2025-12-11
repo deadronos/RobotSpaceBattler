@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Euler, Vector3 } from 'three';
+import { useMemo } from "react";
+import { Euler, Vector3 } from "three";
 
 type LampPanel = {
   position: Vector3;
@@ -17,32 +17,32 @@ export function LampPanels() {
       {
         position: new Vector3(0, 3.5, -48.9),
         rotation: new Euler(0, 0, 0),
-        color: '#7ecbff',
+        color: "#7ecbff",
       },
       {
         position: new Vector3(0, 3.5, 48.9),
         rotation: new Euler(0, Math.PI, 0),
-        color: '#7ecbff',
+        color: "#7ecbff",
       },
       {
         position: new Vector3(-48.9, 3.5, 0),
         rotation: new Euler(0, Math.PI / 2, 0),
-        color: '#ffb36c',
+        color: "#ffb36c",
       },
       {
         position: new Vector3(48.9, 3.5, 0),
         rotation: new Euler(0, -Math.PI / 2, 0),
-        color: '#ff6f9f',
+        color: "#ff6f9f",
       },
       {
         position: new Vector3(-20, 3.25, -20),
         rotation: new Euler(0, Math.PI / 4, 0),
-        color: '#8ce2ff',
+        color: "#8ce2ff",
       },
       {
         position: new Vector3(20, 3.25, 20),
         rotation: new Euler(0, -Math.PI / 4, 0),
-        color: '#9cffb5',
+        color: "#9cffb5",
       },
     ],
     [],
@@ -51,10 +51,18 @@ export function LampPanels() {
   return (
     <>
       {lampPanels.map((panel, index) => (
-        <group key={`lamp-${index}`} position={panel.position} rotation={panel.rotation}>
+        <group
+          key={`lamp-${index}`}
+          position={panel.position}
+          rotation={panel.rotation}
+        >
           <mesh castShadow receiveShadow>
             <boxGeometry args={[4.2, 2.2, 0.3]} />
-            <meshStandardMaterial color="#141724" metalness={0.6} roughness={0.35} />
+            <meshStandardMaterial
+              color="#141724"
+              metalness={0.6}
+              roughness={0.35}
+            />
           </mesh>
           <mesh position={[0, 0, 0.25]} castShadow receiveShadow>
             <boxGeometry args={[3.4, 1.6, 0.2]} />

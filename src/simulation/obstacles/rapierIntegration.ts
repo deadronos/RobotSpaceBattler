@@ -1,26 +1,26 @@
-import { BattleWorld, ObstacleEntity } from '../../ecs/world';
+import { BattleWorld, ObstacleEntity } from "../../ecs/world";
 
 type RapierObstacleApi = Partial<{
   createObstacleCollider: (
     id: string,
-    shape: ObstacleEntity['shape'],
-    position: ObstacleEntity['position'],
+    shape: ObstacleEntity["shape"],
+    position: ObstacleEntity["position"],
     orientation: number,
   ) => unknown;
   createKinematicBody: (
     id: string,
-    shape: ObstacleEntity['shape'],
-    position: ObstacleEntity['position'],
+    shape: ObstacleEntity["shape"],
+    position: ObstacleEntity["position"],
     orientation: number,
   ) => unknown;
   updateObstacleTransform: (
     id: string,
-    position: ObstacleEntity['position'],
+    position: ObstacleEntity["position"],
     orientation: number,
   ) => void;
   setKinematicBodyTransform: (
     id: string,
-    position: ObstacleEntity['position'],
+    position: ObstacleEntity["position"],
     orientation: number,
   ) => void;
   removeObstacle: (id: string) => void;
@@ -55,15 +55,29 @@ export function syncObstaclesToRapier(world: BattleWorld) {
     // Allow test harnesses / adapters to provide a friendly API:
     // - createObstacleCollider(id, shape, position, orientation)
     // - fallback: createKinematicBody / createCollider
-    if (typeof rapierWorld.createObstacleCollider === 'function') {
-      const collider = rapierWorld.createObstacleCollider(o.id, o.shape, o.position, o.orientation ?? 0);
+    if (typeof rapierWorld.createObstacleCollider === "function") {
+      const collider = rapierWorld.createObstacleCollider(
+        o.id,
+        o.shape,
+        o.position,
+        o.orientation ?? 0,
+      );
       map.set(o.id, collider);
-    } else if (typeof rapierWorld.createKinematicBody === 'function') {
-      const body = rapierWorld.createKinematicBody(o.id, o.shape, o.position, o.orientation ?? 0);
+    } else if (typeof rapierWorld.createKinematicBody === "function") {
+      const body = rapierWorld.createKinematicBody(
+        o.id,
+        o.shape,
+        o.position,
+        o.orientation ?? 0,
+      );
       map.set(o.id, body);
     } else {
       // No-op but still record a placeholder binding so subsequent calls are stable.
-      map.set(o.id, { placeholder: true, shape: o.shape, position: o.position });
+      map.set(o.id, {
+        placeholder: true,
+        shape: o.shape,
+        position: o.position,
+      });
     }
   }
 }
@@ -82,10 +96,14 @@ export function updateRapierObstacleTransforms(world: BattleWorld) {
   for (const o of world.obstacles.entities as ObstacleEntity[]) {
     if (!map.has(o.id)) continue;
 
-    if (typeof rapierWorld.updateObstacleTransform === 'function') {
+    if (typeof rapierWorld.updateObstacleTransform === "function") {
       rapierWorld.updateObstacleTransform(o.id, o.position, o.orientation ?? 0);
-    } else if (typeof rapierWorld.setKinematicBodyTransform === 'function') {
-      rapierWorld.setKinematicBodyTransform(o.id, o.position, o.orientation ?? 0);
+    } else if (typeof rapierWorld.setKinematicBodyTransform === "function") {
+      rapierWorld.setKinematicBodyTransform(
+        o.id,
+        o.position,
+        o.orientation ?? 0,
+      );
     } else {
       // no-op fallback
     }
@@ -97,7 +115,7 @@ export function clearRapierBindings(world: BattleWorld) {
   if (!map) return;
   const rapierWorld = world.rapierWorld as RapierObstacleApi | undefined;
   // Allow removal if rapierWorld offers it
-  if (rapierWorld && typeof rapierWorld.removeObstacle === 'function') {
+  if (rapierWorld && typeof rapierWorld.removeObstacle === "function") {
     for (const id of map.keys()) {
       rapierWorld.removeObstacle(id);
     }

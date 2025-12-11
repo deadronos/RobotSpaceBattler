@@ -1,13 +1,18 @@
-import { BattleWorld } from '../../ecs/world';
-import { TelemetryPort } from '../../runtime/simulation/ports';
+import { BattleWorld } from "../../ecs/world";
+import { TelemetryPort } from "../../runtime/simulation/ports";
 
 /**
  * Apply damage to a destructible obstacle. Returns true if the obstacle was destroyed.
  */
-export function applyDamageToObstacle(world: BattleWorld, obstacleId: string, amount: number, telemetry?: TelemetryPort): boolean {
+export function applyDamageToObstacle(
+  world: BattleWorld,
+  obstacleId: string,
+  amount: number,
+  telemetry?: TelemetryPort,
+): boolean {
   const obs = world.obstacles.entities.find((o) => o.id === obstacleId);
   if (!obs) return false;
-  if (obs.obstacleType !== 'destructible') return false;
+  if (obs.obstacleType !== "destructible") return false;
 
   if (obs.durability == null) obs.durability = obs.maxDurability ?? 0;
 

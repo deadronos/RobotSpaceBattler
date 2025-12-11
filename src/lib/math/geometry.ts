@@ -1,4 +1,4 @@
-import { Vec3, vec3 } from './vec3';
+import { Vec3, vec3 } from "./vec3";
 
 /**
  * Calculates the closest point on an Axis-Aligned Bounding Box (AABB) to a given point.
@@ -62,7 +62,7 @@ export function distanceSquaredPointToAABB(
 export function closestPointOnCircle(
   point: Vec3,
   center: Vec3,
-  radius: number
+  radius: number,
 ): Vec3 {
   const dx = point.x - center.x;
   const dz = point.z - center.z;
@@ -78,7 +78,7 @@ export function closestPointOnCircle(
   // But for "closest point on perimeter" it's different.
   // Let's implement "closest point on disk" (solid circle).
   if (distSq <= radius * radius) {
-     return vec3(point.x, point.y, point.z);
+    return vec3(point.x, point.y, point.z);
   }
 
   const dist = Math.sqrt(distSq);
@@ -94,16 +94,16 @@ export function closestPointOnCircle(
 export function distanceSquaredPointToCircle(
   point: Vec3,
   center: Vec3,
-  radius: number
+  radius: number,
 ): number {
-    const dx = point.x - center.x;
-    const dz = point.z - center.z;
-    const distSq = dx * dx + dz * dz;
-    const radiusSq = radius * radius;
+  const dx = point.x - center.x;
+  const dz = point.z - center.z;
+  const distSq = dx * dx + dz * dz;
+  const radiusSq = radius * radius;
 
-    if (distSq <= radiusSq) return 0;
+  if (distSq <= radiusSq) return 0;
 
-    const dist = Math.sqrt(distSq);
-    const gap = dist - radius;
-    return gap * gap;
+  const dist = Math.sqrt(distSq);
+  const gap = dist - radius;
+  return gap * gap;
 }

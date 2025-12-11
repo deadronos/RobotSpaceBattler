@@ -1,5 +1,5 @@
-import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
+import { useFrame } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
 import {
   BufferGeometry,
   Color,
@@ -7,11 +7,11 @@ import {
   LineBasicMaterial,
   LineSegments,
   Vector3,
-} from 'three';
+} from "three";
 
-import { ProjectileEntity, RobotEntity } from '../../ecs/world';
-import { perfMarkEnd, perfMarkStart } from '../../lib/perf';
-import { VisualInstanceManager } from '../../visuals/VisualInstanceManager';
+import { ProjectileEntity, RobotEntity } from "../../ecs/world";
+import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
+import { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
 
 interface LaserBatchRendererProps {
   projectiles: ProjectileEntity[];
@@ -23,8 +23,12 @@ interface LaserBatchRendererProps {
  * Renders multiple laser beams in a single draw call using Three.js LineSegments.
  * Optimized for performance by reusing geometry buffers.
  */
-export function LaserBatchRenderer({ projectiles, robotsById, instanceManager }: LaserBatchRendererProps) {
-  const capacity = instanceManager.getCapacity('lasers');
+export function LaserBatchRenderer({
+  projectiles,
+  robotsById,
+  instanceManager,
+}: LaserBatchRendererProps) {
+  const capacity = instanceManager.getCapacity("lasers");
   const geometry = useMemo(() => new BufferGeometry(), []);
   const material = useMemo(
     () =>
@@ -36,8 +40,14 @@ export function LaserBatchRenderer({ projectiles, robotsById, instanceManager }:
       }),
     [],
   );
-  const positions = useMemo(() => new Float32Array(Math.max(1, capacity) * 6), [capacity]);
-  const colors = useMemo(() => new Float32Array(Math.max(1, capacity) * 6), [capacity]);
+  const positions = useMemo(
+    () => new Float32Array(Math.max(1, capacity) * 6),
+    [capacity],
+  );
+  const colors = useMemo(
+    () => new Float32Array(Math.max(1, capacity) * 6),
+    [capacity],
+  );
   const color = useMemo(() => new Color(), []);
   const dummyStart = useMemo(() => new Vector3(), []);
   const dummyEnd = useMemo(() => new Vector3(), []);
@@ -47,8 +57,8 @@ export function LaserBatchRenderer({ projectiles, robotsById, instanceManager }:
   const lineRef = useRef<LineSegments | null>(null);
 
   useEffect(() => {
-    geometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
+    geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
+    geometry.setAttribute("color", new Float32BufferAttribute(colors, 3));
     geometry.setDrawRange(0, Math.max(1, capacity) * 2);
     return () => {
       geometry.dispose();
@@ -62,17 +72,17 @@ export function LaserBatchRenderer({ projectiles, robotsById, instanceManager }:
   }, [material]);
 
   useFrame(() => {
-    perfMarkStart('LaserBatchRenderer.useFrame');
+    perfMarkStart("LaserBatchRenderer.useFrame");
     const line = lineRef.current;
     if (!line) {
-      perfMarkEnd('LaserBatchRenderer.useFrame');
+      perfMarkEnd("LaserBatchRenderer.useFrame");
       return;
     }
 
-    const positionAttr = geometry.getAttribute('position');
-    const colorAttr = geometry.getAttribute('color');
+    const positionAttr = geometry.getAttribute("position");
+    const colorAttr = geometry.getAttribute("color");
     if (!positionAttr || !colorAttr) {
-      perfMarkEnd('LaserBatchRenderer.useFrame');
+      perfMarkEnd("LaserBatchRenderer.useFrame");
       return;
     }
 
@@ -84,11 +94,13 @@ export function LaserBatchRenderer({ projectiles, robotsById, instanceManager }:
 
     for (let i = 0; i < projectiles.length; i += 1) {
       const projectile = projectiles[i];
-      if (projectile.weapon !== 'laser' || capacity === 0) {
+      if (projectile.weapon !== "laser" || capacity === 0) {
         continue;
       }
 
-      const index = projectile.instanceIndex ?? instanceManager.getIndex('lasers', projectile.id);
+      const index =
+        projectile.instanceIndex ??
+        instanceManager.getIndex("lasers", projectile.id);
       if (index === null || index === undefined || index >= capacity) {
         continue;
       }
@@ -96,18 +108,36 @@ export function LaserBatchRenderer({ projectiles, robotsById, instanceManager }:
       activeIndices.add(index);
 
       const shooter = robotsById.get(projectile.shooterId);
-      const target = projectile.targetId ? robotsById.get(projectile.targetId) : undefined;
+      const target = projectile.targetId
+        ? robotsById.get(projectile.targetId)
+        : undefined;
 
       if (shooter) {
-        dummyStart.set(shooter.position.x, shooter.position.y + 0.8, shooter.position.z);
+        dummyStart.set(
+          shooter.position.x,
+          shooter.position.y + 0.8,
+          shooter.position.z,
+        );
       } else {
-        dummyStart.set(projectile.position.x, projectile.position.y, projectile.position.z);
+        dummyStart.set(
+          projectile.position.x,
+          projectile.position.y,
+          projectile.position.z,
+        );
       }
 
       if (target) {
-        dummyEnd.set(target.position.x, target.position.y + 0.8, target.position.z);
+        dummyEnd.set(
+          target.position.x,
+          target.position.y + 0.8,
+          target.position.z,
+        );
       } else {
-        tempVelocity.set(projectile.velocity.x, projectile.velocity.y, projectile.velocity.z);
+        tempVelocity.set(
+          projectile.velocity.x,
+          projectile.velocity.y,
+          projectile.velocity.z,
+        );
         if (tempVelocity.lengthSq() > 1e-6) {
           tempVelocity.normalize().multiplyScalar(3);
         }
@@ -122,7 +152,7 @@ export function LaserBatchRenderer({ projectiles, robotsById, instanceManager }:
       positions[offset + 4] = dummyEnd.y;
       positions[offset + 5] = dummyEnd.z;
 
-      const beamColor = projectile.projectileColor ?? '#7fffd4';
+      const beamColor = projectile.projectileColor ?? "#7fffd4";
       color.set(beamColor);
       color.toArray(colors, offset);
       color.multiplyScalar(0.7).toArray(colors, offset + 3);
@@ -161,12 +191,18 @@ export function LaserBatchRenderer({ projectiles, robotsById, instanceManager }:
     previousIndicesRef.current = activeIndices;
     activeIndicesRef.current = previousIndices;
 
-    perfMarkEnd('LaserBatchRenderer.useFrame');
+    perfMarkEnd("LaserBatchRenderer.useFrame");
   });
 
   if (capacity === 0) {
     return null;
   }
 
-  return <lineSegments ref={lineRef} args={[geometry, material]} frustumCulled={false} />;
+  return (
+    <lineSegments
+      ref={lineRef}
+      args={[geometry, material]}
+      frustumCulled={false}
+    />
+  );
 }

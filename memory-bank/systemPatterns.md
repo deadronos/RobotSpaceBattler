@@ -24,7 +24,16 @@ Canonical system patterns used across the repo:
 
   - React prefabs attach `rigid` refs and initial component data; cleanup removes `rigid` on unmount.
 
+Physics Scale & Collider Design (2025-12-10)
+
+- **World Unit Scale**: 1 Rapier unit = 1 meter (1:1 scale)
+- **Collider Philosophy**: All colliders sized at 99% of visual mesh dimensions for ~1cm clearance
+- **Robot Constants**: `ROBOT_RADIUS = 0.891m`, `AVOIDANCE_RADIUS = 1.2m`
+- **Collider Types**: Explicit colliders (CapsuleCollider, CylinderCollider, CuboidCollider) at 99% scale
+- **Navigation**: AI steering begins at 1.2m, collision at ~1cm clearance
+
 Edge cases and recommended practices
 
 - Always check `rigid` API availability before calling Rapier methods (defensive try/catch in systems used in tests).
 - Use small epsilon when comparing positions in `physicsSyncSystem` to avoid jitter-driven updates.
+- Collider dimensions must match visual geometry at 99% scale for accurate collision feedback.
