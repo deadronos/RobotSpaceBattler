@@ -7,6 +7,7 @@ import type {
   ArenaConfiguration,
   ConvexPolygon,
   NavigationMesh,
+  ObstacleGeometry,
   Point2D,
 } from "../types";
 
@@ -81,7 +82,7 @@ export class NavMeshGenerator {
    */
   private generatePolygonsWithObstacles(
     size: { width: number; depth: number },
-    obstacles: readonly { footprint: readonly Point2D[] }[],
+    obstacles: readonly (ObstacleGeometry | ({ footprint?: readonly Point2D[]; polygon?: readonly Point2D[] } & Record<string, unknown>))[],
     clearanceRadius: number,
   ): ConvexPolygon[] {
     const GRID_RESOLUTION = 0.5; // Grid cell size in meters
@@ -103,9 +104,13 @@ export class NavMeshGenerator {
 
         // Check against all obstacles
         for (const obstacle of obstacles) {
+          type ObstacleLike = { footprint?: readonly Point2D[]; polygon?: readonly Point2D[] };
+          const o = obstacle as ObstacleLike;
+          const vertices = o.footprint ?? o.polygon;
+          if (!vertices || vertices.length === 0) continue;
           const distance = this.getSquaredDistanceToPolygon(
             cellCenter,
-            obstacle.footprint,
+            vertices,
           );
           // Block if distance is less than clearance radius squared
           // Note: getSquaredDistanceToPolygon returns 0 if inside
@@ -263,8 +268,10 @@ export class NavMeshGenerator {
    */
   private getSquaredDistanceToPolygon(
     point: Point2D,
-    vertices: readonly Point2D[],
+    vertices?: readonly Point2D[],
   ): number {
+    if (!vertices || vertices.length === 0) return Infinity;
+
     let inside = false;
     let minDistSq = Infinity;
 

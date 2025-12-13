@@ -19,7 +19,7 @@ export class StringPuller {
    * @param navMesh - Navigation mesh for line-of-sight checks
    * @returns Smoothed path with fewer waypoints
    */
-  smoothPath(path: Point2D[], navMesh: NavigationMesh): Point2D[] {
+  smoothPath(path: Point2D[], navMesh?: NavigationMesh): Point2D[] {
     if (path.length <= 2) {
       return [...path]; // Cannot smooth paths with 2 or fewer points
     }
@@ -62,8 +62,11 @@ export class StringPuller {
   private isLineWalkable(
     start: Point2D,
     end: Point2D,
-    navMesh: NavigationMesh,
+    navMesh?: NavigationMesh,
   ): boolean {
+    // If no navMesh is passed, assume wide-open walkable space
+    if (!navMesh) return true;
+
     // 1. Find start polygon
     let currentPolyIndex = this.findPolygonForPoint(start, navMesh);
     if (currentPolyIndex === -1) {
@@ -129,8 +132,9 @@ export class StringPuller {
    */
   private findPolygonForPoint(
     point: Point2D,
-    navMesh: NavigationMesh,
+    navMesh?: NavigationMesh,
   ): number {
+    if (!navMesh) return -1;
     for (const poly of navMesh.polygons) {
       if (this.isPointInPolygon(point, poly)) {
         return poly.index;
@@ -229,8 +233,9 @@ export class StringPuller {
   private findNeighborContainingPoint(
     currentPolyIndex: number,
     point: Point2D,
-    navMesh: NavigationMesh
+    navMesh?: NavigationMesh
   ): number {
+    if (!navMesh) return -1;
     const neighbors = navMesh.adjacency.get(currentPolyIndex);
     if (!neighbors) return -1;
 

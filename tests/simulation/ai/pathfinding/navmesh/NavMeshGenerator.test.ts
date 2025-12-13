@@ -58,20 +58,32 @@ describe('NavMeshGenerator', () => {
 
   it('[T015] handles multiple pillar obstacles', () => {
     const generator = new NavMeshGenerator();
+
+    function createOctagon(cx: number, cz: number, r: number) {
+      const sides = 8;
+      const footprint = [] as { x: number; z: number }[];
+      for (let i = 0; i < sides; i++) {
+        const angle = (i * 2 * Math.PI) / sides;
+        footprint.push({ x: cx + r * Math.cos(angle), z: cz + r * Math.sin(angle) });
+      }
+      return footprint;
+    }
+
     const arenaConfig: ArenaConfiguration = {
       size: { width: 100, depth: 100 },
       obstacles: [
         {
           id: 'pillar-1',
           type: 1 as any, // ObstacleType.PILLAR
-          footprint: [], // Will be populated with octagon vertices
+          // Place pillars at different positions
+          footprint: createOctagon(30, 30, 2),
           height: 2.5,
           passable: false,
         },
         {
           id: 'pillar-2',
           type: 1 as any, // ObstacleType.PILLAR
-          footprint: [],
+          footprint: createOctagon(70, 70, 2),
           height: 2.5,
           passable: false,
         },
