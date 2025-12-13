@@ -7,6 +7,7 @@ import type {
   ArenaConfiguration,
   ConvexPolygon,
   NavigationMesh,
+  ObstacleGeometry,
   Point2D,
 } from "../types";
 
@@ -55,7 +56,6 @@ export class NavMeshGenerator {
     }
 
     // With obstacles, we need to subtract them from walkable area
-    // For now, create simplified mesh - full implementation in future tasks
     const polygons = this.generatePolygonsWithObstacles(
       size,
       obstacles,
@@ -78,74 +78,123 @@ export class NavMeshGenerator {
 
   /**
    * Generate polygons with obstacles subtracted
-   * Simplified implementation for MVP - creates coarse mesh
-   * TODO: Implement proper obstacle avoidance and polygon decomposition
+   * Uses a grid-based approach to identify walkable areas and merges them into convex polygons (rectangles).
    */
   private generatePolygonsWithObstacles(
     size: { width: number; depth: number },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _obstacles: readonly { footprint: readonly Point2D[] }[],
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _clearanceRadius: number,
+    obstacles: readonly (ObstacleGeometry | ({ footprint?: readonly Point2D[]; polygon?: readonly Point2D[] } & Record<string, unknown>))[],
+    clearanceRadius: number,
   ): ConvexPolygon[] {
-    // Simplified: divide arena into quadrants and avoid obstacle areas
-    const halfWidth = size.width / 2;
-    const halfDepth = size.depth / 2;
+    const GRID_RESOLUTION = 0.5; // Grid cell size in meters
+    const gridWidth = Math.ceil(size.width / GRID_RESOLUTION);
+    const gridDepth = Math.ceil(size.depth / GRID_RESOLUTION);
 
-    // Create 4 quadrant polygons (simplified mesh)
-    const polygons: ConvexPolygon[] = [
-      // Top-left quadrant
-      {
-        index: 0,
-        vertices: [
-          { x: 0, z: 0 },
-          { x: halfWidth, z: 0 },
-          { x: halfWidth, z: halfDepth },
-          { x: 0, z: halfDepth },
-        ],
-        centroid: { x: halfWidth / 2, z: halfDepth / 2 },
-        area: halfWidth * halfDepth,
-      },
-      // Top-right quadrant
-      {
-        index: 1,
-        vertices: [
-          { x: halfWidth, z: 0 },
-          { x: size.width, z: 0 },
-          { x: size.width, z: halfDepth },
-          { x: halfWidth, z: halfDepth },
-        ],
-        centroid: { x: halfWidth + halfWidth / 2, z: halfDepth / 2 },
-        area: halfWidth * halfDepth,
-      },
-      // Bottom-left quadrant
-      {
-        index: 2,
-        vertices: [
-          { x: 0, z: halfDepth },
-          { x: halfWidth, z: halfDepth },
-          { x: halfWidth, z: size.depth },
-          { x: 0, z: size.depth },
-        ],
-        centroid: { x: halfWidth / 2, z: halfDepth + halfDepth / 2 },
-        area: halfWidth * halfDepth,
-      },
-      // Bottom-right quadrant
-      {
-        index: 3,
-        vertices: [
-          { x: halfWidth, z: halfDepth },
-          { x: size.width, z: halfDepth },
-          { x: size.width, z: size.depth },
-          { x: halfWidth, z: size.depth },
-        ],
-        centroid: {
-          x: halfWidth + halfWidth / 2,
-          z: halfDepth + halfDepth / 2,
-        },
-        area: halfWidth * halfDepth,
-      },
-    ];
+    // Initialize grid (true = walkable, false = blocked)
+    const grid: boolean[][] = Array.from({ length: gridWidth }, () =>
+      Array(gridDepth).fill(true),
+    );
+
+    // Rasterize obstacles into the grid
+    for (let x = 0; x < gridWidth; x++) {
+      for (let z = 0; z < gridDepth; z++) {
+        const cellCenter: Point2D = {
+          x: x * GRID_RESOLUTION + GRID_RESOLUTION / 2,
+          z: z * GRID_RESOLUTION + GRID_RESOLUTION / 2,
+        };
+
+        // Check against all obstacles
+        for (const obstacle of obstacles) {
+          type ObstacleLike = { footprint?: readonly Point2D[]; polygon?: readonly Point2D[] };
+          const o = obstacle as ObstacleLike;
+          const vertices = o.footprint ?? o.polygon;
+          if (!vertices || vertices.length === 0) continue;
+          const distance = this.getSquaredDistanceToPolygon(
+            cellCenter,
+            vertices,
+          );
+          // Block if distance is less than clearance radius squared
+          // Note: getSquaredDistanceToPolygon returns 0 if inside
+          if (distance < clearanceRadius * clearanceRadius) {
+            grid[x][z] = false;
+            break;
+          }
+        }
+      }
+    }
+
+    const polygons: ConvexPolygon[] = [];
+    let polygonIndex = 0;
+    const visited: boolean[][] = Array.from({ length: gridWidth }, () =>
+      Array(gridDepth).fill(false),
+    );
+
+    // Rectangular decomposition (Greedy merging)
+    for (let z = 0; z < gridDepth; z++) {
+      for (let x = 0; x < gridWidth; x++) {
+        if (!grid[x][z] || visited[x][z]) continue;
+
+        // Found a start of a new rectangle
+        // Expand width
+        let width = 1;
+        while (
+          x + width < gridWidth &&
+          grid[x + width][z] &&
+          !visited[x + width][z]
+        ) {
+          width++;
+        }
+
+        // Expand height
+        let height = 1;
+        let canExpandHeight = true;
+        while (z + height < gridDepth && canExpandHeight) {
+          // Check if the entire row of width 'width' is available
+          for (let k = 0; k < width; k++) {
+            if (
+              !grid[x + k][z + height] ||
+              visited[x + k][z + height]
+            ) {
+              canExpandHeight = false;
+              break;
+            }
+          }
+          if (canExpandHeight) {
+            height++;
+          }
+        }
+
+        // Mark cells as visited
+        for (let dz = 0; dz < height; dz++) {
+          for (let dx = 0; dx < width; dx++) {
+            visited[x + dx][z + dz] = true;
+          }
+        }
+
+        // Create polygon
+        const minX = x * GRID_RESOLUTION;
+        const minZ = z * GRID_RESOLUTION;
+        // Clamp to arena size to ensure we don't exceed bounds
+        const maxX = Math.min((x + width) * GRID_RESOLUTION, size.width);
+        const maxZ = Math.min((z + height) * GRID_RESOLUTION, size.depth);
+
+        const vertices: Point2D[] = [
+          { x: minX, z: minZ },
+          { x: maxX, z: minZ },
+          { x: maxX, z: maxZ },
+          { x: minX, z: maxZ },
+        ];
+
+        polygons.push({
+          index: polygonIndex++,
+          vertices,
+          centroid: {
+            x: minX + (maxX - minX) / 2,
+            z: minZ + (maxZ - minZ) / 2,
+          },
+          area: (maxX - minX) * (maxZ - minZ),
+        });
+      }
+    }
 
     return polygons;
   }
@@ -158,15 +207,116 @@ export class NavMeshGenerator {
   ): Map<number, number[]> {
     const adjacency = new Map<number, number[]>();
 
-    // Simplified: connect adjacent quadrants
-    if (polygons.length === 4) {
-      adjacency.set(0, [1, 2]); // Top-left connects to top-right and bottom-left
-      adjacency.set(1, [0, 3]); // Top-right connects to top-left and bottom-right
-      adjacency.set(2, [0, 3]); // Bottom-left connects to top-left and bottom-right
-      adjacency.set(3, [1, 2]); // Bottom-right connects to top-right and bottom-left
+    for (let i = 0; i < polygons.length; i++) {
+      adjacency.set(i, []);
+    }
+
+    for (let i = 0; i < polygons.length; i++) {
+      for (let j = i + 1; j < polygons.length; j++) {
+        if (this.arePolygonsAdjacent(polygons[i], polygons[j])) {
+          adjacency.get(i)?.push(j);
+          adjacency.get(j)?.push(i);
+        }
+      }
     }
 
     return adjacency;
+  }
+
+  /**
+   * Check if two polygons are adjacent (share a boundary)
+   * Assumes axis-aligned rectangles from grid decomposition
+   */
+  private arePolygonsAdjacent(
+    polyA: ConvexPolygon,
+    polyB: ConvexPolygon,
+  ): boolean {
+    const tolerance = 0.001; // Small epsilon for float comparison
+
+    // Get bounds (assuming rectangle vertices order: TL, TR, BR, BL or similar)
+    // Actually, we constructed them as: (minX, minZ), (maxX, minZ), (maxX, maxZ), (minX, maxZ)
+    // Vertices: 0: minX,minZ; 1: maxX,minZ; 2: maxX,maxZ; 3: minX,maxZ
+
+    const aMinX = polyA.vertices[0].x;
+    const aMaxX = polyA.vertices[1].x;
+    const aMinZ = polyA.vertices[0].z;
+    const aMaxZ = polyA.vertices[3].z;
+
+    const bMinX = polyB.vertices[0].x;
+    const bMaxX = polyB.vertices[1].x;
+    const bMinZ = polyB.vertices[0].z;
+    const bMaxZ = polyB.vertices[3].z;
+
+    // Check for overlap in X and touching in Z
+    const xOverlap = Math.max(0, Math.min(aMaxX, bMaxX) - Math.max(aMinX, bMinX));
+    const zTouching = Math.abs(aMaxZ - bMinZ) < tolerance || Math.abs(aMinZ - bMaxZ) < tolerance;
+
+    if (xOverlap > tolerance && zTouching) return true;
+
+    // Check for overlap in Z and touching in X
+    const zOverlap = Math.max(0, Math.min(aMaxZ, bMaxZ) - Math.max(aMinZ, bMinZ));
+    const xTouching = Math.abs(aMaxX - bMinX) < tolerance || Math.abs(aMinX - bMaxX) < tolerance;
+
+    if (zOverlap > tolerance && xTouching) return true;
+
+    return false;
+  }
+
+  /**
+   * Calculate squared distance from point to polygon
+   * Returns 0 if point is inside polygon
+   */
+  private getSquaredDistanceToPolygon(
+    point: Point2D,
+    vertices?: readonly Point2D[],
+  ): number {
+    if (!vertices || vertices.length === 0) return Infinity;
+
+    let inside = false;
+    let minDistSq = Infinity;
+
+    for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+      const xi = vertices[i].x;
+      const zi = vertices[i].z;
+      const xj = vertices[j].x;
+      const zj = vertices[j].z;
+
+      // Check ray casting for point in polygon
+      const intersect =
+        zi > point.z !== zj > point.z &&
+        point.x < ((xj - xi) * (point.z - zi)) / (zj - zi) + xi;
+      if (intersect) inside = !inside;
+
+      // Distance to segment
+      const distSq = this.distanceSquaredPointToSegment(
+        point,
+        vertices[i],
+        vertices[j],
+      );
+      if (distSq < minDistSq) minDistSq = distSq;
+    }
+
+    return inside ? 0 : minDistSq;
+  }
+
+  /**
+   * Squared distance from point to line segment
+   */
+  private distanceSquaredPointToSegment(
+    p: Point2D,
+    v: Point2D,
+    w: Point2D,
+  ): number {
+    const l2 = (v.x - w.x) ** 2 + (v.z - w.z) ** 2;
+    if (l2 === 0) return (p.x - v.x) ** 2 + (p.z - v.z) ** 2;
+
+    let t = ((p.x - v.x) * (w.x - v.x) + (p.z - v.z) * (w.z - v.z)) / l2;
+    t = Math.max(0, Math.min(1, t));
+
+    const projectionX = v.x + t * (w.x - v.x);
+    const projectionZ = v.z + t * (w.z - v.z);
+
+    return (p.x - projectionX) ** 2 + (p.z - projectionZ) ** 2;
   }
 
   /**
