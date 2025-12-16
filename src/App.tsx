@@ -150,6 +150,32 @@ export default function App() {
     runnerRef.current?.reset();
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isSettingsOpen) return;
+      if (e.repeat) return;
+
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      if (e.key === " " || e.code === "Space") {
+        e.preventDefault();
+        handlePauseResume();
+      } else if (e.key === "r" || e.key === "R") {
+        handleReset();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSettingsOpen, handlePauseResume, handleReset]);
+
   const statusText = formatStatus(matchSnapshot);
   const pauseLabel = matchSnapshot.phase === "paused" ? "Resume" : "Pause";
 
@@ -281,10 +307,14 @@ export default function App() {
           gap: 12,
         }}
       >
-        <button type="button" onClick={handlePauseResume}>
+        <button
+          type="button"
+          onClick={handlePauseResume}
+          title="Pause/Resume (Space)"
+        >
           {pauseLabel}
         </button>
-        <button type="button" onClick={handleReset}>
+        <button type="button" onClick={handleReset} title="Reset (R)">
           Reset
         </button>
       </div>
