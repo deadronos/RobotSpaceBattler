@@ -1,47 +1,12 @@
 import { BattleWorld } from "../../ecs/world";
-import { cloneVec3, subtractVec3, Vec3, vec3 } from "../../lib/math/vec3";
+import {
+  pointAtDistance,
+  segmentLengths,
+  totalLength,
+} from "../../lib/math/path";
+import { cloneVec3, subtractVec3, vec3 } from "../../lib/math/vec3";
 import { TelemetryPort } from "../../runtime/simulation/ports";
 import { updateRapierObstacleTransforms } from "./rapierIntegration";
-
-function segmentLengths(points: Vec3[]): number[] {
-  const lens: number[] = [];
-  for (let i = 0; i < points.length - 1; i++) {
-    const a = points[i];
-    const b = points[i + 1];
-    const dx = b.x - a.x;
-    const dz = b.z - a.z;
-    lens.push(Math.sqrt(dx * dx + dz * dz));
-  }
-  return lens;
-}
-
-function totalLength(lens: number[]): number {
-  return lens.reduce((s, v) => s + v, 0);
-}
-
-function pointAtDistance(
-  points: Vec3[],
-  lens: number[],
-  distance: number,
-): Vec3 {
-  if (points.length === 0) return vec3(0, 0, 0);
-  if (points.length === 1) return cloneVec3(points[0]);
-
-  let remaining = distance;
-  for (let i = 0; i < lens.length; i++) {
-    const seg = lens[i];
-    if (remaining <= seg) {
-      const a = points[i];
-      const b = points[i + 1];
-      const t = seg <= 0 ? 0 : remaining / seg;
-      return vec3(a.x + (b.x - a.x) * t, 0, a.z + (b.z - a.z) * t);
-    }
-    remaining -= seg;
-  }
-
-  // Fall back to last point
-  return cloneVec3(points[points.length - 1]);
-}
 
 export function updateObstacleMovement(
   world: BattleWorld,

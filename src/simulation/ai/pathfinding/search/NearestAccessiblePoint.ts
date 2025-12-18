@@ -3,6 +3,8 @@
  * When no path exists to target, finds the closest walkable location
  */
 
+import { isPointInPolygon } from "../../../../lib/math/geometry";
+import { distanceVec3 } from "../../../../lib/math/vec3";
 import type { NavigationMesh, Point2D, Point3D } from "../types";
 
 /**
@@ -48,7 +50,7 @@ export class NearestAccessiblePoint {
           const candidate: Point3D = { x: sampleX, y: target.y, z: sampleZ };
 
           // Calculate distance from start (prefer points closer to start)
-          const distanceFromStart = this.distance3D(candidate, start);
+          const distanceFromStart = distanceVec3(candidate, start);
 
           if (distanceFromStart < nearestDistance) {
             nearestDistance = distanceFromStart;
@@ -81,47 +83,10 @@ export class NearestAccessiblePoint {
    */
   private isPointOnMesh(point: Point2D): boolean {
     for (const polygon of this.mesh.polygons) {
-      if (this.isPointInPolygon(point, polygon.vertices)) {
+      if (isPointInPolygon(point, polygon.vertices)) {
         return true;
       }
     }
     return false;
-  }
-
-  /**
-   * Point-in-polygon test using ray casting algorithm
-   */
-  private isPointInPolygon(
-    point: Point2D,
-    vertices: readonly Point2D[],
-  ): boolean {
-    let inside = false;
-
-    for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
-      const xi = vertices[i].x;
-      const zi = vertices[i].z;
-      const xj = vertices[j].x;
-      const zj = vertices[j].z;
-
-      const intersect =
-        zi > point.z !== zj > point.z &&
-        point.x < ((xj - xi) * (point.z - zi)) / (zj - zi) + xi;
-
-      if (intersect) {
-        inside = !inside;
-      }
-    }
-
-    return inside;
-  }
-
-  /**
-   * Calculates 3D Euclidean distance between two points
-   */
-  private distance3D(a: Point3D, b: Point3D): number {
-    const dx = a.x - b.x;
-    const dy = a.y - b.y;
-    const dz = a.z - b.z;
-    return Math.sqrt(dx * dx + dy * dy + dz * dz);
   }
 }
