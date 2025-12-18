@@ -3,6 +3,10 @@
  * @module pathfinding/navmesh
  */
 
+import {
+  distanceSquaredPointToSegment,
+  isPointInPolygon,
+} from "../../../../lib/math/geometry";
 import type {
   ArenaConfiguration,
   ConvexPolygon,
@@ -10,10 +14,6 @@ import type {
   ObstacleGeometry,
   Point2D,
 } from "../types";
-import {
-  distanceSquaredPointToSegment,
-  isPointInPolygon,
-} from "../../../../lib/math/geometry";
 
 /**
  * Generates navigation meshes from arena configuration
