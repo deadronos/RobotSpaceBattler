@@ -1,3 +1,62 @@
+# Implementation Notes: 3D Team vs Team Autobattler
+
+**Branch**: `001-3d-team-vs`  \
+**Date**: 2025-10-06  \
+**Spec**: [spec.md](./spec.md)  \
+**Status**: As-built notes (supersedes earlier aspirational plan)
+
+The original plan for this feature described a larger UI surface area (victory overlay, stats modal, performance banner, settings for team composition). The current repository implements the core simulation loop and a minimal UI shell.
+
+## Architecture (as built)
+
+- `App` creates and owns:
+  - `BattleWorld` (Miniplex ECS container)
+  - `TelemetryPort` (bridges runtime events into the telemetry store)
+  - `MatchStateMachine` (phase: initializing/running/paused/victory)
+- `Simulation` wires:
+  - `Scene` (r3f `Canvas`, lights, shadows, `OrbitControls`)
+  - `@react-three/rapier` `Physics` world (for environment colliders + raycasting)
+  - `BattleRunner` (the authoritative simulation loop)
+- `BattleRunner.step(deltaSeconds)`:
+  - advances time
+  - updates obstacles/hazards
+  - when `phase === "running"`, updates core systems:
+    - AI (`updateAISystem`)
+    - firing (`updateCombatSystem`)
+    - movement/collision (`updateMovementSystem`)
+    - projectiles and impacts (`updateProjectileSystem`)
+    - visual effects (`updateEffectSystem`)
+  - evaluates victory and starts restart countdown
+  - triggers a fresh match spawn when countdown reaches 0
+
+## Source Layout (current)
+
+- Simulation loop: `src/runtime/simulation/battleRunner.ts`
+- Match state: `src/runtime/state/matchStateMachine.ts`
+- ECS container and entities: `src/ecs/world.ts`
+- ECS systems: `src/ecs/systems/*.ts`
+- AI implementation: `src/simulation/ai/*` and `src/ecs/systems/aiSystem.ts`
+- Weapons/damage: `src/simulation/combat/weapons.ts`
+- Team spawn configuration: `src/lib/teamConfig.ts`
+- UI shell: `src/App.tsx`, `src/components/Scene.tsx`, `src/components/Simulation.tsx`, `src/components/ui/SettingsModal.tsx`
+
+## Known Gaps vs earlier drafts
+
+- No victory overlay UI (status is text only).
+- No post-battle stats UI (telemetry exists but is not surfaced).
+- No team composition settings.
+- No cinematic camera.
+- No automatic quality scaling/time dilation.
+
+## Validation
+
+```bash
+npx vitest tests/spawn-system.spec.ts
+npx vitest tests/captain-election.spec.ts
+npx vitest tests/runtime/matchStateMachine.spec.ts
+npx vitest tests/runtime/battleRunner.spec.ts
+npx vitest tests/ui/AppShortcuts.test.tsx
+```
 # Implementation Plan: 3D Team vs Team Autobattler Game Simulation
 
 **Branch**: `001-3d-team-vs` | **Date**: 2025-10-06 | **Spec**: [spec.md](./spec.md)
