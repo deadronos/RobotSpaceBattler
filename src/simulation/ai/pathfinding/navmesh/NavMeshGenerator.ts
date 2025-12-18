@@ -10,6 +10,10 @@ import type {
   ObstacleGeometry,
   Point2D,
 } from "../types";
+import {
+  distanceSquaredPointToSegment,
+  isPointInPolygon,
+} from "../../../../lib/math/geometry";
 
 /**
  * Generates navigation meshes from arena configuration
@@ -272,23 +276,16 @@ export class NavMeshGenerator {
   ): number {
     if (!vertices || vertices.length === 0) return Infinity;
 
-    let inside = false;
+    // Check if inside first
+    if (isPointInPolygon(point, vertices)) {
+      return 0;
+    }
+
     let minDistSq = Infinity;
 
+    // Check distance to edges
     for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
-      const xi = vertices[i].x;
-      const zi = vertices[i].z;
-      const xj = vertices[j].x;
-      const zj = vertices[j].z;
-
-      // Check ray casting for point in polygon
-      const intersect =
-        zi > point.z !== zj > point.z &&
-        point.x < ((xj - xi) * (point.z - zi)) / (zj - zi) + xi;
-      if (intersect) inside = !inside;
-
-      // Distance to segment
-      const distSq = this.distanceSquaredPointToSegment(
+      const distSq = distanceSquaredPointToSegment(
         point,
         vertices[i],
         vertices[j],
@@ -296,27 +293,7 @@ export class NavMeshGenerator {
       if (distSq < minDistSq) minDistSq = distSq;
     }
 
-    return inside ? 0 : minDistSq;
-  }
-
-  /**
-   * Squared distance from point to line segment
-   */
-  private distanceSquaredPointToSegment(
-    p: Point2D,
-    v: Point2D,
-    w: Point2D,
-  ): number {
-    const l2 = (v.x - w.x) ** 2 + (v.z - w.z) ** 2;
-    if (l2 === 0) return (p.x - v.x) ** 2 + (p.z - v.z) ** 2;
-
-    let t = ((p.x - v.x) * (w.x - v.x) + (p.z - v.z) * (w.z - v.z)) / l2;
-    t = Math.max(0, Math.min(1, t));
-
-    const projectionX = v.x + t * (w.x - v.x);
-    const projectionZ = v.z + t * (w.z - v.z);
-
-    return (p.x - projectionX) ** 2 + (p.z - projectionZ) ** 2;
+    return minDistSq;
   }
 
   /**

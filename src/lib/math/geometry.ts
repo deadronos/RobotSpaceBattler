@@ -1,6 +1,15 @@
 import { Vec3, vec3 } from "./vec3";
 
 /**
+ * Interface representing a 2D point (x, z).
+ * Compatible with Vec3.
+ */
+export interface Point2D {
+  x: number;
+  z: number;
+}
+
+/**
  * Calculates the closest point on an Axis-Aligned Bounding Box (AABB) to a given point.
  * Computations are performed in the XZ plane. Y component of the result is same as input point.
  *
@@ -106,4 +115,60 @@ export function distanceSquaredPointToCircle(
   const dist = Math.sqrt(distSq);
   const gap = dist - radius;
   return gap * gap;
+}
+
+/**
+ * Calculates the squared distance from a point to a line segment in the XZ plane.
+ *
+ * @param p - The query point.
+ * @param v - The first endpoint of the segment.
+ * @param w - The second endpoint of the segment.
+ * @returns The squared distance.
+ */
+export function distanceSquaredPointToSegment(
+  p: Point2D,
+  v: Point2D,
+  w: Point2D,
+): number {
+  const l2 = (v.x - w.x) ** 2 + (v.z - w.z) ** 2;
+  if (l2 === 0) return (p.x - v.x) ** 2 + (p.z - v.z) ** 2;
+
+  let t = ((p.x - v.x) * (w.x - v.x) + (p.z - v.z) * (w.z - v.z)) / l2;
+  t = Math.max(0, Math.min(1, t));
+
+  const projectionX = v.x + t * (w.x - v.x);
+  const projectionZ = v.z + t * (w.z - v.z);
+
+  return (p.x - projectionX) ** 2 + (p.z - projectionZ) ** 2;
+}
+
+/**
+ * Checks if a point is inside a polygon in the XZ plane using ray casting.
+ *
+ * @param point - The query point.
+ * @param vertices - The vertices of the polygon.
+ * @returns True if the point is inside the polygon.
+ */
+export function isPointInPolygon(
+  point: Point2D,
+  vertices: readonly Point2D[],
+): boolean {
+  let inside = false;
+
+  for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+    const xi = vertices[i].x;
+    const zi = vertices[i].z;
+    const xj = vertices[j].x;
+    const zj = vertices[j].z;
+
+    const intersect =
+      zi > point.z !== zj > point.z &&
+      point.x < ((xj - xi) * (point.z - zi)) / (zj - zi) + xi;
+
+    if (intersect) {
+      inside = !inside;
+    }
+  }
+
+  return inside;
 }
