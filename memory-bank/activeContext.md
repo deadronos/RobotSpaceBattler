@@ -3,32 +3,41 @@
 **Created:** 2025-10-17
 
 Current work focus
-- Features: 001-3d-team-vs, 002-3d-simulation-graphics, 003-extend-placeholder-create, 004-ai-roaming-wall-awareness
-- Areas: live trace-driven 3D match playback, battle UI, AI roaming/wall-awareness, performance & constitution compliance
+
+- Keep specs under `specs/` accurate to the current implementation (“as implemented”, no aspirational tails).
+- Maintain the 10v10 simulation loop (BattleRunner + BattleWorld) and the dynamic obstacle system.
+- Performance and visual fidelity tuning (instancing, max instance budgets, renderer stats).
+- AI behavior iteration (seek/engage/retreat + roaming + obstacle-aware movement).
 
 Recent changes
-- AI, PhysicsSync and Weapons designs captured under `memory-bank/designs/`
-- Tests and Playwright suites under `tests/` and `playwright/` validate core flows
+
+- Specs cleanup: removed appended legacy/template sections across `specs/` to keep files single-source and lint-clean.
+- Specs 001 contracts and docs aligned to current runtime behavior.
+- Specs 005 plan template tail removed; file normalized for markdownlint.
 
 Next steps
-1. Ensure memory-bank core files exist (this update)
-2. Add short how-to entries for running tests and dev server in `memory-bank/README.md`
-3. Add tasks entries for known issues in `memory-bank/tasks/_index.md`
-4. Add short run/how-to notes for contributors (dev, test, and E2E) in this file
+
+1. Keep `memory-bank/` aligned to the current code layout (ECS under `src/ecs`, simulation runtime under `src/runtime`).
+1. Triage and update `memory-bank/tasks/*` so tasks reflect current behaviors and known gaps.
+1. Optional: run `npm run test` after documentation sweeps to ensure no accidental code edits.
 
 Active decisions
 
-- Keep Rapier as authoritative transform source; do not mutate mesh transforms when `rigid` exists
-- Favor pure functions in systems for testability
+
+- Keep simulation state in `BattleWorld` as authoritative; rendering reads state and does not mutate it.
+- Use Rapier for arena colliders, obstacle integration, and raycasts (LOS/avoidance), not per-robot physics.
+- Prefer pure logic modules under `src/simulation/*` for testability.
 
 How to run (short)
 
-- Dev server: `npm run dev` (Vite)
-- Unit tests: `npm run test` (Vitest)
-- Playwright E2E: `npm run playwright:test` (run after `npx playwright install`)
+
+- Dev server: `npm run dev`
+- Unit tests: `npm run test`
+- E2E: `npm run playwright:install` then `npm run playwright:test`
 
 Where to look next
 
+
 - `tasks/_index.md` — current tasks and statuses
-- `designs/` — design documents for AI, weapons, and physics-sync
-- `specs/` — feature-level plans and acceptance criteria
+- `designs/` — design snapshots for AI, weapons, and Rapier integration
+- `specs/` — feature-level specs and plans (kept “as implemented”)
