@@ -1,6 +1,7 @@
 import {
   closestPointOnAABB,
   distanceSquaredPointToAABB,
+  distanceSquaredXZ,
 } from "../../lib/math/geometry";
 import {
   addInPlaceVec3,
@@ -63,13 +64,13 @@ function resolveCollision(pos: Vec3): void {
     const pillarCenter = vec3(pillar.x, 0, pillar.z);
     const combinedRadius = pillar.radius + ROBOT_RADIUS;
 
-    const dx = pos.x - pillarCenter.x;
-    const dz = pos.z - pillarCenter.z;
-    const distSq = dx * dx + dz * dz;
+    const distSq = distanceSquaredXZ(pos, pillarCenter);
 
     if (distSq < combinedRadius * combinedRadius) {
       const dist = Math.sqrt(distSq);
       if (dist > 0) {
+        const dx = pos.x - pillarCenter.x;
+        const dz = pos.z - pillarCenter.z;
         const pushDist = combinedRadius - dist;
         pos.x += (dx / dist) * pushDist;
         pos.z += (dz / dist) * pushDist;

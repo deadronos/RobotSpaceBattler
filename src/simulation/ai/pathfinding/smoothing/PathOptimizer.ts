@@ -3,6 +3,7 @@
  * @module pathfinding/smoothing
  */
 
+import { distanceSquaredXZ } from "../../../../lib/math/geometry";
 import type { Point2D } from "../types";
 
 /**
@@ -84,9 +85,7 @@ export class PathOptimizer {
   private calculatePathLength(path: Point2D[]): number {
     let length = 0;
     for (let i = 1; i < path.length; i++) {
-      const dx = path[i].x - path[i - 1].x;
-      const dz = path[i].z - path[i - 1].z;
-      length += Math.sqrt(dx * dx + dz * dz);
+      length += Math.sqrt(distanceSquaredXZ(path[i], path[i - 1]));
     }
     return length;
   }

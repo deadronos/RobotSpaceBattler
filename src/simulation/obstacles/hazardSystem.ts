@@ -1,4 +1,5 @@
 import { BattleWorld } from "../../ecs/world";
+import { isPointInAABB, isPointInCircle } from "../../lib/math/geometry";
 import { TelemetryPort } from "../../runtime/simulation/ports";
 
 export function updateHazardSystem(
@@ -70,21 +71,14 @@ export function updateHazardSystem(
         const obsPos = obstacle.position ?? { x: 0, y: 0, z: 0 };
 
         if (obstacle.shape.kind === "circle") {
-          const dx = robPos.x - obsPos.x;
-          const dz = robPos.z - obsPos.z;
-          inside =
-            dx * dx + dz * dz <=
-            obstacle.shape.radius * obstacle.shape.radius + 1e-6;
+          inside = isPointInCircle(robPos, obsPos, obstacle.shape.radius);
         } else if (obstacle.shape.kind === "box") {
-          const minX = obsPos.x - obstacle.shape.halfWidth;
-          const maxX = obsPos.x + obstacle.shape.halfWidth;
-          const minZ = obsPos.z - obstacle.shape.halfDepth;
-          const maxZ = obsPos.z + obstacle.shape.halfDepth;
-          inside =
-            robPos.x >= minX &&
-            robPos.x <= maxX &&
-            robPos.z >= minZ &&
-            robPos.z <= maxZ;
+          inside = isPointInAABB(
+            robPos,
+            obsPos,
+            obstacle.shape.halfWidth,
+            obstacle.shape.halfDepth,
+          );
         }
 
         if (inside) {
