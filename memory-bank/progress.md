@@ -4,20 +4,27 @@
 
 What works
 
-- Simulation loop and core systems implemented (AI, Weapon, Projectile, Beam, Damage, Respawn)
-- Physics sync and prefab wiring with Rapier implemented
-- Unit tests for many pure functions exist under `tests/`
+- 10v10 match loop implemented via `BattleRunner` (match spawn, running, victory, auto-restart).
+- AI behaviors implemented (`seek`/`engage`/`retreat`) with sensors, target selection, and roaming.
+- Projectile-based weapon simulation (laser/gun/rocket) including rocket AoE + RPS multipliers.
+- Dynamic arena obstacles (barriers/hazards/destructibles) including fixture-driven spawning.
+- Instanced visuals and performance toggles (`QualityManager`, `window.__rendererStats`).
+- Telemetry capture and aggregation via `TelemetryPort` + Zustand store.
+- Unit tests across core systems exist under `tests/`.
 
 What's left / known issues
 
-- Friendly-fire edge cases and AoE attribution need additional tests
-- Performance tuning for WebGL / FX on lower-end devices
-- Expand documentation for contributors (how to run tests and debug determinism)
+- Determinism across page reloads is not guaranteed due to `TEAM_CONFIGS` spawn jitter
+  (`Math.random()` at module init). Tests should continue to pass with explicit seeds.
+- Performance tuning for WebGL / VFX on lower-end devices (instancing budgets help, but needs
+  profiling-driven adjustment).
+- Documentation upkeep: keep `specs/` and `memory-bank/` aligned to what is implemented.
 
 Milestones
 
 - Deterministic simulation + test harness — complete
-- Playwright E2E coverage of boot and core flows — partial
+- Specs alignment sweep (remove appended legacy/template doc tails) — complete
+- Playwright E2E coverage of boot/core flows — partial
 
 How to run (quick)
 

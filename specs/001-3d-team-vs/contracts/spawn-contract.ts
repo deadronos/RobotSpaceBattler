@@ -1,3 +1,15 @@
+import { TEAM_CONFIGS, type TeamId } from "../../../src/lib/teamConfig";
+
+// Machine-readable mirror of spawn-contract.md.
+// NOTE: `specs/` is not included in the repository TypeScript build.
+
+export const ROBOTS_PER_TEAM = 10;
+export const INITIAL_HEALTH = 100;
+export const TEAM_IDS: TeamId[] = ["red", "blue"];
+
+export function getSpawnPoints(team: TeamId) {
+  return TEAM_CONFIGS[team].spawnPoints.slice(0, ROBOTS_PER_TEAM);
+}
 import type { SpawnZone } from '../../../src/types';
 
 // Canonical spawn contract values exported as a TypeScript module so
