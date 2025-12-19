@@ -37,9 +37,7 @@ export class StringPuller {
         testIndex++
       ) {
         // Check if we can go directly from current to test point
-        if (
-          this.isLineWalkable(path[currentIndex], path[testIndex], navMesh)
-        ) {
+        if (this.isLineWalkable(path[currentIndex], path[testIndex], navMesh)) {
           farthestIndex = testIndex;
         } else {
           // If we can't reach testIndex, we probably can't reach any further points
@@ -98,7 +96,7 @@ export class StringPuller {
       const intersection = this.findEdgeIntersection(
         currentPoint,
         targetPoint,
-        currentPoly
+        currentPoly,
       );
 
       if (!intersection) {
@@ -109,7 +107,7 @@ export class StringPuller {
       const nextPolyIndex = this.findNeighborContainingPoint(
         currentPolyIndex,
         intersection.point,
-        navMesh
+        navMesh,
       );
 
       if (nextPolyIndex === -1) {
@@ -149,17 +147,20 @@ export class StringPuller {
   private isPointInPolygon(point: Point2D, poly: ConvexPolygon): boolean {
     // Check if explicitly on boundary first
     if (this.isPointOnPolygonBoundary(point, poly)) {
-        return true;
+      return true;
     }
 
     let inside = false;
     const vs = poly.vertices;
     for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-      const xi = vs[i].x, yi = vs[i].z;
-      const xj = vs[j].x, yj = vs[j].z;
+      const xi = vs[i].x,
+        yi = vs[i].z;
+      const xj = vs[j].x,
+        yj = vs[j].z;
 
-      const intersect = ((yi > point.z) !== (yj > point.z))
-          && (point.x < (xj - xi) * (point.z - yi) / (yj - yi) + xi);
+      const intersect =
+        yi > point.z !== yj > point.z &&
+        point.x < ((xj - xi) * (point.z - yi)) / (yj - yi) + xi;
       if (intersect) inside = !inside;
     }
     return inside;
@@ -171,11 +172,11 @@ export class StringPuller {
   private findEdgeIntersection(
     start: Point2D,
     end: Point2D,
-    poly: ConvexPolygon
-  ): { point: Point2D, edgeIndex: number } | null {
+    poly: ConvexPolygon,
+  ): { point: Point2D; edgeIndex: number } | null {
     const vs = poly.vertices;
     let closestDist = Infinity;
-    let bestIntersection: { point: Point2D, edgeIndex: number } | null = null;
+    let bestIntersection: { point: Point2D; edgeIndex: number } | null = null;
 
     for (let i = 0; i < vs.length; i++) {
       const p1 = vs[i];
@@ -185,10 +186,11 @@ export class StringPuller {
       if (intersect) {
         // We want the intersection that is "forward" along the ray
         // and closest to start (but not AT start, to avoid getting stuck if we are on an edge).
-        const dist = (intersect.x - start.x) ** 2 + (intersect.z - start.z) ** 2;
+        const dist =
+          (intersect.x - start.x) ** 2 + (intersect.z - start.z) ** 2;
         if (dist > 0.000001 && dist < closestDist) {
-            closestDist = dist;
-            bestIntersection = { point: intersect, edgeIndex: i };
+          closestDist = dist;
+          bestIntersection = { point: intersect, edgeIndex: i };
         }
       }
     }
@@ -202,12 +204,16 @@ export class StringPuller {
     p1: Point2D,
     p2: Point2D,
     p3: Point2D,
-    p4: Point2D
+    p4: Point2D,
   ): Point2D | null {
-    const x1 = p1.x, y1 = p1.z;
-    const x2 = p2.x, y2 = p2.z;
-    const x3 = p3.x, y3 = p3.z;
-    const x4 = p4.x, y4 = p4.z;
+    const x1 = p1.x,
+      y1 = p1.z;
+    const x2 = p2.x,
+      y2 = p2.z;
+    const x3 = p3.x,
+      y3 = p3.z;
+    const x4 = p4.x,
+      y4 = p4.z;
 
     const denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
     if (denom === 0) return null; // Parallel
@@ -220,7 +226,7 @@ export class StringPuller {
     if (ua >= -0.0001 && ua <= 1.0001 && ub >= -0.0001 && ub <= 1.0001) {
       return {
         x: x1 + ua * (x2 - x1),
-        z: y1 + ua * (y2 - y1)
+        z: y1 + ua * (y2 - y1),
       };
     }
 
@@ -233,7 +239,7 @@ export class StringPuller {
   private findNeighborContainingPoint(
     currentPolyIndex: number,
     point: Point2D,
-    navMesh?: NavigationMesh
+    navMesh?: NavigationMesh,
   ): number {
     if (!navMesh) return -1;
     const neighbors = navMesh.adjacency.get(currentPolyIndex);
@@ -252,7 +258,10 @@ export class StringPuller {
   /**
    * Check if point lies on the boundary of a polygon
    */
-  private isPointOnPolygonBoundary(point: Point2D, poly: ConvexPolygon): boolean {
+  private isPointOnPolygonBoundary(
+    point: Point2D,
+    poly: ConvexPolygon,
+  ): boolean {
     const vs = poly.vertices;
     const tolerance = 0.001; // Epsilon for checking "on segment"
 

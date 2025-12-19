@@ -1,4 +1,7 @@
-import { closestPointOnAABB } from "../../../lib/math/geometry";
+import {
+  closestPointOnAABB,
+  distanceSquaredXZ,
+} from "../../../lib/math/geometry";
 import {
   addVec3,
   distanceVec3,
@@ -91,7 +94,7 @@ export function computeAvoidance(
       if (obs.shape.kind === "circle") {
         const dx = pos.x - obsPos.x;
         const dz = pos.z - obsPos.z;
-        const distToCenter = Math.sqrt(dx * dx + dz * dz);
+        const distToCenter = Math.sqrt(distanceSquaredXZ(pos, obsPos));
         const safetyMargin = 0.05;
         const dist = distToCenter - ((obs.shape.radius ?? 0) + safetyMargin);
         if (dist < AVOIDANCE_RADIUS) {

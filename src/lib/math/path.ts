@@ -1,3 +1,4 @@
+import { distanceSquaredXZ } from "./geometry";
 import { cloneVec3, Vec3, vec3 } from "./vec3";
 
 /**
@@ -11,9 +12,7 @@ export function segmentLengths(points: Vec3[]): number[] {
   for (let i = 0; i < points.length - 1; i++) {
     const a = points[i];
     const b = points[i + 1];
-    const dx = b.x - a.x;
-    const dz = b.z - a.z;
-    lens.push(Math.sqrt(dx * dx + dz * dz));
+    lens.push(Math.sqrt(distanceSquaredXZ(a, b)));
   }
   return lens;
 }

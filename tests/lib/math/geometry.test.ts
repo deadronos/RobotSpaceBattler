@@ -4,6 +4,12 @@ import {
   closestPointOnCircle,
   distanceSquaredPointToAABB,
   distanceSquaredPointToCircle,
+  isPointInAABB,
+  isPointInCircle,
+  distanceSquaredXZ,
+  segmentIntersectsAABB,
+  segmentIntersectsCircle,
+  distanceSquaredPointToPolygon,
 } from '../../../src/lib/math/geometry';
 import { vec3 } from '../../../src/lib/math/vec3';
 
@@ -100,6 +106,97 @@ describe('geometry', () => {
       // sqDist = (sqrt(80)-5)^2
       const val = Math.sqrt(80) - 5;
       expect(distanceSquaredPointToCircle(point, center, radius)).toBeCloseTo(val * val);
+    });
+  });
+
+  describe('isPointInAABB', () => {
+    const center = vec3(10, 0, 10);
+    const halfWidth = 5;
+    const halfDepth = 5;
+
+    it('returns true if inside', () => {
+      expect(isPointInAABB(vec3(10, 0, 10), center, halfWidth, halfDepth)).toBe(true);
+      expect(isPointInAABB(vec3(5, 0, 5), center, halfWidth, halfDepth)).toBe(true);
+      expect(isPointInAABB(vec3(15, 0, 15), center, halfWidth, halfDepth)).toBe(true);
+    });
+
+    it('returns false if outside', () => {
+      expect(isPointInAABB(vec3(0, 0, 0), center, halfWidth, halfDepth)).toBe(false);
+      expect(isPointInAABB(vec3(16, 0, 10), center, halfWidth, halfDepth)).toBe(false);
+    });
+  });
+
+  describe('isPointInCircle', () => {
+    const center = vec3(0, 0, 0);
+    const radius = 5;
+
+    it('returns true if inside', () => {
+      expect(isPointInCircle(vec3(0, 0, 0), center, radius)).toBe(true);
+      expect(isPointInCircle(vec3(3, 0, 4), center, radius)).toBe(true); // 3^2+4^2 = 25
+    });
+
+    it('returns false if outside', () => {
+      expect(isPointInCircle(vec3(6, 0, 0), center, radius)).toBe(false);
+    });
+  });
+
+  describe('distanceSquaredXZ', () => {
+    it('calculates squared distance in XZ plane', () => {
+      const p1 = vec3(0, 10, 0);
+      const p2 = vec3(3, 20, 4);
+      expect(distanceSquaredXZ(p1, p2)).toBe(25); // 3^2 + 4^2
+    });
+  });
+
+  describe('segmentIntersectsAABB', () => {
+    const center = vec3(0, 0, 0);
+    const halfWidth = 2;
+    const halfDepth = 2;
+
+    it('returns true if segment passes through AABB', () => {
+      const start = vec3(-4, 0, 0);
+      const end = vec3(4, 0, 0);
+      expect(segmentIntersectsAABB(start, end, center, halfWidth, halfDepth)).toBe(true);
+    });
+
+    it('returns false if segment is outside', () => {
+      const start = vec3(-4, 0, 4);
+      const end = vec3(4, 0, 4);
+      expect(segmentIntersectsAABB(start, end, center, halfWidth, halfDepth)).toBe(false);
+    });
+  });
+
+  describe('segmentIntersectsCircle', () => {
+    const center = vec3(0, 0, 0);
+    const radius = 2;
+
+    it('returns true if segment passes through circle', () => {
+      const start = vec3(-4, 0, 0);
+      const end = vec3(4, 0, 0);
+      expect(segmentIntersectsCircle(start, end, center, radius)).toBe(true);
+    });
+
+    it('returns false if segment is outside', () => {
+      const start = vec3(-4, 0, 4);
+      const end = vec3(4, 0, 4);
+      expect(segmentIntersectsCircle(start, end, center, radius)).toBe(false);
+    });
+  });
+
+  describe('distanceSquaredPointToPolygon', () => {
+    const vertices = [
+      vec3(0, 0, 0),
+      vec3(10, 0, 0),
+      vec3(10, 0, 10),
+      vec3(0, 0, 10),
+    ];
+
+    it('returns 0 if inside', () => {
+      expect(distanceSquaredPointToPolygon(vec3(5, 0, 5), vertices)).toBe(0);
+    });
+
+    it('returns squared distance to closest edge if outside', () => {
+      expect(distanceSquaredPointToPolygon(vec3(-2, 0, 5), vertices)).toBe(4);
     });
   });
 });

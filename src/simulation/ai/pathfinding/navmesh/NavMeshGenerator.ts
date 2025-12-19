@@ -3,10 +3,7 @@
  * @module pathfinding/navmesh
  */
 
-import {
-  distanceSquaredPointToSegment,
-  isPointInPolygon,
-} from "../../../../lib/math/geometry";
+import { distanceSquaredPointToPolygon } from "../../../../lib/math/geometry";
 import type {
   ArenaConfiguration,
   ConvexPolygon,
@@ -86,7 +83,13 @@ export class NavMeshGenerator {
    */
   private generatePolygonsWithObstacles(
     size: { width: number; depth: number },
-    obstacles: readonly (ObstacleGeometry | ({ footprint?: readonly Point2D[]; polygon?: readonly Point2D[] } & Record<string, unknown>))[],
+    obstacles: readonly (
+      | ObstacleGeometry
+      | ({
+          footprint?: readonly Point2D[];
+          polygon?: readonly Point2D[];
+        } & Record<string, unknown>)
+    )[],
     clearanceRadius: number,
   ): ConvexPolygon[] {
     const GRID_RESOLUTION = 0.5; // Grid cell size in meters
@@ -108,14 +111,14 @@ export class NavMeshGenerator {
 
         // Check against all obstacles
         for (const obstacle of obstacles) {
-          type ObstacleLike = { footprint?: readonly Point2D[]; polygon?: readonly Point2D[] };
+          type ObstacleLike = {
+            footprint?: readonly Point2D[];
+            polygon?: readonly Point2D[];
+          };
           const o = obstacle as ObstacleLike;
           const vertices = o.footprint ?? o.polygon;
           if (!vertices || vertices.length === 0) continue;
-          const distance = this.getSquaredDistanceToPolygon(
-            cellCenter,
-            vertices,
-          );
+          const distance = distanceSquaredPointToPolygon(cellCenter, vertices);
           // Block if distance is less than clearance radius squared
           // Note: getSquaredDistanceToPolygon returns 0 if inside
           if (distance < clearanceRadius * clearanceRadius) {
@@ -154,10 +157,7 @@ export class NavMeshGenerator {
         while (z + height < gridDepth && canExpandHeight) {
           // Check if the entire row of width 'width' is available
           for (let k = 0; k < width; k++) {
-            if (
-              !grid[x + k][z + height] ||
-              visited[x + k][z + height]
-            ) {
+            if (!grid[x + k][z + height] || visited[x + k][z + height]) {
               canExpandHeight = false;
               break;
             }
@@ -252,48 +252,28 @@ export class NavMeshGenerator {
     const bMaxZ = polyB.vertices[3].z;
 
     // Check for overlap in X and touching in Z
-    const xOverlap = Math.max(0, Math.min(aMaxX, bMaxX) - Math.max(aMinX, bMinX));
-    const zTouching = Math.abs(aMaxZ - bMinZ) < tolerance || Math.abs(aMinZ - bMaxZ) < tolerance;
+    const xOverlap = Math.max(
+      0,
+      Math.min(aMaxX, bMaxX) - Math.max(aMinX, bMinX),
+    );
+    const zTouching =
+      Math.abs(aMaxZ - bMinZ) < tolerance ||
+      Math.abs(aMinZ - bMaxZ) < tolerance;
 
     if (xOverlap > tolerance && zTouching) return true;
 
     // Check for overlap in Z and touching in X
-    const zOverlap = Math.max(0, Math.min(aMaxZ, bMaxZ) - Math.max(aMinZ, bMinZ));
-    const xTouching = Math.abs(aMaxX - bMinX) < tolerance || Math.abs(aMinX - bMaxX) < tolerance;
+    const zOverlap = Math.max(
+      0,
+      Math.min(aMaxZ, bMaxZ) - Math.max(aMinZ, bMinZ),
+    );
+    const xTouching =
+      Math.abs(aMaxX - bMinX) < tolerance ||
+      Math.abs(aMinX - bMaxX) < tolerance;
 
     if (zOverlap > tolerance && xTouching) return true;
 
     return false;
-  }
-
-  /**
-   * Calculate squared distance from point to polygon
-   * Returns 0 if point is inside polygon
-   */
-  private getSquaredDistanceToPolygon(
-    point: Point2D,
-    vertices?: readonly Point2D[],
-  ): number {
-    if (!vertices || vertices.length === 0) return Infinity;
-
-    // Check if inside first
-    if (isPointInPolygon(point, vertices)) {
-      return 0;
-    }
-
-    let minDistSq = Infinity;
-
-    // Check distance to edges
-    for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
-      const distSq = distanceSquaredPointToSegment(
-        point,
-        vertices[i],
-        vertices[j],
-      );
-      if (distSq < minDistSq) minDistSq = distSq;
-    }
-
-    return minDistSq;
   }
 
   /**
