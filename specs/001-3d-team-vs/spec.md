@@ -111,4 +111,3 @@ npx vitest tests/runtime/matchStateMachine.spec.ts
 npx vitest tests/runtime/battleRunner.spec.ts
 npx vitest tests/ui/AppShortcuts.test.tsx
 ```
-# 3D Team vs Team Autobattler
