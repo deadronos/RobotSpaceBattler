@@ -2,7 +2,7 @@ import { RobotEntity } from "../../ecs/world";
 import { distanceSquaredVec3 } from "../../lib/math/vec3";
 import { isActiveRobot } from "../../lib/robotHelpers";
 import { TEAM_CONFIGS } from "../../lib/teamConfig";
-import { sortEntities } from "./targetingUtils";
+import { findBestEntity } from "./targetingUtils";
 
 function isEnemy(seeker: RobotEntity, target: RobotEntity): boolean {
   return (
@@ -43,7 +43,7 @@ export function findClosestEnemy(
 
   const spawnCenter = TEAM_CONFIGS[enemies[0].team].spawnCenter;
 
-  const sorted = sortEntities(
+  return findBestEntity(
     enemies,
     (entity) => ({
       entity,
@@ -63,8 +63,6 @@ export function findClosestEnemy(
       return a.entity.id.localeCompare(b.entity.id);
     },
   );
-
-  return sorted[0];
 }
 
 /**
@@ -92,7 +90,7 @@ export function pickCaptainTarget(
     // So yes, captains also used the tie-breaker logic!
     // rankCandidates(captain, captains).sort(sortByPriority)
     const spawnCenter = TEAM_CONFIGS[enemies[0].team].spawnCenter;
-    const sortedCaptains = sortEntities(
+    return findBestEntity(
       enemyCaptains,
       (entity) => ({
         entity,
@@ -112,7 +110,6 @@ export function pickCaptainTarget(
         return a.entity.id.localeCompare(b.entity.id);
       },
     );
-    return sortedCaptains[0];
   }
 
   // 2. Rank enemies by strategic value (Health > Kills > SpawnDist > ID)
@@ -123,7 +120,7 @@ export function pickCaptainTarget(
   // Determine enemy spawn center for scoring
   const spawnCenter = TEAM_CONFIGS[enemies[0].team].spawnCenter;
 
-  const sorted = sortEntities(
+  return findBestEntity(
     enemies,
     (entity) => ({
       entity,
@@ -142,6 +139,4 @@ export function pickCaptainTarget(
       return a.entity.id.localeCompare(b.entity.id);
     },
   );
-
-  return sorted[0];
 }
