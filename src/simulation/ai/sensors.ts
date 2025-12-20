@@ -70,8 +70,9 @@ export function updateRobotSensors(
   robots: RobotEntity[],
   timestampMs: number,
   battleWorld?: BattleWorld,
+  potentialEnemies?: RobotEntity[],
 ): SensorSnapshot {
-  const enemies = collectEnemies(robot, robots);
+  const enemies = potentialEnemies ?? collectEnemies(robot, robots);
   const visible: RobotEntity[] = [];
   const proximity: RobotEntity[] = [];
 
