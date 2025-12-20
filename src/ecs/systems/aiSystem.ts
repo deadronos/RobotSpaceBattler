@@ -55,13 +55,28 @@ export function updateAISystem(
     }
   }
 
+  // Pre-calculate enemies for each team to avoid O(N^2) filtering in sensors
+  const enemiesByTeam = new Map<string, RobotEntity[]>();
+  const teams = Array.from(robotsByTeam.keys());
+  for (const team of teams) {
+    const enemies: RobotEntity[] = [];
+    for (const otherTeam of teams) {
+      if (team !== otherTeam) {
+        enemies.push(...(robotsByTeam.get(otherTeam) ?? []));
+      }
+    }
+    enemiesByTeam.set(team, enemies);
+  }
+
   robots.forEach((robot) => {
     const allies = robotsByTeam.get(robot.team) ?? [];
+    const potentialEnemies = enemiesByTeam.get(robot.team) ?? [];
     const { visibleEnemies } = updateRobotSensors(
       robot,
       robots,
       battleWorld.state.elapsedMs,
       battleWorld,
+      potentialEnemies,
     );
 
     let target: RobotEntity | undefined;
