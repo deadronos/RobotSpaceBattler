@@ -57,3 +57,36 @@ export function sortEntities<T, S>(
     .sort((a, b) => compareFn(a.score, b.score))
     .map((wrapper) => wrapper.entity);
 }
+
+/**
+ * Finds the best entity based on a computed score.
+ * Performs a single O(N) pass, avoiding the overhead of sorting and array allocation.
+ *
+ * @param entities - The list of entities to search.
+ * @param scoreFn - Function to compute the score/metrics for an entity.
+ * @param compareFn - Function to compare two scores. Returns negative if a < b (a is better), positive if a > b.
+ * @returns The best entity, or undefined if the list is empty.
+ */
+export function findBestEntity<T, S>(
+  entities: T[],
+  scoreFn: (entity: T) => S,
+  compareFn: (a: S, b: S) => number,
+): T | undefined {
+  if (entities.length === 0) {
+    return undefined;
+  }
+
+  let bestEntity = entities[0];
+  let bestScore = scoreFn(bestEntity);
+
+  for (let i = 1; i < entities.length; i += 1) {
+    const entity = entities[i];
+    const score = scoreFn(entity);
+    if (compareFn(score, bestScore) < 0) {
+      bestEntity = entity;
+      bestScore = score;
+    }
+  }
+
+  return bestEntity;
+}
