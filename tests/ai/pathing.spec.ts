@@ -1,44 +1,32 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi, Mock } from 'vitest';
+
 import { RobotBehaviorMode } from '../../src/simulation/ai/behaviorState';
 import {
   integrateMovement,
   planRobotMovement,
 } from '../../src/simulation/ai/pathing';
-import { RobotEntity } from '../../src/ecs/world';
+import { createTestRobot } from '../helpers/robotFactory';
 
-function createRobot(overrides: Partial<RobotEntity> = {}): RobotEntity {
-  const base: RobotEntity = {
-    id: 'robot',
-    kind: 'robot',
-    team: 'red',
-    position: { x: 0, y: 0, z: 0 },
-    velocity: { x: 0, y: 0, z: 0 },
-    orientation: 0,
-    weapon: 'laser',
-    fireCooldown: 0,
-    fireRate: 1,
-    health: 100,
-    maxHealth: 100,
-    ai: { mode: 'seek', targetId: undefined, strafeSign: 1 },
-    kills: 0,
-    isCaptain: false,
-    spawnIndex: 0,
-    lastDamageTimestamp: 0,
-  };
+/** Interface for our mock Rapier world with spyable castRayAndGetNormal */
+interface MockRapierWorld {
+  castRayAndGetNormal: Mock;
+}
 
+/** Helper to create a mock Rapier world that returns a predictable raycast result */
+function createMockRapierWorld(hitDistance?: number): MockRapierWorld {
   return {
-    ...base,
-    ...overrides,
-    position: overrides.position ?? { ...base.position },
-    velocity: overrides.velocity ?? { ...base.velocity },
-    ai: overrides.ai ?? { ...base.ai },
+    castRayAndGetNormal: vi.fn().mockReturnValue(
+      hitDistance !== undefined
+        ? { timeOfImpact: hitDistance, normal: { x: 0, y: 0, z: -1 } }
+        : null
+    ),
   };
 }
 
 describe('planRobotMovement', () => {
   it('moves toward the target while seeking', () => {
-    const robot = createRobot();
-    const target = createRobot({
+    const robot = createTestRobot();
+    const target = createTestRobot({
       id: 'enemy',
       team: 'blue',
       position: { x: 0, y: 0, z: 10 },
@@ -51,11 +39,11 @@ describe('planRobotMovement', () => {
   });
 
   it('retreats toward spawn and integrates velocity', () => {
-    const robot = createRobot({
+    const robot = createTestRobot({
       position: { x: -2, y: 0, z: 0 },
       velocity: { x: 1, y: 0, z: 0 },
     });
-    const target = createRobot({
+    const target = createTestRobot({
       id: 'enemy',
       team: 'blue',
       position: { x: -4, y: 0, z: 0 },
@@ -70,7 +58,7 @@ describe('planRobotMovement', () => {
   });
 
   it('pushes away from nearby allies when anchored', () => {
-    const robot = createRobot({
+    const robot = createTestRobot({
       position: { x: 0, y: 0, z: 0 },
       velocity: { x: 0, y: 0, z: 0 },
     });
@@ -90,11 +78,11 @@ describe('planRobotMovement', () => {
   });
 
   it('strafes around the target when settled near the anchor', () => {
-    const robot = createRobot({
+    const robot = createTestRobot({
       position: { x: 0, y: 0, z: 0 },
       velocity: { x: 0, y: 0, z: 0 },
     });
-    const target = createRobot({
+    const target = createTestRobot({
       id: 'enemy',
       team: 'blue',
       position: { x: 0, y: 0, z: 10 },
@@ -113,5 +101,174 @@ describe('planRobotMovement', () => {
 
     expect(plan.velocity.x).toBeGreaterThan(0);
     expect(plan.velocity.z).toBeGreaterThan(0);
+  });
+
+  it('shifts sideways when an ally blocks line of sight to the target', () => {
+    const robot = createTestRobot({
+      ai: { mode: 'engage', targetId: 'enemy', strafeSign: 1 },
+    });
+    const target = createTestRobot({
+      id: 'enemy',
+      team: 'blue',
+      position: { x: 0, y: 0, z: 8 },
+    });
+
+    const plan = planRobotMovement(
+      robot,
+      RobotBehaviorMode.Engage,
+      target,
+      undefined,
+      {
+        neighbors: [{ x: 0.25, y: 0, z: 3 }],
+        strafeSign: 1,
+      },
+    );
+
+    expect(Math.abs(plan.velocity.x)).toBeGreaterThan(0);
+    expect(plan.velocity.z).toBeGreaterThanOrEqual(0);
+  });
+
+  it('creates an avoidance velocity when positioned adjacent to a wall', () => {
+    const robot = createTestRobot({
+      position: { x: 0, y: 0, z: -49 }, // near the outer wall at z = -50
+      velocity: { x: 0, y: 0, z: 0 },
+      ai: { mode: 'seek', strafeSign: 1 },
+    });
+
+    const plan = planRobotMovement(
+      robot,
+      RobotBehaviorMode.Seek,
+      undefined,
+      undefined,
+      { formationAnchor: { x: 0, y: 0, z: -49 } },
+    );
+
+    // formation anchor equals position would normally yield zero velocity
+    // but avoidance from the nearby wall should produce a non-zero push away (positive z)
+    expect(plan.velocity.z).toBeGreaterThan(0);
+  });
+});
+
+describe('planRobotMovement with predictive avoidance', () => {
+  it('applies predictive avoidance when rapierWorld is provided and entity should raycast', () => {
+    const robot = createTestRobot({
+      id: 'robot-0', // entityId 0 should raycast on frame 0
+      position: { x: 0, y: 0, z: 0 },
+      velocity: { x: 0, y: 0, z: 1 },
+    });
+    const target = createTestRobot({
+      id: 'enemy',
+      team: 'blue',
+      position: { x: 0, y: 0, z: 10 },
+    });
+
+    // Create a mock that hits on center ray at close distance
+    const mockWorld = createMockRapierWorld(2.0);
+
+    const plan = planRobotMovement(
+      robot,
+      RobotBehaviorMode.Seek,
+      target,
+      undefined,
+      {
+        // Cast to unknown to satisfy TypeScript - mock implements the required interface
+        rapierWorld: mockWorld as unknown as NonNullable<Parameters<typeof planRobotMovement>[4]>['rapierWorld'],
+        frameCount: 0, // entity 0 should raycast on frame 0
+        entityId: 0,
+      },
+    );
+
+    // castRayAndGetNormal should have been called (3 times for the fan pattern)
+    expect(mockWorld.castRayAndGetNormal).toHaveBeenCalled();
+    // The plan should have some velocity (combined from base movement and avoidance)
+    expect(plan.velocity.z).toBeDefined();
+  });
+
+  it('skips predictive avoidance when rapierWorld is null (fallback to reactive-only)', () => {
+    const robot = createTestRobot({
+      position: { x: 0, y: 0, z: 0 },
+      velocity: { x: 0, y: 0, z: 1 },
+    });
+    const target = createTestRobot({
+      id: 'enemy',
+      team: 'blue',
+      position: { x: 0, y: 0, z: 10 },
+    });
+
+    // Should work without error when rapierWorld is null
+    const plan = planRobotMovement(
+      robot,
+      RobotBehaviorMode.Seek,
+      target,
+      undefined,
+      {
+        rapierWorld: null,
+        frameCount: 0,
+        entityId: 0,
+      },
+    );
+
+    // Should still produce a valid movement plan (reactive avoidance only)
+    expect(plan.velocity.z).toBeGreaterThan(0);
+  });
+
+  it('skips raycast when entity should not raycast this frame (uses cached result)', () => {
+    const robot = createTestRobot({
+      position: { x: 0, y: 0, z: 0 },
+      velocity: { x: 0, y: 0, z: 1 },
+    });
+    const target = createTestRobot({
+      id: 'enemy',
+      team: 'blue',
+      position: { x: 0, y: 0, z: 10 },
+    });
+
+    const mockWorld = createMockRapierWorld(2.0);
+
+    // Entity 0 should NOT raycast on frame 1 (0 % 3 !== 1 % 3)
+    const plan = planRobotMovement(
+      robot,
+      RobotBehaviorMode.Seek,
+      target,
+      undefined,
+      {
+        // Cast to unknown to satisfy TypeScript - mock implements the required interface
+        rapierWorld: mockWorld as unknown as NonNullable<Parameters<typeof planRobotMovement>[4]>['rapierWorld'],
+        frameCount: 1,
+        entityId: 0,
+      },
+    );
+
+    // castRayAndGetNormal should NOT have been called (not this entity's frame)
+    expect(mockWorld.castRayAndGetNormal).not.toHaveBeenCalled();
+    // Should still produce a valid movement plan
+    expect(plan.velocity.z).toBeGreaterThan(0);
+  });
+
+  it('blends predictive avoidance with reactive avoidance', () => {
+    const robot = createTestRobot({
+      position: { x: 0, y: 0, z: -48 }, // near wall at z = -50
+      velocity: { x: 0, y: 0, z: -1 }, // moving toward wall
+    });
+
+    // No target - will move toward spawn center
+    const mockWorld = createMockRapierWorld(2.0); // obstacle ahead
+
+    const planWithPredictive = planRobotMovement(
+      robot,
+      RobotBehaviorMode.Seek,
+      undefined,
+      undefined,
+      {
+        // Cast to unknown to satisfy TypeScript - mock implements the required interface
+        rapierWorld: mockWorld as unknown as NonNullable<Parameters<typeof planRobotMovement>[4]>['rapierWorld'],
+        frameCount: 0,
+        entityId: 0,
+      },
+    );
+
+    // Both reactive (wall proximity) and predictive (raycast hit) should contribute
+    // to pushing the robot away from the wall (positive z direction)
+    expect(planWithPredictive.velocity.z).toBeGreaterThan(0);
   });
 });

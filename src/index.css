@@ -1,13 +1,3 @@
-:root {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: #f5f6ff;
-  background-color: #060712;
-}
-
-* {
-  box-sizing: border-box;
-}
-
 html,
 body,
 #root {
@@ -15,25 +5,120 @@ body,
   padding: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden;
-  background: radial-gradient(circle at top, #111933 0%, #050610 65%, #02030a 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #050612;
+  color: #f4f5ff;
 }
 
-a {
-  color: inherit;
-}
-
-button {
-  font: inherit;
-}
-
-.app-loading {
+#root {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+}
+
+canvas {
+  flex: 1;
+  display: block;
+}
+
+.match-status {
+  position: absolute;
+  top: 16px;
+  left: 72px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(12, 14, 32, 0.75);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+
+.settings-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
   height: 100%;
-  font-size: 18px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #9aaaf6;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.settings-modal-content {
+  background-color: #2a2a2a;
+  padding: 24px;
+  border-radius: 12px;
+  width: 400px;
+  max-width: 90%;
+  color: #f0f0f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.settings-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.settings-modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.settings-modal-close {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0 8px;
+}
+
+.settings-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #444;
+}
+
+.settings-row label {
+  cursor: pointer;
+}
+
+.settings-row input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.settings-button {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 100;
+  background: rgba(12, 14, 32, 0.75);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  color: #f4f5ff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: background 0.2s;
+}
+
+.settings-button:hover {
+  background: rgba(20, 24, 48, 0.9);
 }

@@ -1,54 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { RobotEntity } from '../../src/ecs/world';
+
 import { findClosestEnemy, pickCaptainTarget } from '../../src/simulation/ai/targeting';
-
-function createRobot(overrides: Partial<RobotEntity> = {}): RobotEntity {
-  const base: RobotEntity = {
-    id: 'robot-0',
-    kind: 'robot',
-    team: 'red',
-    position: { x: 0, y: 0, z: 0 },
-    velocity: { x: 0, y: 0, z: 0 },
-    orientation: 0,
-    weapon: 'laser',
-    fireCooldown: 0,
-    fireRate: 1,
-    health: 100,
-    maxHealth: 100,
-    ai: { mode: 'seek', targetId: undefined },
-    kills: 0,
-    isCaptain: false,
-    spawnIndex: 0,
-    lastDamageTimestamp: 0,
-  };
-
-  return {
-    ...base,
-    ...overrides,
-    position: overrides.position ?? { ...base.position },
-    velocity: overrides.velocity ?? { ...base.velocity },
-    ai: overrides.ai ?? { ...base.ai },
-  };
-}
+import { createTestRobot } from '../helpers/robotFactory';
 
 describe('findClosestEnemy', () => {
   it('prioritizes nearest enemy with deterministic tie-breakers', () => {
-    const seeker = createRobot({ id: 'seeker', team: 'red' });
-    const closerHealth = createRobot({
+    const seeker = createTestRobot({ id: 'seeker', team: 'red' });
+    const closerHealth = createTestRobot({
       id: 'blue-1',
       team: 'blue',
       position: { x: 5, y: 0, z: 0 },
       kills: 1,
       health: 75,
     });
-    const tieDistanceHigherKills = createRobot({
+    const tieDistanceHigherKills = createTestRobot({
       id: 'blue-2',
       team: 'blue',
       position: { x: 0, y: 0, z: 5 },
       kills: 3,
       health: 75,
     });
-    const farEnemy = createRobot({
+    const farEnemy = createTestRobot({
       id: 'blue-3',
       team: 'blue',
       position: { x: 20, y: 0, z: 0 },
@@ -60,21 +32,21 @@ describe('findClosestEnemy', () => {
   });
 
   it('ignores defeated robots and falls back to spawn distance', () => {
-    const seeker = createRobot({ id: 'alpha', team: 'red' });
-    const defeated = createRobot({
+    const seeker = createTestRobot({ id: 'alpha', team: 'red' });
+    const defeated = createTestRobot({
       id: 'blue-defeated',
       team: 'blue',
       position: { x: 6, y: 0, z: 0 },
       health: 0,
     });
-    const tieKillsDifferentSpawn = createRobot({
+    const tieKillsDifferentSpawn = createTestRobot({
       id: 'blue-near-spawn',
       team: 'blue',
       position: { x: 6, y: 0, z: 0 },
       kills: 2,
       health: 60,
     });
-    const fartherFromSpawn = createRobot({
+    const fartherFromSpawn = createTestRobot({
       id: 'blue-far-spawn',
       team: 'blue',
       position: { x: -6, y: 0, z: 0 },
@@ -89,15 +61,15 @@ describe('findClosestEnemy', () => {
 
 describe('pickCaptainTarget', () => {
   it('prefers enemy captains when available', () => {
-    const seeker = createRobot({ id: 'captain-red', team: 'red', isCaptain: true });
-    const captain = createRobot({
+    const seeker = createTestRobot({ id: 'captain-red', team: 'red', isCaptain: true });
+    const captain = createTestRobot({
       id: 'blue-captain',
       team: 'blue',
       isCaptain: true,
       kills: 4,
       health: 90,
     });
-    const strongNonCaptain = createRobot({
+    const strongNonCaptain = createTestRobot({
       id: 'blue-heavy',
       team: 'blue',
       kills: 6,
@@ -109,20 +81,20 @@ describe('pickCaptainTarget', () => {
   });
 
   it('applies deterministic ordering when no captains remain', () => {
-    const seeker = createRobot({ id: 'red-1', team: 'red', isCaptain: true });
-    const highHealth = createRobot({
+    const seeker = createTestRobot({ id: 'red-1', team: 'red', isCaptain: true });
+    const highHealth = createTestRobot({
       id: 'blue-high-health',
       team: 'blue',
       health: 80,
       kills: 1,
     });
-    const equalHealthMoreKills = createRobot({
+    const equalHealthMoreKills = createTestRobot({
       id: 'blue-ace',
       team: 'blue',
       health: 80,
       kills: 5,
     });
-    const tieBreakBySpawn = createRobot({
+    const tieBreakBySpawn = createTestRobot({
       id: 'blue-flanker',
       team: 'blue',
       health: 80,

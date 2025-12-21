@@ -1,255 +1,272 @@
 import { create } from "zustand";
 
-import { TeamId } from "../ecs/world";
-import {
-  MatchTraceEvent,
-  MatchTraceEventType,
-} from "../runtime/matchTrace";
+import { TeamId } from "../lib/teamConfig";
 
-export interface RobotTelemetry {
+/** Event representing a robot spawn. */
+export interface SpawnEvent {
+  type: "spawn";
+  timestampMs: number;
+  sequenceId: number;
+  entityId: string;
+  teamId: TeamId;
+}
+
+/** Event representing a weapon fire. */
+export interface FireEvent {
+  type: "fire";
+  timestampMs: number;
+  sequenceId: number;
+  entityId: string;
+  teamId: TeamId;
+}
+
+/** Event representing damage dealt. */
+export interface DamageEvent {
+  type: "damage";
+  timestampMs: number;
+  sequenceId: number;
+  attackerId: string;
+  targetId: string;
+  teamId: TeamId;
+  amount: number;
+}
+
+/** Event representing a robot death. */
+export interface DeathEvent {
+  type: "death";
+  timestampMs: number;
+  sequenceId: number;
+  entityId: string;
+  teamId: TeamId;
+  attackerId?: string;
+}
+
+/** Event for obstacle movement */
+export interface ObstacleMoveEvent {
+  type: "obstacle:move";
+  timestampMs: number;
+  sequenceId: number;
+  frameIndex?: number;
+  obstacleId: string;
+  position?: { x: number; y: number; z: number };
+  orientation?: number;
+}
+
+/** Event for hazard activation */
+export interface HazardActivateEvent {
+  type: "hazard:activate";
+  timestampMs: number;
+  sequenceId: number;
+  frameIndex?: number;
+  obstacleId: string;
+}
+
+/** Event for hazard deactivation */
+export interface HazardDeactivateEvent {
+  type: "hazard:deactivate";
+  timestampMs: number;
+  sequenceId: number;
+  frameIndex?: number;
+  obstacleId: string;
+}
+
+/** Event for destructible cover destroyed */
+export interface CoverDestroyedEvent {
+  type: "cover:destroyed";
+  timestampMs: number;
+  sequenceId: number;
+  frameIndex?: number;
+  obstacleId: string;
+  destroyedBy?: string;
+}
+
+export type TelemetryEvent =
+  | SpawnEvent
+  | FireEvent
+  | DamageEvent
+  | DeathEvent
+  | ObstacleMoveEvent
+  | HazardActivateEvent
+  | HazardDeactivateEvent
+  | CoverDestroyedEvent;
+
+/** Aggregated stats for a single robot. */
+export interface RobotTelemetryStats {
   id: string;
   teamId: TeamId;
   shotsFired: number;
-  hits: number;
   damageDealt: number;
   damageTaken: number;
   kills: number;
   deaths: number;
-  spawnTimestampMs: number;
-  deathTimestampMs: number | null;
-  timeAliveMs: number;
 }
 
+/** Aggregated stats for a team. */
 export interface TeamTelemetryTotals {
+  spawns: number;
   shotsFired: number;
-  hits: number;
   damageDealt: number;
   damageTaken: number;
-  kills: number;
   deaths: number;
 }
 
-interface TelemetryState {
+/**
+ * State shape for the telemetry store.
+ */
+export interface TelemetryState {
+  /** The ID of the current match. */
   matchId: string | null;
-  lastEventTimestampMs: number;
-  robots: Record<string, RobotTelemetry>;
+  /** List of all recorded events in the current match. */
+  events: TelemetryEvent[];
+  /** Map of robot IDs to their aggregated stats. */
+  robots: Record<string, RobotTelemetryStats>;
+  /** Map of team IDs to their aggregated totals. */
   teamTotals: Record<TeamId, TeamTelemetryTotals>;
-  reset: (matchId: string) => void;
-  recordEvent: (event: MatchTraceEvent) => void;
-  finalizeLiveRobots: (timestampMs: number) => void;
+  /** Records a new event. */
+  recordEvent: (event: TelemetryEvent) => void;
+  /** Resets the store for a new match. */
+  reset: (matchId?: string) => void;
 }
 
-const createTeamTotals = (): TeamTelemetryTotals => ({
-  shotsFired: 0,
-  hits: 0,
-  damageDealt: 0,
-  damageTaken: 0,
-  kills: 0,
-  deaths: 0,
-});
+function createRobotStats(id: string, teamId: TeamId): RobotTelemetryStats {
+  return {
+    id,
+    teamId,
+    shotsFired: 0,
+    damageDealt: 0,
+    damageTaken: 0,
+    kills: 0,
+    deaths: 0,
+  };
+}
 
-const ensureTeamTotals = (
-  totals: Record<TeamId, TeamTelemetryTotals>,
-  teamId: TeamId,
-): TeamTelemetryTotals => {
-  if (!totals[teamId]) {
-    totals[teamId] = createTeamTotals();
-  }
-  return totals[teamId];
-};
-
-const ensureRobot = (
-  robots: Record<string, RobotTelemetry>,
-  teamTotals: Record<TeamId, TeamTelemetryTotals>,
-  id: string,
-  teamId: TeamId | undefined,
-  timestampMs: number,
-): RobotTelemetry | null => {
-  if (!teamId) {
-    return null;
-  }
-
-  if (!robots[id]) {
-    robots[id] = {
-      id,
-      teamId,
+function createTeamTotals(): Record<TeamId, TeamTelemetryTotals> {
+  return {
+    red: {
+      spawns: 0,
       shotsFired: 0,
-      hits: 0,
       damageDealt: 0,
       damageTaken: 0,
-      kills: 0,
       deaths: 0,
-      spawnTimestampMs: timestampMs,
-      deathTimestampMs: null,
-      timeAliveMs: 0,
-    };
-  }
+    },
+    blue: {
+      spawns: 0,
+      shotsFired: 0,
+      damageDealt: 0,
+      damageTaken: 0,
+      deaths: 0,
+    },
+  };
+}
 
-  ensureTeamTotals(teamTotals, robots[id].teamId);
-  return robots[id];
-};
+function cloneTeamTotals(totals: Record<TeamId, TeamTelemetryTotals>) {
+  return {
+    red: { ...totals.red },
+    blue: { ...totals.blue },
+  };
+}
 
+/**
+ * Zustand store for managing match telemetry data.
+ */
 export const useTelemetryStore = create<TelemetryState>((set) => ({
   matchId: null,
-  lastEventTimestampMs: 0,
+  events: [],
   robots: {},
-  teamTotals: {
-    red: createTeamTotals(),
-    blue: createTeamTotals(),
-  },
+  teamTotals: createTeamTotals(),
   reset: (matchId) =>
     set({
-      matchId,
-      lastEventTimestampMs: 0,
+      matchId: matchId ?? null,
+      events: [],
       robots: {},
-      teamTotals: {
-        red: createTeamTotals(),
-        blue: createTeamTotals(),
-      },
-    }),
-  finalizeLiveRobots: (timestampMs) =>
-    set((state) => {
-      const robots = { ...state.robots };
-      Object.values(robots).forEach((robot) => {
-        if (robot.deathTimestampMs === null) {
-          robot.timeAliveMs = Math.max(
-            robot.timeAliveMs,
-            timestampMs - robot.spawnTimestampMs,
-          );
-        }
-      });
-      return { robots, lastEventTimestampMs: timestampMs };
+      teamTotals: createTeamTotals(),
     }),
   recordEvent: (event) =>
     set((state) => {
       const robots = { ...state.robots };
-      const teamTotals = {
-        red: { ...state.teamTotals.red },
-        blue: { ...state.teamTotals.blue },
-      };
+      const teamTotals = cloneTeamTotals(state.teamTotals);
 
-      const timestampMs =
-        event.timestampMs ?? state.lastEventTimestampMs;
-
-      const applyDeath = (
-        targetId: string | undefined,
-        attackerId: string | undefined,
-      ) => {
-        if (!targetId) {
-          return;
-        }
-        const target = robots[targetId];
-        if (target) {
-          const totals = ensureTeamTotals(teamTotals, target.teamId);
-          target.deaths += 1;
-          target.deathTimestampMs = timestampMs;
-          target.timeAliveMs = Math.max(
-            target.timeAliveMs,
-            timestampMs - target.spawnTimestampMs,
-          );
-          totals.deaths += 1;
-        }
-
-        if (attackerId) {
-          const attacker = robots[attackerId];
-          if (attacker) {
-            attacker.kills += 1;
-            ensureTeamTotals(teamTotals, attacker.teamId).kills += 1;
+      const ensureRobot = (id: string, teamId: TeamId): RobotTelemetryStats => {
+        const existing = robots[id];
+        if (existing) {
+          if (existing.teamId !== teamId) {
+            robots[id] = { ...existing, teamId };
           }
+          return robots[id];
         }
+
+        const stats = createRobotStats(id, teamId);
+        robots[id] = stats;
+        return stats;
       };
 
-      switch (event.type as MatchTraceEventType) {
+      switch (event.type) {
         case "spawn": {
-          if (!event.entityId || !event.teamId) {
-            break;
-          }
-          ensureRobot(robots, teamTotals, event.entityId, event.teamId, timestampMs);
+          ensureRobot(event.entityId, event.teamId);
+          teamTotals[event.teamId].spawns += 1;
           break;
         }
         case "fire": {
-          if (!event.entityId) {
-            break;
-          }
-          const robot = robots[event.entityId];
-          if (robot) {
-            robot.shotsFired += 1;
-            ensureTeamTotals(teamTotals, robot.teamId).shotsFired += 1;
-          }
+          const robot = ensureRobot(event.entityId, event.teamId);
+          robots[event.entityId] = {
+            ...robot,
+            shotsFired: robot.shotsFired + 1,
+          };
+          teamTotals[event.teamId].shotsFired += 1;
           break;
         }
         case "damage": {
-          const attackerId = event.attackerId;
-          const targetId = event.targetId;
-          const amount = event.amount ?? 0;
+          const attacker = ensureRobot(event.attackerId, event.teamId);
+          robots[event.attackerId] = {
+            ...attacker,
+            damageDealt: attacker.damageDealt + event.amount,
+          };
+          teamTotals[event.teamId].damageDealt += event.amount;
 
-          if (attackerId) {
-            const attacker = robots[attackerId];
-            if (attacker) {
-              attacker.damageDealt += amount;
-              attacker.hits += 1;
-              const totals = ensureTeamTotals(teamTotals, attacker.teamId);
-              totals.damageDealt += amount;
-              totals.hits += 1;
-            }
-          }
-
-          if (targetId) {
-            const target = robots[targetId];
-            if (target) {
-              target.damageTaken += amount;
-              ensureTeamTotals(teamTotals, target.teamId).damageTaken += amount;
-            }
+          const target = robots[event.targetId];
+          if (target) {
+            robots[event.targetId] = {
+              ...target,
+              damageTaken: target.damageTaken + event.amount,
+            };
+            teamTotals[target.teamId].damageTaken += event.amount;
           }
           break;
         }
         case "death": {
-          applyDeath(event.entityId, event.attackerId);
+          const deceased = ensureRobot(event.entityId, event.teamId);
+          robots[event.entityId] = {
+            ...deceased,
+            deaths: deceased.deaths + 1,
+          };
+          teamTotals[event.teamId].deaths += 1;
+
+          if (event.attackerId) {
+            const attacker = robots[event.attackerId];
+            if (attacker) {
+              robots[event.attackerId] = {
+                ...attacker,
+                kills: attacker.kills + 1,
+              };
+            }
+          }
           break;
         }
+        case "obstacle:move":
+        case "hazard:activate":
+        case "hazard:deactivate":
+        case "cover:destroyed":
+          // These events are recorded but do not affect robot/team aggregates
+          break;
         default:
           break;
       }
 
       return {
+        ...state,
+        events: [...state.events, event],
         robots,
         teamTotals,
-        lastEventTimestampMs: timestampMs,
       };
     }),
 }));
-
-export function selectRobotStatsByTeam(team: TeamId) {
-  return (state: TelemetryState) =>
-    Object.values(state.robots)
-      .filter((robot) => robot.teamId === team)
-      .sort((a, b) => {
-        if (b.kills !== a.kills) {
-          return b.kills - a.kills;
-        }
-        if (b.damageDealt !== a.damageDealt) {
-          return b.damageDealt - a.damageDealt;
-        }
-        return a.spawnTimestampMs - b.spawnTimestampMs;
-      });
-}
-
-export function selectTopRobots(limit: number) {
-  return (state: TelemetryState) =>
-    Object.values(state.robots)
-      .slice()
-      .sort((a, b) => {
-        if (b.damageDealt !== a.damageDealt) {
-          return b.damageDealt - a.damageDealt;
-        }
-        if (b.kills !== a.kills) {
-          return b.kills - a.kills;
-        }
-        return (b.timeAliveMs ?? 0) - (a.timeAliveMs ?? 0);
-      })
-      .slice(0, limit);
-}
-
-export function selectTeamTotals(team: TeamId) {
-  return (state: TelemetryState) => state.teamTotals[team];
-}

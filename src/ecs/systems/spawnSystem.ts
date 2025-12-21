@@ -1,38 +1,88 @@
 import { applyCaptaincy } from "../../lib/captainElection";
-import { TEAM_CONFIGS } from "../../lib/teamConfig";
-import { getWeaponStats } from "../../lib/weapons";
-import { getGridFormationOffset } from "../../lib/formation";
-import { createRng } from "../utils/random";
-import { addVec3 } from "../utils/vector";
-import { BattleWorld, RobotEntity, TeamId, toVec3, WeaponType } from "../world";
+import { createXorShift32 } from "../../lib/random/xorshift";
+import { TEAM_CONFIGS, TeamId } from "../../lib/teamConfig";
+import {
+  getWeaponProfile,
+  WeaponProfile,
+} from "../../simulation/combat/weapons";
+import { BattleWorld, RobotEntity, toVec3, WeaponType } from "../world";
 
-const DEFAULT_ROBOTS_PER_TEAM = 10;
-function buildRobot(props: {
-  team: TeamId;
-  spawnIndex: number;
-  basePosition: { x: number; z: number };
-  weapon: WeaponType;
-  offset: number;
-}): RobotEntity {
-  const { team, spawnIndex, basePosition, weapon, offset } = props;
-  const id = `${team}-${spawnIndex}`;
-  const heading = team === "red" ? 0 : Math.PI;
-  const base = TEAM_CONFIGS[team].spawnCenter;
-  const position = addVec3(base, toVec3(basePosition.x, 0, basePosition.z));
+/**
+ * Options for spawning robots.
+ */
+export interface SpawnOptions {
+  /** The random seed for the match. */
+  seed?: number;
+  /** Callback triggered when a robot is spawned. */
+  onRobotSpawn?: (robot: RobotEntity) => void;
+}
 
+const WEAPON_ROTATION: WeaponType[] = ["laser", "gun", "rocket"];
+const BASE_MAX_HEALTH = 100;
+const BASE_SPEED = 8;
+
+/**
+ * Generates a unique ID for a robot.
+ * @param team - The team ID.
+ * @param index - The robot's index within the team.
+ * @returns A string ID.
+ */
+function buildRobotId(team: TeamId, index: number): string {
+  const displayIndex = index + 1;
+  return `${team}-${displayIndex}`;
+}
+
+/**
+ * Determines the weapon for a robot based on its spawn index.
+ * Cyclically rotates through available weapon types.
+ * @param index - The spawn index.
+ * @returns The WeaponType.
+ */
+function getWeaponForIndex(index: number): WeaponType {
+  return WEAPON_ROTATION[index % WEAPON_ROTATION.length];
+}
+
+/**
+ * Creates a new robot entity with initial stats.
+ * @param team - The team ID.
+ * @param spawnIndex - The robot's spawn index.
+ * @param orientation - Initial facing direction.
+ * @param strafeSign - Initial strafing direction preference.
+ * @param profile - Weapon profile.
+ * @returns A new RobotEntity.
+ */
+function createRobot(
+  team: TeamId,
+  spawnIndex: number,
+  orientation: number,
+  strafeSign: 1 | -1,
+  profile: WeaponProfile,
+): RobotEntity {
   return {
-    id,
+    id: buildRobotId(team, spawnIndex),
     kind: "robot",
     team,
-    position,
+    position: toVec3(0, 0, 0),
     velocity: toVec3(0, 0, 0),
-    orientation: heading,
-    weapon,
-    fireCooldown: offset,
-    fireRate: getWeaponStats(weapon).fireRate,
-    health: 100,
-    maxHealth: 100,
-    ai: { mode: "seek", strafeSign: 1 },
+    orientation,
+    speed: BASE_SPEED,
+    weapon: profile.type,
+    fireCooldown: 0,
+    fireRate: profile.fireRate,
+    health: BASE_MAX_HEALTH,
+    maxHealth: BASE_MAX_HEALTH,
+    ai: {
+      mode: "seek",
+      targetId: undefined,
+      directive: "balanced",
+      anchorPosition: null,
+      anchorDistance: profile.range,
+      strafeSign,
+      targetDistance: null,
+      visibleEnemyIds: [],
+      enemyMemory: {},
+      searchPosition: null,
+    },
     kills: 0,
     isCaptain: false,
     spawnIndex,
@@ -40,55 +90,56 @@ function buildRobot(props: {
   };
 }
 
-function pickWeapon(index: number): WeaponType {
-  const weapons: WeaponType[] = ["laser", "gun", "rocket"];
-  return weapons[index % weapons.length];
-}
+/**
+ * Spawns all robots for a specific team.
+ * @param battleWorld - The battle world.
+ * @param team - The team ID.
+ * @param seed - The seed for randomization.
+ * @param options - Spawn options.
+ */
+function spawnTeamRobots(
+  battleWorld: BattleWorld,
+  team: TeamId,
+  seed: number,
+  options: SpawnOptions,
+) {
+  const generator = createXorShift32(seed);
+  const teamConfig = TEAM_CONFIGS[team];
+  const { world } = battleWorld;
 
-export interface SpawnTeamsOptions {
-  seed?: number;
-  teamRobotCounts?: Partial<Record<TeamId, number>>;
-  onSpawn?: (robot: RobotEntity) => void;
-}
-
-export function spawnTeams(
-  world: BattleWorld,
-  options: SpawnTeamsOptions = {},
-): Record<TeamId, RobotEntity[]> {
-  const { seed = 1337, teamRobotCounts = {}, onSpawn } = options;
-  const rng = createRng(seed);
-
-  const teams: Record<TeamId, RobotEntity[]> = { red: [], blue: [] };
-
-  (["red", "blue"] as TeamId[]).forEach((team) => {
-    const robots: RobotEntity[] = [];
-    const robotCount = teamRobotCounts[team] ?? DEFAULT_ROBOTS_PER_TEAM;
-
-    if (robotCount <= 0) {
-      teams[team] = robots;
-      return;
-    }
-
-    for (let index = 0; index < robotCount; index += 1) {
-      const weapon = pickWeapon(index);
-      const weaponStats = getWeaponStats(weapon);
-      const offset = 0.2 + rng() * weaponStats.fireRate;
-      const displacement = getGridFormationOffset(index, robotCount);
-      const robot = buildRobot({
-        team,
-        spawnIndex: index,
-        basePosition: displacement,
-        weapon,
-        offset,
-      });
-      world.world.add(robot);
-      robots.push(robot);
-      onSpawn?.(robot);
-    }
-
-    applyCaptaincy(team, robots);
-    teams[team] = robots;
+  teamConfig.spawnPoints.slice(0, 10).forEach((spawnPoint, index) => {
+    const strafeSign = generator.next() >= 0.5 ? 1 : -1;
+    const weapon = getWeaponForIndex(index);
+    const profile = getWeaponProfile(weapon);
+    const robot = createRobot(
+      team,
+      index,
+      teamConfig.orientation,
+      strafeSign,
+      profile,
+    );
+    robot.position = toVec3(spawnPoint.x, spawnPoint.y, spawnPoint.z);
+    robot.fireCooldown = 0;
+    world.add(robot);
+    options.onRobotSpawn?.(robot);
   });
 
-  return teams;
+  const robots = battleWorld.getRobotsByTeam(team);
+  applyCaptaincy(team, robots);
+}
+
+/**
+ * Initializes the battle by spawning teams and setting up the initial state.
+ * @param battleWorld - The battle world.
+ * @param options - Configuration options for spawning.
+ */
+export function spawnTeams(
+  battleWorld: BattleWorld,
+  options: SpawnOptions = {},
+): void {
+  const baseSeed = options.seed ?? Date.now();
+  battleWorld.state.seed = baseSeed;
+
+  spawnTeamRobots(battleWorld, "red", baseSeed ^ 0x9e3779b9, options);
+  spawnTeamRobots(battleWorld, "blue", baseSeed ^ 0x4f1bbcdc, options);
 }

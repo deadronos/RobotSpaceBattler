@@ -1,111 +1,142 @@
-import { distance } from "../../ecs/utils/vector";
 import { RobotEntity } from "../../ecs/world";
+import { distanceSquaredVec3 } from "../../lib/math/vec3";
+import { isActiveRobot } from "../../lib/robotHelpers";
 import { TEAM_CONFIGS } from "../../lib/teamConfig";
+import { findBestEntity } from "./targetingUtils";
 
-const DISTANCE_EPSILON = 1e-6;
-
-interface TargetCandidate {
-  robot: RobotEntity;
-  distanceToAttacker: number;
-  spawnDistance: number;
+function isEnemy(seeker: RobotEntity, target: RobotEntity): boolean {
+  return (
+    target.team !== seeker.team &&
+    isActiveRobot(target) &&
+    target.id !== seeker.id
+  );
 }
 
-function compareByCloseness(a: TargetCandidate, b: TargetCandidate): number {
-  if (
-    Math.abs(a.distanceToAttacker - b.distanceToAttacker) > DISTANCE_EPSILON
-  ) {
-    return a.distanceToAttacker - b.distanceToAttacker;
-  }
-
-  if (a.robot.health !== b.robot.health) {
-    return b.robot.health - a.robot.health;
-  }
-
-  if (a.robot.kills !== b.robot.kills) {
-    return b.robot.kills - a.robot.kills;
-  }
-
-  if (Math.abs(a.spawnDistance - b.spawnDistance) > DISTANCE_EPSILON) {
-    return a.spawnDistance - b.spawnDistance;
-  }
-
-  return a.robot.id.localeCompare(b.robot.id);
-}
-
-function buildCandidate(
-  attacker: RobotEntity,
-  candidate: RobotEntity,
-): TargetCandidate {
-  const spawnCenter = TEAM_CONFIGS[candidate.team].spawnCenter;
-  return {
-    robot: candidate,
-    distanceToAttacker: distance(attacker.position, candidate.position),
-    spawnDistance: distance(candidate.position, spawnCenter),
-  };
-}
-
+/**
+ * Finds the best enemy target for a robot.
+ * Prioritizes closest enemies.
+ *
+ * @param seeker - The robot looking for a target.
+ * @param robots - The list of all robots.
+ * @param candidates - Optional subset of robots to consider (e.g., visible ones).
+ * @returns The best target robot or undefined.
+ */
 export function findClosestEnemy(
-  robot: RobotEntity,
+  seeker: RobotEntity,
   robots: RobotEntity[],
+  candidates?: RobotEntity[],
 ): RobotEntity | undefined {
-  const enemies = robots.filter(
-    (candidate) => candidate.team !== robot.team && candidate.health > 0,
-  );
+  const pool = candidates ?? robots;
+  const enemies = pool.filter((robot) => isEnemy(seeker, robot));
 
   if (enemies.length === 0) {
     return undefined;
   }
 
-  const candidates = enemies.map((candidate) =>
-    buildCandidate(robot, candidate),
+  // Use sortEntities to preserve tie-breaking logic (Health, Kills, SpawnDist, ID)
+  // Logic from original code: DistanceSq > Kills (desc) > SpawnDist (asc) > ID
+  // Wait, original sortByPriority:
+  // if (a.distanceSq !== b.distanceSq) return a.distanceSq - b.distanceSq;
+  // if (b.entity.kills !== a.entity.kills) return b.entity.kills - a.entity.kills;
+  // if (a.spawnDistanceSq !== b.spawnDistanceSq) return a.spawnDistanceSq - b.spawnDistanceSq;
+  // return a.entity.id.localeCompare(b.entity.id);
+
+  const spawnCenter = TEAM_CONFIGS[enemies[0].team].spawnCenter;
+
+  return findBestEntity(
+    enemies,
+    (entity) => ({
+      entity,
+      distanceSq: distanceSquaredVec3(seeker.position, entity.position),
+      spawnDistanceSq: distanceSquaredVec3(entity.position, spawnCenter),
+    }),
+    (a, b) => {
+      if (a.distanceSq !== b.distanceSq) {
+        return a.distanceSq - b.distanceSq;
+      }
+      if (b.entity.kills !== a.entity.kills) {
+        return b.entity.kills - a.entity.kills;
+      }
+      if (a.spawnDistanceSq !== b.spawnDistanceSq) {
+        return a.spawnDistanceSq - b.spawnDistanceSq;
+      }
+      return a.entity.id.localeCompare(b.entity.id);
+    },
   );
-  candidates.sort(compareByCloseness);
-  return candidates[0]?.robot;
 }
 
-function compareCaptainPriority(
-  a: TargetCandidate,
-  b: TargetCandidate,
-): number {
-  if (a.robot.health !== b.robot.health) {
-    return b.robot.health - a.robot.health;
-  }
-
-  if (a.robot.kills !== b.robot.kills) {
-    return b.robot.kills - a.robot.kills;
-  }
-
-  if (Math.abs(a.spawnDistance - b.spawnDistance) > DISTANCE_EPSILON) {
-    return a.spawnDistance - b.spawnDistance;
-  }
-
-  return a.robot.id.localeCompare(b.robot.id);
-}
-
+/**
+ * Selects a target for a captain robot.
+ * Captains prioritize enemy captains and high-value targets.
+ *
+ * @param captain - The captain robot.
+ * @param robots - The list of all robots.
+ * @param candidates - Optional subset of robots to consider.
+ * @returns The selected target robot or undefined.
+ */
 export function pickCaptainTarget(
-  robot: RobotEntity,
+  captain: RobotEntity,
   robots: RobotEntity[],
+  candidates?: RobotEntity[],
 ): RobotEntity | undefined {
-  const enemies = robots.filter(
-    (candidate) => candidate.team !== robot.team && candidate.health > 0,
-  );
+  const pool = candidates ?? robots;
+  const enemies = pool.filter((robot) => isEnemy(captain, robot));
 
+  // 1. Prefer closest enemy captain
+  const enemyCaptains = enemies.filter((robot) => robot.isCaptain);
+  if (enemyCaptains.length > 0) {
+    // Also use sortEntities here to be safe?
+    // Original code used rankCandidates which uses sortByPriority.
+    // So yes, captains also used the tie-breaker logic!
+    // rankCandidates(captain, captains).sort(sortByPriority)
+    const spawnCenter = TEAM_CONFIGS[enemies[0].team].spawnCenter;
+    return findBestEntity(
+      enemyCaptains,
+      (entity) => ({
+        entity,
+        distanceSq: distanceSquaredVec3(captain.position, entity.position),
+        spawnDistanceSq: distanceSquaredVec3(entity.position, spawnCenter),
+      }),
+      (a, b) => {
+        if (a.distanceSq !== b.distanceSq) {
+          return a.distanceSq - b.distanceSq;
+        }
+        if (b.entity.kills !== a.entity.kills) {
+          return b.entity.kills - a.entity.kills;
+        }
+        if (a.spawnDistanceSq !== b.spawnDistanceSq) {
+          return a.spawnDistanceSq - b.spawnDistanceSq;
+        }
+        return a.entity.id.localeCompare(b.entity.id);
+      },
+    );
+  }
+
+  // 2. Rank enemies by strategic value (Health > Kills > SpawnDist > ID)
   if (enemies.length === 0) {
     return undefined;
   }
 
-  const captainCandidates = enemies
-    .filter((candidate) => candidate.isCaptain)
-    .map((candidate) => buildCandidate(robot, candidate));
+  // Determine enemy spawn center for scoring
+  const spawnCenter = TEAM_CONFIGS[enemies[0].team].spawnCenter;
 
-  if (captainCandidates.length > 0) {
-    captainCandidates.sort(compareCaptainPriority);
-    return captainCandidates[0]?.robot;
-  }
-
-  const candidates = enemies.map((candidate) =>
-    buildCandidate(robot, candidate),
+  return findBestEntity(
+    enemies,
+    (entity) => ({
+      entity,
+      spawnDistanceSq: distanceSquaredVec3(entity.position, spawnCenter),
+    }),
+    (a, b) => {
+      if (b.entity.health !== a.entity.health) {
+        return b.entity.health - a.entity.health;
+      }
+      if (b.entity.kills !== a.entity.kills) {
+        return b.entity.kills - a.entity.kills;
+      }
+      if (a.spawnDistanceSq !== b.spawnDistanceSq) {
+        return b.spawnDistanceSq - a.spawnDistanceSq; // Descending (furthest first)
+      }
+      return a.entity.id.localeCompare(b.entity.id);
+    },
   );
-  candidates.sort(compareCaptainPriority);
-  return candidates[0]?.robot;
 }

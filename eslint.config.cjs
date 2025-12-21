@@ -191,3 +191,19 @@ module.exports = [
     }
   },
 ]
+
+// Migrate patterns from the now-deprecated .eslintignore file into the flat config
+// See: https://eslint.org/docs/latest/use/configure/migration-guide#ignoring-files
+module.exports.ignores = [
+  'node_modules/',
+  'dist/',
+  'build/',
+  'coverage/',
+  'playwright-report/',
+  'playwright/.cache/',
+  '.vscode/',
+  '!.vscode/settings.json',
+  '!.vscode/tasks.json',
+  '!.vscode/launch.json',
+  '!.vscode/extensions.json',
+];

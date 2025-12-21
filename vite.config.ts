@@ -11,6 +11,8 @@ import { visualizer } from 'rollup-plugin-visualizer'
 import { setupPlugins as responsiveSetupPlugins } from '@responsive-image/vite-plugin'
 
 export default defineConfig({
+  // Build base for GitHub Pages (repo published at /RobotSpaceBattler/)
+  base: '/RobotSpaceBattler/',
   plugins: [
     react(),
     svgr(),
@@ -35,6 +37,7 @@ export default defineConfig({
   // bundled or prebundled which would create duplicate WASM runtimes.
   resolve: {
     alias: {
+      '@': path.resolve(__dirname, 'src'),
       '@dimforge/rapier3d-compat': path.resolve(__dirname, 'node_modules', '@dimforge', 'rapier3d-compat')
     }
   },
@@ -44,17 +47,17 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
+        // Fallback: put all `node_modules` into a single `vendor` chunk.
+        // This avoids cross-chunk circular initialization ordering issues at
+        // the cost of a larger vendor bundle. Use this when finer-grained
+        // manualChunks lead to runtime races (React runtime undefined).
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('three')) return 'vendor_three'
-            if (id.includes('@react-three')) return 'vendor_r3'
-            if (id.includes('@react-three/rapier') || id.includes('rapier')) return 'vendor_rapier'
-            if (id.includes('miniplex')) return 'vendor_miniplex'
             return 'vendor'
           }
-        }
-      },
-      plugins: [visualizer({ filename: 'dist/stats.html', open: false })]
+        },
+        plugins: [visualizer({ filename: 'dist/stats.html', open: false })]
+      }
     }
   }
 })
