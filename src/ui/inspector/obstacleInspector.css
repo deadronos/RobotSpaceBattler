@@ -1,0 +1,79 @@
+.obstacle-inspector-empty {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.obstacle-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.obstacle-inspector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.obstacle-inspector-title {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.obstacle-inspector-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.obstacle-inspector-input {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8f9ff;
+  font-size: 12px;
+}
+
+.obstacle-inspector-button {
+  cursor: pointer;
+}
+
+.obstacle-inspector-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.obstacle-inspector-flags {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.obstacle-inspector-flag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.obstacle-inspector-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 8px;
+}
+
+.obstacle-inspector-section-title {
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.obstacle-inspector-mt-8 {
+  margin-top: 8px;
+}
+
+.obstacle-inspector-mt-6 {
+  margin-top: 6px;
+}
