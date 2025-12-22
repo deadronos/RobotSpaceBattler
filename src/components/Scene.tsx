@@ -1,6 +1,13 @@
 import { OrbitControls, Stars } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
+import {
+  Bloom,
+  ChromaticAberration,
+  EffectComposer,
+  ToneMapping,
+} from "@react-three/postprocessing";
 import { Physics } from "@react-three/rapier";
+import { BlendFunction } from "postprocessing";
 import { ReactNode, Suspense } from "react";
 
 import { initializeRendererStats } from "../visuals/rendererStats";
@@ -29,12 +36,12 @@ export function Scene({ children }: SceneProps) {
       gl={{ antialias: true }}
       onCreated={({ gl }) => initializeRendererStats(gl)}
     >
-      <color attach="background" args={["#020310"]} />
-      <ambientLight intensity={0.6} color="#4a517a" />
+      <color attach="background" args={["#010208"]} />
+      <ambientLight intensity={0.2} color="#1a1d35" />
       <hemisphereLight
-        groundColor="#0a0b18"
-        intensity={0.4}
-        color="#7a8dff"
+        groundColor="#03040a"
+        intensity={0.3}
+        color="#3d4c99"
         position={[0, 34, 0]}
       />
       <directionalLight
@@ -101,6 +108,19 @@ export function Scene({ children }: SceneProps) {
         </Physics>
       </Suspense>
       <OrbitControls enablePan enableZoom enableRotate />
+      <EffectComposer enableNormalPass={false}>
+        <Bloom
+          luminanceThreshold={1.2}
+          mipmapBlur
+          intensity={1.5}
+          radius={0.6}
+        />
+        <ChromaticAberration
+          blendFunction={BlendFunction.NORMAL}
+          offset={[0.002, 0.002]}
+        />
+        <ToneMapping />
+      </EffectComposer>
     </Canvas>
   );
 }
