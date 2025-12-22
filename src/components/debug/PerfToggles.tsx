@@ -4,6 +4,7 @@ import {
   qualityManager,
   useQualitySettings,
 } from "../../state/quality/QualityManager";
+import type { PostprocessingQualityLevel } from "../../state/quality/QualityManager";
 
 const panelStyle: React.CSSProperties = {
   background: "rgba(8, 10, 22, 0.82)",
@@ -49,6 +50,30 @@ export function PerfToggles() {
     setStatus(`Obstacle visuals ${enabled ? "shown" : "hidden"}`);
   };
 
+  const togglePostprocessing = (enabled: boolean) => {
+    qualityManager.setPostprocessingEnabled(enabled);
+    setStatus(`Post FX ${enabled ? "enabled" : "disabled"}`);
+  };
+
+  const updatePostprocessingQuality = (quality: PostprocessingQualityLevel) => {
+    qualityManager.setPostprocessingQuality(quality);
+    setStatus(`Post FX quality set to ${quality}`);
+  };
+
+  const toggleShadows = (enabled: boolean) => {
+    qualityManager.setShadowsEnabled(enabled);
+    setStatus(`Shadows ${enabled ? "enabled" : "disabled"}`);
+  };
+
+  const updateRenderDpr = (value: number) => {
+    if (!Number.isFinite(value)) {
+      return;
+    }
+    const next = Math.max(0.75, Math.min(2, Number(value.toFixed(2))));
+    qualityManager.setRenderDpr(next);
+    setStatus(`Render DPR set to ${next}`);
+  };
+
   const updateMaxInstances = (
     field: keyof typeof quality.visuals.instancing.maxInstances,
     value: number,
@@ -81,6 +106,57 @@ export function PerfToggles() {
           onChange={(e) => toggleObstacleVisuals(e.target.checked)}
         />
         Show obstacle visuals
+      </label>
+
+      <label style={labelStyle}>
+        <input
+          type="checkbox"
+          checked={quality.visuals.postprocessing.enabled}
+          onChange={(e) => togglePostprocessing(e.target.checked)}
+        />
+        Post FX
+      </label>
+
+      <label style={labelStyle}>
+        <span style={{ minWidth: 64, display: "inline-block" }}>
+          Post FX quality
+        </span>
+        <select
+          style={inputStyle}
+          value={quality.visuals.postprocessing.quality}
+          onChange={(e) =>
+            updatePostprocessingQuality(
+              e.target.value as PostprocessingQualityLevel,
+            )
+          }
+        >
+          <option value="low">Low</option>
+          <option value="high">High</option>
+        </select>
+      </label>
+
+      <label style={labelStyle}>
+        <input
+          type="checkbox"
+          checked={quality.visuals.render.shadowsEnabled}
+          onChange={(e) => toggleShadows(e.target.checked)}
+        />
+        Shadows
+      </label>
+
+      <label style={labelStyle}>
+        <span style={{ minWidth: 64, display: "inline-block" }}>
+          Render DPR
+        </span>
+        <input
+          type="number"
+          style={inputStyle}
+          value={quality.visuals.render.dpr}
+          onChange={(e) => updateRenderDpr(Number(e.target.value))}
+          min={0.75}
+          max={2}
+          step={0.05}
+        />
       </label>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>

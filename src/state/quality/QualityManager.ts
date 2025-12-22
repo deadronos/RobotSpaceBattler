@@ -1,5 +1,7 @@
 import { useSyncExternalStore } from "react";
 
+import { createDefaultQualitySettings } from "./qualityDefaults";
+
 /**
  * Configuration for maximum instance counts per visual category.
  */
@@ -18,6 +20,19 @@ export interface InstancingQualityConfig {
   maxInstances: InstancingMaxInstancesConfig;
 }
 
+export type PostprocessingQualityLevel = "low" | "high";
+
+export interface PostprocessingQualityConfig {
+  enabled: boolean;
+  quality: PostprocessingQualityLevel;
+}
+
+export interface RenderQualityConfig {
+  dpr: number;
+  shadowsEnabled: boolean;
+  shadowMapSize: number;
+}
+
 export interface ObstacleDebugConfig {
   visualsEnabled: boolean;
 }
@@ -29,6 +44,8 @@ export interface QualitySettings {
   visuals: {
     instancing: InstancingQualityConfig;
     obstacles: ObstacleDebugConfig;
+    postprocessing: PostprocessingQualityConfig;
+    render: RenderQualityConfig;
   };
 }
 
@@ -39,61 +56,14 @@ type QualityOverrides = {
       maxInstances?: Partial<InstancingMaxInstancesConfig>;
     };
     obstacles?: Partial<ObstacleDebugConfig>;
+    postprocessing?: Partial<PostprocessingQualityConfig>;
+    render?: Partial<RenderQualityConfig>;
   };
 };
 
 type QualityListener = () => void;
 
-function readBooleanFlag(): boolean {
-  if (typeof window !== "undefined") {
-    const url = new URL(window.location.href);
-    if (url.searchParams.has("instancing")) {
-      const value = url.searchParams.get("instancing");
-      if (value === "1" || value === "true") {
-        return true;
-      }
-      if (value === "0" || value === "false") {
-        return false;
-      }
-    }
-  }
-
-  const viteEnv = (import.meta as unknown as { env?: Record<string, string> })
-    .env;
-  const direct =
-    viteEnv?.VITE_REACT_APP_VFX_INSTANCING ?? viteEnv?.REACT_APP_VFX_INSTANCING;
-  if (direct !== undefined) {
-    return direct === "1" || direct?.toLowerCase() === "true";
-  }
-
-  if (typeof process !== "undefined" && process.env) {
-    const envValue =
-      process.env.REACT_APP_VFX_INSTANCING ??
-      process.env.VITE_REACT_APP_VFX_INSTANCING;
-    if (envValue !== undefined) {
-      return envValue === "1" || envValue.toLowerCase() === "true";
-    }
-  }
-
-  return false;
-}
-
-const DEFAULT_SETTINGS: QualitySettings = {
-  visuals: {
-    instancing: {
-      enabled: readBooleanFlag(),
-      maxInstances: {
-        bullets: 256,
-        rockets: 64,
-        lasers: 64,
-        effects: 256,
-      },
-    },
-    obstacles: {
-      visualsEnabled: true,
-    },
-  },
-};
+const DEFAULT_SETTINGS: QualitySettings = createDefaultQualitySettings();
 
 function cloneSettings(settings: QualitySettings): QualitySettings {
   return {
@@ -103,6 +73,8 @@ function cloneSettings(settings: QualitySettings): QualitySettings {
         maxInstances: { ...settings.visuals.instancing.maxInstances },
       },
       obstacles: { ...settings.visuals.obstacles },
+      postprocessing: { ...settings.visuals.postprocessing },
+      render: { ...settings.visuals.render },
     },
   };
 }
@@ -128,6 +100,8 @@ export class QualityManager {
     const instancing = overrides.visuals?.instancing;
     const maxInstanceOverrides = instancing?.maxInstances ?? {};
     const obstacles = overrides.visuals?.obstacles ?? {};
+    const postprocessing = overrides.visuals?.postprocessing ?? {};
+    const render = overrides.visuals?.render ?? {};
 
     return {
       visuals: {
@@ -151,6 +125,19 @@ export class QualityManager {
         obstacles: {
           visualsEnabled:
             obstacles.visualsEnabled ?? base.visuals.obstacles.visualsEnabled,
+        },
+        postprocessing: {
+          enabled:
+            postprocessing.enabled ?? base.visuals.postprocessing.enabled,
+          quality:
+            postprocessing.quality ?? base.visuals.postprocessing.quality,
+        },
+        render: {
+          dpr: render.dpr ?? base.visuals.render.dpr,
+          shadowsEnabled:
+            render.shadowsEnabled ?? base.visuals.render.shadowsEnabled,
+          shadowMapSize:
+            render.shadowMapSize ?? base.visuals.render.shadowMapSize,
         },
       },
     };
@@ -210,6 +197,62 @@ export class QualityManager {
           maxInstances,
         },
       },
+    });
+    this.emit();
+  }
+
+  /**
+   * Enables or disables postprocessing.
+   */
+  setPostprocessingEnabled(enabled: boolean): void {
+    if (this.settings.visuals.postprocessing.enabled === enabled) {
+      return;
+    }
+    this.settings = this.mergeSettings(this.settings, {
+      visuals: { postprocessing: { enabled } },
+    });
+    this.emit();
+  }
+
+  /**
+   * Updates postprocessing quality level.
+   */
+  setPostprocessingQuality(quality: PostprocessingQualityLevel): void {
+    if (this.settings.visuals.postprocessing.quality === quality) {
+      return;
+    }
+    this.settings = this.mergeSettings(this.settings, {
+      visuals: { postprocessing: { quality } },
+    });
+    this.emit();
+  }
+
+  /**
+   * Enables or disables scene shadows.
+   */
+  setShadowsEnabled(enabled: boolean): void {
+    if (this.settings.visuals.render.shadowsEnabled === enabled) {
+      return;
+    }
+    this.settings = this.mergeSettings(this.settings, {
+      visuals: { render: { shadowsEnabled: enabled } },
+    });
+    this.emit();
+  }
+
+  /**
+   * Updates the rendering device pixel ratio.
+   */
+  setRenderDpr(dpr: number): void {
+    if (!Number.isFinite(dpr)) {
+      return;
+    }
+    const nextDpr = Math.max(0.75, Math.min(2, dpr));
+    if (this.settings.visuals.render.dpr === nextDpr) {
+      return;
+    }
+    this.settings = this.mergeSettings(this.settings, {
+      visuals: { render: { dpr: nextDpr } },
     });
     this.emit();
   }

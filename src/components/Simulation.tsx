@@ -95,6 +95,8 @@ function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
   const accumulator = useRef(0);
   const qualitySettings = useQualitySettings();
   const instancingEnabled = qualitySettings.visuals.instancing.enabled;
+  const shadowsEnabled = qualitySettings.visuals.render.shadowsEnabled;
+  const shadowMapSize = qualitySettings.visuals.render.shadowMapSize;
   const instanceManager = battleWorld.visuals.instanceManager;
   const { world: rapierWorld } = useRapier();
 
@@ -150,7 +152,10 @@ function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
 
   return (
     <>
-      <SpaceStation />
+      <SpaceStation
+        shadowsEnabled={shadowsEnabled}
+        shadowMapSize={shadowMapSize}
+      />
       {qualitySettings.visuals.obstacles.visualsEnabled
         ? obstacles.map((obstacle) => (
             <ObstacleVisual key={obstacle.id} obstacle={obstacle} />

@@ -1,11 +1,19 @@
 import { useMemo } from "react";
 
+interface ArenaLightRigProps {
+  shadowsEnabled?: boolean;
+  shadowMapSize?: number;
+}
+
 /**
  * A composite light rig for the space station arena.
  * Includes a central light, corridor lights, and hover beacons.
  * Creates atmosphere and visibility for the scene.
  */
-export function ArenaLightRig() {
+export function ArenaLightRig({
+  shadowsEnabled = false,
+  shadowMapSize = 512,
+}: ArenaLightRigProps) {
   const corridorLightPositions = useMemo(
     () => [
       [-25, 7, 0],
@@ -34,7 +42,7 @@ export function ArenaLightRig() {
         color="#5a86ff"
         distance={95}
         decay={2.0}
-        castShadow
+        castShadow={false}
       />
       <spotLight
         position={[0, 22, 0]}
@@ -42,8 +50,10 @@ export function ArenaLightRig() {
         penumbra={0.6}
         intensity={1.5}
         color="#d4bbff"
-        castShadow
+        castShadow={shadowsEnabled}
         distance={120}
+        shadow-mapSize-width={shadowMapSize}
+        shadow-mapSize-height={shadowMapSize}
       />
       {corridorLightPositions.map((position, index) => (
         <pointLight
