@@ -11,6 +11,7 @@ import {
 
 import { ProjectileEntity, RobotEntity } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
+import { hideAllInstances } from "../../visuals/instanceColorUtils";
 import { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
 
 interface LaserBatchRendererProps {
@@ -44,6 +45,11 @@ export function LaserBatchRenderer({
   const meshRef = useRef<InstancedMesh | null>(null);
   const hasInitializedRef = useRef(false);
 
+  useEffect(() => {
+    const win = (window as unknown) as { __instancedRefs?: Record<string, InstancedMesh | null> };
+    win.__instancedRefs = win.__instancedRefs || {};
+    win.__instancedRefs.lasers = meshRef.current;
+  }, [meshRef]);
   const material = useMemo(
     () => ({
       color: "#ffffff",
@@ -53,6 +59,7 @@ export function LaserBatchRenderer({
       depthWrite: false,
       depthTest: false,
       blending: AdditiveBlending,
+      vertexColors: true,
     }),
     [],
   );
@@ -75,21 +82,9 @@ export function LaserBatchRenderer({
     }
 
     if (!hasInitializedRef.current) {
-      const hidden = -512;
-      scale.set(1e-6, 1e-6, 1e-6);
-      for (let i = 0; i < capacity; i += 1) {
-        tempMatrix.compose(
-          dummyStart.set(hidden, hidden, hidden),
-          tempQuaternion.identity(),
-          scale,
-        );
-        mesh.setMatrixAt(i, tempMatrix);
-        mesh.setColorAt(i, color.setRGB(0, 0, 0));
-      }
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor) {
-        mesh.instanceColor.needsUpdate = true;
-      }
+      // Initialize all slots to hidden/offscreen to avoid garbage draws from
+      // uninitialized instance data.
+      hideAllInstances(mesh, capacity);
       hasInitializedRef.current = true;
     }
 
@@ -172,6 +167,11 @@ export function LaserBatchRenderer({
       color.set(beamColor).multiplyScalar(2.2);
       mesh.setColorAt(index, color);
       colorsDirty = true;
+
+      if (import.meta.env.DEV && index === 0) {
+        const style = (color as unknown as { getStyle?: () => string }).getStyle?.() ?? null;
+        console.log("LaserBatchRenderer: setColorAt", { index, style, r: color.r, g: color.g, b: color.b });
+      }
     }
 
     const hidden = -512;
@@ -210,7 +210,7 @@ export function LaserBatchRenderer({
   }
 
   return (
-    <instancedMesh ref={meshRef} args={[undefined as never, undefined as never, capacity]}>
+    <instancedMesh name="instanced-lasers" ref={meshRef} args={[undefined as never, undefined as never, capacity]}>
       <cylinderGeometry args={[1, 1, 1, 10]} />
       <meshBasicMaterial {...material} />
     </instancedMesh>

@@ -4,6 +4,7 @@ import { AdditiveBlending, Color, InstancedMesh, Object3D, Vector3 } from "three
 
 import { ProjectileEntity } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
+import { hideAllInstances } from "../../visuals/instanceColorUtils";
 import { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
 
 interface InstancedProjectilesProps {
@@ -37,6 +38,15 @@ export function InstancedProjectiles({
 
   const bulletMeshRef = useRef<InstancedMesh | null>(null);
   const rocketMeshRef = useRef<InstancedMesh | null>(null);
+
+  // Expose refs for end-to-end debug inspection (Playwright / devtools)
+  useEffect(() => {
+    // Avoid using `any` in lint rules while still allowing debug plumbing.
+    const win = (window as unknown) as { __instancedRefs?: Record<string, InstancedMesh | null> };
+    win.__instancedRefs = win.__instancedRefs || {};
+    win.__instancedRefs.bullets = bulletMeshRef.current;
+    win.__instancedRefs.rockets = rocketMeshRef.current;
+  }, [bulletMeshRef, rocketMeshRef]);
   const dummy = useMemo(() => new Object3D(), []);
   const velocity = useMemo(() => new Vector3(), []);
   const upVector = useMemo(() => new Vector3(0, 1, 0), []);
@@ -71,27 +81,7 @@ export function InstancedProjectiles({
       return;
     }
 
-    const hideAllInstances = (mesh: InstancedMesh, capacity: number) => {
-      if (capacity <= 0) {
-        return;
-      }
-
-      dummy.position.set(0, -512, 0);
-      dummy.rotation.set(0, 0, 0);
-      dummy.scale.set(0.001, 0.001, 0.001);
-      dummy.updateMatrix();
-
-      for (let index = 0; index < capacity; index += 1) {
-        mesh.setMatrixAt(index, dummy.matrix);
-        mesh.setColorAt(index, hiddenColor);
-      }
-
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor) {
-        mesh.instanceColor.needsUpdate = true;
-      }
-    };
-
+    // Initialize all instance slots to a hidden offscreen matrix and black color
     if (
       bulletMesh &&
       bulletInitStateRef.current.ready === false &&
@@ -121,6 +111,11 @@ export function InstancedProjectiles({
     currentRocketActive.clear();
     currentBulletDirty.clear();
     currentRocketDirty.clear();
+
+    // Track whether we wrote instance colors this frame (so we can mark
+    // instanceColor.needsUpdate reliably even if deactivation path isn't hit).
+    let bulletColorsDirty = false;
+    let rocketColorsDirty = false;
 
     for (let i = 0; i < projectiles.length; i += 1) {
       const projectile = projectiles[i];
@@ -190,6 +185,12 @@ export function InstancedProjectiles({
       color.set(colorHex).multiplyScalar(category === "rockets" ? 3.0 : 3.6);
       mesh.setColorAt(index, color);
 
+      if (import.meta.env.DEV && index === 0) {
+        // Log a sample for developer debugging in the browser console
+        const style = (color as unknown as { getStyle?: () => string }).getStyle?.() ?? null;
+        console.log("InstancedProjectiles: setColorAt", { category, index, style, r: color.r, g: color.g, b: color.b });
+      }
+
       dirty.add(index);
     }
 
@@ -252,18 +253,20 @@ export function InstancedProjectiles({
     <group>
       {shouldRenderBullets ? (
         <instancedMesh
+          name="instanced-bullets"
           ref={bulletMeshRef}
           args={[undefined, undefined, bulletCapacity]}
           frustumCulled={false}
         >
           <cylinderGeometry args={[1, 1, 1, 10]} />
-          <meshStandardMaterial
+          <meshBasicMaterial
             color="#ffffff"
             toneMapped={false}
             transparent
             opacity={0.95}
             blending={AdditiveBlending}
             depthWrite={false}
+            vertexColors
           />
         </instancedMesh>
       ) : null}
@@ -274,13 +277,14 @@ export function InstancedProjectiles({
           frustumCulled={false}
         >
           <cylinderGeometry args={[0.8, 1.2, 1, 10]} />
-          <meshStandardMaterial
+          <meshBasicMaterial
             color="#ffffff"
             toneMapped={false}
             transparent
             opacity={0.95}
             blending={AdditiveBlending}
             depthWrite={false}
+            vertexColors
           />
         </instancedMesh>
       ) : null}

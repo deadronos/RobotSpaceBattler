@@ -85,7 +85,13 @@ export function Scene({ children }: SceneProps) {
         antialias: !postprocessing.enabled,
         powerPreference: "high-performance",
       }}
-      onCreated={({ gl }) => initializeRendererStats(gl)}
+      onCreated={({ gl, scene, camera }) => {
+        initializeRendererStats(gl);
+        // Expose the scene for debugging/visual verification in Playwright
+        // This is temporary and safe to remove later.
+        const win = (window as unknown) as { __robotScene?: Record<string, unknown> };
+        win.__robotScene = { scene, camera, gl } as Record<string, unknown>;
+      }}
     >
       <color attach="background" args={["#010208"]} />
       <ambientLight intensity={0.2} color="#1a1d35" />

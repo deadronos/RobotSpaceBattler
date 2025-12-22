@@ -24,7 +24,12 @@ export function InstancedEffects({
   const capacity = instanceManager.getCapacity("effects");
   const meshRef = useRef<InstancedMesh | null>(null);
   const dummy = useMemo(() => new Object3D(), []);
-  const color = useMemo(() => new Color(), []);
+
+  useEffect(() => {
+    const win = (window as unknown) as { __instancedRefs?: Record<string, InstancedMesh | null> };
+    win.__instancedRefs = win.__instancedRefs || {};
+    win.__instancedRefs.effects = meshRef.current;
+  }, [meshRef]);  const color = useMemo(() => new Color(), []);
   const hiddenColor = useMemo(() => new Color("#000000"), []);
   const activeIndicesRef = useRef<Set<number>>(new Set());
   const previousActiveIndicesRef = useRef<Set<number>>(new Set());
@@ -93,6 +98,11 @@ export function InstancedEffects({
       color.set(tint).multiplyScalar(Math.max(0.1, fade));
       mesh.setColorAt(index, color);
 
+      if (import.meta.env.DEV && index === 0) {
+        const style = (color as unknown as { getStyle?: () => string }).getStyle?.() ?? null;
+        console.log("InstancedEffects: setColorAt", { index, style, r: color.r, g: color.g, b: color.b });
+      }
+
       dirtyIndices.add(index);
     }
 
@@ -127,16 +137,17 @@ export function InstancedEffects({
 
   return (
     <instancedMesh
+      name="instanced-effects"
       ref={meshRef}
       args={[undefined, undefined, capacity]}
       frustumCulled={false}
     >
       <sphereGeometry args={[0.9, 16, 16]} />
-      <meshStandardMaterial
-        emissiveIntensity={1.0}
+      <meshBasicMaterial
         transparent
         opacity={0.85}
         toneMapped={false}
+        vertexColors
       />
     </instancedMesh>
   );
