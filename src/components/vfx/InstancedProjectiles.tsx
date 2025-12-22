@@ -1,6 +1,6 @@
 import { useFrame } from "@react-three/fiber";
 import { MutableRefObject, useEffect, useMemo, useRef } from "react";
-import { Color, InstancedMesh, Object3D, Vector3 } from "three";
+import { AdditiveBlending, Color, InstancedMesh, Object3D, Vector3 } from "three";
 
 import { ProjectileEntity } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
@@ -186,7 +186,8 @@ export function InstancedProjectiles({
       const colorHex =
         projectile.projectileColor ??
         (category === "rockets" ? "#ff955c" : "#ffe08a");
-      color.set(colorHex).multiplyScalar(category === "rockets" ? 1.4 : 1.8);
+      // Boost intensity so projectiles read well under postprocessing.
+      color.set(colorHex).multiplyScalar(category === "rockets" ? 3.0 : 3.6);
       mesh.setColorAt(index, color);
 
       dirty.add(index);
@@ -256,7 +257,15 @@ export function InstancedProjectiles({
           frustumCulled={false}
         >
           <cylinderGeometry args={[1, 1, 1, 10]} />
-          <meshBasicMaterial vertexColors toneMapped={false} />
+          <meshBasicMaterial
+            vertexColors
+            color="#ffffff"
+            toneMapped={false}
+            transparent
+            opacity={0.95}
+            blending={AdditiveBlending}
+            depthWrite={false}
+          />
         </instancedMesh>
       ) : null}
       {shouldRenderRockets ? (
@@ -266,7 +275,15 @@ export function InstancedProjectiles({
           frustumCulled={false}
         >
           <cylinderGeometry args={[0.8, 1.2, 1, 10]} />
-          <meshBasicMaterial vertexColors toneMapped={false} />
+          <meshBasicMaterial
+            vertexColors
+            color="#ffffff"
+            toneMapped={false}
+            transparent
+            opacity={0.95}
+            blending={AdditiveBlending}
+            depthWrite={false}
+          />
         </instancedMesh>
       ) : null}
     </group>
