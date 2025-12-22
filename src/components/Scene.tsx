@@ -56,6 +56,25 @@ export function Scene({ children }: SceneProps) {
   const shadowsEnabled = render.shadowsEnabled;
   const shadowMapSize = render.shadowMapSize;
   const starCount = render.dpr >= 1.5 ? 1500 : 900;
+  const postprocessingEffects = [
+    <Bloom
+      key="bloom"
+      luminanceThreshold={postprocessingPreset.bloomThreshold}
+      mipmapBlur={postprocessingPreset.bloomMipmapBlur}
+      intensity={postprocessingPreset.bloomIntensity}
+      radius={postprocessingPreset.bloomRadius}
+    />,
+    ...(postprocessingPreset.chromaticAberration
+      ? [
+          <ChromaticAberration
+            key="chromatic"
+            blendFunction={BlendFunction.NORMAL}
+            offset={postprocessingPreset.chromaticOffset}
+          />,
+        ]
+      : []),
+    <ToneMapping key="tonemap" />,
+  ];
 
   return (
     <Canvas
@@ -149,19 +168,7 @@ export function Scene({ children }: SceneProps) {
           enableNormalPass={false}
           multisampling={postprocessingPreset.multisampling}
         >
-          <Bloom
-            luminanceThreshold={postprocessingPreset.bloomThreshold}
-            mipmapBlur={postprocessingPreset.bloomMipmapBlur}
-            intensity={postprocessingPreset.bloomIntensity}
-            radius={postprocessingPreset.bloomRadius}
-          />
-          {postprocessingPreset.chromaticAberration ? (
-            <ChromaticAberration
-              blendFunction={BlendFunction.NORMAL}
-              offset={postprocessingPreset.chromaticOffset}
-            />
-          ) : null}
-          <ToneMapping />
+          {postprocessingEffects}
         </EffectComposer>
       ) : null}
     </Canvas>

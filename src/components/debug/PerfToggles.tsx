@@ -1,10 +1,10 @@
 import { useState } from "react";
 
 import {
+  type PostprocessingQualityLevel,
   qualityManager,
   useQualitySettings,
 } from "../../state/quality/QualityManager";
-import type { PostprocessingQualityLevel } from "../../state/quality/QualityManager";
 
 const panelStyle: React.CSSProperties = {
   background: "rgba(8, 10, 22, 0.82)",

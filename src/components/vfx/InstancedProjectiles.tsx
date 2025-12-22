@@ -39,7 +39,7 @@ export function InstancedProjectiles({
   const rocketMeshRef = useRef<InstancedMesh | null>(null);
   const dummy = useMemo(() => new Object3D(), []);
   const velocity = useMemo(() => new Vector3(), []);
-  const lookTarget = useMemo(() => new Vector3(), []);
+  const upVector = useMemo(() => new Vector3(0, 1, 0), []);
   const color = useMemo(() => new Color(), []);
   const hiddenColor = useMemo(() => new Color("#000000"), []);
   const bulletActiveRef = useRef<Set<number>>(new Set());
@@ -109,20 +109,25 @@ export function InstancedProjectiles({
         projectile.position.z,
       );
       const scale = Math.max(0.05, projectile.projectileSize ?? 0.14);
-      if (category === "rockets") {
-        velocity.set(
-          projectile.velocity.x,
-          projectile.velocity.y,
-          projectile.velocity.z,
-        );
-        if (velocity.lengthSq() > 1e-6) {
-          lookTarget.copy(dummy.position).add(velocity);
-          dummy.lookAt(lookTarget);
-        }
-        dummy.scale.set(scale * 0.6, scale * 0.6, scale * 2.8);
+      velocity.set(
+        projectile.velocity.x,
+        projectile.velocity.y,
+        projectile.velocity.z,
+      );
+      const speed = velocity.length();
+      if (speed > 1e-6) {
+        velocity.normalize();
+        dummy.quaternion.setFromUnitVectors(upVector, velocity);
       } else {
-        dummy.rotation.set(0, 0, 0);
-        dummy.scale.set(scale * 0.6, scale * 0.6, scale * 0.6);
+        dummy.quaternion.identity();
+      }
+
+      if (category === "rockets") {
+        dummy.scale.set(scale * 0.6, scale * 2.8, scale * 0.6);
+      } else {
+        const length = Math.min(1.4, Math.max(0.35, speed * 0.04));
+        const thickness = scale * 0.45;
+        dummy.scale.set(thickness, length, thickness);
       }
 
       dummy.updateMatrix();
@@ -131,7 +136,7 @@ export function InstancedProjectiles({
       const colorHex =
         projectile.projectileColor ??
         (category === "rockets" ? "#ff955c" : "#ffe08a");
-      color.set(colorHex);
+      color.set(colorHex).multiplyScalar(category === "rockets" ? 1.4 : 1.8);
       mesh.setColorAt(index, color);
 
       dirty.add(index);
@@ -198,26 +203,20 @@ export function InstancedProjectiles({
         <instancedMesh
           ref={bulletMeshRef}
           args={[undefined, undefined, bulletCapacity]}
+          frustumCulled={false}
         >
-          <sphereGeometry args={[0.12, 12, 12]} />
-          <meshStandardMaterial
-            vertexColors
-            emissiveIntensity={1.05}
-            toneMapped={false}
-          />
+          <cylinderGeometry args={[0.06, 0.06, 1, 10]} />
+          <meshBasicMaterial vertexColors toneMapped={false} />
         </instancedMesh>
       ) : null}
       {shouldRenderRockets ? (
         <instancedMesh
           ref={rocketMeshRef}
           args={[undefined, undefined, rocketCapacity]}
+          frustumCulled={false}
         >
           <cylinderGeometry args={[0.08, 0.12, 0.9, 10]} />
-          <meshStandardMaterial
-            vertexColors
-            emissiveIntensity={1.1}
-            toneMapped={false}
-          />
+          <meshBasicMaterial vertexColors toneMapped={false} />
         </instancedMesh>
       ) : null}
     </group>

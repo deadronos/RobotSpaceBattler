@@ -21,7 +21,7 @@ describe("detectPerformanceTier", () => {
       detectPerformanceTier({
         prefersReducedMotion: false,
         deviceMemory: 8,
-        hardwareConcurrency: 4,
+        hardwareConcurrency: 8,
       }),
     ).toBe("high");
   });
