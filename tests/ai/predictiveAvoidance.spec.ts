@@ -1,14 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-  computePredictiveAvoidance,
-  PredictiveAvoidanceConfig,
-  DEFAULT_AVOIDANCE_CONFIG,
-} from '../../src/simulation/ai/pathing/predictiveAvoidance';
-import {
-  PhysicsQueryService,
-  Vec3Like,
-} from '../../src/simulation/ai/pathing/physicsQueryService';
+import { describe, expect, it, vi } from 'vitest';
 import { CollisionGroup } from '../../src/lib/physics/collisionGroups';
+import { computePredictiveAvoidance, DEFAULT_AVOIDANCE_CONFIG } from '../../src/simulation/ai/pathing/predictiveAvoidance';
+import type { PhysicsQueryService, Vec3Like } from '../../src/simulation/ai/pathing/physicsQueryService';
 
 /** Helper to create a mock PhysicsQueryService */
 function createMockQueryService(
@@ -24,7 +17,6 @@ function createMockQueryService(
     castRayFan: vi.fn(castRayFanImpl),
   };
 }
-
 describe('computePredictiveAvoidance', () => {
   describe('zero/near-zero velocity', () => {
     it('returns zero vector when velocity is zero', () => {
@@ -222,8 +214,7 @@ describe('computePredictiveAvoidance', () => {
       );
 
       // Check that 3 directions were passed
-      const directions = (service.castRayFan as ReturnType<typeof vi.fn>).mock
-        .calls[0][1] as Vec3Like[];
+      const directions = (service.castRayFan as ReturnType<typeof vi.fn>).mock.calls[0][1] as Vec3Like[];
       expect(directions).toHaveLength(3);
 
       // Center ray should be forward (0, 0, 1)
