@@ -1,4 +1,3 @@
-import type { World as RapierWorld } from "@dimforge/rapier3d-compat";
 import { World } from "miniplex";
 
 import {
@@ -13,346 +12,35 @@ import { qualityManager } from "../state/quality/QualityManager";
 import {
   createVisualInstanceManager,
   VisualInstanceCategory,
-  VisualInstanceManager,
 } from "../visuals/VisualInstanceManager";
-import { createEffectPool, EffectPool } from "./pools/EffectPool";
-import { createProjectilePool, ProjectilePool } from "./pools/ProjectilePool";
+import { createEffectPool } from "./pools/EffectPool";
+import { createProjectilePool } from "./pools/ProjectilePool";
+import type {
+  BattleEntity,
+  BattleWorld,
+  BattleWorldState,
+  EffectEntity,
+  ObstacleEntity,
+  ProjectileEntity,
+  RobotEntity,
+  Store,
+} from "./worldTypes";
 
 export type { TeamId } from "../lib/teamConfig";
-
-/**
- * Supported weapon types.
- */
-export type WeaponType = "laser" | "gun" | "rocket";
-
-/**
- * Represents a memory of an enemy's position.
- */
-export interface EnemyMemoryEntry {
-  /** The last known position of the enemy. */
-  position: Vec3;
-  /** The timestamp when this position was recorded. */
-  timestamp: number;
-}
-
-/**
- * State of a robot's AI.
- */
-export interface RobotAIState {
-  /** The current behavioral mode. */
-  mode: "seek" | "engage" | "retreat";
-  /** The ID of the current target entity. */
-  targetId?: string;
-  /** The strategic directive assigned to the robot. */
-  directive?: "offense" | "defense" | "balanced";
-  /** The anchor position for defensive or holding behaviors. */
-  anchorPosition?: Vec3 | null;
-  /** Maximum distance allowed from the anchor position. */
-  anchorDistance?: number | null;
-  /** Direction of strafing movement (1 or -1). */
-  strafeSign?: 1 | -1;
-  /** Distance to the current target. */
-  targetDistance?: number | null;
-  /** IDs of enemies currently visible to this robot. */
-  visibleEnemyIds?: string[];
-  /** Memory of enemy positions, keyed by enemy ID. */
-  enemyMemory?: Record<string, EnemyMemoryEntry>;
-  /** Current search target position when no enemies are visible. */
-  searchPosition?: Vec3 | null;
-  /** Temporary roaming target position. */
-  roamTarget?: Vec3 | null;
-  /** Timestamp when the current roaming behavior expires. */
-  roamUntil?: number | null;
-  /** Consecutive frames where movement toward target was blocked. */
-  blockedFrames?: number;
-}
-
-/**
- * Entity representing a robot in the battle.
- */
-export interface RobotEntity {
-  /** Unique identifier for the robot. */
-  id: string;
-  /** Entity kind discriminator. */
-  kind: "robot";
-  /** The team the robot belongs to. */
-  team: TeamId;
-  /** Current position of the robot. */
-  position: Vec3;
-  /** Current velocity of the robot. */
-  velocity: Vec3;
-  /** Current orientation (rotation around Y axis) in radians. */
-  orientation: number;
-  /** Current movement speed. */
-  speed: number;
-  /** The type of weapon equipped. */
-  weapon: WeaponType;
-  /** Time remaining until the weapon can fire again. */
-  fireCooldown: number;
-  /** Delay between shots (inverse of fire rate). */
-  fireRate: number;
-  /** Current health points. */
-  health: number;
-  /** Maximum health points. */
-  maxHealth: number;
-  /** AI state component. */
-  ai: RobotAIState;
-  /** Number of enemies killed. */
-  kills: number;
-  /** Whether this robot is the team captain. */
-  isCaptain: boolean;
-  /** Index of the spawn point used. */
-  spawnIndex: number;
-  /** Timestamp of the last damage received. */
-  lastDamageTimestamp: number;
-  /** Optional movement slow multiplier applied to the robot (1.0 = normal speed). */
-  slowMultiplier?: number;
-  /** Optional status flags applied to the robot (e.g., 'stunned', 'hazard:<id>'). */
-  statusFlags?: string[];
-  /** Optional per-flag expiry timers. Each entry expires at expiresAt (ms) and is removed automatically. */
-  statusExpirations?: Array<{ flag: string; expiresAt: number }>;
-}
-
-/**
- * Entity representing a projectile in the battle.
- */
-export interface ProjectileEntity {
-  /** Unique identifier for the projectile. */
-  id: string;
-  /** Entity kind discriminator. */
-  kind: "projectile";
-  /** The team that fired the projectile. */
-  team: TeamId;
-  /** The ID of the robot that fired the projectile. */
-  shooterId: string;
-  /** The type of weapon that fired the projectile. */
-  weapon: WeaponType;
-  /** Current position of the projectile. */
-  position: Vec3;
-  /** Current velocity of the projectile. */
-  velocity: Vec3;
-  /** Damage dealt on impact. */
-  damage: number;
-  /** Maximum lifetime of the projectile in milliseconds. */
-  maxLifetime: number;
-  /** Timestamp when the projectile was spawned. */
-  spawnTime: number;
-  /** Distance traveled so far. */
-  distanceTraveled: number;
-  /** Maximum distance the projectile can travel. */
-  maxDistance: number;
-  /** Speed of the projectile. */
-  speed: number;
-  /** ID of the target (for guided projectiles). */
-  targetId?: string;
-  /** Visual size of the projectile. */
-  projectileSize?: number;
-  /** Color of the projectile. */
-  projectileColor?: string;
-  /** Color of the projectile's trail. */
-  trailColor?: string;
-  /** Radius of effect for area damage. */
-  aoeRadius?: number;
-  /** Duration of the explosion visual effect. */
-  explosionDurationMs?: number;
-  /** Width of the beam (for laser weapons). */
-  beamWidth?: number;
-  /** Duration of the impact visual effect. */
-  impactDurationMs?: number;
-  /** Index for instanced rendering. */
-  instanceIndex?: number;
-}
-
-/**
- * Entity representing a static or dynamic obstacle in the battle arena.
- */
-export interface ObstacleEntity {
-  /** Unique identifier for the obstacle. */
-  id: string;
-  /** Entity kind discriminator. */
-  kind: "obstacle";
-  /** Obstacle subtype. */
-  obstacleType: "barrier" | "hazard" | "destructible";
-  /** Current position. */
-  position: Vec3;
-  /** Orientation (rotation around Y axis) in radians. */
-  orientation?: number;
-  /** Shape metadata for blocking checks (box/circle). */
-  shape?:
-    | {
-        kind: "box";
-        halfWidth: number;
-        halfDepth: number;
-        center?: { x: number; z: number };
-      }
-    | { kind: "circle"; radius: number; center?: { x: number; z: number } };
-  /** Whether obstacle blocks line-of-sight. */
-  blocksVision?: boolean;
-  /** Whether obstacle blocks movement/traversal. */
-  blocksMovement?: boolean;
-  /** Current active state (hazard active/inactive or barrier present). */
-  active?: boolean;
-  /** Durability for destructible cover. */
-  durability?: number;
-  /** Optional max durability (if destructible). */
-  maxDurability?: number;
-  /** Optional movement pattern (inline). */
-  movementPattern?: {
-    patternType: "linear" | "rotation" | "oscillate";
-    // linear
-    points?: Vec3[];
-    // rotation
-    pivot?: Vec3;
-    speed?: number; // units/sec or radians/sec for rotation
-    loop?: boolean;
-    pingPong?: boolean;
-    // deterministic offset (0..1) used to seed initial phase
-    phase?: number;
-    // internal: progress (0..1) and direction for ping-pong
-    progress?: number;
-    direction?: 1 | -1;
-    /** Cached offset from pivot for rotation patterns. */
-    originOffset?: Vec3;
-  } | null;
-  /** Hazard schedule (for hazard obstacles) */
-  hazardSchedule?: {
-    periodMs: number;
-    activeMs: number;
-    offsetMs?: number;
-  } | null;
-  /** Effects applied while hazard is active */
-  hazardEffects?: Array<{
-    kind: "damage" | "slow" | "status";
-    amount: number;
-    perSecond?: boolean;
-    durationMs?: number;
-  }> | null;
-}
-
-/**
- * Types of visual effects.
- */
-export type EffectType = "explosion" | "impact" | "laser-impact";
-
-/**
- * Entity representing a visual effect.
- */
-export interface EffectEntity {
-  /** Unique identifier for the effect. */
-  id: string;
-  /** Entity kind discriminator. */
-  kind: "effect";
-  /** The type of visual effect. */
-  effectType: EffectType;
-  /** Position of the effect. */
-  position: Vec3;
-  /** Radius/size of the effect. */
-  radius: number;
-  /** Primary color of the effect. */
-  color: string;
-  /** Secondary color of the effect. */
-  secondaryColor?: string;
-  /** Timestamp when the effect was created. */
-  createdAt: number;
-  /** Duration of the effect in milliseconds. */
-  duration: number;
-  /** Index for instanced rendering. */
-  instanceIndex?: number;
-}
-
-/**
- * Union type of all entities in the battle.
- */
-export type BattleEntity =
-  | RobotEntity
-  | ProjectileEntity
-  | EffectEntity
-  | ObstacleEntity;
-
-/**
- * A store for holding entities of a specific type.
- * Provides optimized access to entities.
- */
-export interface Store<T extends BattleEntity> {
-  /** The list of entities in the store. */
-  entities: T[];
-}
-
-/**
- * Global state of the battle world.
- */
-export interface BattleWorldState {
-  /** Time elapsed in the battle in milliseconds. */
-  elapsedMs: number;
-  /** ID counter for projectiles. */
-  nextProjectileId: number;
-  /** ID counter for effects. */
-  nextEffectId: number;
-  /** Random seed for the battle. */
-  seed: number;
-  /** Frame counter for telemetry. */
-  frameIndex: number;
-}
-
-/**
- * The main container for the battle simulation.
- * Manages entities, physics, state, and subsystems.
- */
-export interface BattleWorld {
-  /** The underlying Miniplex world instance. */
-  world: World<BattleEntity>;
-  /** Store containing all robot entities. */
-  robots: Store<RobotEntity>;
-  /** Store containing all projectile entities. */
-  projectiles: Store<ProjectileEntity>;
-  /** Store containing all effect entities. */
-  effects: Store<EffectEntity>;
-  /** Store containing all obstacle entities. */
-  obstacles: Store<ObstacleEntity>;
-  /** Configuration for teams. */
-  teams: Record<TeamId, TeamConfig>;
-  /** Global battle state. */
-  state: BattleWorldState;
-  /** Optional Rapier physics world. */
-  rapierWorld?: RapierWorld;
-  /** Clears all entities and resets state. */
-  clear: () => void;
-  /**
-   * Gets all robots belonging to a specific team.
-   * @param team - The team ID.
-   * @returns Array of robot entities.
-   */
-  getRobotsByTeam(team: TeamId): RobotEntity[];
-  /** Visual system components. */
-  visuals: {
-    instanceManager: VisualInstanceManager;
-  };
-  /** Object pools. */
-  pools: {
-    projectiles: ProjectilePool;
-    effects: EffectPool;
-  };
-  /**
-   * Adds a projectile to the world.
-   * @param projectile - The projectile entity to add.
-   */
-  addProjectile: (projectile: ProjectileEntity) => void;
-  /**
-   * Removes a projectile from the world and releases it to the pool.
-   * @param projectile - The projectile entity to remove.
-   */
-  removeProjectile: (projectile: ProjectileEntity) => void;
-  /**
-   * Adds an effect to the world.
-   * @param effect - The effect entity to add.
-   */
-  addEffect: (effect: EffectEntity) => void;
-  /**
-   * Removes an effect from the world and releases it to the pool.
-   * @param effect - The effect entity to remove.
-   */
-  removeEffect: (effect: EffectEntity) => void;
-}
+export type {
+  BattleEntity,
+  BattleWorld,
+  BattleWorldState,
+  EffectEntity,
+  EffectType,
+  EnemyMemoryEntry,
+  ObstacleEntity,
+  ProjectileEntity,
+  RobotAIState,
+  RobotEntity,
+  Store,
+  WeaponType,
+} from "./worldTypes";
 
 /**
  * Creates a Vec3 helper function.

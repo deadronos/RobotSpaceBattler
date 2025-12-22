@@ -1,22 +1,33 @@
 <!--
 SYNC IMPACT REPORT
-- Version change: 1.0.0 → 1.0.1
+- Version change: 1.0.1 → 1.1.0
 - Modified principles:
-  - None (no substantive governance changes)
-- Added sections: none
+  - Principle III (Size & Separation Limits): Added explicit path to issue tracking for violations
+  - Principle II (Test-First TDD): Expanded with test organization and coverage guidance
+  - Principle V (Observability): Updated target platform baselines to reflect current tooling
+- Added sections:
+  - New "Test Organization & Coverage" subsection under Principle II
+  - Enhanced "Refactor plan guidance" with exemption marker examples
+  - Added explicit "Target Platform Baselines" table in Principle V
+  - New "LOC Violation Tracking" subsection for active exemptions
 - Removed sections: none
 - Repo references updated:
-  - .github/copilot-instructions.md → align principle list with current six
-  - specs/001-3d-team-vs/plan.md → fix constitution path + version string
+  - README.md → references updated to constitution v1.1.0
+  - AGENTS.md → test coverage expectations aligned with expanded Principle II
+  - .github/workflows/constitution_checks.yml → validated enforcement alignment
+  - scripts/check_source_size.js → exemption marker validation confirmed
 - Templates requiring updates:
-  - .specify/templates/plan-template.md ✅ reviewed (no changes required)
-  - .specify/templates/spec-template.md ✅ reviewed (no changes required)
-  - .specify/templates/tasks-template.md ✅ reviewed (no changes required)
-  - .specify/templates/agent-file-template.md ✅ reviewed (no changes required)
+  - .specify/templates/plan-template.md ✅ reviewed (structure validated)
+  - .specify/templates/spec-template.md ✅ reviewed (test scenarios align)
+  - .specify/templates/tasks-template.md ✅ reviewed (task structure validated)
+  - .github/PULL_REQUEST_TEMPLATE/feature.md ✅ reviewed (CONSTITUTION-CHECK section complete)
 - Follow-up TODOs:
-  - Verify README.md and AGENTS.md references to constitution rules ✅ done
-  - Run repository-wide lint/test and update any infra that assumes older
-    constitution text (⚠ pending)
+  - ✅ Most large-file refactors completed (e.g., `world`, obstacle editor/spawner/inspector files have been split or reduced)
+  - ⚠ Remaining: `src/simulation/ai/pathfinding/integration/PathfindingSystem.ts` (333 LOC)
+    needs exemption or refactor per Principle III
+  - ✅ Validate CI checks enforce updated principles
+- Active LOC Exemptions & Refactor Backlog:
+  - src/simulation/ai/pathfinding/integration/PathfindingSystem.ts (333 LOC) - NEEDS EXEMPTION or refactor
 -->
 
 # RobotSpaceBattler Constitution
@@ -39,8 +50,30 @@ MANDATORY: write failing tests to lock expected behavior, implement to make test
 then refactor. Tests MUST include unit tests for pure logic, component tests for UI, and
 contract/integration tests for cross-system guarantees.
 
+**Test Organization & Coverage Requirements**:
+
+- Test files MUST be co-located or clearly mapped to source files:
+  - Unit tests: `tests/` directory mirroring `src/` structure
+  - Integration tests: `tests/integration/` for cross-system scenarios
+  - E2E tests: `playwright/tests/` for user journey validation
+  
+- Test naming convention: `*.test.ts`, `*.test.tsx`, `*.spec.ts`, `*.spec.tsx`
+
+- Coverage expectations:
+  - Core systems (ECS, AI, physics): ≥80% line coverage
+  - UI components: ≥70% with meaningful interaction tests
+  - Utility libraries: ≥90% for pure functions
+  - Critical paths (combat, scoring, pathfinding): 100% branch coverage
+
+- Test independence: Tests MUST NOT depend on execution order or shared mutable state.
+  Use setup/teardown hooks and fixtures appropriately.
+
+- Performance tests: Systems with defined performance targets (e.g., <16ms execution time)
+  MUST include automated performance regression tests.
+
 Rationale: TDD enforces clear requirements, prevents regressions, and keeps the codebase
-maintainable as the project scales.
+maintainable as the project scales. Explicit coverage targets and organization standards
+ensure tests remain valuable and maintainable.
 
 ### III. Size & Separation Limits
 Source files MUST be easy to review. Individual source files MUST be kept under or equal
@@ -49,8 +82,17 @@ must be followed. When an immediate refactor isn't possible (hotfix, experimenta
 the author MUST open a short-term exemption issue that includes a migration plan and
 target release for the refactor.
 
+**LOC Violation Tracking**: The following files currently exceed 300 LOC and require
+either refactor or exemption documentation (updated: 2025-12-22):
+
+- `src/simulation/ai/pathfinding/integration/PathfindingSystem.ts` (333 LOC) - Pathfinding integration
+
+Each file above MUST either: (a) receive a formal exemption with `CONSTITUTION-EXEMPT`
+header and rationale within 1 release cycle, or (b) be refactored per guidance below.
+
 Rationale: Limiting file size reduces cognitive load during code review, improves
-reusability, and encourages small, focused changes.
+reusability, and encourages small, focused changes. Tracking violations explicitly
+ensures accountability and prevents accumulation of technical debt.
 
 Enforcement steps when a file exceeds 300 LOC
 
@@ -61,6 +103,7 @@ Enforcement steps when a file exceeds 300 LOC
      intended public API for each extraction.
    - At least one small test demonstrating the extracted boundary (pure function or
      behaviour) where feasible.
+   - Reference to the GitHub issue tracking this refactor work.
 
 2. The PR/issue MUST include one or more actionable tasks (2–4 hour chunks) tracked in
    the repo's task/spec system (for example under `specs/<n>/tasks`) with at least the
@@ -79,6 +122,21 @@ Refactor plan guidance
 - Add unit tests for the extracted pure logic first, then integration tests for the
   composed behaviour.
 - Keep commits small and reviewable: extract one cohesive part per PR.
+
+**Exemption marker format**: Add to file header within first 30 lines:
+
+```typescript
+// CONSTITUTION-EXEMPT: [Brief justification]
+// Exemption granted: [DATE] | Target refactor: [DATE or VERSION]
+// Issue: #[ISSUE_NUMBER]
+```
+
+Example:
+```typescript
+// CONSTITUTION-EXEMPT: ECS world definitions require comprehensive entity types
+// Exemption granted: 2025-12-21 | Target refactor: v0.2.0 or 2026-03-01
+// Issue: #123
+```
 
 ### IV. React & react-three-fiber (r3f) Best Practices
 Front-end React code MUST follow modern React and r3f best practices:
@@ -117,14 +175,30 @@ render performance predictable, tests isolated, and the codebase maintainable.
   traces for long-running simulations. Logging in hot loops MUST be rate-limited or
   guarded behind debug flags.
 
-- Target Platforms: Front-end code MUST target modern Chromium-based browsers (Chrome
-  and Edge) current stable releases at the time of ratification. Recommended baseline:
-  Chrome 120+ / Edge 120+ (update this baseline annually or when platform features used
-  require newer releases). Polyfills or transpilation for legacy browsers MUST be
-  justified in a spec and added as explicit build steps.
+- Target Platforms & Baseline Configuration:
 
-Rationale: Defining target platforms reduces accidental compatibility work and allows
-use of modern JS/DOM/WebGL features safely.
+**Target Platform Baselines** (updated: 2025-12-21):
+
+| Component   | Baseline        | Version | Rationale                                           |
+| ----------- | --------------- | ------- | --------------------------------------------------- |
+| Browser     | Chrome/Edge     | 120+    | Modern WebGL 2.0, ES2022, Web Workers support       |
+| Node.js     | Active LTS      | 18+     | ESM support, native fetch, performance improvements |
+| TypeScript  | Latest stable   | 5.9+    | Incremental compilation, decorator support          |
+| React       | Latest stable   | 19.2+   | Concurrent features, Server Components ready        |
+| Three.js    | Latest stable   | 0.182+  | WebGL 2.0 optimizations, r3f compatibility          |
+
+  Front-end code MUST target modern Chromium-based browsers (Chrome and Edge) current
+  stable releases as specified in the baseline table above. Update this baseline
+  annually or when platform features used require newer releases. Polyfills or
+  transpilation for legacy browsers MUST be justified in a spec and added as explicit
+  build steps.
+
+  All TypeScript code MUST compile with `strict: true` and target `esnext` module
+  resolution with bundler-compatible output.
+
+Rationale: Defining explicit target platforms and tool baselines reduces accidental
+compatibility work, allows use of modern JS/DOM/WebGL features safely, and ensures
+consistent development environments across the team.
 
 ### VI. Deprecation, Redundancy & Dependency Hygiene
 
@@ -221,4 +295,11 @@ approved and governed.
   reflect changes in this document. CI or pre-merge checks SHOULD include a linter
   that validates new PRs for the `CONSTITUTION-CHECK` section and fails if absent.
 
-**Version**: 1.0.1 | **Ratified**: 2025-10-06 | **Last Amended**: 2025-10-13
+**Active Constitution Enforcement**:
+
+- `scripts/check_source_size.js` validates 300 LOC limit and exemption markers
+- `.github/workflows/constitution_checks.yml` enforces checks on all PRs
+- `scripts/check_pr_constitution_check.js` validates PR template compliance
+- Constitution checks run on every push and pull request
+
+**Version**: 1.1.0 | **Ratified**: 2025-10-06 | **Last Amended**: 2025-12-22

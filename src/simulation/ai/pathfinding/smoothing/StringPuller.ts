@@ -1,7 +1,5 @@
 /**
- * String pulling algorithm for path smoothing
- * Uses funnel algorithm from navmesh library
- * @module pathfinding/smoothing
+ * String pulling algorithm for path smoothing using a funnel-style approach.
  */
 
 import type { ConvexPolygon, NavigationMesh, Point2D } from "../types";

@@ -1,24 +1,12 @@
 import { Vec3, vec3 } from "./vec3";
 
-/**
- * Interface representing a 2D point (x, z).
- * Compatible with Vec3.
- */
+/** 2D point in the XZ plane (Vec3-compatible). */
 export interface Point2D {
   x: number;
   z: number;
 }
 
-/**
- * Calculates the closest point on an Axis-Aligned Bounding Box (AABB) to a given point.
- * Computations are performed in the XZ plane. Y component of the result is same as input point.
- *
- * @param point - The query point.
- * @param center - The center of the AABB.
- * @param halfWidth - Half of the AABB's width (X axis).
- * @param halfDepth - Half of the AABB's depth (Z axis).
- * @returns The closest point on the AABB.
- */
+/** Closest point on an AABB (XZ plane; preserves Y). */
 export function closestPointOnAABB(
   point: Vec3,
   center: Vec3,
@@ -36,15 +24,7 @@ export function closestPointOnAABB(
   return vec3(x, point.y, z);
 }
 
-/**
- * Calculates the squared distance from a point to an AABB in the XZ plane.
- *
- * @param point - The query point.
- * @param center - The center of the AABB.
- * @param halfWidth - Half of the AABB's width.
- * @param halfDepth - Half of the AABB's depth.
- * @returns The squared distance.
- */
+/** Squared distance from point to AABB (XZ plane). */
 export function distanceSquaredPointToAABB(
   point: Vec3,
   center: Vec3,
@@ -57,17 +37,7 @@ export function distanceSquaredPointToAABB(
   return dx * dx + dz * dz;
 }
 
-/**
- * Calculates the closest point on the perimeter of a circle (or cylinder) to a given point.
- * Computations are performed in the XZ plane. Y component is preserved.
- * If the point is inside the circle, the closest point is the point itself (or projected to edge? Standard behavior is point itself for "disk", edge for "circle perimeter").
- * However, usually for collision resolution we want the point on the surface.
- *
- * @param point - The query point.
- * @param center - The center of the circle.
- * @param radius - The radius of the circle.
- * @returns The closest point on the circle.
- */
+/** Closest point on a circle/disk (XZ plane; preserves Y). */
 export function closestPointOnCircle(
   point: Vec3,
   center: Vec3,
@@ -96,10 +66,7 @@ export function closestPointOnCircle(
   return vec3(center.x + dx * scale, point.y, center.z + dz * scale);
 }
 
-/**
- * Calculates the squared distance from a point to a circle (disk) in the XZ plane.
- * returns 0 if inside.
- */
+/** Squared distance from a point to a disk (XZ plane). Returns 0 if inside. */
 export function distanceSquaredPointToCircle(
   point: Vec3,
   center: Vec3,
@@ -117,14 +84,7 @@ export function distanceSquaredPointToCircle(
   return gap * gap;
 }
 
-/**
- * Calculates the squared distance from a point to a line segment in the XZ plane.
- *
- * @param p - The query point.
- * @param v - The first endpoint of the segment.
- * @param w - The second endpoint of the segment.
- * @returns The squared distance.
- */
+/** Squared distance from point to segment (XZ plane). */
 export function distanceSquaredPointToSegment(
   p: Point2D,
   v: Point2D,
@@ -142,13 +102,7 @@ export function distanceSquaredPointToSegment(
   return (p.x - projectionX) ** 2 + (p.z - projectionZ) ** 2;
 }
 
-/**
- * Checks if a point is inside a polygon in the XZ plane using ray casting.
- *
- * @param point - The query point.
- * @param vertices - The vertices of the polygon.
- * @returns True if the point is inside the polygon.
- */
+/** Point-in-polygon test (XZ plane) using ray casting. */
 export function isPointInPolygon(
   point: Point2D,
   vertices: readonly Point2D[],
@@ -173,15 +127,7 @@ export function isPointInPolygon(
   return inside;
 }
 
-/**
- * Checks if a point is inside an AABB in the XZ plane.
- *
- * @param point - The query point.
- * @param center - The center of the AABB.
- * @param halfWidth - Half of the AABB's width.
- * @param halfDepth - Half of the AABB's depth.
- * @returns True if inside.
- */
+/** Point-in-AABB check (XZ plane). */
 export function isPointInAABB(
   point: Point2D,
   center: Point2D,
@@ -198,14 +144,7 @@ export function isPointInAABB(
   );
 }
 
-/**
- * Checks if a point is inside a circle in the XZ plane.
- *
- * @param point - The query point.
- * @param center - The center of the circle.
- * @param radius - The radius of the circle.
- * @returns True if inside.
- */
+/** Point-in-circle check (XZ plane). */
 export function isPointInCircle(
   point: Point2D,
   center: Point2D,
@@ -216,29 +155,14 @@ export function isPointInCircle(
   return dx * dx + dz * dz <= radius * radius;
 }
 
-/**
- * Calculates the squared distance between two points in the XZ plane.
- *
- * @param a - The first point.
- * @param b - The second point.
- * @returns The squared distance.
- */
+/** Squared distance between two XZ points. */
 export function distanceSquaredXZ(a: Point2D, b: Point2D): number {
   const dx = a.x - b.x;
   const dz = a.z - b.z;
   return dx * dx + dz * dz;
 }
 
-/**
- * Checks if a line segment intersects an AABB in the XZ plane.
- *
- * @param start - The start point of the segment.
- * @param end - The end point of the segment.
- * @param center - The center of the AABB.
- * @param halfWidth - Half of the AABB's width.
- * @param halfDepth - Half of the AABB's depth.
- * @returns True if they intersect.
- */
+/** Segment-vs-AABB intersection (XZ plane). */
 export function segmentIntersectsAABB(
   start: Point2D,
   end: Point2D,
@@ -298,15 +222,7 @@ export function segmentIntersectsAABB(
   return tMax > EPSILON && tMin < 1 - EPSILON;
 }
 
-/**
- * Checks if a line segment intersects a circle in the XZ plane.
- *
- * @param start - The start point of the segment.
- * @param end - The end point of the segment.
- * @param center - The center of the circle.
- * @param radius - The radius of the circle.
- * @returns True if they intersect.
- */
+/** Segment-vs-circle intersection (XZ plane). */
 export function segmentIntersectsCircle(
   start: Point2D,
   end: Point2D,
@@ -344,14 +260,7 @@ export function segmentIntersectsCircle(
   return false;
 }
 
-/**
- * Calculates squared distance from a point to a polygon.
- * Returns 0 if point is inside.
- *
- * @param point - The query point.
- * @param vertices - The vertices of the polygon.
- * @returns The squared distance.
- */
+/** Squared distance from point to polygon edges (0 if inside). */
 export function distanceSquaredPointToPolygon(
   point: Point2D,
   vertices: readonly Point2D[],

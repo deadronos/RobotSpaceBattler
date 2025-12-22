@@ -1,5 +1,5 @@
 import { vec3 } from "../../lib/math/vec3";
-import { EffectEntity } from "../world";
+import type { EffectEntity } from "../worldTypes";
 
 /**
  * Statistics for effect pool usage.

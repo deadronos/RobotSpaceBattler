@@ -1,26 +1,16 @@
-import {
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import "./App.css";
 
-// Import the sample fixture directly so the dev server doesn't need to serve
-// the file path for tests and local development. This provides a robust
-// default while still allowing live updates via fetch.
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import sampleObstacleFixture from "../specs/fixtures/dynamic-arena-sample.json";
 import { ObstacleEditor } from "./components/debug/ObstacleEditor";
 import { ObstacleSpawner } from "./components/debug/ObstacleSpawner";
 import { PerfToggles } from "./components/debug/PerfToggles";
 import { Simulation } from "./components/Simulation";
+import { SettingsIcon } from "./components/ui/SettingsIcon";
 import { SettingsModal } from "./components/ui/SettingsModal";
 import { createBattleWorld } from "./ecs/world";
-import {
-  AUTO_RESTART_DELAY_MS,
-  VICTORY_OVERLAY_BACKGROUND,
-} from "./lib/constants";
+import { AUTO_RESTART_DELAY_MS } from "./lib/constants";
 import { isActiveRobot } from "./lib/robotHelpers";
 import { TEAM_CONFIGS } from "./lib/teamConfig";
 import { BattleRunner } from "./runtime/simulation/battleRunner";
@@ -190,7 +180,7 @@ export default function App() {
       : null;
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+    <div className="app-root">
       <div id="status" className="match-status" role="status">
         {statusText}
       </div>
@@ -200,20 +190,7 @@ export default function App() {
         onClick={() => setIsSettingsOpen(true)}
         aria-label="Open settings"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-        </svg>
+        <SettingsIcon />
       </button>
 
       <SettingsModal
@@ -233,62 +210,26 @@ export default function App() {
         />
       </Suspense>
       {showDebugUI && (
-        <div
-          style={{
-            position: "absolute",
-            left: 16,
-            top: 72,
-            maxWidth: 440,
-            zIndex: 2,
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-          }}
-        >
+        <div className="app-debug-ui">
           <ObstacleEditor world={battleWorld} sampleFixture={obstacleFixture} />
           <ObstacleSpawner world={battleWorld} />
           <PerfToggles />
         </div>
       )}
-      <div
-        style={{
-          position: "absolute",
-          top: 16,
-          right: 16,
-          display: "flex",
-          flexDirection: "column",
-          gap: 4,
-          alignItems: "flex-end",
-        }}
-      >
-        <div style={{ fontWeight: 600, fontSize: 14 }}>Alive</div>
+      <div className="app-alive-panel">
+        <div className="app-alive-title">Alive</div>
         <div>{`${TEAM_CONFIGS.red.label}: ${aliveCounts.red}`}</div>
         <div>{`${TEAM_CONFIGS.blue.label}: ${aliveCounts.blue}`}</div>
       </div>
       {matchSnapshot.phase === "victory" && winnerLabel ? (
-        <div
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            padding: "24px 32px",
-            borderRadius: 12,
-            background: VICTORY_OVERLAY_BACKGROUND,
-            color: "#f7f8ff",
-            textAlign: "center",
-            boxShadow: "0 12px 32px rgba(0, 0, 0, 0.45)",
-          }}
-        >
-          <h2 style={{ margin: 0, fontSize: 22 }}>{winnerLabel} Triumphs!</h2>
+        <div className="app-victory-overlay">
+          <h2 className="app-victory-title">{winnerLabel} Triumphs!</h2>
           {restartSeconds != null ? (
-            <p
-              style={{ margin: "12px 0 0 0" }}
-            >{`Restarting in ${restartSeconds}s`}</p>
+            <p className="app-victory-subtitle">{`Restarting in ${restartSeconds}s`}</p>
           ) : null}
           <button
             type="button"
-            style={{ marginTop: 16 }}
+            className="app-victory-button"
             onClick={() => {
               // Placeholder for stats modal trigger
             }}
@@ -297,16 +238,7 @@ export default function App() {
           </button>
         </div>
       ) : null}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 16,
-          left: "50%",
-          transform: "translateX(-50%)",
-          display: "flex",
-          gap: 12,
-        }}
-      >
+      <div className="app-controls">
         <button
           type="button"
           onClick={handlePauseResume}

@@ -1,5 +1,5 @@
 import { vec3 } from "../../lib/math/vec3";
-import { ProjectileEntity } from "../world";
+import type { ProjectileEntity } from "../worldTypes";
 
 /**
  * Statistics for projectile pool usage.
