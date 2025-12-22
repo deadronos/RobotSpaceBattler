@@ -1,11 +1,11 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import {
-  BufferGeometry,
+  AdditiveBlending,
   Color,
-  Float32BufferAttribute,
-  LineBasicMaterial,
-  LineSegments,
+  InstancedMesh,
+  Matrix4,
+  Quaternion,
   Vector3,
 } from "three";
 
@@ -29,67 +29,74 @@ export function LaserBatchRenderer({
   instanceManager,
 }: LaserBatchRendererProps) {
   const capacity = instanceManager.getCapacity("lasers");
-  const geometry = useMemo(() => new BufferGeometry(), []);
-  const material = useMemo(
-    () =>
-      new LineBasicMaterial({
-        vertexColors: true,
-        toneMapped: false,
-        transparent: true,
-        opacity: 0.92,
-      }),
-    [],
-  );
-  const positions = useMemo(
-    () => new Float32Array(Math.max(1, capacity) * 6),
-    [capacity],
-  );
-  const colors = useMemo(
-    () => new Float32Array(Math.max(1, capacity) * 6),
-    [capacity],
-  );
   const color = useMemo(() => new Color(), []);
   const dummyStart = useMemo(() => new Vector3(), []);
   const dummyEnd = useMemo(() => new Vector3(), []);
+  const direction = useMemo(() => new Vector3(), []);
+  const midpoint = useMemo(() => new Vector3(), []);
+  const scale = useMemo(() => new Vector3(), []);
+  const tempMatrix = useMemo(() => new Matrix4(), []);
+  const tempQuaternion = useMemo(() => new Quaternion(), []);
+  const yAxis = useMemo(() => new Vector3(0, 1, 0), []);
   const tempVelocity = useMemo(() => new Vector3(), []);
   const activeIndicesRef = useRef<Set<number>>(new Set());
   const previousIndicesRef = useRef<Set<number>>(new Set());
-  const lineRef = useRef<LineSegments | null>(null);
+  const meshRef = useRef<InstancedMesh | null>(null);
+  const hasInitializedRef = useRef(false);
+
+  const material = useMemo(
+    () => ({
+      color: "#ffffff",
+      toneMapped: false,
+      transparent: true,
+      opacity: 0.92,
+      depthWrite: false,
+      depthTest: false,
+      blending: AdditiveBlending,
+    }),
+    [],
+  );
 
   useEffect(() => {
-    geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
-    geometry.setAttribute("color", new Float32BufferAttribute(colors, 3));
-    geometry.setDrawRange(0, Math.max(1, capacity) * 2);
-    return () => {
-      geometry.dispose();
-    };
-  }, [geometry, positions, colors, capacity]);
-
-  useEffect(() => {
-    return () => {
-      material.dispose();
-    };
-  }, [material]);
+    hasInitializedRef.current = false;
+  }, [capacity]);
 
   useFrame(() => {
     perfMarkStart("LaserBatchRenderer.useFrame");
-    const line = lineRef.current;
-    if (!line) {
+    const mesh = meshRef.current;
+    if (!mesh) {
       perfMarkEnd("LaserBatchRenderer.useFrame");
       return;
     }
 
-    const positionAttr = geometry.getAttribute("position");
-    const colorAttr = geometry.getAttribute("color");
-    if (!positionAttr || !colorAttr) {
+    if (capacity <= 0) {
       perfMarkEnd("LaserBatchRenderer.useFrame");
       return;
+    }
+
+    if (!hasInitializedRef.current) {
+      const hidden = -512;
+      scale.set(1e-6, 1e-6, 1e-6);
+      for (let i = 0; i < capacity; i += 1) {
+        tempMatrix.compose(
+          dummyStart.set(hidden, hidden, hidden),
+          tempQuaternion.identity(),
+          scale,
+        );
+        mesh.setMatrixAt(i, tempMatrix);
+        mesh.setColorAt(i, color.setRGB(0, 0, 0));
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) {
+        mesh.instanceColor.needsUpdate = true;
+      }
+      hasInitializedRef.current = true;
     }
 
     const activeIndices = activeIndicesRef.current;
     const previousIndices = previousIndicesRef.current;
     activeIndices.clear();
-    let positionsDirty = false;
+    let matricesDirty = false;
     let colorsDirty = false;
 
     for (let i = 0; i < projectiles.length; i += 1) {
@@ -144,48 +151,52 @@ export function LaserBatchRenderer({
         dummyEnd.copy(dummyStart).add(tempVelocity);
       }
 
-      const offset = index * 6;
-      positions[offset] = dummyStart.x;
-      positions[offset + 1] = dummyStart.y;
-      positions[offset + 2] = dummyStart.z;
-      positions[offset + 3] = dummyEnd.x;
-      positions[offset + 4] = dummyEnd.y;
-      positions[offset + 5] = dummyEnd.z;
+      direction.copy(dummyEnd).sub(dummyStart);
+      const length = direction.length();
+      if (length <= 1e-4) {
+        continue;
+      }
+      direction.normalize();
+
+      midpoint.copy(dummyStart).add(dummyEnd).multiplyScalar(0.5);
+      tempQuaternion.setFromUnitVectors(yAxis, direction);
+
+      const beamWidth = projectile.beamWidth ?? 0.08;
+      const thickness = Math.max(0.02, beamWidth) * 0.55;
+      scale.set(thickness, length, thickness);
+      tempMatrix.compose(midpoint, tempQuaternion, scale);
+      mesh.setMatrixAt(index, tempMatrix);
+      matricesDirty = true;
 
       const beamColor = projectile.projectileColor ?? "#7fffd4";
-      color.set(beamColor);
-      color.toArray(colors, offset);
-      color.multiplyScalar(0.7).toArray(colors, offset + 3);
-      positionsDirty = true;
+      color.set(beamColor).multiplyScalar(2.2);
+      mesh.setColorAt(index, color);
       colorsDirty = true;
     }
 
     const hidden = -512;
+    scale.set(1e-6, 1e-6, 1e-6);
     for (const index of previousIndices) {
       if (!activeIndices.has(index)) {
-        const offset = index * 6;
-        positions[offset] = hidden;
-        positions[offset + 1] = hidden;
-        positions[offset + 2] = hidden;
-        positions[offset + 3] = hidden;
-        positions[offset + 4] = hidden;
-        positions[offset + 5] = hidden;
-        colors[offset] = 0;
-        colors[offset + 1] = 0;
-        colors[offset + 2] = 0;
-        colors[offset + 3] = 0;
-        colors[offset + 4] = 0;
-        colors[offset + 5] = 0;
-        positionsDirty = true;
+        tempMatrix.compose(
+          dummyStart.set(hidden, hidden, hidden),
+          tempQuaternion.identity(),
+          scale,
+        );
+        mesh.setMatrixAt(index, tempMatrix);
+        mesh.setColorAt(index, color.setRGB(0, 0, 0));
+        matricesDirty = true;
         colorsDirty = true;
       }
     }
 
-    if (positionsDirty) {
-      positionAttr.needsUpdate = true;
+    if (matricesDirty) {
+      mesh.instanceMatrix.needsUpdate = true;
     }
     if (colorsDirty) {
-      colorAttr.needsUpdate = true;
+      if (mesh.instanceColor) {
+        mesh.instanceColor.needsUpdate = true;
+      }
     }
 
     previousIndicesRef.current = activeIndices;
@@ -199,10 +210,9 @@ export function LaserBatchRenderer({
   }
 
   return (
-    <lineSegments
-      ref={lineRef}
-      args={[geometry, material]}
-      frustumCulled={false}
-    />
+    <instancedMesh ref={meshRef} args={[undefined as never, undefined as never, capacity]}>
+      <cylinderGeometry args={[1, 1, 1, 10]} />
+      <meshBasicMaterial {...material} />
+    </instancedMesh>
   );
 }

@@ -133,7 +133,6 @@ export function InstancedEffects({
     >
       <sphereGeometry args={[0.9, 16, 16]} />
       <meshStandardMaterial
-        vertexColors
         emissiveIntensity={1.0}
         transparent
         opacity={0.85}

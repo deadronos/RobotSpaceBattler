@@ -257,8 +257,7 @@ export function InstancedProjectiles({
           frustumCulled={false}
         >
           <cylinderGeometry args={[1, 1, 1, 10]} />
-          <meshBasicMaterial
-            vertexColors
+          <meshStandardMaterial
             color="#ffffff"
             toneMapped={false}
             transparent
@@ -275,8 +274,7 @@ export function InstancedProjectiles({
           frustumCulled={false}
         >
           <cylinderGeometry args={[0.8, 1.2, 1, 10]} />
-          <meshBasicMaterial
-            vertexColors
+          <meshStandardMaterial
             color="#ffffff"
             toneMapped={false}
             transparent
