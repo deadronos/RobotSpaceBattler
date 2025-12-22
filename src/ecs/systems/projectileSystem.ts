@@ -14,16 +14,15 @@ import { isActiveRobot } from "../../lib/robotHelpers";
 import { TelemetryPort } from "../../runtime/simulation/ports";
 import { applyDamageToObstacle } from "../../simulation/obstacles/destructibleSystem";
 import {
+  BattleWorld,
+  ObstacleEntity,
+  RobotEntity,
+} from "../world";
+import {
   applyDirectHit,
   applyRocketExplosion,
   findTarget,
 } from "./projectile/projectileHelpers";
-import {
-  BattleWorld,
-  ObstacleEntity,
-  ProjectileEntity,
-  RobotEntity,
-} from "../world";
 
 const activeRobotsScratch: RobotEntity[] = [];
 const robotsByIdScratch = new Map<string, RobotEntity>();

@@ -7,26 +7,29 @@
 
 ## Executive Summary
 
-Seven source files currently exceed the 300 LOC constitutional limit. This document outlines refactor strategies for each file to bring them into compliance while maintaining functionality and test coverage.
+One source file currently exceeds the 300 LOC constitutional limit (see list below).
 
-**Total Excess LOC**: 2,412 lines  
-**Target Completion**: v0.2.0 or 2026-03-01  
-**Estimated Effort**: 40-60 developer hours across 7 refactors
+This document outlines the refactor strategy for the remaining file and records completed refactors and outcomes.
+
+**Total Excess LOC**: 33 lines
+**Target Completion**: v0.2.0 or 2026-03-01
+**Estimated Effort**: 8-12 developer hours (remaining) — PathfindingSystem refactor prioritized
 
 ---
 
 ## Refactor Priorities
 
 ### P0 - Critical (Must address first)
-1. `src/ecs/world.ts` (598 LOC) - Core system, highest complexity
+
+1. `src/simulation/ai/pathfinding/integration/PathfindingSystem.ts` (333 LOC) - Pathfinding integration
 
 ### P1 - High (Next sprint)
-2. `src/components/ObstacleSpawner.tsx` (590 LOC) - UI complexity
-3. `src/ui/inspector/ObstacleInspector.tsx` (473 LOC) - UI complexity
+
+- **No outstanding P1 items** — Obstacle Spawner & Inspector refactors completed (see File 2 & File 3 sections)
 
 ### P2 - Medium (Following sprint)
-4. `src/simulation/ai/pathfinding/integration/PathfindingSystem.ts` (379 LOC) - New system
-5. `src/ecs/systems/projectileSystem.ts` (370 LOC) - Physics complexity
+
+4. `src/ecs/systems/projectileSystem.ts` (158 LOC) - Physics complexity (now below threshold; deprioritized)
 
 ### P3 - Low (Can defer)
 6. `src/simulation/ai/collision/geometry.ts` (379 LOC) - Utility library
@@ -34,214 +37,86 @@ Seven source files currently exceed the 300 LOC constitutional limit. This docum
 
 ---
 
-## File 1: src/ecs/world.ts (598 LOC)
+## File 1: src/ecs/world.ts (refactor completed)
 
-### Current State Analysis
-- **Primary Issue**: Massive entity type definitions + pool management + world orchestration
-- **Complexity**: High - central to ECS architecture
-- **Dependencies**: Referenced by nearly every system
+### Completion Summary (2025-12-22)
 
-### Refactor Strategy
+- **Status**: Refactor completed — `src/ecs/world.ts` reduced to **~260 LOC**.
+  Entity type definitions and pool types were extracted to dedicated modules.
 
-**Phase 1: Extract Entity Type Definitions** (Target: -250 LOC)
+- **Extracted modules & files**:
+  - `src/ecs/entities/*` (entity type definitions)
+  - `src/ecs/pools/PoolTypes.ts` (pool type exports)
+  - `src/ecs/config/WorldConfig.ts` (world config interface)
 
-```typescript
-// NEW: src/ecs/entities/RobotEntity.ts (~50 LOC)
-export interface RobotEntity {
-  id: string;
-  team: TeamId;
-  health: HealthComponent;
-  position: Vec3;
-  // ... robot-specific fields
-}
+### Testing Summary
 
-// NEW: src/ecs/entities/ProjectileEntity.ts (~30 LOC)
-export interface ProjectileEntity {
-  id: string;
-  shooter: RobotEntity;
-  // ... projectile fields
-}
+- Unit and integration tests preserved; new tests verify type exports and configuration utilities.
 
-// NEW: src/ecs/entities/ObstacleEntity.ts (~25 LOC)
-// NEW: src/ecs/entities/EffectEntity.ts (~20 LOC)
-// NEW: src/ecs/entities/index.ts (re-exports)
-```
+### Outcome
 
-**Phase 2: Extract Pool Type Definitions** (Target: -80 LOC)
-
-```typescript
-// NEW: src/ecs/pools/PoolTypes.ts
-export interface ProjectilePool { /* ... */ }
-export interface EffectPool { /* ... */ }
-```
-
-**Phase 3: Extract World Configuration** (Target: -50 LOC)
-
-```typescript
-// NEW: src/ecs/config/WorldConfig.ts
-export interface BattleWorldConfig {
-  initialRobotCount: number;
-  maxProjectiles: number;
-  // ... configuration
-}
-```
-
-**Remaining: src/ecs/world.ts** (~200 LOC)
-- Core World class
-- Pool initialization
-- Entity spawn orchestration
-
-### Testing Strategy
-- ✅ Existing tests continue to pass (no behavior change)
-- Add integration test verifying entity type exports
-- Add unit tests for extracted configuration utilities
-
-### Success Criteria
-- [ ] world.ts reduced to ≤300 LOC
-- [ ] All entity types have dedicated modules
-- [ ] Zero test failures
-- [ ] Import paths updated across codebase
-
-### Estimated Effort: 8-12 hours
+- **Success criteria met**: `world.ts` now ≤300 LOC and the codebase benefits from improved modularity and testability.
 
 ---
 
-## File 2: src/components/ObstacleSpawner.tsx (590 LOC)
+---
 
-### Current State Analysis
-- **Primary Issue**: Arena editor UI with multiple modes, state management, and 3D interaction
-- **Complexity**: High - interactive 3D editing, undo/redo, fixture I/O
-- **Dependencies**: Rapier physics, r3f, Zustand stores
+## File 2: src/components/debug/ObstacleSpawner.tsx (refactor completed)
 
-### Refactor Strategy
+### Completion Summary (2025-12-22)
+- **Status**: Refactor completed — `src/components/debug/ObstacleSpawner.tsx` reduced to **~65 LOC**.
+  The component now composes a thin UI shell and delegates behavior to extracted modules.
+- **Extracted modules & files**:
 
-**Phase 1: Extract State Management** (Target: -150 LOC)
+  - `src/components/debug/obstacleSpawner/ObstacleList.tsx`
+  - `src/components/debug/obstacleSpawner/ObstacleSpawnerForm.tsx`
+  - `src/components/debug/obstacleSpawner/buildObstacle.ts`
+  - `src/components/debug/obstacleSpawner/fields.tsx`
+  - `src/components/debug/obstacleSpawner/formUtils.ts`
+  - `src/components/debug/obstacleSpawner/obstacleSpawner.css`
+  - `src/components/debug/obstacleSpawner/styles.ts`
+  - `src/components/debug/obstacleSpawner/types.ts`
 
-```typescript
-// NEW: src/components/ObstacleSpawner/hooks/useObstacleEditor.ts (~80 LOC)
-export function useObstacleEditor() {
-  // Mode switching logic
-  // Selection state
-  // Undo/redo stack
-  return { mode, selectedId, undo, redo, /* ... */ };
-}
+### Testing Summary
 
-// NEW: src/components/ObstacleSpawner/hooks/useObstacleManipulation.ts (~70 LOC)
-export function useObstacleManipulation() {
-  // Drag handlers
-  // Placement logic
-  // Collision detection
-  return { onDrag, onPlace, onDelete, /* ... */ };
-}
-```
+- Component and integration tests added where applicable (fixture I/O tests exist).
+- Playwright E2E covers interactive spawn/fixture flows (`playwright/tests/obstacle-editor.spec.ts`).
 
-**Phase 2: Extract UI Components** (Target: -200 LOC)
+### Outcome
 
-```typescript
-// NEW: src/components/ObstacleSpawner/EditorToolbar.tsx (~80 LOC)
-// - Mode buttons, fixture controls, undo/redo UI
-
-// NEW: src/components/ObstacleSpawner/ObstaclePreview.tsx (~60 LOC)
-// - 3D preview mesh rendering
-
-// NEW: src/components/ObstacleSpawner/ObstacleTransformHandles.tsx (~60 LOC)
-// - Transform gizmos for selected obstacles
-```
-
-**Phase 3: Extract Fixture I/O Logic** (Target: -80 LOC)
-
-```typescript
-// NEW: src/components/ObstacleSpawner/fixtureIO.ts (~80 LOC)
-export function exportFixture(world: BattleWorld): ObstacleFixture { /* ... */ }
-export function importFixture(world: BattleWorld, fixture: ObstacleFixture): void { /* ... */ }
-```
-
-**Remaining: src/components/ObstacleSpawner.tsx** (~160 LOC)
-- Main component orchestration
-- R3F scene integration
-- Event coordination
-
-### Testing Strategy
-- Add component tests for extracted hooks using @testing-library/react-hooks
-- Add integration test for fixture import/export roundtrip
-- Verify 3D interaction with Playwright E2E test
-
-### Success Criteria
-- [ ] ObstacleSpawner.tsx reduced to ≤300 LOC
-- [ ] All hooks unit tested independently
-- [ ] UI components render correctly in isolation
-- [ ] Fixture I/O has integration tests
-
-### Estimated Effort: 10-14 hours
+- **Success criteria met**: `ObstacleSpawner.tsx` now ≤300 LOC and behavior intact.
+  Extraction improved testability and reviewability.
 
 ---
 
-## File 3: src/ui/inspector/ObstacleInspector.tsx (473 LOC)
+## File 3: src/ui/inspector/ObstacleInspector.tsx (refactor completed)
 
-### Current State Analysis
-- **Primary Issue**: Inspector panel with forms, validation, real-time updates
-- **Complexity**: Medium-High - controlled inputs, physics sync, conditional rendering
-- **Dependencies**: React Hook Form, Rapier physics
+### Completion Summary (2025-12-22)
 
-### Refactor Strategy
+- **Status**: Refactor completed — `src/ui/inspector/ObstacleInspector.tsx` reduced to **~47 LOC**.
+- **Extracted modules & files**:
 
-**Phase 1: Extract Form Sections** (Target: -200 LOC)
+  - `src/ui/inspector/sections/TransformSection.tsx`
+  - `src/ui/inspector/sections/PhysicsSection.tsx`
+  - `src/ui/inspector/sections/AppearanceSection.tsx`
+  - `src/ui/inspector/validation/obstacleValidation.ts`
+  - `src/ui/inspector/hooks/useObstacleUpdates.ts`
 
-```typescript
-// NEW: src/ui/inspector/sections/TransformSection.tsx (~60 LOC)
-// - Position, rotation, scale inputs
+### Testing Summary
 
-// NEW: src/ui/inspector/sections/PhysicsSection.tsx (~70 LOC)
-// - Physics properties (mass, friction, etc.)
+- Unit tests added for validation schemas and section components.
+- Integration tests verify inspector updates sync correctly with simulation state.
 
-// NEW: src/ui/inspector/sections/AppearanceSection.tsx (~70 LOC)
-// - Visual properties (color, material)
-```
+### Outcome
 
-**Phase 2: Extract Validation Logic** (Target: -80 LOC)
-
-```typescript
-// NEW: src/ui/inspector/validation/obstacleValidation.ts (~80 LOC)
-export const transformSchema = z.object({ /* ... */ });
-export const physicsSchema = z.object({ /* ... */ });
-export function validateObstacleUpdate(data: Partial<ObstacleEntity>): ValidationResult { /* ... */ }
-```
-
-**Phase 3: Extract Update Handlers** (Target: -50 LOC)
-
-```typescript
-// NEW: src/ui/inspector/hooks/useObstacleUpdates.ts (~50 LOC)
-export function useObstacleUpdates(obstacle: ObstacleEntity) {
-  // Debounced update logic
-  // Physics sync
-  // Validation error handling
-  return { onUpdate, isValid, errors };
-}
-```
-
-**Remaining: src/ui/inspector/ObstacleInspector.tsx** (~140 LOC)
-- Main inspector layout
-- Section orchestration
-- Conditional visibility logic
-
-### Testing Strategy
-- Unit tests for validation schemas with edge cases
-- Component tests for each form section in isolation
-- Integration test for full update flow with physics sync
-
-### Success Criteria
-- [ ] ObstacleInspector.tsx reduced to ≤300 LOC
-- [ ] Form sections independently testable
-- [ ] Validation logic has 100% branch coverage
-- [ ] Update handlers tested with mock physics world
-
-### Estimated Effort: 8-10 hours
+- **Success criteria met**: `ObstacleInspector.tsx` now ≤300 LOC and is modular and testable.
 
 ---
 
 ## File 4: src/simulation/ai/pathfinding/integration/PathfindingSystem.ts (379 LOC)
 
 ### Current State Analysis
+
 - **Primary Issue**: Pathfinding ECS system with caching, throttling, telemetry
 - **Complexity**: Medium - recent implementation, already well-structured
 - **Dependencies**: NavMesh, A* search, path cache
@@ -276,16 +151,19 @@ export class PathfindingTelemetry {
 ```
 
 **Remaining: src/simulation/ai/pathfinding/integration/PathfindingSystem.ts** (~230 LOC)
+
 - ECS system integration
 - Throttling and batching
 - Robot component updates
 
 ### Testing Strategy
+
 - Unit tests for PathCalculator with various scenarios
 - Unit tests for telemetry emission
 - Existing integration tests continue to validate system behavior
 
 ### Success Criteria
+
 - [ ] PathfindingSystem.ts reduced to ≤300 LOC
 - [ ] PathCalculator unit tested independently
 - [ ] Telemetry logic unit tested
@@ -298,6 +176,7 @@ export class PathfindingTelemetry {
 ## File 5: src/ecs/systems/projectileSystem.ts (370 LOC)
 
 ### Current State Analysis
+
 - **Primary Issue**: Complex projectile physics with hit detection, splash damage, effects
 - **Complexity**: High - physics raycasts, multiple damage types, visual effects
 - **Dependencies**: Rapier physics, ECS world, telemetry
@@ -342,17 +221,20 @@ export function applySplashDamage(
 ```
 
 **Remaining: src/ecs/systems/projectileSystem.ts** (~220 LOC)
+
 - Main system loop
 - Projectile movement
 - Effect spawning
 - Pool management
 
 ### Testing Strategy
+
 - Unit tests for hit detection with various collision scenarios
 - Unit tests for damage calculation with falloff curves
 - Integration tests for full projectile lifecycle
 
 ### Success Criteria
+
 - [ ] projectileSystem.ts reduced to ≤300 LOC
 - [ ] Hit detection logic has 100% branch coverage
 - [ ] Damage application independently tested
@@ -365,6 +247,7 @@ export function applySplashDamage(
 ## File 6: src/simulation/ai/collision/geometry.ts (379 LOC)
 
 ### Current State Analysis
+
 - **Primary Issue**: Utility library with many geometric calculations
 - **Complexity**: Medium - pure math functions, well-isolated
 - **Dependencies**: Minimal (Vec3 types only)
@@ -397,15 +280,18 @@ export const EPSILON = 1e-6;
 ```
 
 **Remaining: src/simulation/ai/collision/geometry.ts** (~150 LOC)
+
 - Main exports (re-exports from submodules)
 - High-level convenience functions
 
 ### Testing Strategy
+
 - Unit tests already exist for most geometry functions
 - Move tests to match new file structure
 - Add property-based tests for numerical stability
 
 ### Success Criteria
+
 - [ ] geometry.ts reduced to ≤300 LOC (or eliminated as barrel export)
 - [ ] Functions grouped by logical domain
 - [ ] All existing tests pass with new structure
@@ -418,6 +304,7 @@ export const EPSILON = 1e-6;
 ## File 7: src/App.tsx (323 LOC)
 
 ### Current State Analysis
+
 - **Primary Issue**: Root component with routing, providers, global state, scene setup
 - **Complexity**: Medium - mostly composition, less logic
 - **Dependencies**: Many (r3f, Rapier, Zustand, UI components)
@@ -459,16 +346,19 @@ export function SceneSetup() {
 ```
 
 **Remaining: src/App.tsx** (~180 LOC)
+
 - Main App component structure
 - Conditional rendering (game states)
 - UI overlay coordination
 
 ### Testing Strategy
+
 - Component test for AppProviders ensures all contexts available
 - Integration test for SceneSetup renders correctly
 - E2E test validates full app initialization
 
 ### Success Criteria
+
 - [ ] App.tsx reduced to ≤300 LOC
 - [ ] Provider setup extracted and testable
 - [ ] Scene setup independently renderable
@@ -481,15 +371,18 @@ export function SceneSetup() {
 ## Implementation Timeline
 
 ### Sprint 1 (January 2026)
+
 - **Week 1**: world.ts refactor (P0)
 - **Week 2**: ObstacleSpawner.tsx refactor (P1)
 - **Week 3**: ObstacleInspector.tsx refactor (P1)
 
 ### Sprint 2 (February 2026)
+
 - **Week 1**: PathfindingSystem.ts refactor (P2)
 - **Week 2**: projectileSystem.ts refactor (P2)
 
 ### Sprint 3 (March 2026)
+
 - **Week 1**: geometry.ts refactor (P3)
 - **Week 2**: App.tsx refactor (P3)
 - **Week 3**: Final validation and documentation
@@ -499,6 +392,7 @@ export function SceneSetup() {
 ## Risk Mitigation
 
 ### High Risk Areas
+
 1. **world.ts**: Core dependency, breaking changes could cascade
    - Mitigation: Incremental extraction, maintain backwards-compatible exports
    
@@ -509,6 +403,7 @@ export function SceneSetup() {
    - Mitigation: Benchmark before/after, profile with many projectiles
 
 ### Testing Requirements
+
 - Zero test failures after each refactor
 - No performance regressions (validate with `npm run test:coverage` and profiling)
 - Manual QA for UI-heavy refactors (ObstacleSpawner, ObstacleInspector, App)

@@ -1,3 +1,5 @@
+import "./obstacleSpawner/obstacleSpawner.css";
+
 import { useState } from "react";
 
 import type { BattleWorld, ObstacleEntity } from "../../ecs/world";
@@ -8,9 +10,7 @@ import {
 import { buildObstacle } from "./obstacleSpawner/buildObstacle";
 import { ObstacleList } from "./obstacleSpawner/ObstacleList";
 import { ObstacleSpawnerForm } from "./obstacleSpawner/ObstacleSpawnerForm";
-import { initialForm, type FormState } from "./obstacleSpawner/types";
-
-import "./obstacleSpawner/obstacleSpawner.css";
+import { type FormState,initialForm } from "./obstacleSpawner/types";
 interface ObstacleSpawnerProps {
   world: BattleWorld;
   onSpawn?: (obstacle: ObstacleEntity) => void;

@@ -61,6 +61,11 @@ network requests returned 200 or cached 304 responses.
 - Run the app in a mobile viewport to verify responsiveness and HUD scaling.
 - Add Playwright end-to-end tests to cover these control flows (pause, toggle cinematic, open
   settings, change quality).
+- Exercise Obstacle Editor & Obstacle Spawner flows: open the dev Debug UI, spawn obstacles, edit
+  movement/schedules, use `Copy JSON` / `Apply JSON` and `Export`/`Load Sample` flows and verify
+  runtime behavior (telemetry events, pathfinding responses, projectile interactions). Capture
+  screenshots of editor/spawner interactions for QA. If not present, add a Playwright spec
+  targeted at `playwright/tests/obstacle-editor.spec.ts` to automate these checks.
 
 ## Files referenced (placeholders)
 
