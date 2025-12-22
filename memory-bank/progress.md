@@ -19,6 +19,10 @@ What's left / known issues
 - Performance tuning for WebGL / VFX on lower-end devices (instancing budgets help, but needs
   profiling-driven adjustment).
 - Documentation upkeep: keep `specs/` and `memory-bank/` aligned to what is implemented.
+- LOC refactor progress: Obstacle Spawner and Inspector refactors completed and documented.
+- Remaining file above threshold: `src/simulation/ai/pathfinding/integration/PathfindingSystem.ts` (333 LOC).
+- See `memory-bank/designs/loc-refactor-plan.md` and
+  `.specify/memory/constitution.md` for details.
 
 Milestones
 

@@ -155,7 +155,7 @@ Independent Test: Headless match where a barrier moves to block the planned path
 - [x] T024 [P] Update spec docs, quickstart and fixtures with final instructions
   - Files: `specs/006-dynamic-arena-obstacles/spec.md`, `quickstart.md`, `specs/fixtures/` updates
 
-- [ ] T025 [P] Create PR, add `CONSTITUTION-CHECK` notes, test run summary and a short exec summary
+- [x] T025 [P] Create PR, add `CONSTITUTION-CHECK` notes, test run summary and a short exec summary — PRs merged (#102, #103). Verify CONSTITUTION-CHECK content in merged PRs.
   - Files: PR description + `specs/006-dynamic-arena-obstacles/` artifacts
 
 ---

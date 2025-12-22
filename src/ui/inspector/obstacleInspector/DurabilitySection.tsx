@@ -1,5 +1,4 @@
 import type { ObstacleEntity } from '../../../ecs/world';
-
 import { NumberInput } from './NumberInput';
 
 type Props = {

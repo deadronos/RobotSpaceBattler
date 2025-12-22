@@ -1,4 +1,3 @@
-import type { World as RapierWorld } from "@dimforge/rapier3d-compat";
 import { World } from "miniplex";
 
 import {
@@ -13,11 +12,9 @@ import { qualityManager } from "../state/quality/QualityManager";
 import {
   createVisualInstanceManager,
   VisualInstanceCategory,
-  VisualInstanceManager,
 } from "../visuals/VisualInstanceManager";
-import { createEffectPool, EffectPool } from "./pools/EffectPool";
-import { createProjectilePool, ProjectilePool } from "./pools/ProjectilePool";
-
+import { createEffectPool } from "./pools/EffectPool";
+import { createProjectilePool } from "./pools/ProjectilePool";
 import type {
   BattleEntity,
   BattleWorld,
@@ -29,6 +26,7 @@ import type {
   Store,
 } from "./worldTypes";
 
+export type { TeamId } from "../lib/teamConfig";
 export type {
   BattleEntity,
   BattleWorld,
@@ -43,8 +41,6 @@ export type {
   Store,
   WeaponType,
 } from "./worldTypes";
-
-export type { TeamId } from "../lib/teamConfig";
 
 /**
  * Creates a Vec3 helper function.

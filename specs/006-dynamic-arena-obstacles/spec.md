@@ -2,7 +2,7 @@
 
 **Feature Branch**: `006-dynamic-arena-obstacles`  
 **Created**: 2025-12-10  
-**Status**: Implemented (runtime systems + debug editor)  
+**Status**: Implemented (runtime systems + debug editor + spawner UI)  
 **Input**: The arena currently uses static walls and pillars. This feature introduces
 dynamic, interactive arena elements that change positioning, sightlines and
 movement over time to make positioning more strategic and less predictable.
@@ -189,6 +189,7 @@ wait/retreat rather than become stuck.
 - Destructible cover durability/removal is implemented in
   `src/simulation/obstacles/destructibleSystem.ts`.
 - The debug Obstacle Editor UI lives in `src/components/debug/ObstacleEditor.tsx`.
+- A quick Obstacle Spawner is available at `src/components/debug/ObstacleSpawner.tsx` for ad-hoc placement and testing.
 - Telemetry is recorded via `src/runtime/simulation/telemetryAdapter.ts` into
   `src/state/telemetryStore.ts`.
 

@@ -1,12 +1,11 @@
-import type { ObstacleEntity } from "../../ecs/world";
+import "./obstacleInspector.css";
 
+import type { ObstacleEntity } from "../../ecs/world";
 import { DurabilitySection } from "./obstacleInspector/DurabilitySection";
 import { FlagsSection } from "./obstacleInspector/FlagsSection";
 import { HazardSection } from "./obstacleInspector/HazardSection";
 import { MovementSection } from "./obstacleInspector/MovementSection";
 import { TransformSection } from "./obstacleInspector/TransformSection";
-
-import "./obstacleInspector.css";
 
 interface ObstacleInspectorProps {
   obstacle: ObstacleEntity | null;

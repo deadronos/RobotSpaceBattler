@@ -22,17 +22,12 @@ SYNC IMPACT REPORT
   - .specify/templates/tasks-template.md ✅ reviewed (task structure validated)
   - .github/PULL_REQUEST_TEMPLATE/feature.md ✅ reviewed (CONSTITUTION-CHECK section complete)
 - Follow-up TODOs:
-  - ⚠ Address 7 files exceeding 300 LOC without exemptions (see Refactor Backlog below)
+  - ✅ Most large-file refactors completed (e.g., `world`, obstacle editor/spawner/inspector files have been split or reduced)
+  - ⚠ Remaining: `src/simulation/ai/pathfinding/integration/PathfindingSystem.ts` (333 LOC)
+    needs exemption or refactor per Principle III
   - ✅ Validate CI checks enforce updated principles
-  - ✅ Update package.json baseline references
 - Active LOC Exemptions & Refactor Backlog:
-  - src/ecs/world.ts (598 LOC) - NEEDS EXEMPTION or refactor
-  - src/components/ObstacleSpawner.tsx (590 LOC) - NEEDS EXEMPTION or refactor
-  - src/ui/inspector/ObstacleInspector.tsx (473 LOC) - NEEDS EXEMPTION or refactor
-  - src/simulation/ai/collision/geometry.ts (379 LOC) - NEEDS EXEMPTION or refactor
-  - src/simulation/ai/pathfinding/integration/PathfindingSystem.ts (379 LOC) - NEEDS EXEMPTION or refactor
-  - src/ecs/systems/projectileSystem.ts (370 LOC) - NEEDS EXEMPTION or refactor
-  - src/App.tsx (323 LOC) - NEEDS EXEMPTION or refactor
+  - src/simulation/ai/pathfinding/integration/PathfindingSystem.ts (333 LOC) - NEEDS EXEMPTION or refactor
 -->
 
 # RobotSpaceBattler Constitution
@@ -88,15 +83,9 @@ the author MUST open a short-term exemption issue that includes a migration plan
 target release for the refactor.
 
 **LOC Violation Tracking**: The following files currently exceed 300 LOC and require
-either refactor or exemption documentation (updated: 2025-12-21):
+either refactor or exemption documentation (updated: 2025-12-22):
 
-- `src/ecs/world.ts` (598 LOC) - Core ECS definitions
-- `src/components/ObstacleSpawner.tsx` (590 LOC) - Arena editor UI
-- `src/ui/inspector/ObstacleInspector.tsx` (473 LOC) - Inspector panel
-- `src/simulation/ai/collision/geometry.ts` (379 LOC) - Collision utilities
-- `src/simulation/ai/pathfinding/integration/PathfindingSystem.ts` (379 LOC) - Pathfinding integration
-- `src/ecs/systems/projectileSystem.ts` (370 LOC) - Projectile physics
-- `src/App.tsx` (323 LOC) - Main application component
+- `src/simulation/ai/pathfinding/integration/PathfindingSystem.ts` (333 LOC) - Pathfinding integration
 
 Each file above MUST either: (a) receive a formal exemption with `CONSTITUTION-EXEMPT`
 header and rationale within 1 release cycle, or (b) be refactored per guidance below.
@@ -313,4 +302,4 @@ approved and governed.
 - `scripts/check_pr_constitution_check.js` validates PR template compliance
 - Constitution checks run on every push and pull request
 
-**Version**: 1.1.0 | **Ratified**: 2025-10-06 | **Last Amended**: 2025-12-21
+**Version**: 1.1.0 | **Ratified**: 2025-10-06 | **Last Amended**: 2025-12-22
