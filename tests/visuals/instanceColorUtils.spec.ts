@@ -4,6 +4,7 @@ import {
   srgbToLinear,
   fillInstanceColorsLinear,
   hideAllInstances,
+  clampHDRColor,
 } from "../../src/visuals/instanceColorUtils";
 
 // Helper to compare floats with a tolerance
@@ -80,5 +81,15 @@ describe("instanceColorUtils", () => {
     // Y translation is stored at index 13 for this matrix layout (observed
     // in three.js used by our environment).
     expect(matArr[13]).toBeCloseTo(-512, 1);
+  });
+
+  it('clamps HDR colors to a max channel', () => {
+    const c = new Color(4, 2, 1);
+    clampHDRColor(c, 2.0);
+    const max = Math.max(c.r, c.g, c.b);
+    expect(max).toBeLessThanOrEqual(2.0);
+    // preserves hue ratio
+    const ratio = c.r / c.g;
+    expect(ratio).toBeCloseTo(2.0, 1);
   });
 });

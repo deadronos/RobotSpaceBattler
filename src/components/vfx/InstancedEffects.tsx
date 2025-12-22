@@ -4,6 +4,7 @@ import { Color, InstancedMesh, Object3D } from "three";
 
 import { EffectEntity } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
+import { clampHDRColor } from "../../visuals/instanceColorUtils";
 import { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
 
 interface InstancedEffectsProps {
@@ -96,6 +97,7 @@ export function InstancedEffects({
 
       const tint = effect.secondaryColor ?? effect.color;
       color.set(tint).multiplyScalar(Math.max(0.1, fade));
+      clampHDRColor(color, 2.0);
       mesh.setColorAt(index, color);
 
       if (import.meta.env.DEV && index === 0) {

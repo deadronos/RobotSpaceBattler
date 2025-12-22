@@ -54,6 +54,44 @@ export function fillInstanceColorsLinear(
  * Hide all instances by pushing them offscreen and setting their colors to black.
  * Also marks instance buffers as needing updates.
  */
+export function clampHDRColor(color: Color, maxChannel = 2.0): Color {
+  const m = Math.max(color.r, color.g, color.b);
+  if (m > 0 && m > maxChannel) {
+    color.multiplyScalar(maxChannel / m);
+  }
+  return color;
+}
+
+/**
+ * Normalize HDR linear color for instance display by clamping large peaks and
+ * applying a tone-mapping curve (Reinhard) in linear space.
+ * Returns the same Color instance for convenience.
+ */
+export function normalizeHDRForInstance(
+  color: Color,
+  {
+    exposure = 1.0,
+    maxChannel = 2.0,
+    method = "reinhard",
+  }: { exposure?: number; maxChannel?: number; method?: "reinhard" } = {},
+): Color {
+  // Clamp extreme peaks first to avoid fully saturated channels
+  clampHDRColor(color, maxChannel);
+
+  // Apply exposure
+  if (exposure !== 1) color.multiplyScalar(exposure);
+
+  // Tone map using Reinhard: c = c / (1 + c)
+  if (method === "reinhard") {
+    // operate in place
+    color.r = color.r / (1 + color.r);
+    color.g = color.g / (1 + color.g);
+    color.b = color.b / (1 + color.b);
+  }
+
+  return color;
+}
+
 export function hideAllInstances(mesh: InstancedMesh, capacity: number) {
   if (capacity <= 0) return;
 

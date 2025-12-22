@@ -11,7 +11,7 @@ import {
 
 import { ProjectileEntity, RobotEntity } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
-import { hideAllInstances } from "../../visuals/instanceColorUtils";
+import { hideAllInstances, normalizeHDRForInstance } from "../../visuals/instanceColorUtils";
 import { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
 
 interface LaserBatchRendererProps {
@@ -165,6 +165,7 @@ export function LaserBatchRenderer({
 
       const beamColor = projectile.projectileColor ?? "#7fffd4";
       color.set(beamColor).multiplyScalar(2.2);
+      normalizeHDRForInstance(color, { exposure: 1.0, maxChannel: 3.0 });
       mesh.setColorAt(index, color);
       colorsDirty = true;
 

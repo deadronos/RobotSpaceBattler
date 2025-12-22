@@ -1,10 +1,10 @@
 import { useFrame } from "@react-three/fiber";
-import { MutableRefObject, useEffect, useMemo, useRef } from "react";
+import { MutableRefObject, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { AdditiveBlending, Color, InstancedMesh, Object3D, Vector3 } from "three";
 
 import { ProjectileEntity } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
-import { hideAllInstances } from "../../visuals/instanceColorUtils";
+import { hideAllInstances, normalizeHDRForInstance } from "../../visuals/instanceColorUtils";
 import { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
 
 interface InstancedProjectilesProps {
@@ -16,7 +16,7 @@ function useResizeInstanceCount(
   ref: MutableRefObject<InstancedMesh | null>,
   capacity: number,
 ) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (ref.current) {
       ref.current.count = capacity;
     }
@@ -112,10 +112,13 @@ export function InstancedProjectiles({
     currentBulletDirty.clear();
     currentRocketDirty.clear();
 
-    // Track whether we wrote instance colors this frame (so we can mark
-    // instanceColor.needsUpdate reliably even if deactivation path isn't hit).
+    // Track whether we wrote instance matrices/colors this frame (so we can
+    // mark instanceMatrix/instanceColor.needsUpdate reliably even if the
+    // deactivation path isn't hit).
     let bulletColorsDirty = false;
     let rocketColorsDirty = false;
+    let bulletMatrixDirty = false;
+    let rocketMatrixDirty = false;
 
     for (let i = 0; i < projectiles.length; i += 1) {
       const projectile = projectiles[i];
@@ -178,12 +181,28 @@ export function InstancedProjectiles({
       dummy.updateMatrix();
       mesh.setMatrixAt(index, dummy.matrix);
 
+      // Mark matrix dirty for this category
+      if (category === "rockets") {
+        rocketMatrixDirty = true;
+      } else {
+        bulletMatrixDirty = true;
+      }
+
       const colorHex =
         projectile.projectileColor ??
         (category === "rockets" ? "#ff955c" : "#ffe08a");
       // Boost intensity so projectiles read well under postprocessing.
       color.set(colorHex).multiplyScalar(category === "rockets" ? 3.0 : 3.6);
+      // Normalize HDR values for display: clamp peaks + Reinhard tone mapping.
+      normalizeHDRForInstance(color, { exposure: 1.0, maxChannel: 3.0 });
       mesh.setColorAt(index, color);
+
+      // Mark color dirty for this category
+      if (category === "rockets") {
+        rocketColorsDirty = true;
+      } else {
+        bulletColorsDirty = true;
+      }
 
       if (import.meta.env.DEV && index === 0) {
         // Log a sample for developer debugging in the browser console
@@ -207,7 +226,7 @@ export function InstancedProjectiles({
         }
       }
 
-      if (currentBulletDirty.size > 0) {
+      if (currentBulletDirty.size > 0 || bulletMatrixDirty || bulletColorsDirty) {
         bulletMesh.instanceMatrix.needsUpdate = true;
         if (bulletMesh.instanceColor) {
           bulletMesh.instanceColor.needsUpdate = true;
@@ -225,10 +244,13 @@ export function InstancedProjectiles({
           rocketMesh.setMatrixAt(index, dummy.matrix);
           rocketMesh.setColorAt(index, hiddenColor);
           currentRocketDirty.add(index);
+          // mark that we modified matrices/colors via deactivation path
+          rocketMatrixDirty = true;
+          rocketColorsDirty = true;
         }
       }
 
-      if (currentRocketDirty.size > 0) {
+      if (currentRocketDirty.size > 0 || rocketMatrixDirty || rocketColorsDirty) {
         rocketMesh.instanceMatrix.needsUpdate = true;
         if (rocketMesh.instanceColor) {
           rocketMesh.instanceColor.needsUpdate = true;
