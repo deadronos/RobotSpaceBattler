@@ -48,9 +48,19 @@ export function InstancedProjectiles({
   const previousRocketActiveRef = useRef<Set<number>>(new Set());
   const bulletDirtyRef = useRef<Set<number>>(new Set());
   const rocketDirtyRef = useRef<Set<number>>(new Set());
+  const bulletInitStateRef = useRef({ capacity: -1, ready: false });
+  const rocketInitStateRef = useRef({ capacity: -1, ready: false });
 
   useResizeInstanceCount(bulletMeshRef, bulletCapacity);
   useResizeInstanceCount(rocketMeshRef, rocketCapacity);
+
+  useEffect(() => {
+    bulletInitStateRef.current = { capacity: bulletCapacity, ready: false };
+  }, [bulletCapacity]);
+
+  useEffect(() => {
+    rocketInitStateRef.current = { capacity: rocketCapacity, ready: false };
+  }, [rocketCapacity]);
 
   useFrame(() => {
     perfMarkStart("InstancedProjectiles.useFrame");
@@ -59,6 +69,45 @@ export function InstancedProjectiles({
     if (!bulletMesh && !rocketMesh) {
       perfMarkEnd("InstancedProjectiles.useFrame");
       return;
+    }
+
+    const hideAllInstances = (mesh: InstancedMesh, capacity: number) => {
+      if (capacity <= 0) {
+        return;
+      }
+
+      dummy.position.set(0, -512, 0);
+      dummy.rotation.set(0, 0, 0);
+      dummy.scale.set(0.001, 0.001, 0.001);
+      dummy.updateMatrix();
+
+      for (let index = 0; index < capacity; index += 1) {
+        mesh.setMatrixAt(index, dummy.matrix);
+        mesh.setColorAt(index, hiddenColor);
+      }
+
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) {
+        mesh.instanceColor.needsUpdate = true;
+      }
+    };
+
+    if (
+      bulletMesh &&
+      bulletInitStateRef.current.ready === false &&
+      bulletInitStateRef.current.capacity === bulletCapacity
+    ) {
+      hideAllInstances(bulletMesh, bulletCapacity);
+      bulletInitStateRef.current.ready = true;
+    }
+
+    if (
+      rocketMesh &&
+      rocketInitStateRef.current.ready === false &&
+      rocketInitStateRef.current.capacity === rocketCapacity
+    ) {
+      hideAllInstances(rocketMesh, rocketCapacity);
+      rocketInitStateRef.current.ready = true;
     }
 
     const currentBulletActive = bulletActiveRef.current;
