@@ -14,6 +14,7 @@ import { MatchStateMachine } from "../runtime/state/matchStateMachine";
 import { useQualitySettings } from "../state/quality/QualityManager";
 import { ObstacleVisual } from "../visuals/ObstacleVisual";
 import { recordRendererFrame } from "../visuals/rendererStats";
+import { InstanceColorDebugger } from "./debug/InstanceColorDebugger";
 import { RobotPlaceholder } from "./RobotPlaceholder";
 import { Scene } from "./Scene";
 import { SpaceStation } from "./SpaceStation";
@@ -95,8 +96,19 @@ function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
   const accumulator = useRef(0);
   const qualitySettings = useQualitySettings();
   const instancingEnabled = qualitySettings.visuals.instancing.enabled;
+  const shadowsEnabled = qualitySettings.visuals.render.shadowsEnabled;
+  const shadowMapSize = qualitySettings.visuals.render.shadowMapSize;
   const instanceManager = battleWorld.visuals.instanceManager;
   const { world: rapierWorld } = useRapier();
+
+  useEffect(() => {
+    // Expose the battle world for quick debugging in DEV
+    const win = (window as unknown) as { __battleWorld?: typeof battleWorld };
+    win.__battleWorld = battleWorld;
+    return () => {
+      delete win.__battleWorld;
+    };
+  }, [battleWorld]);
 
   // Pass Rapier world to BattleRunner for raycasting
   // Note: Type assertion needed due to duplicate @dimforge/rapier3d-compat types
@@ -150,7 +162,10 @@ function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
 
   return (
     <>
-      <SpaceStation />
+      <SpaceStation
+        shadowsEnabled={shadowsEnabled}
+        shadowMapSize={shadowMapSize}
+      />
       {qualitySettings.visuals.obstacles.visualsEnabled
         ? obstacles.map((obstacle) => (
             <ObstacleVisual key={obstacle.id} obstacle={obstacle} />
@@ -179,6 +194,7 @@ function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
             instanceManager={instanceManager}
             currentTimeMs={currentTimeMs}
           />
+          {import.meta.env.DEV ? <InstanceColorDebugger /> : null}
         </>
       ) : null}
       {fallbackProjectiles.map((projectile) => (

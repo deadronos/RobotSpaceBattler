@@ -1,9 +1,10 @@
 import { useFrame } from "@react-three/fiber";
-import { MutableRefObject, useEffect, useMemo, useRef } from "react";
-import { Color, InstancedMesh, Object3D, Vector3 } from "three";
+import { MutableRefObject, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { AdditiveBlending, Color, InstancedMesh, Object3D, Vector3 } from "three";
 
 import { ProjectileEntity } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
+import { hideAllInstances, normalizeHDRForInstance } from "../../visuals/instanceColorUtils";
 import { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
 
 interface InstancedProjectilesProps {
@@ -15,7 +16,7 @@ function useResizeInstanceCount(
   ref: MutableRefObject<InstancedMesh | null>,
   capacity: number,
 ) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (ref.current) {
       ref.current.count = capacity;
     }
@@ -37,9 +38,18 @@ export function InstancedProjectiles({
 
   const bulletMeshRef = useRef<InstancedMesh | null>(null);
   const rocketMeshRef = useRef<InstancedMesh | null>(null);
+
+  // Expose refs for end-to-end debug inspection (Playwright / devtools)
+  useEffect(() => {
+    // Avoid using `any` in lint rules while still allowing debug plumbing.
+    const win = (window as unknown) as { __instancedRefs?: Record<string, InstancedMesh | null> };
+    win.__instancedRefs = win.__instancedRefs || {};
+    win.__instancedRefs.bullets = bulletMeshRef.current;
+    win.__instancedRefs.rockets = rocketMeshRef.current;
+  }, [bulletMeshRef, rocketMeshRef]);
   const dummy = useMemo(() => new Object3D(), []);
   const velocity = useMemo(() => new Vector3(), []);
-  const lookTarget = useMemo(() => new Vector3(), []);
+  const upVector = useMemo(() => new Vector3(0, 1, 0), []);
   const color = useMemo(() => new Color(), []);
   const hiddenColor = useMemo(() => new Color("#000000"), []);
   const bulletActiveRef = useRef<Set<number>>(new Set());
@@ -48,9 +58,19 @@ export function InstancedProjectiles({
   const previousRocketActiveRef = useRef<Set<number>>(new Set());
   const bulletDirtyRef = useRef<Set<number>>(new Set());
   const rocketDirtyRef = useRef<Set<number>>(new Set());
+  const bulletInitStateRef = useRef({ capacity: -1, ready: false });
+  const rocketInitStateRef = useRef({ capacity: -1, ready: false });
 
   useResizeInstanceCount(bulletMeshRef, bulletCapacity);
   useResizeInstanceCount(rocketMeshRef, rocketCapacity);
+
+  useEffect(() => {
+    bulletInitStateRef.current = { capacity: bulletCapacity, ready: false };
+  }, [bulletCapacity]);
+
+  useEffect(() => {
+    rocketInitStateRef.current = { capacity: rocketCapacity, ready: false };
+  }, [rocketCapacity]);
 
   useFrame(() => {
     perfMarkStart("InstancedProjectiles.useFrame");
@@ -59,6 +79,25 @@ export function InstancedProjectiles({
     if (!bulletMesh && !rocketMesh) {
       perfMarkEnd("InstancedProjectiles.useFrame");
       return;
+    }
+
+    // Initialize all instance slots to a hidden offscreen matrix and black color
+    if (
+      bulletMesh &&
+      bulletInitStateRef.current.ready === false &&
+      bulletInitStateRef.current.capacity === bulletCapacity
+    ) {
+      hideAllInstances(bulletMesh, bulletCapacity);
+      bulletInitStateRef.current.ready = true;
+    }
+
+    if (
+      rocketMesh &&
+      rocketInitStateRef.current.ready === false &&
+      rocketInitStateRef.current.capacity === rocketCapacity
+    ) {
+      hideAllInstances(rocketMesh, rocketCapacity);
+      rocketInitStateRef.current.ready = true;
     }
 
     const currentBulletActive = bulletActiveRef.current;
@@ -72,6 +111,14 @@ export function InstancedProjectiles({
     currentRocketActive.clear();
     currentBulletDirty.clear();
     currentRocketDirty.clear();
+
+    // Track whether we wrote instance matrices/colors this frame (so we can
+    // mark instanceMatrix/instanceColor.needsUpdate reliably even if the
+    // deactivation path isn't hit).
+    let bulletColorsDirty = false;
+    let rocketColorsDirty = false;
+    let bulletMatrixDirty = false;
+    let rocketMatrixDirty = false;
 
     for (let i = 0; i < projectiles.length; i += 1) {
       const projectile = projectiles[i];
@@ -109,30 +156,59 @@ export function InstancedProjectiles({
         projectile.position.z,
       );
       const scale = Math.max(0.05, projectile.projectileSize ?? 0.14);
-      if (category === "rockets") {
-        velocity.set(
-          projectile.velocity.x,
-          projectile.velocity.y,
-          projectile.velocity.z,
-        );
-        if (velocity.lengthSq() > 1e-6) {
-          lookTarget.copy(dummy.position).add(velocity);
-          dummy.lookAt(lookTarget);
-        }
-        dummy.scale.set(scale * 0.6, scale * 0.6, scale * 2.8);
+      velocity.set(
+        projectile.velocity.x,
+        projectile.velocity.y,
+        projectile.velocity.z,
+      );
+      const speed = velocity.length();
+      if (speed > 1e-6) {
+        velocity.normalize();
+        dummy.quaternion.setFromUnitVectors(upVector, velocity);
       } else {
-        dummy.rotation.set(0, 0, 0);
-        dummy.scale.set(scale * 0.6, scale * 0.6, scale * 0.6);
+        dummy.quaternion.identity();
+      }
+
+      if (category === "rockets") {
+        const thickness = Math.max(0.08, scale * 0.55);
+        dummy.scale.set(thickness, scale * 2.8, thickness);
+      } else {
+        const length = Math.min(1.4, Math.max(0.35, speed * 0.04));
+        const thickness = Math.max(0.06, scale * 0.55);
+        dummy.scale.set(thickness, length, thickness);
       }
 
       dummy.updateMatrix();
       mesh.setMatrixAt(index, dummy.matrix);
 
+      // Mark matrix dirty for this category
+      if (category === "rockets") {
+        rocketMatrixDirty = true;
+      } else {
+        bulletMatrixDirty = true;
+      }
+
       const colorHex =
         projectile.projectileColor ??
         (category === "rockets" ? "#ff955c" : "#ffe08a");
-      color.set(colorHex);
+      // Boost intensity so projectiles read well under postprocessing.
+      color.set(colorHex).multiplyScalar(category === "rockets" ? 3.0 : 3.6);
+      // Normalize HDR values for display: clamp peaks + Reinhard tone mapping.
+      normalizeHDRForInstance(color, { exposure: 1.0, maxChannel: 3.0 });
       mesh.setColorAt(index, color);
+
+      // Mark color dirty for this category
+      if (category === "rockets") {
+        rocketColorsDirty = true;
+      } else {
+        bulletColorsDirty = true;
+      }
+
+      if (import.meta.env.DEV && index === 0) {
+        // Log a sample for developer debugging in the browser console
+        const style = (color as unknown as { getStyle?: () => string }).getStyle?.() ?? null;
+        console.log("InstancedProjectiles: setColorAt", { category, index, style, r: color.r, g: color.g, b: color.b });
+      }
 
       dirty.add(index);
     }
@@ -150,7 +226,7 @@ export function InstancedProjectiles({
         }
       }
 
-      if (currentBulletDirty.size > 0) {
+      if (currentBulletDirty.size > 0 || bulletMatrixDirty || bulletColorsDirty) {
         bulletMesh.instanceMatrix.needsUpdate = true;
         if (bulletMesh.instanceColor) {
           bulletMesh.instanceColor.needsUpdate = true;
@@ -168,10 +244,13 @@ export function InstancedProjectiles({
           rocketMesh.setMatrixAt(index, dummy.matrix);
           rocketMesh.setColorAt(index, hiddenColor);
           currentRocketDirty.add(index);
+          // mark that we modified matrices/colors via deactivation path
+          rocketMatrixDirty = true;
+          rocketColorsDirty = true;
         }
       }
 
-      if (currentRocketDirty.size > 0) {
+      if (currentRocketDirty.size > 0 || rocketMatrixDirty || rocketColorsDirty) {
         rocketMesh.instanceMatrix.needsUpdate = true;
         if (rocketMesh.instanceColor) {
           rocketMesh.instanceColor.needsUpdate = true;
@@ -196,14 +275,20 @@ export function InstancedProjectiles({
     <group>
       {shouldRenderBullets ? (
         <instancedMesh
+          name="instanced-bullets"
           ref={bulletMeshRef}
           args={[undefined, undefined, bulletCapacity]}
+          frustumCulled={false}
         >
-          <sphereGeometry args={[0.12, 12, 12]} />
-          <meshStandardMaterial
-            vertexColors
-            emissiveIntensity={1.05}
+          <cylinderGeometry args={[1, 1, 1, 10]} />
+          <meshBasicMaterial
+            color="#ffffff"
             toneMapped={false}
+            transparent
+            opacity={0.95}
+            blending={AdditiveBlending}
+            depthWrite={false}
+            vertexColors
           />
         </instancedMesh>
       ) : null}
@@ -211,12 +296,17 @@ export function InstancedProjectiles({
         <instancedMesh
           ref={rocketMeshRef}
           args={[undefined, undefined, rocketCapacity]}
+          frustumCulled={false}
         >
-          <cylinderGeometry args={[0.08, 0.12, 0.9, 10]} />
-          <meshStandardMaterial
-            vertexColors
-            emissiveIntensity={1.1}
+          <cylinderGeometry args={[0.8, 1.2, 1, 10]} />
+          <meshBasicMaterial
+            color="#ffffff"
             toneMapped={false}
+            transparent
+            opacity={0.95}
+            blending={AdditiveBlending}
+            depthWrite={false}
+            vertexColors
           />
         </instancedMesh>
       ) : null}

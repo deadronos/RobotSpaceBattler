@@ -5,6 +5,7 @@ import {
   CollisionGroup,
   interactionGroups,
 } from "../../lib/physics/collisionGroups";
+import { NeonGeometry } from "../vfx/NeonGeometry";
 
 type WallConfig = {
   pos: [number, number, number];
@@ -69,6 +70,36 @@ export function WallGroup() {
                 roughness={0.45}
               />
             </mesh>
+            {/* Add Neon Strips along the top edges */}
+            <NeonGeometry
+              color="#00f3ff"
+              intensity={2}
+              position={[0, wall.dim[1] / 2 - 0.1, 0]}
+              flickerSpeed={3}
+            >
+              <boxGeometry
+                args={[
+                  wall.dim[0] + 0.1,
+                  0.15,
+                  wall.dim[2] + 0.1,
+                ]}
+              />
+            </NeonGeometry>
+            {/* Add Neon Strips along the bottom edges */}
+            <NeonGeometry
+              color="#ff00aa"
+              intensity={1.5}
+              position={[0, -wall.dim[1] / 2 + 0.1, 0]}
+              flickerSpeed={2}
+            >
+              <boxGeometry
+                args={[
+                  wall.dim[0] + 0.1,
+                  0.15,
+                  wall.dim[2] + 0.1,
+                ]}
+              />
+            </NeonGeometry>
           </RigidBody>
         );
       })}
