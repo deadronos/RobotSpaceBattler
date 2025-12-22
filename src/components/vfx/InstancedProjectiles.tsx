@@ -123,10 +123,11 @@ export function InstancedProjectiles({
       }
 
       if (category === "rockets") {
-        dummy.scale.set(scale * 0.6, scale * 2.8, scale * 0.6);
+        const thickness = Math.max(0.08, scale * 0.55);
+        dummy.scale.set(thickness, scale * 2.8, thickness);
       } else {
         const length = Math.min(1.4, Math.max(0.35, speed * 0.04));
-        const thickness = scale * 0.45;
+        const thickness = Math.max(0.06, scale * 0.55);
         dummy.scale.set(thickness, length, thickness);
       }
 
@@ -205,7 +206,7 @@ export function InstancedProjectiles({
           args={[undefined, undefined, bulletCapacity]}
           frustumCulled={false}
         >
-          <cylinderGeometry args={[0.06, 0.06, 1, 10]} />
+          <cylinderGeometry args={[1, 1, 1, 10]} />
           <meshBasicMaterial vertexColors toneMapped={false} />
         </instancedMesh>
       ) : null}
@@ -215,7 +216,7 @@ export function InstancedProjectiles({
           args={[undefined, undefined, rocketCapacity]}
           frustumCulled={false}
         >
-          <cylinderGeometry args={[0.08, 0.12, 0.9, 10]} />
+          <cylinderGeometry args={[0.8, 1.2, 1, 10]} />
           <meshBasicMaterial vertexColors toneMapped={false} />
         </instancedMesh>
       ) : null}
