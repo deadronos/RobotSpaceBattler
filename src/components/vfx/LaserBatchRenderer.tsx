@@ -214,10 +214,6 @@ export function LaserBatchRenderer({
       mesh.setColorAt(index, color);
       colorsDirty = true;
 
-      if (import.meta.env.DEV && index === 0) {
-        const style = (color as unknown as { getStyle?: () => string }).getStyle?.() ?? null;
-        console.log("LaserBatchRenderer: setColorAt", { index, style, r: color.r, g: color.g, b: color.b });
-      }
     }
 
     const hidden = -512;

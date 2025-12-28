@@ -269,12 +269,6 @@ export function InstancedProjectiles({
         bulletColorsDirty = true;
       }
 
-      if (import.meta.env.DEV && index === 0) {
-        // Log a sample for developer debugging in the browser console
-        const style = (color as unknown as { getStyle?: () => string }).getStyle?.() ?? null;
-        console.log("InstancedProjectiles: setColorAt", { category, index, style, r: color.r, g: color.g, b: color.b });
-      }
-
       dirty.add(index);
     }
 

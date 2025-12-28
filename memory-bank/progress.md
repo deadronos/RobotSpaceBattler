@@ -9,6 +9,7 @@ What works
 - Projectile-based weapon simulation (laser/gun/rocket) including rocket AoE + RPS multipliers.
 - Dynamic arena obstacles (barriers/hazards/destructibles) including fixture-driven spawning.
 - Instanced visuals and performance toggles (`QualityManager`, `window.__rendererStats`).
+- Instanced VFX color parity (projectiles/effects/lasers) via per-instance colors + geometry vertex-color attribute.
 - Telemetry capture and aggregation via `TelemetryPort` + Zustand store.
 - Unit tests across core systems exist under `tests/`.
 

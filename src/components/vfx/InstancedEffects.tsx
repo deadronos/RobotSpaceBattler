@@ -138,11 +138,6 @@ export function InstancedEffects({
       clampHDRColor(color, 2.0);
       mesh.setColorAt(index, color);
 
-      if (import.meta.env.DEV && index === 0) {
-        const style = (color as unknown as { getStyle?: () => string }).getStyle?.() ?? null;
-        console.log("InstancedEffects: setColorAt", { index, style, r: color.r, g: color.g, b: color.b });
-      }
-
       dirtyIndices.add(index);
     }
 

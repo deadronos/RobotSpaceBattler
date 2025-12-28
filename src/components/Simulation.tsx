@@ -14,7 +14,6 @@ import { MatchStateMachine } from "../runtime/state/matchStateMachine";
 import { useQualitySettings } from "../state/quality/QualityManager";
 import { ObstacleVisual } from "../visuals/ObstacleVisual";
 import { recordRendererFrame } from "../visuals/rendererStats";
-import { InstanceColorDebugger } from "./debug/InstanceColorDebugger";
 import { RobotPlaceholder } from "./RobotPlaceholder";
 import { Scene } from "./Scene";
 import { SpaceStation } from "./SpaceStation";
@@ -194,7 +193,6 @@ function SimulationContent({ battleWorld, runnerRef }: SimulationContentProps) {
             instanceManager={instanceManager}
             currentTimeMs={currentTimeMs}
           />
-          {import.meta.env.DEV ? <InstanceColorDebugger /> : null}
         </>
       ) : null}
       {fallbackProjectiles.map((projectile) => (
