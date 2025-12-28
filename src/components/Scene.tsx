@@ -1,9 +1,38 @@
 import { OrbitControls, Stars } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
+import {
+  Bloom,
+  ChromaticAberration,
+  EffectComposer,
+  ToneMapping,
+} from "@react-three/postprocessing";
 import { Physics } from "@react-three/rapier";
+import { BlendFunction } from "postprocessing";
 import { ReactNode, Suspense } from "react";
 
+import { useQualitySettings } from "../state/quality/QualityManager";
 import { initializeRendererStats } from "../visuals/rendererStats";
+
+const POSTPROCESSING_PRESETS = {
+  low: {
+    multisampling: 0,
+    bloomIntensity: 0.9,
+    bloomRadius: 0.35,
+    bloomThreshold: 1.35,
+    bloomMipmapBlur: false,
+    chromaticAberration: false,
+    chromaticOffset: [0.001, 0.001] as [number, number],
+  },
+  high: {
+    multisampling: 0,
+    bloomIntensity: 1.2,
+    bloomRadius: 0.5,
+    bloomThreshold: 1.2,
+    bloomMipmapBlur: false,
+    chromaticAberration: true,
+    chromaticOffset: [0.0012, 0.0012] as [number, number],
+  },
+} as const;
 
 /**
  * Props for the Scene component.
@@ -21,29 +50,64 @@ interface SceneProps {
  * @returns The rendered scene.
  */
 export function Scene({ children }: SceneProps) {
+  const qualitySettings = useQualitySettings();
+  const { postprocessing, render } = qualitySettings.visuals;
+  const postprocessingPreset = POSTPROCESSING_PRESETS[postprocessing.quality];
+  const shadowsEnabled = render.shadowsEnabled;
+  const shadowMapSize = render.shadowMapSize;
+  const starCount = render.dpr >= 1.5 ? 1500 : 900;
+  const postprocessingEffects = [
+    <Bloom
+      key="bloom"
+      luminanceThreshold={postprocessingPreset.bloomThreshold}
+      mipmapBlur={postprocessingPreset.bloomMipmapBlur}
+      intensity={postprocessingPreset.bloomIntensity}
+      radius={postprocessingPreset.bloomRadius}
+    />,
+    ...(postprocessingPreset.chromaticAberration
+      ? [
+          <ChromaticAberration
+            key="chromatic"
+            blendFunction={BlendFunction.NORMAL}
+            offset={postprocessingPreset.chromaticOffset}
+          />,
+        ]
+      : []),
+    <ToneMapping key="tonemap" />,
+  ];
+
   return (
     <Canvas
-      shadows
-      dpr={[1, 2]}
+      shadows={shadowsEnabled}
+      dpr={render.dpr}
       camera={{ position: [-14, 28, 48], fov: 45 }}
-      gl={{ antialias: true }}
-      onCreated={({ gl }) => initializeRendererStats(gl)}
+      gl={{
+        antialias: !postprocessing.enabled,
+        powerPreference: "high-performance",
+      }}
+      onCreated={({ gl, scene, camera }) => {
+        initializeRendererStats(gl);
+        // Expose the scene for debugging/visual verification in Playwright
+        // This is temporary and safe to remove later.
+        const win = (window as unknown) as { __robotScene?: Record<string, unknown> };
+        win.__robotScene = { scene, camera, gl } as Record<string, unknown>;
+      }}
     >
-      <color attach="background" args={["#020310"]} />
-      <ambientLight intensity={0.6} color="#4a517a" />
+      <color attach="background" args={["#010208"]} />
+      <ambientLight intensity={0.2} color="#1a1d35" />
       <hemisphereLight
-        groundColor="#0a0b18"
-        intensity={0.4}
-        color="#7a8dff"
+        groundColor="#03040a"
+        intensity={0.3}
+        color="#3d4c99"
         position={[0, 34, 0]}
       />
       <directionalLight
         position={[25, 32, 18]}
         intensity={1.5}
         color="#f3f0ff"
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        castShadow={shadowsEnabled}
+        shadow-mapSize-width={shadowMapSize}
+        shadow-mapSize-height={shadowMapSize}
         shadow-camera-near={1}
         shadow-camera-far={120}
         shadow-camera-left={-60}
@@ -56,9 +120,7 @@ export function Scene({ children }: SceneProps) {
         position={[-28, 26, -24]}
         intensity={1.1}
         color="#c8d7ff"
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
+        castShadow={false}
         shadow-camera-near={1}
         shadow-camera-far={90}
         shadow-camera-left={-45}
@@ -73,7 +135,7 @@ export function Scene({ children }: SceneProps) {
         penumbra={0.4}
         intensity={0.85}
         color="#88aaff"
-        castShadow
+        castShadow={false}
         distance={120}
       />
       <spotLight
@@ -82,7 +144,7 @@ export function Scene({ children }: SceneProps) {
         penumbra={0.35}
         intensity={0.9}
         color="#ffcf9b"
-        castShadow
+        castShadow={false}
         distance={110}
       />
       <spotLight
@@ -91,16 +153,30 @@ export function Scene({ children }: SceneProps) {
         penumbra={0.5}
         intensity={1.1}
         color="#fff1d7"
-        castShadow
+        castShadow={false}
         distance={140}
       />
-      <Stars radius={80} depth={50} count={1500} factor={3} saturation={0.5} />
+      <Stars
+        radius={80}
+        depth={50}
+        count={starCount}
+        factor={3}
+        saturation={0.5}
+      />
       <Suspense fallback={null}>
         <Physics gravity={[0, 0, 0]} interpolate={false}>
           {children}
         </Physics>
       </Suspense>
       <OrbitControls enablePan enableZoom enableRotate />
+      {postprocessing.enabled ? (
+        <EffectComposer
+          enableNormalPass={false}
+          multisampling={postprocessingPreset.multisampling}
+        >
+          {postprocessingEffects}
+        </EffectComposer>
+      ) : null}
     </Canvas>
   );
 }

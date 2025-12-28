@@ -300,6 +300,16 @@ for (let i = 0; i < world.projectiles.entities.length; i++) {
 
 - Replace `dummy.updateMatrix()` with direct math where possible; avoid creating temporary `Object3D` every frame.
 
+- Guardrails for per-instance color:
+
+  - If `vertexColors` is enabled to support `instanceColor`, ensure the geometry
+    has a `color` attribute (all-white) so instance colors don’t get multiplied
+    to black. Prefer a helper like `ensureGeometryHasVertexColors(geometry)` at
+    geometry creation time.
+  - Ensure `instanceColor` exists before the first render/compile for the
+    material, or force a one-time `material.needsUpdate = true` when
+    `instanceColor` is first created.
+
 ### LaserBatchRenderer (Quick Wins)
 
 - Prevent `geometry.computeBoundingSphere()` on every frame:
