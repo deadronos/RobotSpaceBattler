@@ -1,15 +1,25 @@
 import { useFrame } from "@react-three/fiber";
 import { MutableRefObject, useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { AdditiveBlending, Color, InstancedMesh, Object3D, Vector3 } from "three";
+import { AdditiveBlending, Color, CylinderGeometry, InstancedMesh, Material, Object3D, Vector3 } from "three";
 
 import { ProjectileEntity } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
-import { hideAllInstances, normalizeHDRForInstance } from "../../visuals/instanceColorUtils";
+import { ensureGeometryHasVertexColors, hideAllInstances, normalizeHDRForInstance } from "../../visuals/instanceColorUtils";
 import { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
 
 interface InstancedProjectilesProps {
   projectiles: ProjectileEntity[];
   instanceManager: VisualInstanceManager;
+}
+
+function markMaterialNeedsUpdate(material: Material | Material[]) {
+  if (Array.isArray(material)) {
+    for (let i = 0; i < material.length; i += 1) {
+      material[i].needsUpdate = true;
+    }
+    return;
+  }
+  material.needsUpdate = true;
 }
 
 function useResizeInstanceCount(
@@ -52,6 +62,25 @@ export function InstancedProjectiles({
   const upVector = useMemo(() => new Vector3(0, 1, 0), []);
   const color = useMemo(() => new Color(), []);
   const hiddenColor = useMemo(() => new Color("#000000"), []);
+
+  const bulletGeometry = useMemo(() => {
+    const geometry = new CylinderGeometry(1, 1, 1, 10);
+    ensureGeometryHasVertexColors(geometry);
+    return geometry;
+  }, []);
+
+  const rocketGeometry = useMemo(() => {
+    const geometry = new CylinderGeometry(0.8, 1.2, 1, 10);
+    ensureGeometryHasVertexColors(geometry);
+    return geometry;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      bulletGeometry.dispose();
+      rocketGeometry.dispose();
+    };
+  }, [bulletGeometry, rocketGeometry]);
   const bulletActiveRef = useRef<Set<number>>(new Set());
   const rocketActiveRef = useRef<Set<number>>(new Set());
   const previousBulletActiveRef = useRef<Set<number>>(new Set());
@@ -64,12 +93,40 @@ export function InstancedProjectiles({
   useResizeInstanceCount(bulletMeshRef, bulletCapacity);
   useResizeInstanceCount(rocketMeshRef, rocketCapacity);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     bulletInitStateRef.current = { capacity: bulletCapacity, ready: false };
   }, [bulletCapacity]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     rocketInitStateRef.current = { capacity: rocketCapacity, ready: false };
+  }, [rocketCapacity]);
+
+  useLayoutEffect(() => {
+    const mesh = bulletMeshRef.current;
+    if (!mesh || bulletCapacity <= 0) return;
+
+    const hadInstanceColor = Boolean(mesh.instanceColor);
+    hideAllInstances(mesh, bulletCapacity);
+    bulletInitStateRef.current = { capacity: bulletCapacity, ready: true };
+
+    // If instanceColor didn't exist during the first shader compile, Three won't
+    // enable instancing colors until the material is recompiled.
+    if (!hadInstanceColor && mesh.instanceColor) {
+      markMaterialNeedsUpdate(mesh.material);
+    }
+  }, [bulletCapacity]);
+
+  useLayoutEffect(() => {
+    const mesh = rocketMeshRef.current;
+    if (!mesh || rocketCapacity <= 0) return;
+
+    const hadInstanceColor = Boolean(mesh.instanceColor);
+    hideAllInstances(mesh, rocketCapacity);
+    rocketInitStateRef.current = { capacity: rocketCapacity, ready: true };
+
+    if (!hadInstanceColor && mesh.instanceColor) {
+      markMaterialNeedsUpdate(mesh.material);
+    }
   }, [rocketCapacity]);
 
   useFrame(() => {
@@ -87,7 +144,11 @@ export function InstancedProjectiles({
       bulletInitStateRef.current.ready === false &&
       bulletInitStateRef.current.capacity === bulletCapacity
     ) {
+      const hadInstanceColor = Boolean(bulletMesh.instanceColor);
       hideAllInstances(bulletMesh, bulletCapacity);
+      if (!hadInstanceColor && bulletMesh.instanceColor) {
+        markMaterialNeedsUpdate(bulletMesh.material);
+      }
       bulletInitStateRef.current.ready = true;
     }
 
@@ -96,7 +157,11 @@ export function InstancedProjectiles({
       rocketInitStateRef.current.ready === false &&
       rocketInitStateRef.current.capacity === rocketCapacity
     ) {
+      const hadInstanceColor = Boolean(rocketMesh.instanceColor);
       hideAllInstances(rocketMesh, rocketCapacity);
+      if (!hadInstanceColor && rocketMesh.instanceColor) {
+        markMaterialNeedsUpdate(rocketMesh.material);
+      }
       rocketInitStateRef.current.ready = true;
     }
 
@@ -280,7 +345,7 @@ export function InstancedProjectiles({
           args={[undefined, undefined, bulletCapacity]}
           frustumCulled={false}
         >
-          <cylinderGeometry args={[1, 1, 1, 10]} />
+          <primitive object={bulletGeometry} attach="geometry" />
           <meshBasicMaterial
             color="#ffffff"
             toneMapped={false}
@@ -298,7 +363,7 @@ export function InstancedProjectiles({
           args={[undefined, undefined, rocketCapacity]}
           frustumCulled={false}
         >
-          <cylinderGeometry args={[0.8, 1.2, 1, 10]} />
+          <primitive object={rocketGeometry} attach="geometry" />
           <meshBasicMaterial
             color="#ffffff"
             toneMapped={false}

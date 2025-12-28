@@ -1,9 +1,11 @@
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import {
   AdditiveBlending,
   Color,
+  CylinderGeometry,
   InstancedMesh,
+  Material,
   Matrix4,
   Quaternion,
   Vector3,
@@ -11,13 +13,27 @@ import {
 
 import { ProjectileEntity, RobotEntity } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
-import { hideAllInstances, normalizeHDRForInstance } from "../../visuals/instanceColorUtils";
+import {
+  ensureGeometryHasVertexColors,
+  hideAllInstances,
+  normalizeHDRForInstance,
+} from "../../visuals/instanceColorUtils";
 import { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
 
 interface LaserBatchRendererProps {
   projectiles: ProjectileEntity[];
   robotsById: Map<string, RobotEntity>;
   instanceManager: VisualInstanceManager;
+}
+
+function markMaterialNeedsUpdate(material: Material | Material[]) {
+  if (Array.isArray(material)) {
+    for (let i = 0; i < material.length; i += 1) {
+      material[i].needsUpdate = true;
+    }
+    return;
+  }
+  material.needsUpdate = true;
 }
 
 /**
@@ -45,6 +61,18 @@ export function LaserBatchRenderer({
   const meshRef = useRef<InstancedMesh | null>(null);
   const hasInitializedRef = useRef(false);
 
+  const laserGeometry = useMemo(() => {
+    const geometry = new CylinderGeometry(1, 1, 1, 10);
+    ensureGeometryHasVertexColors(geometry);
+    return geometry;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      laserGeometry.dispose();
+    };
+  }, [laserGeometry]);
+
   useEffect(() => {
     const win = (window as unknown) as { __instancedRefs?: Record<string, InstancedMesh | null> };
     win.__instancedRefs = win.__instancedRefs || {};
@@ -68,6 +96,19 @@ export function LaserBatchRenderer({
     hasInitializedRef.current = false;
   }, [capacity]);
 
+  useLayoutEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh || capacity <= 0) return;
+
+    const hadInstanceColor = Boolean(mesh.instanceColor);
+    hideAllInstances(mesh, capacity);
+    hasInitializedRef.current = true;
+
+    if (!hadInstanceColor && mesh.instanceColor) {
+      markMaterialNeedsUpdate(mesh.material);
+    }
+  }, [capacity]);
+
   useFrame(() => {
     perfMarkStart("LaserBatchRenderer.useFrame");
     const mesh = meshRef.current;
@@ -84,7 +125,11 @@ export function LaserBatchRenderer({
     if (!hasInitializedRef.current) {
       // Initialize all slots to hidden/offscreen to avoid garbage draws from
       // uninitialized instance data.
+      const hadInstanceColor = Boolean(mesh.instanceColor);
       hideAllInstances(mesh, capacity);
+      if (!hadInstanceColor && mesh.instanceColor) {
+        markMaterialNeedsUpdate(mesh.material);
+      }
       hasInitializedRef.current = true;
     }
 
@@ -211,8 +256,13 @@ export function LaserBatchRenderer({
   }
 
   return (
-    <instancedMesh name="instanced-lasers" ref={meshRef} args={[undefined as never, undefined as never, capacity]}>
-      <cylinderGeometry args={[1, 1, 1, 10]} />
+    <instancedMesh
+      name="instanced-lasers"
+      ref={meshRef}
+      args={[undefined as never, undefined as never, capacity]}
+      frustumCulled={false}
+    >
+      <primitive object={laserGeometry} attach="geometry" />
       <meshBasicMaterial {...material} />
     </instancedMesh>
   );

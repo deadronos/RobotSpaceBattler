@@ -1,4 +1,28 @@
-import { Color, InstancedMesh, Object3D } from "three";
+import { BufferAttribute, BufferGeometry, Color, InstancedMesh, Object3D } from "three";
+
+export function ensureGeometryHasVertexColors(
+  geometry: BufferGeometry,
+  color: string | number | Color = 0xffffff,
+) {
+  const position = geometry.getAttribute("position");
+  if (!position) return;
+
+  const existing = geometry.getAttribute("color");
+  if (existing && existing.count === position.count) return;
+
+  const tmp = new Color();
+  tmp.set(color as string | number | Color);
+
+  const colors = new Float32Array(position.count * 3);
+  for (let i = 0; i < position.count; i += 1) {
+    const base = i * 3;
+    colors[base] = tmp.r;
+    colors[base + 1] = tmp.g;
+    colors[base + 2] = tmp.b;
+  }
+
+  geometry.setAttribute("color", new BufferAttribute(colors, 3));
+}
 
 /**
  * Convert an sRGB color (hex string or Color) into linear space and return it.
