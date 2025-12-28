@@ -5,12 +5,20 @@ import { LampPanels } from "./SpaceStation/LampPanels";
 import { Pillars } from "./SpaceStation/Pillars";
 import { WallGroup } from "./SpaceStation/WallGroup";
 
+interface SpaceStationProps {
+  shadowsEnabled?: boolean;
+  shadowMapSize?: number;
+}
+
 /**
  * SpaceStation - A battle arena with corridors, walls, and obstacles.
  * Physics-enabled with proper Rapier configuration.
  * Composes various sub-components to build the environment.
  */
-export function SpaceStation() {
+export function SpaceStation({
+  shadowsEnabled = false,
+  shadowMapSize = 512,
+}: SpaceStationProps) {
   return (
     <>
       <RigidBody type="fixed" colliders="cuboid">
@@ -29,7 +37,10 @@ export function SpaceStation() {
       <WallGroup />
       <LampPanels />
       <Pillars />
-      <ArenaLightRig />
+      <ArenaLightRig
+        shadowsEnabled={shadowsEnabled}
+        shadowMapSize={shadowMapSize}
+      />
     </>
   );
 }

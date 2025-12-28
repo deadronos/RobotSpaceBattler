@@ -14,6 +14,10 @@ Recent changes
 - Specs cleanup: removed appended legacy/template sections across `specs/` to keep files single-source and lint-clean.
 - Specs 001 contracts and docs aligned to current runtime behavior.
 - Specs 005 plan template tail removed; file normalized for markdownlint.
+- Fixed instanced VFX rendering parity (projectiles/effects/lasers) by ensuring
+  instanced geometries provide a white `color` vertex attribute when
+  `vertexColors` is enabled and by initializing `instanceColor` early.
+- Removed the temporary on-screen instancing debug overlay.
 
 Next steps
 
