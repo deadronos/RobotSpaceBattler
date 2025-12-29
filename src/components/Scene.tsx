@@ -42,6 +42,8 @@ const POSTPROCESSING_PRESETS = {
 interface SceneProps {
   /** The 3D content to render inside the scene. */
   children?: ReactNode;
+  /** Whether to render the performance overlay (off by default). */
+  showPerfOverlay?: boolean;
 }
 
 /**
@@ -51,7 +53,7 @@ interface SceneProps {
  * @param props - Component props.
  * @returns The rendered scene.
  */
-export function Scene({ children }: SceneProps) {
+export function Scene({ children, showPerfOverlay = false }: SceneProps) {
   const qualitySettings = useQualitySettings();
   const { postprocessing, render } = qualitySettings.visuals;
   const postprocessingPreset = POSTPROCESSING_PRESETS[postprocessing.quality];
@@ -166,7 +168,7 @@ export function Scene({ children }: SceneProps) {
         saturation={0.5}
       />
       <DynamicResScaler />
-      <PerfMonitorOverlay />
+      {showPerfOverlay ? <PerfMonitorOverlay /> : null}
       <Suspense fallback={null}>
         <Physics gravity={[0, 0, 0]} interpolate={false}>
           {children}

@@ -61,11 +61,12 @@ describe("buildQualitySettings", () => {
     expect(settings.visuals.instancing.enabled).toBe(false);
   });
 
-  it("scales render DPR with performance tier", () => {
+  it("defaults to a conservative DPR baseline and relies on dynamic scaling", () => {
     const lowTier = buildQualitySettings({ perfTier: "low" });
     const highTier = buildQualitySettings({ perfTier: "high" });
-    expect(highTier.visuals.render.dpr).toBeGreaterThan(
-      lowTier.visuals.render.dpr,
-    );
+    // We now start conservatively at 0.5 DPR and allow the DynamicResScaler to
+    // increase DPR at runtime when performance allows.
+    expect(lowTier.visuals.render.dpr).toBe(0.5);
+    expect(highTier.visuals.render.dpr).toBe(0.5);
   });
 });

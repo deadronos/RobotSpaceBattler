@@ -62,6 +62,7 @@ export default function App() {
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showDebugUI, setShowDebugUI] = useState(false);
+  const [showPerfOverlay, setShowPerfOverlay] = useState(false);
 
   const [obstacleFixture, setObstacleFixture] = useState<
     ObstacleFixture | undefined
@@ -198,6 +199,8 @@ export default function App() {
         onClose={() => setIsSettingsOpen(false)}
         showDebugUI={showDebugUI}
         onToggleDebugUI={setShowDebugUI}
+        showPerfOverlay={showPerfOverlay}
+        onTogglePerfOverlay={setShowPerfOverlay}
       />
 
       <Suspense fallback={<div className="match-status">Loading arena...</div>}>
@@ -207,6 +210,7 @@ export default function App() {
           telemetry={telemetryPort}
           onRunnerReady={handleRunnerReady}
           obstacleFixture={obstacleFixture}
+          showPerfOverlay={showPerfOverlay}
         />
       </Suspense>
       {showDebugUI && (
