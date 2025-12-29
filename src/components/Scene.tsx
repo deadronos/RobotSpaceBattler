@@ -11,7 +11,9 @@ import { BlendFunction } from "postprocessing";
 import { ReactNode, Suspense } from "react";
 
 import { useQualitySettings } from "../state/quality/QualityManager";
+import { DynamicResScaler } from "../visuals/DynamicResScaler";
 import { initializeRendererStats } from "../visuals/rendererStats";
+import { PerfMonitorOverlay } from "./debug/PerfMonitorOverlay";
 
 const POSTPROCESSING_PRESETS = {
   low: {
@@ -163,6 +165,8 @@ export function Scene({ children }: SceneProps) {
         factor={3}
         saturation={0.5}
       />
+      <DynamicResScaler />
+      <PerfMonitorOverlay />
       <Suspense fallback={null}>
         <Physics gravity={[0, 0, 0]} interpolate={false}>
           {children}

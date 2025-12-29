@@ -138,7 +138,8 @@ export function buildQualitySettings({
 }): QualitySettings {
   const postprocessingQuality: PostprocessingQualityLevel =
     perfTier === "high" ? "high" : "low";
-  const dpr = perfTier === "high" ? 1.5 : perfTier === "medium" ? 1.25 : 1;
+  // Start conservatively at 0.5 DPR; DynamicResScaler will scale up if performance allows.
+  const dpr = 0.5;
   const shadowMapSize = perfTier === "high" ? 1024 : 512;
   const resolvedPostprocessing =
     postprocessingEnabled ?? perfTier !== "low";
