@@ -38,6 +38,18 @@ Canonical system patterns used across the repo:
   - `QualityManager` exposes instancing settings and obstacle debug visuals.
   - `window.__rendererStats` captures frame-level renderer stats for debugging and profiling.
 
+- Instanced VFX color pipeline
+
+  - Instanced projectiles/effects/lasers use per-instance color
+    (`InstancedMesh.setColorAt`) with materials that have `vertexColors: true`.
+  - Geometry must provide a `color` vertex attribute (all-white) or instance
+    colors can render black/invisible. The repo-standard helper is
+    `ensureGeometryHasVertexColors` in `src/visuals/instanceColorUtils.ts`.
+  - `instanceColor` is created lazily by three.js; initialize instance slots
+    once (e.g., via `hideAllInstances`) and force a material recompile
+    (`material.needsUpdate = true`) if `instanceColor` first appears after
+    initial shader compilation.
+
 Physics Scale & Collider Design (2025-12-10)
 
 - **World Unit Scale**: 1 Rapier unit = 1 meter (1:1 scale)

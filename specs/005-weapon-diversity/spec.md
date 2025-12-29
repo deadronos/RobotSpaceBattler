@@ -139,6 +139,15 @@ Acceptance Scenarios:
   - Instancing must be opt-in via `QualityManager` and runtime flags so it can be toggled for comparison & CI runs.
   - The `MatchTrace` and deterministic replay records MUST NOT be affected by instancing decisions; visual instance index mapping is not required for deterministic semantics but must be traceable for debugging.
   - Per-instance runtime attributes (color, lifetime, scale) can be implemented using `InstancedBufferAttribute` and must be updated using efficient `three` methods with minimal allocations.
+  - When using `InstancedMesh.setColorAt(...)` with a material that has
+    `vertexColors: true`, ensure the base geometry provides a `color` vertex
+    attribute (typically all-white). If the geometry has no `color` attribute,
+    shaders may multiply instance color by zero, producing black/invisible
+    instances.
+  - `instanceColor` is created lazily by three.js; ensure it exists before first
+    render (e.g., initialize via a one-time hide/fill call) and force a material
+    recompile (`material.needsUpdate = true`) if `instanceColor` is created
+    after the first shader compile.
 
 High-level bullet points: Instancing strategy and scope
 - Scope: "fully and almost all entities" refers to every visual-only, ephemeral entity that does not require individual physics or per-frame gameplay logic to be present as a unique runtime object for the simulation. This includes projectiles, beams, impact effects, shots/tracers, debris particles, and sparks. It excludes the authoritative physics/colliders for robots unless decoupled.

@@ -4,6 +4,7 @@ import {
   CollisionGroup,
   interactionGroups,
 } from "../../lib/physics/collisionGroups";
+import { NeonGeometry } from "../vfx/NeonGeometry";
 
 const PILLAR_POSITIONS: [number, number, number][] = [
   [-30, 1.5, -30],
@@ -51,6 +52,23 @@ function Pillar({ position }: PillarProps) {
         <cylinderGeometry args={[1.2, 1.2, 3, 6]} />
         <meshPhysicalMaterial color="#3a4560" metalness={0.5} roughness={0.5} />
       </mesh>
+      {/* Neon Rings */}
+      <NeonGeometry
+        color="#00f3ff"
+        intensity={3}
+        position={[0, 0.5, 0]}
+        flickerSpeed={4}
+      >
+        <cylinderGeometry args={[1.25, 1.25, 0.1, 16]} />
+      </NeonGeometry>
+      <NeonGeometry
+        color="#ff00aa"
+        intensity={3}
+        position={[0, -0.5, 0]}
+        flickerSpeed={4}
+      >
+        <cylinderGeometry args={[1.25, 1.25, 0.1, 16]} />
+      </NeonGeometry>
     </RigidBody>
   );
 }
