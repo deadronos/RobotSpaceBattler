@@ -15,7 +15,7 @@ import { initializeRendererStats } from "../visuals/rendererStats";
 
 const POSTPROCESSING_PRESETS = {
   low: {
-    multisampling: 0,
+    multisampling: 8,
     bloomIntensity: 0.9,
     bloomRadius: 0.35,
     bloomThreshold: 1.35,
@@ -24,7 +24,7 @@ const POSTPROCESSING_PRESETS = {
     chromaticOffset: [0.001, 0.001] as [number, number],
   },
   high: {
-    multisampling: 0,
+    multisampling: 8,
     bloomIntensity: 1.2,
     bloomRadius: 0.5,
     bloomThreshold: 1.2,
@@ -82,7 +82,7 @@ export function Scene({ children }: SceneProps) {
       dpr={render.dpr}
       camera={{ position: [-14, 28, 48], fov: 45 }}
       gl={{
-        antialias: !postprocessing.enabled,
+        antialias: true,
         powerPreference: "high-performance",
       }}
       onCreated={({ gl, scene, camera }) => {
