@@ -11,11 +11,13 @@ import { BlendFunction } from "postprocessing";
 import { ReactNode, Suspense } from "react";
 
 import { useQualitySettings } from "../state/quality/QualityManager";
+import { DynamicResScaler } from "../visuals/DynamicResScaler";
 import { initializeRendererStats } from "../visuals/rendererStats";
+import { PerfMonitorOverlay } from "./debug/PerfMonitorOverlay";
 
 const POSTPROCESSING_PRESETS = {
   low: {
-    multisampling: 0,
+    multisampling: 8,
     bloomIntensity: 0.9,
     bloomRadius: 0.35,
     bloomThreshold: 1.35,
@@ -24,7 +26,7 @@ const POSTPROCESSING_PRESETS = {
     chromaticOffset: [0.001, 0.001] as [number, number],
   },
   high: {
-    multisampling: 0,
+    multisampling: 8,
     bloomIntensity: 1.2,
     bloomRadius: 0.5,
     bloomThreshold: 1.2,
@@ -40,6 +42,8 @@ const POSTPROCESSING_PRESETS = {
 interface SceneProps {
   /** The 3D content to render inside the scene. */
   children?: ReactNode;
+  /** Whether to render the performance overlay (off by default). */
+  showPerfOverlay?: boolean;
 }
 
 /**
@@ -49,7 +53,7 @@ interface SceneProps {
  * @param props - Component props.
  * @returns The rendered scene.
  */
-export function Scene({ children }: SceneProps) {
+export function Scene({ children, showPerfOverlay = false }: SceneProps) {
   const qualitySettings = useQualitySettings();
   const { postprocessing, render } = qualitySettings.visuals;
   const postprocessingPreset = POSTPROCESSING_PRESETS[postprocessing.quality];
@@ -82,7 +86,7 @@ export function Scene({ children }: SceneProps) {
       dpr={render.dpr}
       camera={{ position: [-14, 28, 48], fov: 45 }}
       gl={{
-        antialias: !postprocessing.enabled,
+        antialias: true,
         powerPreference: "high-performance",
       }}
       onCreated={({ gl, scene, camera }) => {
@@ -163,6 +167,8 @@ export function Scene({ children }: SceneProps) {
         factor={3}
         saturation={0.5}
       />
+      <DynamicResScaler />
+      {showPerfOverlay ? <PerfMonitorOverlay /> : null}
       <Suspense fallback={null}>
         <Physics gravity={[0, 0, 0]} interpolate={false}>
           {children}

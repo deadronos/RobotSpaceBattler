@@ -37,6 +37,8 @@ interface SimulationProps {
   onRunnerReady?: (runner: BattleRunner) => void;
   /** Optional obstacle fixture to seed matches in dev mode. */
   obstacleFixture?: Parameters<typeof createBattleRunner>[1]["obstacleFixture"];
+  /** Whether to show the Perf overlay (off by default). */
+  showPerfOverlay?: boolean;
 }
 
 const FRAME_SAMPLE_INTERVAL = 1 / 30;
@@ -55,6 +57,7 @@ export function Simulation({
   telemetry,
   onRunnerReady,
   obstacleFixture,
+  showPerfOverlay,
 }: SimulationProps) {
   const runnerRef = useRef<BattleRunner | null>(null);
 
@@ -75,7 +78,7 @@ export function Simulation({
   }, [battleWorld, matchMachine, telemetry, onRunnerReady, obstacleFixture]);
 
   return (
-    <Scene>
+    <Scene showPerfOverlay={showPerfOverlay}>
       <SimulationContent battleWorld={battleWorld} runnerRef={runnerRef} />
     </Scene>
   );

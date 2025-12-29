@@ -5,6 +5,8 @@ interface SettingsModalProps {
   onClose: () => void;
   showDebugUI: boolean;
   onToggleDebugUI: (show: boolean) => void;
+  showPerfOverlay: boolean;
+  onTogglePerfOverlay: (show: boolean) => void;
 }
 
 export function SettingsModal({
@@ -12,6 +14,8 @@ export function SettingsModal({
   onClose,
   showDebugUI,
   onToggleDebugUI,
+  showPerfOverlay,
+  onTogglePerfOverlay,
 }: SettingsModalProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -57,6 +61,17 @@ export function SettingsModal({
               onChange={(e) => onToggleDebugUI(e.target.checked)}
             />
           </div>
+
+          <div className="settings-row">
+            <label htmlFor="perf-toggle">Show Performance Overlay</label>
+            <input
+              id="perf-toggle"
+              type="checkbox"
+              checked={showPerfOverlay}
+              onChange={(e) => onTogglePerfOverlay(e.target.checked)}
+            />
+          </div>
+
           {/* Extensible area for more settings */}
         </div>
       </div>
