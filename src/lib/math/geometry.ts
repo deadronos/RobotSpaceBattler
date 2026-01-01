@@ -162,6 +162,11 @@ export function distanceSquaredXZ(a: Point2D, b: Point2D): number {
   return dx * dx + dz * dz;
 }
 
+/** Distance between two XZ points. */
+export function distanceXZ(a: Point2D, b: Point2D): number {
+  return Math.sqrt(distanceSquaredXZ(a, b));
+}
+
 /** Segment-vs-AABB intersection (XZ plane). */
 export function segmentIntersectsAABB(
   start: Point2D,
