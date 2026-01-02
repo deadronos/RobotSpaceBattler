@@ -10,7 +10,7 @@
  * and remains maintainable at current size.
  */
 
-import { distanceSquaredXZ } from "../../../../lib/math/geometry";
+import { distanceXZ } from "../../../../lib/math/geometry";
 import { AStarSearch } from "../search/AStarSearch";
 import { NearestAccessiblePoint } from "../search/NearestAccessiblePoint";
 import { PathCache } from "../search/PathCache";
@@ -211,9 +211,7 @@ export class PathfindingSystem {
       // Calculate path length
       let pathLength = 0;
       for (let i = 1; i < waypoints3D.length; i++) {
-        pathLength += Math.sqrt(
-          distanceSquaredXZ(waypoints3D[i], waypoints3D[i - 1]),
-        );
+        pathLength += distanceXZ(waypoints3D[i], waypoints3D[i - 1]);
       }
 
       // Create navigation path
@@ -275,9 +273,7 @@ export class PathfindingSystem {
 
             let pathLength = 0;
             for (let i = 1; i < waypoints3D.length; i++) {
-              pathLength += Math.sqrt(
-                distanceSquaredXZ(waypoints3D[i], waypoints3D[i - 1]),
-              );
+              pathLength += distanceXZ(waypoints3D[i], waypoints3D[i - 1]);
             }
 
             path = {

@@ -1,5 +1,5 @@
 import { Perf } from "r3f-perf";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * A performance monitor overlay.
@@ -8,7 +8,7 @@ import { useState } from "react";
  * the React subtree out of the Canvas and breaks hook usage.
  */
 export function PerfMonitorOverlay() {
-  const [visible, setVisible] = useState(true);
+  const [visible] = useState(true);
   const posRef = useRef({ x: 20, y: 20 });
 
   useEffect(() => {
@@ -48,7 +48,7 @@ export function PerfMonitorOverlay() {
         dragState.origX = posRef.current.x;
         dragState.origY = posRef.current.y;
         try {
-          (ev.target as Element).setPointerCapture((ev as any).pointerId);
+          (ev.target as Element).setPointerCapture(ev.pointerId);
         } catch {
           // ignore
         }
@@ -70,7 +70,7 @@ export function PerfMonitorOverlay() {
       const onPointerUp = (ev: PointerEvent) => {
         dragState.dragging = false;
         try {
-          (ev.target as Element).releasePointerCapture((ev as any).pointerId);
+          (ev.target as Element).releasePointerCapture(ev.pointerId);
         } catch {
           // ignore
         }
@@ -88,6 +88,7 @@ export function PerfMonitorOverlay() {
       };
 
       // Save detach on the element so we can call it in cleanup
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (el as any).__perfDetach = detach;
     };
 
@@ -95,6 +96,7 @@ export function PerfMonitorOverlay() {
 
     return () => {
       attached = false;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const elNow = document.querySelector('.perf-monitor') as any;
       if (elNow && elNow.__perfDetach) elNow.__perfDetach();
     };

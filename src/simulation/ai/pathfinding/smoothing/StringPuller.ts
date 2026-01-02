@@ -2,6 +2,10 @@
  * String pulling algorithm for path smoothing using a funnel-style approach.
  */
 
+import {
+  distanceSquaredPointToSegment,
+  isPointInPolygon,
+} from "../../../../lib/math/geometry";
 import type { ConvexPolygon, NavigationMesh, Point2D } from "../types";
 
 /**
@@ -70,7 +74,10 @@ export class StringPuller {
     }
 
     // Optimization: If start and end are in the same convex polygon, it's walkable.
-    if (this.isPointInPolygon(end, navMesh.polygons[currentPolyIndex])) {
+    if (
+      isPointInPolygon(end, navMesh.polygons[currentPolyIndex].vertices) ||
+      this.isPointOnPolygonBoundary(end, navMesh.polygons[currentPolyIndex])
+    ) {
       return true;
     }
 
@@ -86,7 +93,10 @@ export class StringPuller {
       const currentPoly = navMesh.polygons[currentPolyIndex];
 
       // Check if end point is in current polygon
-      if (this.isPointInPolygon(targetPoint, currentPoly)) {
+      if (
+        isPointInPolygon(targetPoint, currentPoly.vertices) ||
+        this.isPointOnPolygonBoundary(targetPoint, currentPoly)
+      ) {
         return true;
       }
 
@@ -132,36 +142,15 @@ export class StringPuller {
   ): number {
     if (!navMesh) return -1;
     for (const poly of navMesh.polygons) {
-      if (this.isPointInPolygon(point, poly)) {
+      // Check for strict inside OR boundary
+      if (
+        isPointInPolygon(point, poly.vertices) ||
+        this.isPointOnPolygonBoundary(point, poly)
+      ) {
         return poly.index;
       }
     }
     return -1;
-  }
-
-  /**
-   * Check if point is inside a convex polygon
-   */
-  private isPointInPolygon(point: Point2D, poly: ConvexPolygon): boolean {
-    // Check if explicitly on boundary first
-    if (this.isPointOnPolygonBoundary(point, poly)) {
-      return true;
-    }
-
-    let inside = false;
-    const vs = poly.vertices;
-    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-      const xi = vs[i].x,
-        yi = vs[i].z;
-      const xj = vs[j].x,
-        yj = vs[j].z;
-
-      const intersect =
-        yi > point.z !== yj > point.z &&
-        point.x < ((xj - xi) * (point.z - yi)) / (yj - yi) + xi;
-      if (intersect) inside = !inside;
-    }
-    return inside;
   }
 
   /**
@@ -267,32 +256,11 @@ export class StringPuller {
       const p1 = vs[i];
       const p2 = vs[(i + 1) % vs.length];
 
-      const distSq = this.distanceSquaredPointToSegment(point, p1, p2);
+      const distSq = distanceSquaredPointToSegment(point, p1, p2);
       if (distSq < tolerance * tolerance) {
         return true;
       }
     }
     return false;
-  }
-
-  /**
-   * Squared distance from point to line segment
-   * Copied from NavMeshGenerator or implemented here
-   */
-  private distanceSquaredPointToSegment(
-    p: Point2D,
-    v: Point2D,
-    w: Point2D,
-  ): number {
-    const l2 = (v.x - w.x) ** 2 + (v.z - w.z) ** 2;
-    if (l2 === 0) return (p.x - v.x) ** 2 + (p.z - v.z) ** 2;
-
-    let t = ((p.x - v.x) * (w.x - v.x) + (p.z - v.z) * (w.z - v.z)) / l2;
-    t = Math.max(0, Math.min(1, t));
-
-    const projectionX = v.x + t * (w.x - v.x);
-    const projectionZ = v.z + t * (w.z - v.z);
-
-    return (p.x - projectionX) ** 2 + (p.z - projectionZ) ** 2;
   }
 }
