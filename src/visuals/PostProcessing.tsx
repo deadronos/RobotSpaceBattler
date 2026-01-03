@@ -5,7 +5,6 @@ import {
   ToneMapping,
 } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
-import { ReactNode } from "react";
 
 export const POSTPROCESSING_PRESETS = {
   low: {
@@ -60,7 +59,7 @@ export function PostProcessing({ enabled, quality }: PostProcessingProps) {
           blendFunction={BlendFunction.NORMAL}
           offset={preset.chromaticOffset}
         />
-      ) : null}
+      ) : <></>}
       <ToneMapping key="tonemap" />
     </EffectComposer>
   );

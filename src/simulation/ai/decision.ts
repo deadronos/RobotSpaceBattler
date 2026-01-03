@@ -1,7 +1,7 @@
+import { refreshRoamTarget } from "../../ecs/systems/roaming";
+import { BattleWorld, RobotEntity } from "../../ecs/world";
 import { ENGAGE_MEMORY_TIMEOUT_MS } from "../../lib/constants";
 import { distanceVec3 } from "../../lib/math/vec3";
-import { BattleWorld, RobotEntity } from "../../ecs/world";
-import { refreshRoamTarget } from "../../ecs/systems/roaming";
 import {
   getLatestEnemyMemory,
   predictSearchAnchor,
