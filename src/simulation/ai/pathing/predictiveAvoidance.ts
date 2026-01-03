@@ -4,6 +4,7 @@
  * @module predictiveAvoidance
  */
 
+import { lengthVec3 } from "../../../lib/math/vec3";
 import { CollisionGroup } from "../../../lib/physics/collisionGroups";
 import { PhysicsQueryService, Vec3Like } from "./physicsQueryService";
 
@@ -65,7 +66,7 @@ export function computePredictiveAvoidance(
   const cfg = { ...DEFAULT_AVOIDANCE_CONFIG, ...config };
 
   // Check if velocity is near zero
-  const speed = Math.sqrt(velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2);
+  const speed = lengthVec3(velocity);
   if (speed < VELOCITY_THRESHOLD) {
     return { x: 0, y: 0, z: 0 };
   }

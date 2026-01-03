@@ -11,6 +11,16 @@ export interface Vec3 {
 }
 
 /**
+ * Interface representing a read-only 3D vector or vector-like object.
+ * Compatible with Vec3Like from physicsQueryService.
+ */
+export interface ReadonlyVec3 {
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+}
+
+/**
  * Creates a new Vec3 instance.
  * @param x - The x component (default 0).
  * @param y - The y component (default 0).
@@ -92,7 +102,7 @@ export function scaleVec3To(target: Vec3, vector: Vec3, scalar: number): Vec3 {
  * @param vector - The vector to measure.
  * @returns The length of the vector.
  */
-export function lengthVec3(vector: Vec3): number {
+export function lengthVec3(vector: ReadonlyVec3): number {
   return Math.sqrt(lengthSquaredVec3(vector));
 }
 
@@ -102,7 +112,7 @@ export function lengthVec3(vector: Vec3): number {
  * @param vector - The vector to measure.
  * @returns The squared length of the vector.
  */
-export function lengthSquaredVec3(vector: Vec3): number {
+export function lengthSquaredVec3(vector: ReadonlyVec3): number {
   return vector.x * vector.x + vector.y * vector.y + vector.z * vector.z;
 }
 
