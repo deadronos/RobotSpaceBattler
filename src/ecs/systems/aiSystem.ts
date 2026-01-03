@@ -1,26 +1,19 @@
-import { ENGAGE_MEMORY_TIMEOUT_MS } from "../../lib/constants";
-import { distanceVec3, lengthVec3 } from "../../lib/math/vec3";
+import { lengthVec3 } from "../../lib/math/vec3";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
-import { isActiveRobot } from "../../lib/robotHelpers";
 import {
   nextBehaviorState,
   RobotBehaviorMode,
 } from "../../simulation/ai/behaviorState";
 import { computeTeamAnchors } from "../../simulation/ai/captainCoordinator";
+import { updateTargeting } from "../../simulation/ai/decision";
 import { planRobotMovement } from "../../simulation/ai/pathing";
 import type { MovementContext } from "../../simulation/ai/pathing/types";
 import {
-  getLatestEnemyMemory,
-  predictSearchAnchor,
-  updateRobotSensors,
-} from "../../simulation/ai/sensors";
-import {
-  findClosestEnemy,
-  pickCaptainTarget,
-} from "../../simulation/ai/targeting";
-import { BattleWorld, RobotEntity } from "../world";
+  groupRobotsByTeam,
+  mapEnemiesByTeam,
+} from "../../simulation/ai/teamUtils";
+import { BattleWorld } from "../world";
 import { buildNeighbors } from "./aiNeighbors";
-import { refreshRoamTarget } from "./roaming";
 
 /**
  * Updates the AI for all robots in the battle world.
@@ -42,87 +35,20 @@ export function updateAISystem(
   }
 
   const anchors = computeTeamAnchors(robots);
-  const robotsByTeam = new Map<string, RobotEntity[]>();
-
-  for (let i = 0; i < robots.length; i += 1) {
-    const robot = robots[i];
-    if (!robotsByTeam.has(robot.team)) {
-      robotsByTeam.set(robot.team, []);
-    }
-
-    if (isActiveRobot(robot)) {
-      robotsByTeam.get(robot.team)?.push(robot);
-    }
-  }
-
-  // Pre-calculate enemies for each team to avoid O(N^2) filtering in sensors
-  const enemiesByTeam = new Map<string, RobotEntity[]>();
-  const teams = Array.from(robotsByTeam.keys());
-  for (const team of teams) {
-    const enemies: RobotEntity[] = [];
-    for (const otherTeam of teams) {
-      if (team !== otherTeam) {
-        enemies.push(...(robotsByTeam.get(otherTeam) ?? []));
-      }
-    }
-    enemiesByTeam.set(team, enemies);
-  }
+  const robotsByTeam = groupRobotsByTeam(robots);
+  const enemiesByTeam = mapEnemiesByTeam(robotsByTeam);
 
   robots.forEach((robot) => {
     const allies = robotsByTeam.get(robot.team) ?? [];
     const potentialEnemies = enemiesByTeam.get(robot.team) ?? [];
-    const { visibleEnemies } = updateRobotSensors(
+
+    const { target } = updateTargeting(
       robot,
       robots,
-      battleWorld.state.elapsedMs,
-      battleWorld,
       potentialEnemies,
+      battleWorld,
+      rng,
     );
-
-    let target: RobotEntity | undefined;
-    if (robot.ai.targetId) {
-      target = visibleEnemies.find((enemy) => enemy.id === robot.ai.targetId);
-    }
-
-    if (!target) {
-      if (robot.isCaptain) {
-        target = pickCaptainTarget(robot, robots, visibleEnemies);
-      }
-    }
-
-    if (!target) {
-      target = findClosestEnemy(robot, robots, visibleEnemies) ?? undefined;
-    }
-
-    if (target) {
-      robot.ai.targetId = target.id;
-      robot.ai.searchPosition = null;
-      robot.ai.roamTarget = null;
-      robot.ai.roamUntil = null;
-    } else {
-      const latestMemory = getLatestEnemyMemory(robot);
-      const memoryEntry = latestMemory?.[1] ?? null;
-
-      // Only pursue memory if it is recent enough
-      if (
-        latestMemory &&
-        latestMemory[1].timestamp >=
-          battleWorld.state.elapsedMs - ENGAGE_MEMORY_TIMEOUT_MS
-      ) {
-        robot.ai.searchPosition = predictSearchAnchor(memoryEntry);
-        robot.ai.targetId = latestMemory?.[0];
-      } else {
-        // Memory stale - clear pursuit and consider roaming
-        robot.ai.searchPosition = null;
-        robot.ai.targetId = undefined;
-        refreshRoamTarget(robot.ai, battleWorld.state.elapsedMs, rng);
-      }
-    }
-
-    const targetDistance = target
-      ? distanceVec3(robot.position, target.position)
-      : null;
-    robot.ai.targetDistance = targetDistance;
 
     const assignment = anchors[robot.id];
     const anchorCandidate = target
@@ -133,7 +59,11 @@ export function updateAISystem(
       assignment?.directive ?? robot.ai.directive ?? "balanced";
     robot.ai.strafeSign = assignment?.strafeSign ?? robot.ai.strafeSign ?? 1;
     robot.ai.anchorDistance = anchorCandidate
-      ? distanceVec3(robot.position, anchorCandidate)
+      ? lengthVec3({
+          x: robot.position.x - anchorCandidate.x,
+          y: robot.position.y - anchorCandidate.y,
+          z: robot.position.z - anchorCandidate.z,
+        })
       : (robot.ai.anchorDistance ?? null);
 
     const behavior = nextBehaviorState(
@@ -148,7 +78,7 @@ export function updateAISystem(
               : RobotBehaviorMode.Seek,
       },
       {
-        targetDistance,
+        targetDistance: robot.ai.targetDistance ?? null,
         anchorDistance: robot.ai.anchorDistance ?? null,
         rng,
       },
