@@ -64,4 +64,65 @@ describe('VisualInstanceManager', () => {
     const next = manager.allocateIndex('lasers', 'l2');
     expect(next).toBe(0);
   });
+
+  it('handles double release gracefully', () => {
+    const telemetry = createTelemetryCollector();
+    const manager = createVisualInstanceManager(
+      {
+        maxInstances: { bullets: 1, rockets: 0, lasers: 0, effects: 0 },
+      },
+      telemetry.emitter,
+    );
+
+    const index = manager.allocateIndex('bullets', 'p1');
+    expect(index).not.toBeNull();
+
+    manager.releaseIndex('bullets', 'p1');
+    manager.releaseIndex('bullets', 'p1'); // Should do nothing
+
+    const events = telemetry.events.filter((e) => e.type === 'VFX:Instancing:Release');
+    expect(events).toHaveLength(1);
+  });
+
+  it('ignores release of unknown entity', () => {
+    const telemetry = createTelemetryCollector();
+    const manager = createVisualInstanceManager(
+      {
+        maxInstances: { bullets: 1, rockets: 0, lasers: 0, effects: 0 },
+      },
+      telemetry.emitter,
+    );
+
+    manager.releaseIndex('bullets', 'unknown');
+    expect(telemetry.events).toHaveLength(0);
+  });
+
+  it('returns existing index if entity already allocated', () => {
+    const telemetry = createTelemetryCollector();
+    const manager = createVisualInstanceManager(
+      {
+        maxInstances: { bullets: 2, rockets: 0, lasers: 0, effects: 0 },
+      },
+      telemetry.emitter,
+    );
+
+    const idx1 = manager.allocateIndex('bullets', 'p1');
+    const idx2 = manager.allocateIndex('bullets', 'p1');
+
+    expect(idx1).toBe(idx2);
+    // Should not emit a second alloc event
+    const allocEvents = telemetry.events.filter((e) => e.type === 'VFX:Instancing:Alloc');
+    expect(allocEvents).toHaveLength(1);
+  });
+
+  it('manages categories independently', () => {
+    const manager = createVisualInstanceManager({
+      maxInstances: { bullets: 1, rockets: 1, lasers: 0, effects: 0 },
+    });
+
+    expect(manager.allocateIndex('bullets', 'b1')).not.toBeNull();
+    expect(manager.allocateIndex('bullets', 'b2')).toBeNull(); // Bullets full
+
+    expect(manager.allocateIndex('rockets', 'r1')).not.toBeNull(); // Rockets still open
+  });
 });
