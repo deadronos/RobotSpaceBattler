@@ -82,6 +82,10 @@ small amount of global state:
 - Some configuration uses `Math.random()` at module initialization (stable within
   a single run but variable across reloads). Treat determinism as best-effort.
 
+## Pathfinding performance note
+
+- Path calculation targets are: **P95 < 5ms** for individual path requests under unit test workloads; caching and throttling reduce runtime pressure for many robots.
+
 ## Primary files to inspect
 
 - `src/components/Simulation.tsx` and `src/components/Scene.tsx`

@@ -2,7 +2,7 @@
 
 **Feature Branch**: `007-specify-scripts-bash`  
 **Created**: 2025-12-10  
-**Status**: Implemented (module + tests), integration pending  
+**Status**: Implemented and integrated into runtime (module + tests + BehaviorBlender integration); follow-ups: telemetry, debug UI toggles, and partial mesh invalidation  
 **Input**: User description: "Implement Navigation Mesh (NavMesh) pathfinding
 system with convex polygon decomposition, A* search across polygons, and string
 pulling for smooth paths"

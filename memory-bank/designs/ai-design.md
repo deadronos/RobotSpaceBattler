@@ -30,6 +30,14 @@ Current behavior modes:
 
 Robots carry an AI state object on the entity:
 
+## NavMesh Integration
+
+- NavMesh pathfinding is available under `src/simulation/ai/pathfinding/` and is used by AI where applicable.
+- Key components: `NavMeshGenerator`, `AStarSearch`, `PathCache`, `StringPuller`, `PathOptimizer`, `PathfindingSystem`, and `BehaviorBlender`.
+- `BehaviorBlender` blends path-following desires with combat/retreat priorities so pathfinding does not override higher-priority behaviors (retreat > combat > pathfinding > idle).
+- Debug visuals: `NavMeshDebugger` and `PathDebugger` are available for observability; a UI toggle is a pending follow-up.
+
+
 ```ts
 export interface RobotAIState {
   mode: 'seek' | 'engage' | 'retreat';
