@@ -1,11 +1,10 @@
-import { initRuntime, move, spawn } from "multithreading";
 
-import type { ConvexPolygon, NavigationMesh, Point2D, Point3D } from "../types";
-import { AStarSearch } from "../search/AStarSearch";
-import { PathOptimizer } from "../smoothing/PathOptimizer";
-import { NearestAccessiblePoint } from "../search/NearestAccessiblePoint";
 import { distanceXZ } from "../../../../lib/math/geometry";
-import type { WorkerInitMessage, WorkerPathRequest, WorkerPathResult } from "./types";
+import { AStarSearch } from "../search/AStarSearch";
+import { NearestAccessiblePoint } from "../search/NearestAccessiblePoint";
+import { PathOptimizer } from "../smoothing/PathOptimizer";
+import type { NavigationMesh, Point2D, Point3D } from "../types";
+import type { WorkerPathRequest, WorkerPathResult } from "./types";
 
 // State
 let astar: AStarSearch | null = null;
@@ -46,8 +45,6 @@ export function calculatePath(req: WorkerPathRequest): WorkerPathResult {
   try {
     // Find path using A*
     let waypoints2D = astar.findPath(start2D, target2D);
-    let success = false;
-    let usingFallback = false;
 
     // Nearest accessible point fallback
     if ((!waypoints2D || waypoints2D.length === 0) && enableNearestFallback) {
@@ -56,9 +53,6 @@ export function calculatePath(req: WorkerPathRequest): WorkerPathResult {
       if (nearestPoint) {
         const nearestTarget2D: Point2D = { x: nearestPoint.x, z: nearestPoint.z };
         waypoints2D = astar.findPath(start2D, nearestTarget2D);
-        if (waypoints2D && waypoints2D.length > 0) {
-          usingFallback = true;
-        }
       }
     }
 

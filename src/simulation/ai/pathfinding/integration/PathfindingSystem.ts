@@ -10,20 +10,18 @@
  * and remains maintainable at current size.
  */
 
-import { initRuntime, spawn } from "multithreading";
+import { initRuntime, move, spawn } from "multithreading";
 
 import { PathCache } from "../search/PathCache";
-import type { NavigationPath, Point3D } from "../types";
-import type { NavMeshResource } from "./NavMeshResource";
-import type { PathComponent } from "./PathComponent";
+import type { Point3D } from "../types";
+// Import the worker functions (this will be handled by the bundler/runtime)
+import { calculatePath,initWorker } from "../worker/pathfinding.worker";
 import type {
-  WorkerInitMessage,
   WorkerPathRequest,
   WorkerPathResult,
 } from "../worker/types";
-
-// Import the worker functions (this will be handled by the bundler/runtime)
-import { initWorker, calculatePath } from "../worker/pathfinding.worker";
+import type { NavMeshResource } from "./NavMeshResource";
+import type { PathComponent } from "./PathComponent";
 
 interface PathfindingSystemOptions {
   enableSmoothing?: boolean;
@@ -114,7 +112,6 @@ export class PathfindingSystem {
       this.workerRuntimeInitialized = true;
 
       // Initialize worker with mesh data
-      const mesh = this.navMeshResource.getSerializedMesh();
       // We spawn a task to initialize the worker. Since multithreading uses a pool,
       // we might need to ensure all workers are initialized or pass data with every request if it's large.
       // However, usually for large static data, we might want to use a strategy where we only pass it once.
@@ -207,7 +204,13 @@ export class PathfindingSystem {
       // The `PathfindingSystem` will then catch this and trigger initialization (sending mesh) and retry.
       // This implements the lazy loading pattern on a per-worker basis.
 
-      await spawn(this.navMeshResource.getSerializedMesh(), initWorker);
+      // Use move() to transfer ownership if possible, or just pass it (structured clone)
+      // Since NavigationMesh might not be transferable (contains objects), we rely on structured clone
+      // which `multithreading` handles. But typically `spawn` expects arguments directly.
+      // If TypeScript complains about MovedData, it might be that `spawn` expects strict usage of `move` or `transfer`.
+      // However, `move` creates a MovedData wrapper.
+      // Let's try wrapping it.
+      await spawn(move(this.navMeshResource.getSerializedMesh()), initWorker).join();
 
     } catch (error) {
       console.error("Failed to initialize worker runtime:", error);
@@ -328,10 +331,14 @@ export class PathfindingSystem {
         };
 
         // Spawn task
-        const task = spawn(req, calculatePath);
-        const result = await task;
+        const task = spawn(move(req), calculatePath);
+        const result = await task.join();
 
-        this.handleWorkerResult(result);
+        if (result.ok) {
+          this.handleWorkerResult(result.value);
+        } else {
+          throw result.error;
+        }
 
     } catch (err) {
         console.error("Worker pathfinding error:", err);
@@ -354,12 +361,12 @@ export class PathfindingSystem {
       if (!request) return; // Request likely cancelled or timed out
 
       this.pendingRequests.delete(result.id);
-      const { pathComponent, startTime, robotId, start, target } = request;
+      const { pathComponent, robotId, start, target } = request;
 
       // Handle worker "not initialized" error (Lazy Init)
       if (result.status === "failed" && result.error === "Worker not initialized") {
           console.log("Worker not initialized, sending mesh and retrying...");
-          await spawn(this.navMeshResource.getSerializedMesh(), initWorker);
+          await spawn(move(this.navMeshResource.getSerializedMesh()), initWorker).join();
           // Retry logic could be added here, but for now we just fail this one and next one will likely succeed
           // Or we can recursively call calculatePath?
           // Let's just fail to avoid infinite loops for now, next frame will retry if throttled allows.
@@ -433,7 +440,6 @@ export class PathfindingSystem {
     }>,
   ): void {
     const startTime = performance.now();
-    let processed = 0;
 
     // We no longer block the main thread with calculations.
     // We just dispatch requests.
@@ -465,7 +471,6 @@ export class PathfindingSystem {
       ) {
         // Fire and forget (it's async)
         this.calculatePath(robot.position, robot.pathComponent, robot.id);
-        processed++;
       }
     }
 

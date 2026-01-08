@@ -4,9 +4,21 @@ import { vi } from 'vitest';
 // Mock multithreading library globally
 vi.mock('multithreading', () => ({
   initRuntime: vi.fn(),
-  spawn: vi.fn(async (data: any, func: Function) => {
-    // Execute the function synchronously (but wrapped in async) for tests
-    return func(data);
+  spawn: vi.fn((data: any, func: Function) => {
+    // Return a mock JoinHandle
+    return {
+      join: async () => {
+        try {
+          // Execute the function synchronously
+          const result = func(data);
+          // Return success result
+          return { ok: true, value: result };
+        } catch (error) {
+          // Return error result
+          return { ok: false, error };
+        }
+      }
+    };
   }),
   move: vi.fn((data) => data),
   Transfer: vi.fn((data) => data),
