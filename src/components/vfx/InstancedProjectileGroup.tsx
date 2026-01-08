@@ -1,6 +1,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import { AdditiveBlending, BufferGeometry, Color, InstancedMesh, Object3D, Vector3 } from "three";
+
 import { ProjectileEntity } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
 import { hideAllInstances, normalizeHDRForInstance } from "../../visuals/instanceColorUtils";

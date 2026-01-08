@@ -52,8 +52,12 @@ export function InstancedProjectiles({
   const updateRocketInstance = (
     projectile: ProjectileEntity,
     dummy: Object3D,
-    speed: number,
+    _speed: number,
   ) => {
+    // `_speed` intentionally unused for rockets; keep param for signature compatibility
+    // and use a no-op reference to satisfy lint rules.
+    void _speed;
+
     const scale = Math.max(0.05, projectile.projectileSize ?? 0.14);
     const thickness = Math.max(0.08, scale * 0.55);
     dummy.scale.set(thickness, scale * 2.8, thickness);

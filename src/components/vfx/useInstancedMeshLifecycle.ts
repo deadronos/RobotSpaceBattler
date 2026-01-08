@@ -1,5 +1,6 @@
 import { MutableRefObject, useLayoutEffect, useRef } from "react";
 import { InstancedMesh, Material } from "three";
+
 import { hideAllInstances } from "../../visuals/instanceColorUtils";
 
 export function markMaterialNeedsUpdate(material: Material | Material[]) {
