@@ -70,6 +70,19 @@ export class NavMeshResource {
   }
 
   /**
+   * Serialize the mesh for worker transport
+   * Maps in NavigationMesh need to be converted to array of entries if the transport doesn't support them.
+   * However, multithreading and structuredClone usually support Maps.
+   * If problems arise, we can convert here.
+   * For now, we assume structuredClone is sufficient or we can add a transform here.
+   */
+  getSerializedMesh(): NavigationMesh {
+    // If we needed to strip anything or convert Maps, do it here.
+    // Currently NavigationMesh uses ReadonlyMap for adjacency, which is supported by structuredClone.
+    return this._mesh;
+  }
+
+  /**
    * Records a path calculation for metrics tracking
    */
   recordCalculation(calculationTimeMs: number): void {

@@ -1,7 +1,7 @@
 /**
  * T072: PathfindingSystem outputs movement desire vector (not direct position update)
  * Phase 8 TDD RED - Integration & AI Behavior Coordination
- * 
+ *
  * Tests verify that pathfinding emits movement desires rather than directly modifying position.
  * @module pathfinding/integration
  */
@@ -60,9 +60,9 @@ describe('PathfindingSystem Movement Desire Output', () => {
     };
   });
 
-  it('T072: should output movement desire vector from path calculation', () => {
+  it('T072: should output movement desire vector from path calculation', async () => {
     // Act: Calculate path
-    system.calculatePath(mockRobotPosition, mockPathComponent);
+    await system.calculatePath(mockRobotPosition, mockPathComponent);
 
     // Assert: PathComponent should contain navigation path
     expect(mockPathComponent.path).not.toBeNull();
@@ -78,12 +78,12 @@ describe('PathfindingSystem Movement Desire Output', () => {
     expect(firstWaypoint.z).toBeCloseTo(mockRobotPosition.z, 1);
   });
 
-  it('T072: should NOT directly modify robot position in calculatePath', () => {
+  it('T072: should NOT directly modify robot position in calculatePath', async () => {
     // Arrange: Store original position
     const originalPosition = { ...mockRobotPosition };
 
     // Act: Calculate path
-    system.calculatePath(mockRobotPosition, mockPathComponent);
+    await system.calculatePath(mockRobotPosition, mockPathComponent);
 
     // Assert: Robot position should be unchanged (system doesn't modify it)
     expect(mockRobotPosition.x).toBe(originalPosition.x);
@@ -91,9 +91,9 @@ describe('PathfindingSystem Movement Desire Output', () => {
     expect(mockRobotPosition.z).toBe(originalPosition.z);
   });
 
-  it('T072: path waypoints should represent directional desires for movement', () => {
+  it('T072: path waypoints should represent directional desires for movement', async () => {
     // Act
-    system.calculatePath(mockRobotPosition, mockPathComponent);
+    await system.calculatePath(mockRobotPosition, mockPathComponent);
 
     // Assert: Waypoints progress toward target
     const path = mockPathComponent.path!;
@@ -108,7 +108,7 @@ describe('PathfindingSystem Movement Desire Output', () => {
     for (let i = 1; i < path.waypoints.length; i++) {
       const prev = path.waypoints[i - 1];
       const curr = path.waypoints[i];
-      
+
       // Each waypoint should be different from previous (path makes progress)
       const dx = curr.x - prev.x;
       const dz = curr.z - prev.z;
@@ -117,18 +117,18 @@ describe('PathfindingSystem Movement Desire Output', () => {
     }
   });
 
-  it('T072: movement desire should be extractable from current waypoint', () => {
+  it('T072: movement desire should be extractable from current waypoint', async () => {
     // Act
-    system.calculatePath(mockRobotPosition, mockPathComponent);
+    await system.calculatePath(mockRobotPosition, mockPathComponent);
 
     // Assert: Can derive movement desire from path
     const path = mockPathComponent.path!;
     expect(path.waypoints.length).toBeGreaterThan(1);
-    
+
     // Use next waypoint (index 1) since index 0 is the start position
     const nextWaypointIndex = Math.min(1, path.waypoints.length - 1);
     const nextWaypoint = path.waypoints[nextWaypointIndex];
-    
+
     // Compute desired movement vector from robot position to next waypoint
     const desireX = nextWaypoint.x - mockRobotPosition.x;
     const desireZ = nextWaypoint.z - mockRobotPosition.z;
@@ -146,7 +146,7 @@ describe('PathfindingSystem Movement Desire Output', () => {
     expect(Math.abs(directionZ)).toBeLessThanOrEqual(1);
   });
 
-  it('T072: pathfinding system provides waypoint-based desires for concurrent blending', () => {
+  it('T072: pathfinding system provides waypoint-based desires for concurrent blending', async () => {
     // Arrange: Multiple robots with different paths
     const robot1Pos = { x: 10, y: 0, z: 10 };
     const robot1Path: PathComponent = {
@@ -167,8 +167,10 @@ describe('PathfindingSystem Movement Desire Output', () => {
     };
 
     // Act: Calculate both paths
-    system.calculatePath(robot1Pos, robot1Path, 'robot-1');
-    system.calculatePath(robot2Pos, robot2Path, 'robot-2');
+    await Promise.all([
+      system.calculatePath(robot1Pos, robot1Path, 'robot-1'),
+      system.calculatePath(robot2Pos, robot2Path, 'robot-2')
+    ]);
 
     // Assert: Both robots have independent movement desires
     expect(robot1Path.path).not.toBeNull();
@@ -181,7 +183,7 @@ describe('PathfindingSystem Movement Desire Output', () => {
     // Starting waypoints match their respective start positions
     expect(robot1Waypoint.x).toBeCloseTo(robot1Pos.x, 1);
     expect(robot2Waypoint.x).toBeCloseTo(robot2Pos.x, 1);
-    
+
     // Paths have independent waypoint sequences
     expect(robot1Path.path!.waypoints.length).toBeGreaterThan(0);
     expect(robot2Path.path!.waypoints.length).toBeGreaterThan(0);
