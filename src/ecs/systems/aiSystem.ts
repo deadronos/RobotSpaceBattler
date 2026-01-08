@@ -76,6 +76,7 @@ export function updateAISystem(
             : robot.ai.mode === "engage"
               ? RobotBehaviorMode.Engage
               : RobotBehaviorMode.Seek,
+        role: robot.role,
       },
       {
         targetDistance: robot.ai.targetDistance ?? null,

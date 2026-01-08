@@ -7,7 +7,9 @@ import type { VisualInstanceManager } from '../visuals/VisualInstanceManager';
 import type { EffectPool } from './pools/EffectPool';
 import type { ProjectilePool } from './pools/ProjectilePool';
 
-export type WeaponType = 'laser' | 'gun' | 'rocket';
+export type WeaponType = 'laser' | 'gun' | 'rocket' | 'heal';
+
+export type UnitRole = 'assault' | 'tank' | 'sniper' | 'medic';
 
 export interface EnemyMemoryEntry {
   position: Vec3;
@@ -34,6 +36,7 @@ export interface RobotEntity {
   id: string;
   kind: 'robot';
   team: TeamId;
+  role: UnitRole;
   position: Vec3;
   velocity: Vec3;
   orientation: number;

@@ -4,7 +4,7 @@ import { Physics } from "@react-three/rapier";
 import { ReactNode, Suspense } from "react";
 
 import { useQualitySettings } from "../state/quality/QualityManager";
-import { DynamicResScaler } from "../visuals/DynamicResScaler";
+import { DynamicResScalerV2 as DynamicResScaler } from "../visuals/DynamicRescalerV2";
 import { Lighting } from "../visuals/Lighting";
 import { PostProcessing } from "../visuals/PostProcessing";
 import { initializeRendererStats } from "../visuals/rendererStats";

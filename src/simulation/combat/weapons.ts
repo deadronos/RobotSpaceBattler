@@ -65,6 +65,18 @@ const WEAPON_PROFILES: Record<WeaponType, WeaponProfile> = {
     explosionDurationMs: 720,
     impactDurationMs: 360,
   },
+  heal: {
+    type: "heal",
+    damage: -10, // Negative damage implies healing
+    fireRate: 2.0,
+    projectileSpeed: 30,
+    range: 20,
+    projectileSize: 0.2,
+    projectileColor: "#00ff00", // Green
+    trailColor: "#88ff88",
+    beamWidth: 0.1,
+    impactDurationMs: 300,
+  },
 };
 
 const DAMAGE_MATRIX: Record<WeaponType, Record<WeaponType, number>> = {
@@ -72,16 +84,25 @@ const DAMAGE_MATRIX: Record<WeaponType, Record<WeaponType, number>> = {
     laser: 1,
     gun: 1.25,
     rocket: 0.85,
+    heal: 1,
   },
   gun: {
     laser: 0.85,
     gun: 1,
     rocket: 1.25,
+    heal: 1,
   },
   rocket: {
     laser: 1.25,
     gun: 0.85,
     rocket: 1,
+    heal: 1,
+  },
+  heal: {
+    laser: 1,
+    gun: 1,
+    rocket: 1,
+    heal: 1,
   },
 };
 
