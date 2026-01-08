@@ -55,14 +55,16 @@ describe('PathfindingSystem Observability', () => {
     system = new PathfindingSystem(navMeshResource, { enableCaching: true });
   });
 
-  it('T067: should emit telemetry events for path calculation start', () => {
+  it('T067: should emit telemetry events for path calculation start', async () => {
     const telemetrySpy = vi.fn();
     system.onTelemetry(telemetrySpy);
 
     const robotPosition: Point3D = { x: 0, y: 0, z: 0 };
     const targetPosition: Point3D = { x: 5, y: 0, z: 5 };
 
-    system.calculatePath(robotPosition, mockPathComponent, 'robot-1');
+    // path calculation start is emitted synchronously before worker offload, so we don't strictly need await here for this assertion,
+    // but it's good practice.
+    await system.calculatePath(robotPosition, mockPathComponent, 'robot-1');
 
     expect(telemetrySpy).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -75,14 +77,14 @@ describe('PathfindingSystem Observability', () => {
     );
   });
 
-  it('T067: should emit telemetry events for path calculation complete', () => {
+  it('T067: should emit telemetry events for path calculation complete', async () => {
     const telemetrySpy = vi.fn();
     system.onTelemetry(telemetrySpy);
 
     const robotPosition: Point3D = { x: 0, y: 0, z: 0 };
     mockPathComponent.requestedTarget = { x: 5, y: 0, z: 5 };
 
-    system.calculatePath(robotPosition, mockPathComponent, 'robot-1');
+    await system.calculatePath(robotPosition, mockPathComponent, 'robot-1');
 
     expect(telemetrySpy).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -98,7 +100,7 @@ describe('PathfindingSystem Observability', () => {
     );
   });
 
-  it('T067: should emit telemetry for cache hits', () => {
+  it('T067: should emit telemetry for cache hits', async () => {
     // Create system with zero throttle interval to allow immediate recalculation
     const systemNoThrottle = new PathfindingSystem(navMeshResource, {
       enableCaching: true,
@@ -112,11 +114,11 @@ describe('PathfindingSystem Observability', () => {
     mockPathComponent.requestedTarget = { x: 5, y: 0, z: 5 };
 
     // First calculation - cache miss
-    systemNoThrottle.calculatePath(robotPosition, mockPathComponent, 'robot-1');
+    await systemNoThrottle.calculatePath(robotPosition, mockPathComponent, 'robot-1');
     telemetrySpy.mockClear();
 
     // Second calculation - cache hit (same position)
-    systemNoThrottle.calculatePath(robotPosition, mockPathComponent, 'robot-1');
+    await systemNoThrottle.calculatePath(robotPosition, mockPathComponent, 'robot-1');
 
     const cacheHitEvent = telemetrySpy.mock.calls.find(
       (call) => call[0].type === 'path-calculation-complete' && call[0].fromCache === true,
@@ -125,11 +127,11 @@ describe('PathfindingSystem Observability', () => {
     expect(cacheHitEvent).toBeDefined();
   });
 
-  it('T070: should export performance metrics from NavMeshResource', () => {
+  it('T070: should export performance metrics from NavMeshResource', async () => {
     const robotPosition: Point3D = { x: 0, y: 0, z: 0 };
     mockPathComponent.requestedTarget = { x: 5, y: 0, z: 5 };
 
-    system.calculatePath(robotPosition, mockPathComponent, 'robot-1');
+    await system.calculatePath(robotPosition, mockPathComponent, 'robot-1');
 
     const metrics = navMeshResource.getMetrics();
 
@@ -147,7 +149,7 @@ describe('PathfindingSystem Observability', () => {
     expect(metrics.cacheHitRate).toBeLessThanOrEqual(1);
   });
 
-  it('T070: should track cache hit rate accurately over multiple calculations', () => {
+  it('T070: should track cache hit rate accurately over multiple calculations', async () => {
     const positions: Point3D[] = [
       { x: 0, y: 0, z: 0 },
       { x: 1, y: 0, z: 1 },
@@ -159,9 +161,9 @@ describe('PathfindingSystem Observability', () => {
     const targetPosition: Point3D = { x: 5, y: 0, z: 5 };
     mockPathComponent.requestedTarget = targetPosition;
 
-    positions.forEach((pos, i) => {
-      system.calculatePath(pos, mockPathComponent, `robot-${i}`);
-    });
+    for (const [i, pos] of positions.entries()) {
+      await system.calculatePath(pos, mockPathComponent, `robot-${i}`);
+    }
 
     const metrics = navMeshResource.getMetrics();
 

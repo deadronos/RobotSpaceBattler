@@ -48,7 +48,7 @@ describe('T060: Narrow Passage Navigation', () => {
     system = new PathfindingSystem(navMeshResource);
   });
 
-  it('should generate paths through narrow passage', () => {
+  it('should generate paths through narrow passage', async () => {
     // Arrange: Robot needs to navigate (simplified test for MVP)
     const pathComponent: PathComponent = {
       status: 'pending',
@@ -61,17 +61,17 @@ describe('T060: Narrow Passage Navigation', () => {
     const startPosition = { x: 20, y: 0, z: 20 }; // Start position
 
     // Act
-    system.calculatePath(startPosition, pathComponent);
+    await system.calculatePath(startPosition, pathComponent);
 
     // Assert: Should have valid path (MVP creates simple mesh, so path is direct)
     expect(pathComponent.path).not.toBeNull();
     expect(pathComponent.status).toBe('valid');
-    
+
     // Path should have at least start and end waypoints
     expect(pathComponent.path!.waypoints.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('should handle multiple robots without path clustering', () => {
+  it('should handle multiple robots without path clustering', async () => {
     // Arrange: 5 robots all need to go through same passage
     const robots = Array.from({ length: 5 }, (_, i) => ({
       id: `robot-${i}`,
@@ -86,13 +86,13 @@ describe('T060: Narrow Passage Navigation', () => {
     }));
 
     // Act: Calculate paths for all robots
-    robots.forEach(robot => {
+    await Promise.all(robots.map(robot =>
       system.calculatePath(
         robot.position,
         robot.pathComponent,
         robot.id
-      );
-    });
+      )
+    ));
 
     // Assert: All should have valid paths
     const validPaths = robots.filter(r => r.pathComponent.status === 'valid').length;
