@@ -39,6 +39,7 @@ export type {
   RobotAIState,
   RobotEntity,
   Store,
+  UnitRole,
   WeaponType,
 } from "./worldTypes";
 

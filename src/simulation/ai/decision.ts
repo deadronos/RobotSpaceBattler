@@ -65,7 +65,7 @@ export function updateTargeting(
      // Wait, if we set `targetId`, the robot will turn to face them and move towards them.
      // So even if not "visible" (LOS), we can move towards them.
 
-     target = findClosestAlly(robot, robots);
+     target = findClosestAlly(robot, allies);
   } else {
     // Offensive Logic
     if (robot.ai.targetId) {
