@@ -5,7 +5,7 @@ import {
   getWeaponProfile,
   WeaponProfile,
 } from "../../simulation/combat/weapons";
-import { BattleWorld, RobotEntity, toVec3, WeaponType } from "../world";
+import { BattleWorld, RobotEntity, toVec3, UnitRole, WeaponType } from "../world";
 
 /**
  * Options for spawning robots.
@@ -17,9 +17,7 @@ export interface SpawnOptions {
   onRobotSpawn?: (robot: RobotEntity) => void;
 }
 
-const WEAPON_ROTATION: WeaponType[] = ["laser", "gun", "rocket"];
-const BASE_MAX_HEALTH = 100;
-const BASE_SPEED = 8;
+const ROLE_ROTATION: UnitRole[] = ["tank", "sniper", "medic", "assault"];
 
 /**
  * Generates a unique ID for a robot.
@@ -33,13 +31,34 @@ function buildRobotId(team: TeamId, index: number): string {
 }
 
 /**
- * Determines the weapon for a robot based on its spawn index.
- * Cyclically rotates through available weapon types.
+ * Determines the role for a robot based on its spawn index.
+ * Cyclically rotates through available roles.
  * @param index - The spawn index.
- * @returns The WeaponType.
+ * @returns The UnitRole.
  */
-function getWeaponForIndex(index: number): WeaponType {
-  return WEAPON_ROTATION[index % WEAPON_ROTATION.length];
+function getRoleForIndex(index: number): UnitRole {
+  return ROLE_ROTATION[index % ROLE_ROTATION.length];
+}
+
+/**
+ * Gets the weapon and stats for a specific role.
+ */
+function getRoleStats(role: UnitRole): {
+  weapon: WeaponType;
+  maxHealth: number;
+  speed: number;
+} {
+  switch (role) {
+    case "tank":
+      return { weapon: "gun", maxHealth: 200, speed: 6 };
+    case "sniper":
+      return { weapon: "rocket", maxHealth: 60, speed: 9 };
+    case "medic":
+      return { weapon: "heal", maxHealth: 80, speed: 8 };
+    case "assault":
+    default:
+      return { weapon: "laser", maxHealth: 100, speed: 8 };
+  }
 }
 
 /**
@@ -48,7 +67,9 @@ function getWeaponForIndex(index: number): WeaponType {
  * @param spawnIndex - The robot's spawn index.
  * @param orientation - Initial facing direction.
  * @param strafeSign - Initial strafing direction preference.
+ * @param role - The unit role.
  * @param profile - Weapon profile.
+ * @param stats - Role specific stats.
  * @returns A new RobotEntity.
  */
 function createRobot(
@@ -56,21 +77,24 @@ function createRobot(
   spawnIndex: number,
   orientation: number,
   strafeSign: 1 | -1,
+  role: UnitRole,
   profile: WeaponProfile,
+  stats: { maxHealth: number; speed: number },
 ): RobotEntity {
   return {
     id: buildRobotId(team, spawnIndex),
     kind: "robot",
     team,
+    role,
     position: toVec3(0, 0, 0),
     velocity: toVec3(0, 0, 0),
     orientation,
-    speed: BASE_SPEED,
+    speed: stats.speed,
     weapon: profile.type,
     fireCooldown: 0,
     fireRate: profile.fireRate,
-    health: BASE_MAX_HEALTH,
-    maxHealth: BASE_MAX_HEALTH,
+    health: stats.maxHealth,
+    maxHealth: stats.maxHealth,
     ai: {
       mode: "seek",
       targetId: undefined,
@@ -109,14 +133,18 @@ function spawnTeamRobots(
 
   teamConfig.spawnPoints.slice(0, 10).forEach((spawnPoint, index) => {
     const strafeSign = generator.next() >= 0.5 ? 1 : -1;
-    const weapon = getWeaponForIndex(index);
-    const profile = getWeaponProfile(weapon);
+    const role = getRoleForIndex(index);
+    const stats = getRoleStats(role);
+    const profile = getWeaponProfile(stats.weapon);
+
     const robot = createRobot(
       team,
       index,
       teamConfig.orientation,
       strafeSign,
+      role,
       profile,
+      stats,
     );
     robot.position = toVec3(spawnPoint.x, spawnPoint.y, spawnPoint.z);
     robot.fireCooldown = 0;
