@@ -8,7 +8,12 @@ import type { NavigationPath, Point3D } from "../types";
 /**
  * Path calculation status
  */
-export type PathComponentStatus = "pending" | "valid" | "invalid" | "failed";
+export type PathComponentStatus =
+  | "pending"
+  | "valid"
+  | "invalid"
+  | "failed"
+  | "calculating";
 
 /**
  * ECS component storing navigation path for a robot entity

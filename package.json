@@ -39,6 +39,7 @@
     "@react-three/rapier": "^2.2.0",
     "@tanstack/react-query": "^5.90.16",
     "miniplex": "^2.0.0",
+    "multithreading": "^0.3.45",
     "navmesh": "^2.3.1",
     "postprocessing": "^6.38.2",
     "r3f-perf": "^7.2.3",

@@ -20,6 +20,7 @@ export function createTestRobot(overrides: Partial<RobotEntity> = {}): RobotEnti
     id: 'robot-0',
     kind: 'robot',
     team: 'red',
+    role: 'assault',
     position: toVec3(0, 0, 0),
     velocity: toVec3(0, 0, 0),
     orientation: 0,

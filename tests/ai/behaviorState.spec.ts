@@ -14,6 +14,7 @@ function evaluate(
     health: 100,
     maxHealth: 100,
     mode: RobotBehaviorMode.Seek,
+    role: 'assault',
     ...snapshot,
   };
 
@@ -78,5 +79,26 @@ describe('nextBehaviorState', () => {
 
     expect(engage).toBe(RobotBehaviorMode.Engage);
     expect(seek).toBe(RobotBehaviorMode.Seek);
+  });
+
+  // Role based tests
+  it('tank engages closer', () => {
+      // Default is 18. Tank is 14.
+      // At 16, assault engages, tank seeks.
+      const assault = evaluate({ role: 'assault' }, { targetDistance: 16 });
+      const tank = evaluate({ role: 'tank' }, { targetDistance: 16 });
+
+      expect(assault).toBe(RobotBehaviorMode.Engage);
+      expect(tank).toBe(RobotBehaviorMode.Seek);
+  });
+
+  it('sniper engages farther', () => {
+      // Default 18. Sniper 30.
+      // At 25, assault seeks, sniper engages.
+      const assault = evaluate({ role: 'assault' }, { targetDistance: 25 });
+      const sniper = evaluate({ role: 'sniper' }, { targetDistance: 25 });
+
+      expect(assault).toBe(RobotBehaviorMode.Seek);
+      expect(sniper).toBe(RobotBehaviorMode.Engage);
   });
 });

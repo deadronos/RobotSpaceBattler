@@ -20,6 +20,19 @@ export function findTarget(
     ? robotsById.get(projectile.targetId)
     : undefined;
 
+  // For healing projectiles, target teammates
+  if (projectile.weapon === "heal") {
+     if (direct && direct.team === projectile.team && isActiveRobot(direct)) {
+        return direct;
+     }
+     return findClosestEntity(
+        projectile.position,
+        activeRobots,
+        (candidate) => candidate.team === projectile.team && candidate.id !== projectile.shooterId
+     );
+  }
+
+  // Normal projectiles target enemies
   if (direct && direct.team !== projectile.team && isActiveRobot(direct)) {
     return direct;
   }
@@ -70,7 +83,35 @@ function applyDamageToRobot(
   baseDamage: number,
   telemetry: TelemetryPort,
 ): void {
-  if (target.health <= 0 || baseDamage <= 0) {
+  // If healing (negative damage), we allow hitting alive targets even if they are low?
+  // But wait, if health <= 0, they are dead. We shouldn't heal dead robots probably.
+  if (target.health <= 0) {
+    return;
+  }
+
+  // Handle Healing
+  if (projectile.weapon === "heal") {
+      // Heal logic
+      // Invert baseDamage (which is negative) to get positive healing amount
+      // Or just subtract negative damage.
+      // But we need to ensure we don't apply damage multipliers for healing?
+      // computeDamageMultiplier for 'heal' against 'laser' is 1. So it's fine.
+
+      const multiplier = computeDamageMultiplier(projectile.weapon, target.weapon);
+      const healAmount = -baseDamage * multiplier; // -(-10) = 10
+
+      if (healAmount <= 0) return; // Should not happen given config
+
+      target.health = Math.min(target.maxHealth, target.health + healAmount);
+      // No damage telemetry for healing? Or maybe record as negative damage?
+      // recordDamage takes "amount". If we pass negative, does it break things?
+      // Usually telemetry is for damage done.
+      // Let's not record healing as damage for now to avoid confusing charts.
+      // Or we could record it with a separate event or just ignore it.
+      return;
+  }
+
+  if (baseDamage <= 0) {
     return;
   }
 

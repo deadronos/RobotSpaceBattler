@@ -13,7 +13,7 @@ describe('PathfindingSystem Performance', () => {
 
   beforeEach(() => {
     const generator = new NavMeshGenerator();
-    navMesh = generator.generateFromArena({ 
+    navMesh = generator.generateFromArena({
       size: { width: 100, depth: 100 },
       obstacles: []
     });
@@ -21,7 +21,7 @@ describe('PathfindingSystem Performance', () => {
     system = new PathfindingSystem(navMeshResource);
   });
 
-  it('T046: 20 robots calculate paths simultaneously in <16ms total', () => {
+  it('T046: 20 robots calculate paths simultaneously in <16ms total', async () => {
     // Arrange: Create 20 robots with path requests
     const robots = Array.from({ length: 20 }, (_, i) => ({
       id: `robot-${i}`,
@@ -37,29 +37,30 @@ describe('PathfindingSystem Performance', () => {
 
     // Act: Calculate all paths and measure time
     const startTime = performance.now();
-    
-    robots.forEach(robot => {
+
+    await Promise.all(robots.map(robot =>
       system.calculatePath(
         robot.position,
         robot.pathComponent
-      );
-    });
-    
+      )
+    ));
+
     const endTime = performance.now();
     const totalTime = endTime - startTime;
 
     // Assert: Total time should be <16ms for 60fps (16.67ms frame budget)
+    // Note: With async workers (even mocked), this should be fast.
     expect(totalTime).toBeLessThan(16);
-    
+
     // Verify all paths were calculated
     const successfulPaths = robots.filter(r => r.pathComponent.status === 'valid').length;
     expect(successfulPaths).toBe(20);
   });
 
-  it('T047: Individual path calculation <5ms in 95% of cases (P95)', () => {
+  it('T047: Individual path calculation <5ms in 95% of cases (P95)', async () => {
     // Arrange: Generate 100 random path requests to get P95 statistics
     const measurements: number[] = [];
-    
+
     // Act: Calculate 100 paths with random start/end positions
     for (let i = 0; i < 100; i++) {
       const pathComponent: PathComponent = {
@@ -69,26 +70,26 @@ describe('PathfindingSystem Performance', () => {
         currentWaypointIndex: 0,
         lastCalculationTime: 0,
       };
-      
+
       const start = { x: Math.random() * 80 + 10, y: 0, z: Math.random() * 80 + 10 };
-      
+
       const startTime = performance.now();
-      system.calculatePath(start, pathComponent);
+      await system.calculatePath(start, pathComponent);
       const endTime = performance.now();
-      
+
       measurements.push(endTime - startTime);
     }
-    
+
     // Calculate P95 (95th percentile)
     measurements.sort((a, b) => a - b);
     const p95Index = Math.floor(measurements.length * 0.95);
     const p95Time = measurements[p95Index];
-    
+
     // Assert: P95 should be <5ms
     expect(p95Time).toBeLessThan(5);
   });
 
-  it('T049: Path recalculation on dynamic obstacle completes <100ms', () => {
+  it('T049: Path recalculation on dynamic obstacle completes <100ms', async () => {
     // Arrange: Create initial navmesh and 10 robots with existing paths
     const robots = Array.from({ length: 10 }, (_, i) => ({
       id: `robot-${i}`,
@@ -124,25 +125,25 @@ describe('PathfindingSystem Performance', () => {
         ]
       }] as any // Test uses older polygon API
     });
-    
+
     navMeshResource.updateMesh(newNavMesh);
-    
+
     const startTime = performance.now();
-    
-    robots.forEach(robot => {
+
+    await Promise.all(robots.map(robot => {
       robot.pathComponent.status = 'pending' as PathComponentStatus;
-      system.calculatePath(
+      return system.calculatePath(
         robot.position,
         robot.pathComponent
       );
-    });
-    
+    }));
+
     const endTime = performance.now();
     const recalcTime = endTime - startTime;
 
     // Assert: Recalculation should complete in <100ms
     expect(recalcTime).toBeLessThan(100);
-    
+
     // Verify paths were recalculated
     const validPaths = robots.filter(r => r.pathComponent.status === 'valid').length;
     expect(validPaths).toBeGreaterThan(0);

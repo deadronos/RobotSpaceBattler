@@ -13,7 +13,7 @@ import type { ArenaConfiguration } from '@/simulation/ai/pathfinding/types';
 import { ObstacleType } from '@/simulation/ai/pathfinding/types';
 
 describe('PathfindingSystem - Robot Navigation', () => {
-  it('[T019] Robot navigates around wall cluster', () => {
+  it('[T019] Robot navigates around wall cluster', async () => {
     // Create arena with a wall cluster in the center
     const arenaConfig: ArenaConfiguration = {
       size: { width: 100, depth: 100 },
@@ -67,7 +67,7 @@ describe('PathfindingSystem - Robot Navigation', () => {
     };
 
     // Calculate path
-    system.calculatePath(robotPosition, pathComponent, 'test-robot');
+    await system.calculatePath(robotPosition, pathComponent, 'test-robot');
 
     // Verify path was found
     expect(pathComponent.path).not.toBeNull();

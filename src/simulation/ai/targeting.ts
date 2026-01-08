@@ -12,6 +12,14 @@ function isEnemy(seeker: RobotEntity, target: RobotEntity): boolean {
   );
 }
 
+function isAlly(seeker: RobotEntity, target: RobotEntity): boolean {
+  return (
+    target.team === seeker.team &&
+    isActiveRobot(target) &&
+    target.id !== seeker.id
+  );
+}
+
 /**
  * Finds the best enemy target for a robot.
  * Prioritizes closest enemies.
@@ -64,6 +72,64 @@ export function findClosestEnemy(
     },
   );
 }
+
+/**
+ * Finds the best ally target for a medic robot.
+ * Prioritizes injured allies.
+ *
+ * @param seeker - The medic robot.
+ * @param robots - The list of all robots.
+ * @param candidates - Optional subset of robots to consider.
+ * @returns The best ally to heal or undefined.
+ */
+export function findClosestAlly(
+  seeker: RobotEntity,
+  robots: RobotEntity[],
+  candidates?: RobotEntity[],
+): RobotEntity | undefined {
+  const pool = candidates ?? robots;
+  // Only target injured allies
+  const allies = pool.filter((robot) => isAlly(seeker, robot) && robot.health < robot.maxHealth);
+
+  if (allies.length === 0) {
+    // Fallback: Follow closest ally even if healthy? Or just stick to default seek?
+    // For now, if everyone is healthy, maybe just follow the captain or closest ally.
+    // Let's stick to injured for now. If no one is injured, maybe we target healthy allies just to follow?
+    // But `decision.ts` will use this target to engage/heal.
+    // If we return a healthy ally, the medic will shoot them (heal them) even if full health.
+    // That's fine, it just won't add health.
+    const healthyAllies = pool.filter((robot) => isAlly(seeker, robot));
+    if (healthyAllies.length === 0) return undefined;
+
+    // Just follow closest ally
+    return findBestEntity(
+        healthyAllies,
+        (entity) => ({
+            entity,
+            distanceSq: distanceSquaredVec3(seeker.position, entity.position),
+        }),
+        (a, b) => a.distanceSq - b.distanceSq
+    );
+  }
+
+  // Prioritize lowest health percentage first, then distance.
+  return findBestEntity(
+    allies,
+    (entity) => ({
+      entity,
+      healthRatio: entity.health / entity.maxHealth,
+      distanceSq: distanceSquaredVec3(seeker.position, entity.position),
+    }),
+    (a, b) => {
+        // Lower health ratio is better
+      if (Math.abs(a.healthRatio - b.healthRatio) > 0.1) {
+          return a.healthRatio - b.healthRatio;
+      }
+      return a.distanceSq - b.distanceSq;
+    },
+  );
+}
+
 
 /**
  * Selects a target for a captain robot.
