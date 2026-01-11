@@ -7,6 +7,7 @@ import { ObstacleEditor } from "./components/debug/ObstacleEditor";
 import { ObstacleSpawner } from "./components/debug/ObstacleSpawner";
 import { PerfToggles } from "./components/debug/PerfToggles";
 import { Simulation } from "./components/Simulation";
+import { BattleStatsModal } from "./components/ui/BattleStatsModal";
 import { SettingsIcon } from "./components/ui/SettingsIcon";
 import { SettingsModal } from "./components/ui/SettingsModal";
 import { createBattleWorld } from "./ecs/world";
@@ -61,6 +62,7 @@ export default function App() {
     winner: null,
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isBattleStatsOpen, setIsBattleStatsOpen] = useState(false);
   const [showDebugUI, setShowDebugUI] = useState(false);
   const [showPerfOverlay, setShowPerfOverlay] = useState(false);
 
@@ -143,7 +145,7 @@ export default function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isSettingsOpen) return;
+      if (isSettingsOpen || isBattleStatsOpen) return;
       if (e.repeat) return;
 
       const target = e.target as HTMLElement;
@@ -165,7 +167,7 @@ export default function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isSettingsOpen, handlePauseResume, handleReset]);
+  }, [isSettingsOpen, isBattleStatsOpen, handlePauseResume, handleReset]);
 
   const statusText = formatStatus(matchSnapshot);
   const pauseLabel = matchSnapshot.phase === "paused" ? "Resume" : "Pause";
@@ -203,6 +205,12 @@ export default function App() {
         onTogglePerfOverlay={setShowPerfOverlay}
       />
 
+      <BattleStatsModal
+        isOpen={isBattleStatsOpen}
+        onClose={() => setIsBattleStatsOpen(false)}
+        winner={matchSnapshot.phase === "victory" ? matchSnapshot.winner : null}
+      />
+
       <Suspense fallback={<div className="match-status">Loading arena...</div>}>
         <Simulation
           battleWorld={battleWorld}
@@ -235,7 +243,7 @@ export default function App() {
             type="button"
             className="app-victory-button"
             onClick={() => {
-              // Placeholder for stats modal trigger
+              setIsBattleStatsOpen(true);
             }}
           >
             View Battle Stats
@@ -248,10 +256,10 @@ export default function App() {
           onClick={handlePauseResume}
           title="Pause/Resume (Space)"
         >
-          {pauseLabel}
+          <span>{pauseLabel === "Pause" ? "⏸" : "▶"} {pauseLabel}</span>
         </button>
         <button type="button" onClick={handleReset} title="Reset (R)">
-          Reset
+          <span>🔄 Reset</span>
         </button>
       </div>
     </div>
