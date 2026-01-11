@@ -112,56 +112,36 @@ export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
                 key={robot.id}
                 className={`robot-list-robot ${!robot.isAlive ? "robot-list-robot-dead" : ""}`}
               >
-                <div className="robot-list-robot-header">
-                  <span className="robot-list-robot-id">
-                    #{robot.spawnIndex + 1}
-                  </span>
-                  <span className="robot-list-robot-health">
-                    {robot.isAlive
-                      ? `${Math.ceil(robot.health)}/${robot.maxHealth} HP`
-                      : "DEAD"}
-                  </span>
-                </div>
-
+                <span className="robot-list-robot-id">
+                  #{robot.spawnIndex + 1}
+                </span>
+                <span className="robot-list-robot-health">
+                  {robot.isAlive
+                    ? `${Math.ceil(robot.health)}/${robot.maxHealth}`
+                    : "DEAD"}
+                </span>
                 {robot.isAlive && (
                   <>
-                    <div className="robot-list-robot-status">
-                      <span className="robot-list-robot-mode">
-                        {robot.mode.toUpperCase()}
-                      </span>
-                      {robot.targetId && (
-                        <span className="robot-list-robot-target">
-                          Target: #{getRobotSpawnIndex(robot.targetId, battleWorld)}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="robot-list-robot-stats">
-                      <div className="robot-list-stat">
-                        <span className="robot-list-stat-label">K</span>
-                        <span className="robot-list-stat-value">
-                          {robot.kills}
-                        </span>
-                      </div>
-                      <div className="robot-list-stat">
-                        <span className="robot-list-stat-label">D</span>
-                        <span className="robot-list-stat-value">
-                          {Math.floor(robot.damageDealt)}
-                        </span>
-                      </div>
-                      <div className="robot-list-stat">
-                        <span className="robot-list-stat-label">T</span>
-                        <span className="robot-list-stat-value">
-                          {Math.floor(robot.damageTaken)}
-                        </span>
-                      </div>
-                      <div className="robot-list-stat">
-                        <span className="robot-list-stat-label">S</span>
-                        <span className="robot-list-stat-value">
-                          {robot.shotsFired}
-                        </span>
-                      </div>
-                    </div>
+                    <span className="robot-list-robot-mode">
+                      {robot.mode.toUpperCase()}
+                    </span>
+                    <span className="robot-list-robot-target">
+                      {robot.targetId
+                        ? `→#${getRobotSpawnIndex(robot.targetId, battleWorld)}`
+                        : "-"}
+                    </span>
+                    <span className="robot-list-robot-stat">
+                      K:{robot.kills}
+                    </span>
+                    <span className="robot-list-robot-stat">
+                      D:{Math.floor(robot.damageDealt)}
+                    </span>
+                    <span className="robot-list-robot-stat">
+                      T:{Math.floor(robot.damageTaken)}
+                    </span>
+                    <span className="robot-list-robot-stat">
+                      S:{robot.shotsFired}
+                    </span>
                   </>
                 )}
               </div>
