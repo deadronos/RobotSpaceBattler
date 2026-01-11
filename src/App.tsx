@@ -8,6 +8,7 @@ import { ObstacleSpawner } from "./components/debug/ObstacleSpawner";
 import { PerfToggles } from "./components/debug/PerfToggles";
 import { Simulation } from "./components/Simulation";
 import { BattleStatsModal } from "./components/ui/BattleStatsModal";
+import { RobotListPanel } from "./components/ui/RobotListPanel";
 import { SettingsIcon } from "./components/ui/SettingsIcon";
 import { SettingsModal } from "./components/ui/SettingsModal";
 import { createBattleWorld } from "./ecs/world";
@@ -65,6 +66,7 @@ export default function App() {
   const [isBattleStatsOpen, setIsBattleStatsOpen] = useState(false);
   const [showDebugUI, setShowDebugUI] = useState(false);
   const [showPerfOverlay, setShowPerfOverlay] = useState(false);
+  const [showRobotList, setShowRobotList] = useState(true);
 
   const [obstacleFixture, setObstacleFixture] = useState<
     ObstacleFixture | undefined
@@ -203,7 +205,11 @@ export default function App() {
         onToggleDebugUI={setShowDebugUI}
         showPerfOverlay={showPerfOverlay}
         onTogglePerfOverlay={setShowPerfOverlay}
+        showRobotList={showRobotList}
+        onToggleRobotList={setShowRobotList}
       />
+
+      {showRobotList && <RobotListPanel battleWorld={battleWorld} />}
 
       <BattleStatsModal
         isOpen={isBattleStatsOpen}

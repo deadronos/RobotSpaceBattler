@@ -7,6 +7,8 @@ interface SettingsModalProps {
   onToggleDebugUI: (show: boolean) => void;
   showPerfOverlay: boolean;
   onTogglePerfOverlay: (show: boolean) => void;
+  showRobotList: boolean;
+  onToggleRobotList: (show: boolean) => void;
 }
 
 export function SettingsModal({
@@ -16,6 +18,8 @@ export function SettingsModal({
   onToggleDebugUI,
   showPerfOverlay,
   onTogglePerfOverlay,
+  showRobotList,
+  onToggleRobotList,
 }: SettingsModalProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -69,6 +73,16 @@ export function SettingsModal({
               type="checkbox"
               checked={showPerfOverlay}
               onChange={(e) => onTogglePerfOverlay(e.target.checked)}
+            />
+          </div>
+
+          <div className="settings-row">
+            <label htmlFor="robot-list-toggle">Show Robot List</label>
+            <input
+              id="robot-list-toggle"
+              type="checkbox"
+              checked={showRobotList}
+              onChange={(e) => onToggleRobotList(e.target.checked)}
             />
           </div>
 
