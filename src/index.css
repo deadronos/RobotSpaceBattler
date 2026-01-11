@@ -328,3 +328,203 @@ canvas {
   color: #aaa;
   font-size: 14px;
 }
+
+/* Robot List Panel */
+.robot-list-panel {
+  position: absolute;
+  top: 80px;
+  right: 16px;
+  width: 280px;
+  max-height: calc(100vh - 120px);
+  background: linear-gradient(135deg, rgba(26, 29, 58, 0.95) 0%, rgba(13, 15, 31, 0.95) 100%);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+.robot-list-drag-handle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: move;
+  user-select: none;
+}
+
+.robot-list-title {
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #f0f0f0;
+}
+
+.robot-list-drag-icon {
+  color: #888;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.robot-list-content {
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+  padding: 8px;
+}
+
+.robot-list-team {
+  margin-bottom: 8px;
+}
+
+.robot-list-team-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  border-left: 3px solid;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  color: #f0f0f0;
+  font-size: 13px;
+}
+
+.robot-list-team-header:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.robot-list-team-title {
+  font-weight: 600;
+}
+
+.robot-list-collapse-icon {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.robot-list-robots {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 4px;
+}
+
+.robot-list-robot {
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background 0.2s;
+}
+
+.robot-list-robot:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.robot-list-robot-dead {
+  opacity: 0.5;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.robot-list-robot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.robot-list-robot-id {
+  font-weight: 600;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.robot-list-robot-health {
+  font-size: 11px;
+  font-weight: 500;
+  color: #4ade80;
+}
+
+.robot-list-robot-dead .robot-list-robot-health {
+  color: #ef4444;
+}
+
+.robot-list-robot-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 10px;
+}
+
+.robot-list-robot-mode {
+  padding: 2px 6px;
+  background: rgba(59, 130, 246, 0.2);
+  border-radius: 3px;
+  color: #60a5fa;
+  font-weight: 600;
+}
+
+.robot-list-robot-target {
+  color: #fbbf24;
+  font-weight: 500;
+}
+
+.robot-list-robot-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.robot-list-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.robot-list-stat-label {
+  font-size: 9px;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.robot-list-stat-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f0f0f0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .robot-list-panel {
+    width: 240px;
+    top: 60px;
+    right: 8px;
+  }
+
+  .robot-list-robot-header {
+    font-size: 11px;
+  }
+
+  .robot-list-robot-health {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .robot-list-panel {
+    width: calc(100% - 16px);
+    left: 8px;
+    right: 8px;
+    max-height: 40vh;
+  }
+}
