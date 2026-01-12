@@ -21,7 +21,8 @@ What's left / known issues
   profiling-driven adjustment).
 - Documentation upkeep: keep `specs/` and `memory-bank/` aligned to what is implemented.
 - LOC refactor progress: Obstacle Spawner and Inspector refactors completed and documented.
-- Remaining file above threshold: `src/simulation/ai/pathfinding/integration/PathfindingSystem.ts` (333 LOC).
+- NavMesh pathfinding implementation is complete (A*, smoothing, caching, integration and tests) — see `specs/007-specify-scripts-bash/` and `memory-bank/tasks/TASK002-navmesh-pathfinding.md` for details.
+- Follow-up: refactor `src/simulation/ai/pathfinding/integration/PathfindingSystem.ts` and add pathfinding telemetry (see `memory-bank/tasks/TASK003-pathfinding-refactor-and-telemetry.md` and `memory-bank/designs/loc-refactor-plan.md`).
 - See `memory-bank/designs/loc-refactor-plan.md` and
   `.specify/memory/constitution.md` for details.
 

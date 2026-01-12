@@ -7,6 +7,7 @@ describe('SettingsModal', () => {
     const onClose = vi.fn();
     const onToggleDebugUI = vi.fn();
     const onTogglePerfOverlay = vi.fn();
+    const onToggleRobotList = vi.fn();
 
     render(
       <SettingsModal
@@ -16,6 +17,8 @@ describe('SettingsModal', () => {
         onToggleDebugUI={onToggleDebugUI}
         showPerfOverlay={false}
         onTogglePerfOverlay={onTogglePerfOverlay}
+        showRobotList={false}
+        onToggleRobotList={onToggleRobotList}
       />,
     );
 

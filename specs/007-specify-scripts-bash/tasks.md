@@ -4,14 +4,13 @@
 
 ## Current State Summary
 
-- The NavMesh pathfinding library exists under `src/simulation/ai/pathfinding/`.
-- Unit + integration tests exist under `tests/simulation/ai/pathfinding/` and `tests/integration/`.
-- The library is not currently wired into the live movement loop; runtime movement planning is still
-  reactive steering in `src/simulation/ai/pathing/`.
+- The NavMesh pathfinding library exists under `src/simulation/ai/pathfinding/` and is integrated into the runtime via `PathfindingSystem` and the `BehaviorBlender`.
+- Unit + integration tests exist under `tests/simulation/ai/pathfinding/` and `tests/integration/` (narrow passage, smoothing, cache, performance).
+- Runtime movement planning now blends NavMesh path following with existing steering behavior; reactive steering remains as a fallback when no valid path exists.
 
 ## Spec/Docs Alignment (done)
 
-- [x] T001 Align spec.md to “implemented library, integration pending”.
+- [x] T001 Align spec.md to “implemented library and integrated into runtime (behavior blending + PathfindingSystem)”. 
 - [x] T002 Align contracts/pathfinding-api.md to current API surface.
 - [x] T003 Align plan.md to the actual file layout and constraints.
 - [x] T004 Align data-model.md to the actual exported types/components.
@@ -25,20 +24,18 @@
 - [ ] T012 Run lint: `npm run lint`.
 - [ ] T013 Run formatter (markdown + src): `npm run format`.
 
-## Gameplay Integration (pending / optional)
+## Gameplay Integration (status)
 
-These tasks are intentionally not marked complete until the library is actually used in the
-simulation’s movement planner.
+These tasks track the runtime integration and observability of pathfinding.
 
-- [ ] T020 Choose integration point for path-following (likely in `src/simulation/ai/pathing/`).
-- [ ] T021 Create an adapter that:
-  - requests a path (set `PathComponent.requestedTarget`, call `PathfindingSystem.execute(...)`)
-  - converts current `NavigationPath.waypoints` into a movement desire/velocity
+- [x] T020 Choose integration point for path-following (integration point chosen and implemented in `src/simulation/ai/pathing/` and `PathfindingSystem`).
+- [x] T021 Create an adapter that:
+  - requests a path (via `PathComponent` and `PathfindingSystem`)
+  - converts `NavigationPath.waypoints` into movement desires/velocities
   - falls back to the current reactive steering when no valid path exists
-- [ ] T022 Decide how to keep NavMesh inputs in sync with arena obstacles.
-  - Short term: treat NavMesh as immutable and rebuild when the arena changes.
-  - Longer term: dynamic obstacle invalidation / partial rebuild strategy.
-- [ ] T023 Add a UI/debug toggle for `NavMeshDebugger` + `PathDebugger` in the existing debug UI.
+- [~] T022 Decide how to keep NavMesh inputs in sync with arena obstacles (short-term rebuild-on-change implemented; longer-term dynamic invalidation/partial rebuild is an open follow-up).
+- [ ] T023 Add a UI/debug toggle for `NavMeshDebugger` + `PathDebugger` in the existing debug UI (pending).
+- [ ] T024 Pathfinding refactor & telemetry (tracked in `memory-bank/tasks/TASK003-pathfinding-refactor-and-telemetry.md`).
 
 ## Notes
 

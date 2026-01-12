@@ -22,7 +22,8 @@ Recent changes
 Next steps
 
 1. Keep `memory-bank/` aligned to the current code layout (ECS under `src/ecs`, simulation runtime under `src/runtime`).
-1. Triage and update `memory-bank/tasks/*` so tasks reflect current behaviors and known gaps.
+1. Triage and update `memory-bank/tasks/*` so tasks reflect current behaviors and known gaps (e.g., `TASK002` completed; `TASK003` refactor/telemetry in progress).
+1. Add debug UI toggles for NavMesh/Path debuggers as a follow-up task.
 1. Optional: run `npm run test` after documentation sweeps to ensure no accidental code edits.
 
 Active decisions

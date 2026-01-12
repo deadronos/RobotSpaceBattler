@@ -122,3 +122,443 @@ canvas {
 .settings-button:hover {
   background: rgba(20, 24, 48, 0.9);
 }
+
+/* Battle Stats Modal */
+.battle-stats-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.battle-stats-content {
+  background: linear-gradient(135deg, #1a1d3a 0%, #0d0f1f 100%);
+  padding: 32px;
+  border-radius: 16px;
+  width: 700px;
+  max-width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  color: #f0f0f0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.battle-stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.battle-stats-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  background: linear-gradient(90deg, #60a5fa, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.battle-stats-close {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0 8px;
+  transition: color 0.2s;
+}
+
+.battle-stats-close:hover {
+  color: #fff;
+}
+
+.battle-stats-body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.battle-stats-winner {
+  text-align: center;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+.battle-stats-winner h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.battle-stats-teams {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.battle-stats-team-card {
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px solid;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.battle-stats-team-red {
+  border-color: #ef4444;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+}
+
+.battle-stats-team-blue {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+}
+
+.battle-stats-team-card h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.battle-stats-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.battle-stats-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.battle-stats-stat-label {
+  font-size: 12px;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.battle-stats-stat-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.battle-stats-top-performers {
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.battle-stats-top-performers h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.battle-stats-performers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.battle-stats-performer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.battle-stats-performer:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.battle-stats-performer-rank {
+  font-weight: 700;
+  font-size: 18px;
+  color: #fbbf24;
+  min-width: 36px;
+}
+
+.battle-stats-performer-team {
+  font-weight: 600;
+  min-width: 120px;
+}
+
+.battle-stats-performer-stats {
+  color: #aaa;
+  font-size: 14px;
+}
+
+/* Robot List Panel */
+.robot-list-panel {
+  position: absolute;
+  top: 80px;
+  right: 16px;
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 120px);
+  background: linear-gradient(135deg, rgba(26, 29, 58, 0.95) 0%, rgba(13, 15, 31, 0.95) 100%);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+.robot-list-drag-handle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: move;
+  user-select: none;
+}
+
+.robot-list-title {
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #f0f0f0;
+}
+
+.robot-list-drag-icon {
+  color: #888;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.robot-list-content {
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+  padding: 8px;
+}
+
+.robot-list-team {
+  margin-bottom: 8px;
+}
+
+.robot-list-team-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  border-left: 3px solid;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  color: #f0f0f0;
+  font-size: 13px;
+}
+
+.robot-list-team-header:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.robot-list-team-title {
+  font-weight: 600;
+}
+
+.robot-list-collapse-icon {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.robot-list-robots {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 4px;
+}
+
+.robot-list-robot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background 0.2s;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.robot-list-robot:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.robot-list-robot-dead {
+  opacity: 0.5;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.robot-list-robot-id {
+  font-weight: 600;
+  font-size: 11px;
+  color: #aaa;
+  min-width: 28px;
+}
+
+.robot-list-robot-health {
+  font-size: 11px;
+  font-weight: 500;
+  color: #4ade80;
+  min-width: 60px;
+}
+
+.robot-list-robot-dead .robot-list-robot-health {
+  color: #ef4444;
+}
+
+.robot-list-robot-mode {
+  padding: 2px 6px;
+  background: rgba(59, 130, 246, 0.2);
+  border-radius: 3px;
+  color: #60a5fa;
+  font-weight: 600;
+  font-size: 9px;
+  min-width: 48px;
+  text-align: center;
+}
+
+.robot-list-robot-target {
+  color: #fbbf24;
+  font-weight: 500;
+  font-size: 10px;
+  min-width: 32px;
+}
+
+.robot-list-robot-stat {
+  color: #ccc;
+  font-size: 10px;
+  font-weight: 500;
+  min-width: 32px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .robot-list-panel {
+    width: 360px;
+  }
+}
+@media (max-width: 768px) {
+  .robot-list-panel {
+    width: 320px;
+    top: 60px;
+    right: 8px;
+  }
+
+  .robot-list-robot {
+    font-size: 10px;
+    gap: 6px;
+    padding: 5px 8px;
+  }
+
+  .robot-list-robot-id {
+    min-width: 24px;
+  }
+
+  .robot-list-robot-health {
+    min-width: 50px;
+  }
+
+  .robot-list-robot-mode {
+    min-width: 42px;
+    font-size: 8px;
+  }
+
+  .robot-list-robot-stat {
+    font-size: 9px;
+    min-width: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .robot-list-panel {
+    width: calc(100% - 16px);
+    left: 8px;
+    right: 8px;
+    max-height: 45vh;
+  }
+
+  .robot-list-robot {
+    font-size: 9px;
+    gap: 4px;
+    padding: 4px 6px;
+  }
+
+  .robot-list-robot-id {
+    min-width: 20px;
+    font-size: 9px;
+  }
+
+  .robot-list-robot-health {
+    min-width: 45px;
+    font-size: 9px;
+  }
+
+  .robot-list-robot-mode {
+    min-width: 38px;
+    font-size: 8px;
+    padding: 1px 4px;
+  }
+
+  .robot-list-robot-target {
+    min-width: 26px;
+    font-size: 9px;
+  }
+
+  .robot-list-robot-stat {
+    font-size: 8px;
+    min-width: 24px;
+  }
+}
