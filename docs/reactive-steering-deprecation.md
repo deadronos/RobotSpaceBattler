@@ -98,16 +98,16 @@ The legacy reactive steering system (`src/simulation/ai/pathing/avoidance.ts`) i
 
 ## Migration Strategy
 
-### Phase 1: Soft Deprecation (Immediate)
+### Phase 1: Soft Deprecation (Complete)
 
 **Goal**: Mark systems as deprecated but keep functional
 
 **Actions**:
 
-1. Add deprecation comments to `avoidance.ts`
-2. Add console warnings when reactive steering is used
-3. Update documentation to recommend NavMesh
-4. Mark tests as "legacy"
+1. ✅ Add deprecation comments to `avoidance.ts`
+2. ✅ Add console warnings when reactive steering is used
+3. ✅ Update documentation to recommend NavMesh (AGENTS.md and docs/pathfinding-quickstart.md already updated)
+4. ✅ Mark tests as "legacy"
 
 **Code Changes**:
 
@@ -214,9 +214,9 @@ if (lengthVec3(avoidance) > 0) {
 
 ### Phase 1 Complete (Soft Deprecation)
 
-- [ ] Deprecation comments added to avoidance.ts
-- [ ] Documentation updated to recommend NavMesh
-- [ ] Tests marked as "legacy"
+- [x] Deprecation comments added to avoidance.ts
+- [x] Documentation updated to recommend NavMesh
+- [x] Tests marked as "legacy"
 
 ### Phase 2 Complete (Parallel Operation)
 
