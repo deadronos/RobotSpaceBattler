@@ -32,6 +32,8 @@ export interface RobotAIState {
   blockedFrames?: number;
 }
 
+import type { PathComponent } from "../simulation/ai/pathfinding/integration/PathComponent";
+
 export interface RobotEntity {
   id: string;
   kind: 'robot';
@@ -52,8 +54,10 @@ export interface RobotEntity {
   spawnIndex: number;
   lastDamageTimestamp: number;
   slowMultiplier?: number;
+
   statusFlags?: string[];
   statusExpirations?: Array<{ flag: string; expiresAt: number }>;
+  pathComponent: PathComponent;
 }
 
 export interface ProjectileEntity {

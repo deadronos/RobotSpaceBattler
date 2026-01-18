@@ -11,7 +11,6 @@ import {
   isPathBlockedByMovementRuntime,
 } from "../../environment/arenaGeometry";
 import { RobotBehaviorMode } from "../behaviorState";
-import { computeAvoidance } from "./avoidance";
 import {
   applySeparation,
   clampVelocity,
@@ -124,13 +123,50 @@ export function planRobotMovement(
 
   const pathBlocked = !!target && (visionBlocked || movementBlocked);
 
-  // Apply reactive avoidance (always runs). Give computeAvoidance access to runtime obstacles.
-  const avoidance = computeAvoidance(robot.position, context?.obstacles);
-  if (lengthVec3(avoidance) > 0) {
-    desiredVelocity = addVec3(
-      desiredVelocity,
-      scaleVec3(normalizeVec3(avoidance), SEEK_SPEED * AVOIDANCE_STRENGTH),
-    );
+  // NavMesh Path Following
+  // If the direct path is blocked, we rely on the NavMesh path to guide us around obstacles.
+  if (pathBlocked && robot.pathComponent && robot.pathComponent.status === "valid" && robot.pathComponent.path) {
+    const path = robot.pathComponent.path;
+    const waypoints = path.waypoints;
+    let idx = robot.pathComponent.currentWaypointIndex;
+
+    // Advance waypoint if close enough
+    const REACH_THRESHOLD = 0.5;
+    // Iterate to find the furthest reachable waypoint or the next one
+    while (idx < waypoints.length) {
+      const wp = waypoints[idx];
+      const dist = lengthVec3({
+        x: robot.position.x - wp.x,
+        y: robot.position.y - wp.y,
+        z: robot.position.z - wp.z
+      });
+      
+      // If we reached this waypoint, move to next
+      if (dist < REACH_THRESHOLD && idx < waypoints.length - 1) {
+        idx++;
+      } else {
+        break;
+      }
+    }
+    
+    // Update state
+    robot.pathComponent.currentWaypointIndex = idx;
+    
+    // Steer towards current waypoint
+    if (idx < waypoints.length) {
+       const wp = waypoints[idx];
+       const steeringTarget = { x: wp.x, y: wp.y, z: wp.z };
+       const direction = computeForwardDirection(robot.position, steeringTarget);
+       // Preserve speed from mode
+       const speed = lengthVec3(desiredVelocity); 
+       desiredVelocity = scaleVec3(direction, Math.max(speed, SEEK_SPEED * 0.5));
+    }
+  } else if (pathBlocked && target) {
+     // Fallback if path not ready: basic lateral steering
+     // This is the old "slide around" logic, kept for the few frames while path is calculating
+     const forward = computeForwardDirection(robot.position, target.position);
+     const lateral = normalizeVec3({ x: forward.z, y: 0, z: -forward.x });
+     desiredVelocity = scaleVec3(lateral, SEEK_SPEED * 0.9);
   }
 
   // Apply predictive avoidance when Rapier world is available
@@ -166,14 +202,8 @@ export function planRobotMovement(
     });
   }
 
-  if (pathBlocked && target) {
-    const forward = computeForwardDirection(robot.position, target.position);
-    const lateral = normalizeVec3({ x: forward.z, y: 0, z: -forward.x });
-    desiredVelocity = scaleVec3(lateral, SEEK_SPEED * 0.9);
-    robot.ai.blockedFrames = (robot.ai.blockedFrames ?? 0) + 1;
-  } else {
-    robot.ai.blockedFrames = 0;
-  }
+  // (Fallback logic moved above)
+  robot.ai.blockedFrames = pathBlocked ? (robot.ai.blockedFrames ?? 0) + 1 : 0;
 
   if (robot.ai.blockedFrames && robot.ai.blockedFrames >= 3) {
     // After repeated blockage, pause movement to avoid deadlock and let avoidance push us free.
@@ -209,3 +239,5 @@ export function integrateMovement(
   const delta = scaleVec3(velocity, deltaSeconds);
   return addVec3(position, delta);
 }
+
+export { resolveSpawnCenter } from "./helpers";

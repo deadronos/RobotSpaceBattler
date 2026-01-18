@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import { lengthVec3, Vec3 } from '../../src/lib/math/vec3';
 import { TEAM_CONFIGS } from '../../src/lib/teamConfig';
-import { AVOIDANCE_RADIUS } from '../../src/simulation/ai/pathing/avoidance';
 import {
   clampVelocity,
   computeForwardDirection,
@@ -46,11 +45,4 @@ describe('pathing helpers', () => {
   });
 });
 
-describe('avoidance constants', () => {
-  it('has AVOIDANCE_RADIUS for reactive steering (legacy)', () => {
-    // NOTE: This tests legacy reactive steering system (src/simulation/ai/pathing/avoidance.ts)
-    // which is being phased out in favor of NavMesh pathfinding.
-    // Current value is 0.1; NavMesh uses clearanceRadius in NavMeshGenerator instead.
-    expect(AVOIDANCE_RADIUS).toBe(0.1);
-  });
-});
+
