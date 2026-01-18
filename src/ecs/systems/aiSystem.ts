@@ -6,7 +6,10 @@ import {
 } from "../../simulation/ai/behaviorState";
 import { computeTeamAnchors } from "../../simulation/ai/captainCoordinator";
 import { updateTargeting } from "../../simulation/ai/decision";
-import { planRobotMovement } from "../../simulation/ai/pathing";
+import {
+  planRobotMovement,
+  resolveSpawnCenter,
+} from "../../simulation/ai/pathing";
 import type { MovementContext } from "../../simulation/ai/pathing/types";
 import {
   groupRobotsByTeam,
@@ -94,6 +97,24 @@ export function updateAISystem(
       neighbors: neighborPositions.length > 0 ? neighborPositions : undefined,
       obstacles: battleWorld.obstacles.entities,
     };
+
+    // calculate nav target
+    let navTarget = target ? target.position : undefined;
+    if (behavior === RobotBehaviorMode.Retreat) {
+      navTarget = resolveSpawnCenter(robot, neighborsContext);
+    } else if (robot.ai.searchPosition) {
+      navTarget = robot.ai.searchPosition;
+    } else if (anchorCandidate) {
+        navTarget = anchorCandidate;
+    } else if (!target) {
+        navTarget = resolveSpawnCenter(robot, neighborsContext);
+    }
+
+    if (navTarget) {
+      robot.pathComponent.requestedTarget = { x: navTarget.x, y: navTarget.y, z: navTarget.z };
+    } else {
+      robot.pathComponent.requestedTarget = null;
+    }
 
     const movementPlan = planRobotMovement(
       robot,

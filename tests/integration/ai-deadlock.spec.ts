@@ -4,6 +4,7 @@ import { createBattleWorld } from '../../src/ecs/world';
 import { vec3 } from '../../src/lib/math/vec3';
 import { updateAISystem } from '../../src/ecs/systems/aiSystem';
 import { updateMovementSystem } from '../../src/ecs/systems/movementSystem';
+import { createPathComponent } from '../../src/simulation/ai/pathfinding/integration/PathComponent';
 
 function createRobot(id: string, team: 'red' | 'blue', position: ReturnType<typeof vec3>) {
   return {
@@ -33,8 +34,10 @@ function createRobot(id: string, team: 'red' | 'blue', position: ReturnType<type
     },
     kills: 0,
     isCaptain: false,
+
     spawnIndex: 0,
     lastDamageTimestamp: 0,
+    pathComponent: createPathComponent(),
   } as any;
 }
 
