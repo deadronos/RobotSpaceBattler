@@ -5,6 +5,7 @@ import {
   getWeaponProfile,
   WeaponProfile,
 } from "../../simulation/combat/weapons";
+import { createPathComponent } from "../../simulation/ai/pathfinding/integration/PathComponent";
 import { BattleWorld, RobotEntity, toVec3, UnitRole, WeaponType } from "../world";
 
 /**
@@ -111,6 +112,7 @@ function createRobot(
     isCaptain: false,
     spawnIndex,
     lastDamageTimestamp: 0,
+    pathComponent: createPathComponent(),
   };
 }
 

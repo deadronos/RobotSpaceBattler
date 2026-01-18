@@ -1,4 +1,5 @@
 import { RobotEntity, toVec3 } from '../../src/ecs/world';
+import { createPathComponent } from '../../src/simulation/ai/pathfinding/integration/PathComponent';
 
 /**
  * Creates a test robot with default values and optional overrides.
@@ -33,8 +34,10 @@ export function createTestRobot(overrides: Partial<RobotEntity> = {}): RobotEnti
     ai: baseAI,
     kills: 0,
     isCaptain: false,
+
     spawnIndex: 0,
     lastDamageTimestamp: 0,
+    pathComponent: createPathComponent(),
   };
 
   return {
