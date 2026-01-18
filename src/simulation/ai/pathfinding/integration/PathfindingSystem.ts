@@ -12,8 +12,8 @@
 
 import type { Point3D } from "../types";
 import type { NavMeshResource } from "./NavMeshResource";
-import type { PathComponent } from "./PathComponent";
 import { PathCalculator } from "./PathCalculator";
+import type { PathComponent } from "./PathComponent";
 import { PathfindingTelemetry } from "./PathfindingTelemetry";
 
 interface PathfindingSystemOptions {

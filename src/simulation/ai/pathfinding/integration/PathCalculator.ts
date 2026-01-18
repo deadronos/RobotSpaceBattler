@@ -1,10 +1,11 @@
 import { move, spawn } from "multithreading";
+
 import { PathCache } from "../search/PathCache";
 import type { Point3D } from "../types";
-import type { PathComponent } from "./PathComponent";
-import type { NavMeshResource } from "./NavMeshResource";
-import type { WorkerPathRequest, WorkerPathResult } from "../worker/types";
 import { calculatePath, initWorker } from "../worker/pathfinding.worker";
+import type { WorkerPathRequest, WorkerPathResult } from "../worker/types";
+import type { NavMeshResource } from "./NavMeshResource";
+import type { PathComponent } from "./PathComponent";
 import type { PathfindingTelemetryCallback } from "./PathfindingTelemetry";
 
 export interface PathCalculatorOptions {

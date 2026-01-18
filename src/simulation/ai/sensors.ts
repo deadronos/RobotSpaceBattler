@@ -1,6 +1,6 @@
 import { BattleWorld, EnemyMemoryEntry, RobotEntity } from "../../ecs/world";
 import { cloneVec3, distanceSquaredVec3, Vec3 } from "../../lib/math/vec3";
-import { isActiveRobot } from "../../lib/robotHelpers";
+import { isEnemy } from "../../lib/robotHelpers";
 import {
   isLineOfSightBlocked,
   isLineOfSightBlockedRuntime,
@@ -16,12 +16,7 @@ function collectEnemies(
   robot: RobotEntity,
   robots: RobotEntity[],
 ): RobotEntity[] {
-  return robots.filter(
-    (candidate) =>
-      candidate.team !== robot.team &&
-      isActiveRobot(candidate) &&
-      candidate.id !== robot.id,
-  );
+  return robots.filter((candidate) => isEnemy(robot, candidate));
 }
 
 function rememberEnemy(
