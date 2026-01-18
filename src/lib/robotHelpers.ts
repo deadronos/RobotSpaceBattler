@@ -35,3 +35,35 @@ export function getActiveRobots(robots: RobotEntity[]): RobotEntity[] {
 export function isOnTeam(robot: RobotEntity, teamId: string): boolean {
   return robot.team === teamId;
 }
+
+/**
+ * Checks if the target is an enemy of the seeker.
+ * Evaluates team difference, active status, and self-exclusion.
+ *
+ * @param seeker - The robot looking at the target.
+ * @param target - The target robot.
+ * @returns True if the target is a valid enemy.
+ */
+export function isEnemy(seeker: RobotEntity, target: RobotEntity): boolean {
+  return (
+    target.team !== seeker.team &&
+    isActiveRobot(target) &&
+    target.id !== seeker.id
+  );
+}
+
+/**
+ * Checks if the target is an ally of the seeker.
+ * Evaluates team match, active status, and self-exclusion.
+ *
+ * @param seeker - The robot looking at the target.
+ * @param target - The target robot.
+ * @returns True if the target is a valid ally.
+ */
+export function isAlly(seeker: RobotEntity, target: RobotEntity): boolean {
+  return (
+    target.team === seeker.team &&
+    isActiveRobot(target) &&
+    target.id !== seeker.id
+  );
+}
