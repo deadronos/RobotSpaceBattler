@@ -12,8 +12,17 @@ import {
 } from "../../../lib/math/vec3";
 import { ARENA_PILLARS, ARENA_WALLS } from "../../environment/arenaGeometry";
 
+/**
+ * @deprecated Use NavMesh pathfinding (PathfindingSystem) instead.
+ * This reactive steering system has limited lookahead and small detection
+ * radius. NavMesh provides superior obstacle avoidance with clearance zones.
+ *
+ * Scheduled for removal: v2.0.0
+ */
 /** Reactive avoidance detection radius - reduced for tight wall proximity */
 export const AVOIDANCE_RADIUS = 0.1;
+
+let hasWarned = false;
 
 type RuntimeObstacle = {
   position?: { x: number; y: number; z: number };
@@ -28,6 +37,7 @@ type RuntimeObstacle = {
  * Computes an avoidance force vector based on proximity to static obstacles.
  * Uses a simple reactive model: if close to a wall/pillar, push away.
  *
+ * @deprecated Use PathfindingSystem (NavMesh) instead.
  * @param pos - The current position of the entity.
  * @returns A force vector to steer away from obstacles.
  */
@@ -35,6 +45,13 @@ export function computeAvoidance(
   pos: Vec3,
   obstacles?: Array<RuntimeObstacle | null>,
 ): Vec3 {
+  if (!hasWarned) {
+    console.warn(
+      "Deprecation Warning: Reactive steering (computeAvoidance) is deprecated. Use NavMesh pathfinding instead.",
+    );
+    hasWarned = true;
+  }
+
   let avoid = vec3(0, 0, 0);
 
   for (const wall of ARENA_WALLS) {

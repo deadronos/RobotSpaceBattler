@@ -5,7 +5,9 @@ import { planRobotMovement } from '../../src/simulation/ai/pathing';
 import { RobotBehaviorMode } from '../../src/simulation/ai/behaviorState';
 import { vec3 } from '../../src/lib/math/vec3';
 
-describe('AI pathing - reactive avoidance with runtime obstacles', () => {
+describe('AI pathing - reactive avoidance with runtime obstacles (Legacy)', () => {
+  // NOTE: This tests legacy reactive steering system (src/simulation/ai/pathing/avoidance.ts)
+  // which is being phased out in favor of NavMesh pathfinding.
   it('alters desired velocity when an obstacle is in the direct path', () => {
     const robot = createTestRobot({ position: vec3(0, 0, 0) });
     const target = createTestRobot({ position: vec3(10, 0, 0) });
