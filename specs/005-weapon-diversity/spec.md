@@ -12,12 +12,14 @@
 This spec updates and expands `specs/005-weapon-diversity` to: (a) explicitly reflect the project's 10 vs 10 team simulation established in `specs/001-3d-team-vs`, (b) follow the renderer and UI guidance from `specs/002-3d-simulation-graphics`, (c) respect deterministic replay and simulation/renderer decoupling in `specs/003-extend-placeholder-create`, and (d) assume the improved AI roaming/wall-awareness behaviours from `specs/004-ai-roaming-wall-awareness` are active.
 
 High-level goals:
+
 - Run a 10 (red) vs 10 (blue) automated fight where the human is an observer (no active player control).
-- Introduce weapon diversity (guns, lasers, rockets) with rock-paper-scissors balance already scoped in `specs/001` and explicit, testable multipliers here.
+- Introduce weapon diversity (guns, lasers, rockets, heal) with rock-paper-scissors balance already scoped in `specs/001` and explicit, testable multipliers here.
 - Provide distinct visuals and particle effects: rockets produce projectile trails and AoE particle explosions on impact; lasers produce visible beam/tracer and connected particle/spark effects; guns have distinct ballistic tracers/impacts.
 - Ensure telemetry, test harnesses, and performance scaling are available to validate balance and visuals without leaking implementation details.
 
 Related specs:
+
 - `specs/001-3d-team-vs/spec.md` — 10 vs 10 spawn, captain election, ECS architecture, high-level simulation requirements.
 - `specs/002-3d-simulation-graphics/spec.md` — in-round UI, camera modes, quality-scaling and VFX guidance.
 - `specs/003-extend-placeholder-create/spec.md` — deterministic MatchTrace and replay/contracts guidance.
@@ -37,11 +39,12 @@ Related specs:
 ## Objective
 
 Deliver a validated weapon-diversity feature for the 10v10 observer simulation that:
+
 - Implements rock-paper-scissors weapon interactions consistent with `specs/001` (Laser > Gun, Gun > Rocket, Rocket > Laser).
 - Adds clearly distinguishable visual and audio cues for each archetype, emphasizing rocket AoE explosions and laser beams/particles.
 - Provides measurable acceptance tests and telemetry to validate balance and visual correctness.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 — Watch a 10v10 automated match (Priority: P1)
 
@@ -52,6 +55,7 @@ Why: Primary demonstration and evaluation flow for the simulation and new weapon
 Independent Test: Start a match using the simulation UI; observe two teams of 10 robots spawn, fight, and a winner declared; verify the spectator camera and in-round UI behave per `specs/002`.
 
 Acceptance Scenarios:
+
 1. Given the match is configured for 10v10, When the match starts, Then 10 red and 10 blue robots spawn in their designated zones and engage autonomously.
 2. Given an observer is connected, When the match runs, Then the observer cannot control robots and may toggle camera modes (free, follow, cinematic) while match continues.
 
@@ -64,6 +68,7 @@ As an observer, I want rockets to show projectile trails and AoE explosions and 
 Independent Test: Run a match with representative weapon usage and capture a ~30s clip; verify rocket impacts show explosion VFX and damage radius, lasers show visible beam/tracer and persistent hit particles, guns show ballistic tracers and impact sparks.
 
 Acceptance Scenarios:
+
 1. Rocket projectile collisions produce an explosion particle effect and an area-of-effect damage application visible in the log and via damage markers.
 2. Laser firings produce a visible continuous beam/tracer between attacker and target for the duration of firing and spark/impact VFX at the contact point.
 
@@ -76,6 +81,7 @@ As a designer, I want automated 1v1 and small-scale tests that verify the declar
 Independent Test: Execute an automated matrix of controlled 1v1 duels (each pair repeated N times) and aggregate win/damage rates to assert expected dominance.
 
 Acceptance Scenarios:
+
 1. For each weapon pairing, run at least 30 repeated duels with identical starting health and environment; the weapon with declared advantage wins ≥ 70% of trials (initial tuning target).
 
 ---
@@ -86,7 +92,7 @@ Acceptance Scenarios:
 - Laser beams that cross geometry should apply hit detection using the same authoritative rules used by projectiles to keep replay deterministic.
 - If visual VFX fail to load, placeholder simple geometry/particle markers must show so the observer still perceives weapon type.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -95,16 +101,17 @@ Acceptance Scenarios:
 - **FR-002 (Observer Mode)**: The human user by default is an observer; observer controls are limited to camera and UI toggles (no movement or weapon control of robots). Acceptance: Observer cannot issue robot control commands; camera toggles function while simulation runs.
 
 - **FR-003 (RPS Balance)**: The system MUST implement rock-paper-scissors relations consistent with `specs/001`: Laser beats Gun, Gun beats Rocket, Rocket beats Laser. Acceptance: Controlled duel tests (see Acceptance Tests) show the declared advantage yields the expected dominance (see testing thresholds).
- - **FR-003 (RPS Balance)**: The system MUST implement rock-paper-scissors relations consistent with `specs/001`: Laser beats Gun, Gun beats Rocket, Rocket beats Laser. The RPS advantage is applied as a damage-only modifier (see FR-004) — it does not alter accuracy, rate-of-fire, or other weapon stats. Acceptance: Controlled duel tests (see Acceptance Tests) show the declared advantage yields the expected dominance (see testing thresholds).
+- **FR-003 (RPS Balance)**: The system MUST implement rock-paper-scissors relations consistent with `specs/001`: Laser beats Gun, Gun beats Rocket, Rocket beats Laser. The RPS advantage is applied as a damage-only modifier (see FR-004) — it does not alter accuracy, rate-of-fire, or other weapon stats. Acceptance: Controlled duel tests (see Acceptance Tests) show the declared advantage yields the expected dominance (see testing thresholds).
 
 - **FR-004 (Balance Multipliers — Designer-tunable defaults)**: The feature MUST expose design-level multipliers for inter-archetype bonuses. Suggested initial defaults (tunable):
   - Advantage multiplier: +25% damage when attacker archetype has advantage vs defender's archetype.
   - Disadvantage multiplier: −15% damage when attacker archetype is disadvantaged.
+  - The implementation also includes a support archetype: **Heal** (negative damage), which is neutral in the RPS triangle.
   - These numeric defaults are design guidance; acceptance relies on testable outcomes, not fixed values.
- - **FR-004 (Balance Multipliers — Designer-tunable defaults)**: The feature MUST expose design-level multipliers for inter-archetype bonuses and apply them as multiplicative damage modifiers to the weapon's `baseDamage` prior to any resistances or additional modifiers. Suggested initial defaults (tunable):
-  - Advantage multiplier: `1.25` (i.e., +25% damage) when attacker archetype has advantage vs defender's archetype.
-  - Disadvantage multiplier: `0.85` (i.e., −15% damage) when attacker archetype is disadvantaged.
-  - Application rules: the engine SHOULD compute `finalDamage = baseDamage * archetypeMultiplier * otherModifiers` where `archetypeMultiplier` is selected from `{1.25, 0.85, 1.0}` depending on attacker/defender archetype relationship. These multipliers are damage-only and do not change hit probability, rate-of-fire, or projectile behavior. These numeric defaults are design guidance; acceptance relies on testable outcomes, not fixed values.
+- **FR-004 (Balance Multipliers — Designer-tunable defaults)**: The feature MUST expose design-level multipliers for inter-archetype bonuses and apply them as multiplicative damage modifiers to the weapon's `baseDamage` prior to any resistances or additional modifiers. Suggested initial defaults (tunable):
+- Advantage multiplier: `1.25` (i.e., +25% damage) when attacker archetype has advantage vs defender's archetype.
+- Disadvantage multiplier: `0.85` (i.e., −15% damage) when attacker archetype is disadvantaged.
+- Application rules: the engine SHOULD compute `finalDamage = baseDamage * archetypeMultiplier * otherModifiers` where `archetypeMultiplier` is selected from `{1.25, 0.85, 1.0}` depending on attacker/defender archetype relationship. These multipliers are damage-only and do not change hit probability, rate-of-fire, or projectile behavior. These numeric defaults are design guidance; acceptance relies on testable outcomes, not fixed values.
 
 - **FR-005 (Weapon Visuals & Audio)**: Each archetype MUST have distinct HUD icon, in-world pickup model, firing SFX, and projectile/impact VFX. Acceptance: Design review and blind recognizability test pass targets (see Success Criteria).
 
@@ -115,13 +122,14 @@ Acceptance Scenarios:
 - **FR-008 (Gun Ballistics / Tracers)**: Gun archetype MUST present high-rate ballistic fire with visible tracers/impacts suited for quick engagements; acceptance: tracer and impact VFX match playtest footage.
 
 - **FR-009 (Telemetry & Test Hooks)**: Emit telemetry events for pickup-acquired, weapon-fired, weapon-hit, explosion-AoE, and weapon-damage to enable balance aggregation and test automation. Acceptance: Events emitted with weapon archetype and match identifiers and aggregated in the test harness.
- - **FR-009 (Telemetry & Test Hooks)**: Emit telemetry events for pickup-acquired, weapon-fired, weapon-hit, explosion-AoE, and weapon-damage to enable balance aggregation and test automation. Telemetry MUST be recorded to an authoritative per-match `MatchTrace` file (for deterministic replay and persisted analysis) and also published to an in-memory telemetry aggregator during test runs for fast assertions and harness reads. Acceptance: Events emitted with weapon archetype and match identifiers and aggregated in both `MatchTrace` and the in-memory test harness; the automated duel matrix and balance verifier can read the in-memory summaries and/or the persisted `MatchTrace` as needed.
+- **FR-009 (Telemetry & Test Hooks)**: Emit telemetry events for pickup-acquired, weapon-fired, weapon-hit, explosion-AoE, and weapon-damage to enable balance aggregation and test automation. Telemetry MUST be recorded to an authoritative per-match `MatchTrace` file (for deterministic replay and persisted analysis) and also published to an in-memory telemetry aggregator during test runs for fast assertions and harness reads. Acceptance: Events emitted with weapon archetype and match identifiers and aggregated in both `MatchTrace` and the in-memory test harness; the automated duel matrix and balance verifier can read the in-memory summaries and/or the persisted `MatchTrace` as needed.
 
 - **FR-010 (Performance & Quality Scaling)**: Visuals (particles, explosion density, beam resolution) MUST respect the performance manager and quality-scaling parameters from `specs/002`. Acceptance: Quality scaling reduces VFX density and preserves simulation correctness when frame budget is constrained.
 
 - **FR-011 (AI Weapon Use)**: Robot AI SHOULD prefer weapons based on engagement range and RPS advantage where feasible (e.g., choose rocket when clustered enemies present). Acceptance: In a set of simulation runs, AI weapon selection frequency reflects engagement context and RPS heuristics (observational test).
 
 ### FR-012 (Rendering Instancing & Pooling)
+
 - **FR-012 (Rendering Instancing & Pooling)**: To meet performance targets under heavy projectile / VFX load, the renderer MUST use GPU-friendly instancing and batched draw calls for visual-only entities. The expected scope is "instanced for virtually all visual-only entities", with the following specifics:
   - Projectiles (guns, rockets): instanced meshes with per-instance color/transform attributes.
   - Laser beams: batched line segments or instanced geometry updated per-frame.
@@ -150,6 +158,7 @@ Acceptance Scenarios:
     after the first shader compile.
 
 High-level bullet points: Instancing strategy and scope
+
 - Scope: "fully and almost all entities" refers to every visual-only, ephemeral entity that does not require individual physics or per-frame gameplay logic to be present as a unique runtime object for the simulation. This includes projectiles, beams, impact effects, shots/tracers, debris particles, and sparks. It excludes the authoritative physics/colliders for robots unless decoupled.
 - Architecture: Add a lightweight VisualInstanceManager that maintains mappings from `entityId` -> `instanceIndex` and a `freeIndex` pool per instance category (bullet/rocket/laser/effect). Integrate the manager with render-level components, and ensure the ECS `projectileSystem` and `effectSystem` acquire/release indices as part of lifecycle management.
 - Implement per-entity fallback: if the instance pool is exhausted (no free indices), fall back to the existing per-entity React component renderer for parity and visibility.
@@ -159,24 +168,25 @@ High-level bullet points: Instancing strategy and scope
   - Perf regression tests: collect draw-call counts and JS render times before/after; assert improvements or fix thresholds.
   - End-to-end duel-matrix and 10v10 smoke tests must run under both instanced and non-instanced modes to demonstrate no behavioural differences in outputs & telemetry.
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **WeaponProfile**: id, name, archetype (gun|laser|rocket), baseDamage, rateOfFire, ammoOrEnergy, projectileSpeed (if applicable), aoeRadius (rocket), aoeFalloffProfile, beamDuration/tickRate (laser), tracerConfig, visualRefs.
- - **WeaponProfile**: id, name, archetype (gun|laser|rocket), baseDamage, rateOfFire, ammoOrEnergy, projectileSpeed (if applicable), aoeRadius (rocket), aoeFalloffProfile, beamDuration/tickRate (laser), tracerConfig, visualRefs.
- - **BalanceMultipliers**: design-level multipliers for archetype interactions. Fields: `advantageMultiplier` (default `1.25`), `disadvantageMultiplier` (default `0.85`), `neutralMultiplier` (default `1.0`). These are applied multiplicatively to `WeaponProfile.baseDamage` for deterministic RPS effects.
+- **WeaponProfile**: id, name, archetype (gun|laser|rocket), baseDamage, rateOfFire, ammoOrEnergy, projectileSpeed (if applicable), aoeRadius (rocket), aoeFalloffProfile, beamDuration/tickRate (laser), tracerConfig, visualRefs.
+- **BalanceMultipliers**: design-level multipliers for archetype interactions. Fields: `advantageMultiplier` (default `1.25`), `disadvantageMultiplier` (default `0.85`), `neutralMultiplier` (default `1.0`). These are applied multiplicatively to `WeaponProfile.baseDamage` for deterministic RPS effects.
 - **ProjectileInstance**: id, weaponProfileId, ownerId, position, velocity, timestampMs, contactEventId.
- - **ProjectileInstance**: id, weaponProfileId, ownerId, position, velocity, timestampMs, contactEventId. (Optional `instanceIndex` when visual instancing is used.)
+- **ProjectileInstance**: id, weaponProfileId, ownerId, position, velocity, timestampMs, contactEventId. (Optional `instanceIndex` when visual instancing is used.)
 - **ExplosionEvent**: id, origin, radius, timestampMs, damageProfileId.
- - **ExplosionEvent**: id, origin, radius, timestampMs, damageProfileId. (Optional `instanceIndex` for batched visual representation.)
+- **ExplosionEvent**: id, origin, radius, timestampMs, damageProfileId. (Optional `instanceIndex` for batched visual representation.)
 - **WeaponVisual**: iconRef, modelRef, firingSfxRef, impactVfxRef, beamVfxRef, trailVfxRef.
- - **WeaponTelemetry**: events: `pickup-acquired`, `weapon-fired`, `weapon-hit`, `explosion-aoe`, `weapon-damage` (fields include `matchId`, `weaponProfileId`, `attackerId`, `targetId`, `amount`, `timestampMs` — integer milliseconds since match start; optional `frameIndex` for deterministic ordering).
- - **WeaponTelemetry**: events: `pickup-acquired`, `weapon-fired`, `weapon-hit`, `explosion-aoe`, `weapon-damage` (fields include `matchId`, `weaponProfileId`, `attackerId`, `targetId`, `amount`, `timestampMs` — integer milliseconds since match start; optional `frameIndex` for deterministic ordering).
- - **TelemetryAggregator**: ephemeral in-memory aggregator used during automated tests and live runs to accumulate per-match event summaries for fast assertions. Fields: `matchId`, `eventCountsByType`, `damageTotalsByWeapon`, `winCountsByArchetype`, `timestampMs` (summary window; integer milliseconds since match start). The aggregator is optional for production analytics but required for the automated duel matrix harness.
+- **WeaponTelemetry**: events: `pickup-acquired`, `weapon-fired`, `weapon-hit`, `explosion-aoe`, `weapon-damage` (fields include `matchId`, `weaponProfileId`, `attackerId`, `targetId`, `amount`, `timestampMs` — integer milliseconds since match start; optional `frameIndex` for deterministic ordering).
+- **WeaponTelemetry**: events: `pickup-acquired`, `weapon-fired`, `weapon-hit`, `explosion-aoe`, `weapon-damage` (fields include `matchId`, `weaponProfileId`, `attackerId`, `targetId`, `amount`, `timestampMs` — integer milliseconds since match start; optional `frameIndex` for deterministic ordering).
+- **TelemetryAggregator**: ephemeral in-memory aggregator used during automated tests and live runs to accumulate per-match event summaries for fast assertions. Fields: `matchId`, `eventCountsByType`, `damageTotalsByWeapon`, `winCountsByArchetype`, `timestampMs` (summary window; integer milliseconds since match start). The aggregator is optional for production analytics but required for the automated duel matrix harness.
 
 #### VisualInstanceManager (concept)
+
 - Visual-only component coordinator. Provides an API for the renderer and ECS to allocate & release per-category instance indices and map `entityId` => `instanceIndex` for batched rendering. It is a runtime optimization layer; it must be fully optional and togglable via `QualityManager`.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
@@ -205,8 +215,8 @@ High-level bullet points: Instancing strategy and scope
 - Test A — 10v10 Observer Run: Launch a 10v10 match as an observer, record a match video and MatchTrace; verify 20 robots spawn, fight autonomously, and a winner is declared. Verify observer cannot issue robot commands.
 
 - Test B — RPS Duel Matrix: For each pair of weapon archetypes, run 30 controlled duels with identical config and initial health; aggregate wins; assert advantaged archetype wins ≥70% of trials.
- - Test B — RPS Duel Matrix: For each pair of weapon archetypes, run 30 controlled duels with identical config and initial health; aggregate wins using the in-memory telemetry aggregator (fast path) and validate against authoritative `MatchTrace` records; assert advantaged archetype wins ≥70% of trials.
- - Test B — RPS Duel Matrix: For each pair of weapon archetypes, run 30 controlled duels with identical config and initial health; apply the damage-only archetype multipliers (multiplicative on `baseDamage` before resistances); aggregate wins using the in-memory telemetry aggregator (fast path) and validate against authoritative `MatchTrace` records; assert advantaged archetype wins ≥70% of trials.
+- Test B — RPS Duel Matrix: For each pair of weapon archetypes, run 30 controlled duels with identical config and initial health; aggregate wins using the in-memory telemetry aggregator (fast path) and validate against authoritative `MatchTrace` records; assert advantaged archetype wins ≥70% of trials.
+- Test B — RPS Duel Matrix: For each pair of weapon archetypes, run 30 controlled duels with identical config and initial health; apply the damage-only archetype multipliers (multiplicative on `baseDamage` before resistances); aggregate wins using the in-memory telemetry aggregator (fast path) and validate against authoritative `MatchTrace` records; assert advantaged archetype wins ≥70% of trials.
 
 - Test C — Rocket AoE Capture: Execute 50 rocket impact captures and assert explosion VFX appears and explosion-AoE telemetry event recorded for ≥95% of samples.
 
@@ -228,4 +238,3 @@ High-level bullet points: Instancing strategy and scope
 4. Run designer blind recognizability study and iterate visuals.
 5. Tune balance multipliers based on duel matrix results and repeat tests until success criteria met.
 6. Implement rendering instancing & pooling for visual-only entities (projectiles, lasers, effects) with a POC followed by rollout, feature flag toggles, and test/harness validations per `plan.md`.
-
