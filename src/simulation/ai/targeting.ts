@@ -1,24 +1,8 @@
 import { RobotEntity } from "../../ecs/world";
 import { distanceSquaredVec3 } from "../../lib/math/vec3";
-import { isActiveRobot } from "../../lib/robotHelpers";
+import { isAlly, isEnemy } from "../../lib/robotHelpers";
 import { TEAM_CONFIGS } from "../../lib/teamConfig";
 import { findBestEntity } from "./targetingUtils";
-
-function isEnemy(seeker: RobotEntity, target: RobotEntity): boolean {
-  return (
-    target.team !== seeker.team &&
-    isActiveRobot(target) &&
-    target.id !== seeker.id
-  );
-}
-
-function isAlly(seeker: RobotEntity, target: RobotEntity): boolean {
-  return (
-    target.team === seeker.team &&
-    isActiveRobot(target) &&
-    target.id !== seeker.id
-  );
-}
 
 /**
  * Finds the best enemy target for a robot.

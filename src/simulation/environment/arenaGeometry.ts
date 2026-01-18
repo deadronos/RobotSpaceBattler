@@ -100,43 +100,50 @@ export function isLineOfSightBlocked(start: Vec3, end: Vec3): boolean {
   return false;
 }
 
+export interface RuntimeObstacleShapeBox {
+  kind: "box";
+  halfWidth: number;
+  halfDepth: number;
+  center?: { x: number; z: number };
+}
+
+export interface RuntimeObstacleShapeCircle {
+  kind: "circle";
+  radius: number;
+  center?: { x: number; z: number };
+}
+
+export interface RuntimeObstacle {
+  blocksVision?: boolean;
+  blocksMovement?: boolean;
+  active?: boolean;
+  shape?: RuntimeObstacleShapeBox | RuntimeObstacleShapeCircle;
+  position?: { x: number; y?: number; z: number };
+}
+
+export interface RuntimeCheckOptions {
+  obstacles?: Array<RuntimeObstacle>;
+  rapierWorld?: {
+    castRayAndGetNormal?: (
+      ray: Ray,
+      maxToi: number,
+      solid: boolean,
+    ) => {
+      timeOfImpact: number;
+      normal: { x: number; y: number; z: number };
+    } | null;
+  };
+}
+
 /**
- * Runtime-aware line-of-sight check that includes dynamic obstacles.
- * If obstacles are not provided, this behaves like the static check.
+ * Helper function to check intersections with dynamic obstacles and rapier world.
  */
-export function isLineOfSightBlockedRuntime(
+function checkIntersectionRuntime(
   start: Vec3,
   end: Vec3,
-  options?: {
-    obstacles?: Array<{
-      blocksVision?: boolean;
-      active?: boolean;
-      shape?:
-        | {
-            kind: "box";
-            halfWidth: number;
-            halfDepth: number;
-            center?: { x: number; z: number };
-          }
-        | { kind: "circle"; radius: number; center?: { x: number; z: number } };
-      position?: { x: number; y?: number; z: number };
-    }>;
-    rapierWorld?: {
-      castRayAndGetNormal?: (
-        ray: Ray,
-        maxToi: number,
-        solid: boolean,
-      ) => {
-        timeOfImpact: number;
-        normal: { x: number; y: number; z: number };
-      } | null;
-    };
-  },
+  options: RuntimeCheckOptions | undefined,
+  checkType: "vision" | "movement"
 ): boolean {
-  // First check static geometry
-  if (isLineOfSightBlocked(start, end)) return true;
-
-  // If a rapier world is provided prefer raycast checks against the physics world
   const rapierWorld = options?.rapierWorld;
   if (rapierWorld && typeof rapierWorld.castRayAndGetNormal === "function") {
     const dx = end.x - start.x;
@@ -153,7 +160,12 @@ export function isLineOfSightBlockedRuntime(
 
   if (options && Array.isArray(options.obstacles)) {
     for (const obs of options.obstacles) {
-      if (!obs || obs.blocksVision === false) continue;
+      if (!obs) continue;
+
+      // Check if the obstacle blocks the specific type (vision or movement)
+      if (checkType === "vision" && obs.blocksVision === false) continue;
+      if (checkType === "movement" && obs.blocksMovement === false) continue;
+
       if (obs.active === false) continue;
 
       const shape = obs.shape;
@@ -185,81 +197,28 @@ export function isLineOfSightBlockedRuntime(
 }
 
 /**
+ * Runtime-aware line-of-sight check that includes dynamic obstacles.
+ * If obstacles are not provided, this behaves like the static check.
+ */
+export function isLineOfSightBlockedRuntime(
+  start: Vec3,
+  end: Vec3,
+  options?: RuntimeCheckOptions,
+): boolean {
+  // First check static geometry
+  if (isLineOfSightBlocked(start, end)) return true;
+
+  return checkIntersectionRuntime(start, end, options, "vision");
+}
+
+/**
  * Checks if the line between two points is blocked by dynamic obstacles that block movement.
  * This is a movement-aware complement to the vision-based LOS checks above.
  */
 export function isPathBlockedByMovementRuntime(
   start: Vec3,
   end: Vec3,
-  options?: {
-    obstacles?: Array<{
-      blocksMovement?: boolean;
-      active?: boolean;
-      shape?:
-        | {
-            kind: "box";
-            halfWidth: number;
-            halfDepth: number;
-            center?: { x: number; z: number };
-          }
-        | { kind: "circle"; radius: number; center?: { x: number; z: number } };
-      position?: { x: number; y?: number; z: number };
-    }>;
-    rapierWorld?: {
-      castRayAndGetNormal?: (
-        ray: Ray,
-        maxToi: number,
-        solid: boolean,
-      ) => {
-        timeOfImpact: number;
-        normal: { x: number; y: number; z: number };
-      } | null;
-    };
-  },
+  options?: RuntimeCheckOptions,
 ): boolean {
-  const rapierWorld = options?.rapierWorld;
-  if (rapierWorld && typeof rapierWorld.castRayAndGetNormal === "function") {
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const dz = end.z - start.z;
-    const maxDist = distanceVec3(start, end);
-    if (maxDist > EPSILON) {
-      const dir = { x: dx / maxDist, y: dy / maxDist, z: dz / maxDist };
-      const ray = new Ray(start, dir);
-      const hit = rapierWorld.castRayAndGetNormal(ray, maxDist, true);
-      if (hit) return true;
-    }
-  }
-
-  if (options && Array.isArray(options.obstacles)) {
-    for (const obs of options.obstacles) {
-      if (!obs || obs.blocksMovement === false) continue;
-      if (obs.active === false) continue;
-
-      const shape = obs.shape;
-      if (!shape) continue;
-
-      if (shape.kind === "box") {
-        const cx = shape.center?.x ?? obs.position?.x ?? 0;
-        const cz = shape.center?.z ?? obs.position?.z ?? 0;
-        if (
-          segmentIntersectsAABB(
-            start,
-            end,
-            { x: cx, z: cz },
-            shape.halfWidth,
-            shape.halfDepth,
-          )
-        )
-          return true;
-      } else if (shape.kind === "circle") {
-        const cx = shape.center?.x ?? obs.position?.x ?? 0;
-        const cz = shape.center?.z ?? obs.position?.z ?? 0;
-        if (segmentIntersectsCircle(start, end, { x: cx, z: cz }, shape.radius))
-          return true;
-      }
-    }
-  }
-
-  return false;
+  return checkIntersectionRuntime(start, end, options, "movement");
 }
