@@ -1,10 +1,6 @@
 import type { WebGLRenderer } from "three";
 
-const GLOBAL_KEY = "__rendererStats";
-
-type RendererStatsWindow = Window & {
-  [GLOBAL_KEY]?: RendererStatsSnapshot;
-};
+import { getRendererStatsGlobal } from "./rendererStatsGlobal";
 
 /**
  * Snapshot of renderer performance statistics.
@@ -29,20 +25,12 @@ const defaultSnapshot: RendererStatsSnapshot = {
   frameTimeMs: 0,
 };
 
+export function createRendererStatsSnapshot(): RendererStatsSnapshot {
+  return { ...defaultSnapshot };
+}
+
 function ensureGlobalSnapshot(): RendererStatsSnapshot | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const statsWindow = window as RendererStatsWindow;
-  const existing = statsWindow[GLOBAL_KEY];
-  if (existing && typeof existing === "object") {
-    return existing;
-  }
-
-  const snapshot = { ...defaultSnapshot } satisfies RendererStatsSnapshot;
-  statsWindow[GLOBAL_KEY] = snapshot;
-  return snapshot;
+  return getRendererStatsGlobal(createRendererStatsSnapshot);
 }
 
 /**

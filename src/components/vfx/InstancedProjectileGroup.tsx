@@ -4,9 +4,18 @@ import { AdditiveBlending, BufferGeometry, Color, InstancedMesh, Object3D, Vecto
 
 import { ProjectileEntity } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
-import { hideAllInstances, normalizeHDRForInstance } from "../../visuals/instanceColorUtils";
+import {
+  applyHiddenInstance,
+  markInstanceBuffersDirty,
+  normalizeHDRForInstance,
+} from "../../visuals/instanceColorUtils";
 import { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
-import { markMaterialNeedsUpdate, useInstancedMeshLifecycle } from "./useInstancedMeshLifecycle";
+import {
+  ensureInstancedMeshReady,
+  forEachInactiveInstance,
+  swapActiveInstanceSets,
+  useInstancedMeshLifecycle,
+} from "./useInstancedMeshLifecycle";
 
 export interface InstancedProjectileGroupProps {
   projectiles: ProjectileEntity[];
@@ -61,20 +70,8 @@ export function InstancedProjectileGroup({
       return;
     }
 
-    // Initialize all instance slots to a hidden offscreen matrix and black color
-    // This is a safety check in useFrame in case layout effect missed it or context was lost?
-    // Following original pattern.
-    if (
-      !initStateRef.current.ready &&
-      initStateRef.current.capacity === capacity
-    ) {
-      const hadInstanceColor = Boolean(mesh.instanceColor);
-      hideAllInstances(mesh, capacity);
-      if (!hadInstanceColor && mesh.instanceColor) {
-        markMaterialNeedsUpdate(mesh.material);
-      }
-      initStateRef.current.ready = true;
-    }
+    // Safety check in case layout effect missed it or context was lost.
+    ensureInstancedMeshReady(mesh, capacity, initStateRef);
 
     const currentActive = activeRef.current;
     const lastActive = previousActiveRef.current;
@@ -138,30 +135,20 @@ export function InstancedProjectileGroup({
     }
 
     // Handle deactivation
-    for (const index of lastActive) {
-      if (!currentActive.has(index)) {
-        dummy.position.set(0, -512, 0);
-        dummy.rotation.set(0, 0, 0);
-        dummy.scale.set(0.001, 0.001, 0.001);
-        dummy.updateMatrix();
-        mesh.setMatrixAt(index, dummy.matrix);
-        mesh.setColorAt(index, hiddenColor);
-        currentDirty.add(index);
-        matrixDirty = true;
-        colorsDirty = true;
-      }
-    }
+    forEachInactiveInstance(currentActive, lastActive, (index) => {
+      applyHiddenInstance(mesh, index, dummy, hiddenColor);
+      currentDirty.add(index);
+      matrixDirty = true;
+      colorsDirty = true;
+    });
 
-    if (currentDirty.size > 0 || matrixDirty || colorsDirty) {
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor) {
-        mesh.instanceColor.needsUpdate = true;
-      }
-    }
+    markInstanceBuffersDirty(mesh, {
+      matrix: matrixDirty,
+      color: colorsDirty,
+      dirtyIndices: currentDirty,
+    });
 
-    // Swap refs
-    previousActiveRef.current = currentActive;
-    activeRef.current = lastActive;
+    swapActiveInstanceSets(activeRef, previousActiveRef);
 
     perfMarkEnd(`InstancedProjectileGroup.${category}`);
   });

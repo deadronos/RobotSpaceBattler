@@ -1,18 +1,13 @@
-import type { RendererStatsSnapshot } from "./rendererStats";
+import { createRendererStatsSnapshot, type RendererStatsSnapshot } from "./rendererStats";
+import { getRendererStatsGlobal } from "./rendererStatsGlobal";
 import type {
   VisualInstanceTelemetryEmitter,
   VisualInstanceTelemetryEvent,
 } from "./VisualInstanceManager";
 
-const GLOBAL_KEY = "__rendererStats";
-
 interface RendererStatsGlobal extends RendererStatsSnapshot {
   instancingTelemetry?: VisualInstanceTelemetryEvent[];
 }
-
-type RendererStatsWindow = Window & {
-  [GLOBAL_KEY]?: RendererStatsGlobal;
-};
 
 // Determine once whether debug logs are enabled via URL flag, e.g. /?debuglogs=1
 const DEBUG_LOGS_ENABLED = (() => {
@@ -26,30 +21,13 @@ const DEBUG_LOGS_ENABLED = (() => {
   }
 })();
 function getGlobalStats(): RendererStatsGlobal | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const statsWindow = window as RendererStatsWindow;
-  const existing = statsWindow[GLOBAL_KEY];
-  if (existing && typeof existing === "object") {
-    if (!existing.instancingTelemetry) {
-      existing.instancingTelemetry = [];
-    }
-    return existing;
-  }
-
-  const stats: RendererStatsGlobal = {
-    drawCalls: 0,
-    triangles: 0,
-    lines: 0,
-    points: 0,
-    geometries: 0,
-    textures: 0,
-    frameTimeMs: 0,
+  const stats = getRendererStatsGlobal(() => ({
+    ...createRendererStatsSnapshot(),
     instancingTelemetry: [],
-  };
-  statsWindow[GLOBAL_KEY] = stats;
+  }));
+  if (stats && !stats.instancingTelemetry) {
+    stats.instancingTelemetry = [];
+  }
   return stats;
 }
 
