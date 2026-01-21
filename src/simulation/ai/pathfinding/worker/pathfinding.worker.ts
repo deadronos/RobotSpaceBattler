@@ -1,22 +1,63 @@
 
-import { distanceXZ } from "../../../../lib/math/geometry";
-import { AStarSearch } from "../search/AStarSearch";
-import { NearestAccessiblePoint } from "../search/NearestAccessiblePoint";
-import { PathOptimizer } from "../smoothing/PathOptimizer";
 import type { NavigationMesh, Point2D, Point3D } from "../types";
 import type { WorkerPathRequest, WorkerPathResult } from "./types";
 
-// State
-let astar: AStarSearch | null = null;
-let optimizer: PathOptimizer | null = null;
-let nearestFinder: NearestAccessiblePoint | null = null;
+interface PathfindingWorkerState {
+  astar: { findPath: (start: Point2D, target: Point2D) => Point2D[] | null } | null;
+  optimizer: { smoothPath: (path: Point2D[]) => Point2D[] } | null;
+  nearestFinder: { findNearest: (target: Point3D, start: Point3D) => Point3D | null } | null;
+}
+
+interface PathfindingWorkerModules {
+  distanceXZ: (a: Point3D, b: Point3D) => number;
+  AStarSearch: new (mesh: NavigationMesh) => {
+    findPath: (start: Point2D, target: Point2D) => Point2D[] | null;
+  };
+  NearestAccessiblePoint: new (mesh: NavigationMesh) => {
+    findNearest: (target: Point3D, start: Point3D) => Point3D | null;
+  };
+  PathOptimizer: new () => { smoothPath: (path: Point2D[]) => Point2D[] };
+}
 
 // Initialize the worker with the navigation mesh
-export function initWorker(mesh: NavigationMesh): boolean {
+export async function initWorker(mesh: NavigationMesh): Promise<boolean> {
   try {
-    astar = new AStarSearch(mesh);
-    optimizer = new PathOptimizer();
-    nearestFinder = new NearestAccessiblePoint(mesh);
+    const scope = globalThis as typeof globalThis & {
+      __pathfindingWorkerState?: PathfindingWorkerState;
+      __pathfindingWorkerModules?: PathfindingWorkerModules;
+    };
+    const state = scope.__pathfindingWorkerState ?? {
+      astar: null,
+      optimizer: null,
+      nearestFinder: null,
+    };
+    if (!scope.__pathfindingWorkerModules) {
+      const [geometry, astarModule, nearestModule, optimizerModule] =
+        await Promise.all([
+          import("../../../../lib/math/geometry"),
+          import("../search/AStarSearch"),
+          import("../search/NearestAccessiblePoint"),
+          import("../smoothing/PathOptimizer"),
+        ]);
+      scope.__pathfindingWorkerModules = {
+        distanceXZ: geometry.distanceXZ as (a: Point3D, b: Point3D) => number,
+        AStarSearch: astarModule.AStarSearch as new (mesh: NavigationMesh) => {
+          findPath: (start: Point2D, target: Point2D) => Point2D[] | null;
+        },
+        NearestAccessiblePoint: nearestModule.NearestAccessiblePoint as new (
+          mesh: NavigationMesh,
+        ) => { findNearest: (target: Point3D, start: Point3D) => Point3D | null },
+        PathOptimizer: optimizerModule.PathOptimizer as new () => {
+          smoothPath: (path: Point2D[]) => Point2D[];
+        },
+      };
+    }
+    const { AStarSearch, NearestAccessiblePoint, PathOptimizer } =
+      scope.__pathfindingWorkerModules;
+    state.astar = new AStarSearch(mesh);
+    state.optimizer = new PathOptimizer();
+    state.nearestFinder = new NearestAccessiblePoint(mesh);
+    scope.__pathfindingWorkerState = state;
     return true;
   } catch (error) {
     console.error("Failed to initialize pathfinding worker:", error);
@@ -25,9 +66,44 @@ export function initWorker(mesh: NavigationMesh): boolean {
 }
 
 // Calculate path
-export function calculatePath(req: WorkerPathRequest): WorkerPathResult {
+export async function calculatePath(
+  req: WorkerPathRequest,
+): Promise<WorkerPathResult> {
   const startTime = performance.now();
 
+  const scope = globalThis as typeof globalThis & {
+    __pathfindingWorkerState?: PathfindingWorkerState;
+    __pathfindingWorkerModules?: PathfindingWorkerModules;
+  };
+  const state = scope.__pathfindingWorkerState ?? {
+    astar: null,
+    optimizer: null,
+    nearestFinder: null,
+  };
+  scope.__pathfindingWorkerState = state;
+  if (!scope.__pathfindingWorkerModules) {
+    const [geometry, astarModule, nearestModule, optimizerModule] =
+      await Promise.all([
+        import("../../../../lib/math/geometry"),
+        import("../search/AStarSearch"),
+        import("../search/NearestAccessiblePoint"),
+        import("../smoothing/PathOptimizer"),
+      ]);
+    scope.__pathfindingWorkerModules = {
+      distanceXZ: geometry.distanceXZ as (a: Point3D, b: Point3D) => number,
+      AStarSearch: astarModule.AStarSearch as new (mesh: NavigationMesh) => {
+        findPath: (start: Point2D, target: Point2D) => Point2D[] | null;
+      },
+      NearestAccessiblePoint: nearestModule.NearestAccessiblePoint as new (
+        mesh: NavigationMesh,
+      ) => { findNearest: (target: Point3D, start: Point3D) => Point3D | null },
+      PathOptimizer: optimizerModule.PathOptimizer as new () => {
+        smoothPath: (path: Point2D[]) => Point2D[];
+      },
+    };
+  }
+  const modules = scope.__pathfindingWorkerModules;
+  const { astar, optimizer, nearestFinder } = state;
   if (!astar || !optimizer || !nearestFinder) {
     return {
       id: req.id,
@@ -72,7 +148,7 @@ export function calculatePath(req: WorkerPathRequest): WorkerPathResult {
       // Calculate total distance
       let totalDistance = 0;
       for (let i = 1; i < waypoints3D.length; i++) {
-        totalDistance += distanceXZ(waypoints3D[i], waypoints3D[i - 1]);
+        totalDistance += modules.distanceXZ(waypoints3D[i], waypoints3D[i - 1]);
       }
 
       const durationMs = performance.now() - startTime;
