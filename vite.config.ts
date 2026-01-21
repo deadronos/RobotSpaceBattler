@@ -30,7 +30,8 @@ export default defineConfig({
     // Ensure Vite prebundles the Rapier compat module once so static and
     // dynamic imports resolve to the same instance (avoids duplicate module
     // closures where `init` runs in one and `EventQueue` is created in another).
-    include: ['@dimforge/rapier3d-compat', '@react-three/rapier']
+    include: ['@dimforge/rapier3d-compat', '@react-three/rapier'],
+    exclude: ['worker.js?worker_file&type=module']
   },
   // Force all imports of the rapier compat package to resolve to the top-level
   // node_modules path. This avoids multiple different package copies being
