@@ -1,11 +1,10 @@
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import {
   AdditiveBlending,
   Color,
   CylinderGeometry,
   InstancedMesh,
-  Material,
   Matrix4,
   Quaternion,
   Vector3,
@@ -14,26 +13,23 @@ import {
 import { ProjectileEntity, RobotEntity } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
 import {
+  applyHiddenInstanceMatrix,
   ensureGeometryHasVertexColors,
-  hideAllInstances,
+  markInstanceBuffersDirty,
   normalizeHDRForInstance,
 } from "../../visuals/instanceColorUtils";
 import { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
+import {
+  ensureInstancedMeshReady,
+  forEachInactiveInstance,
+  swapActiveInstanceSets,
+  useInstancedMeshLifecycle,
+} from "./useInstancedMeshLifecycle";
 
 interface LaserBatchRendererProps {
   projectiles: ProjectileEntity[];
   robotsById: Map<string, RobotEntity>;
   instanceManager: VisualInstanceManager;
-}
-
-function markMaterialNeedsUpdate(material: Material | Material[]) {
-  if (Array.isArray(material)) {
-    for (let i = 0; i < material.length; i += 1) {
-      material[i].needsUpdate = true;
-    }
-    return;
-  }
-  material.needsUpdate = true;
 }
 
 /**
@@ -47,6 +43,7 @@ export function LaserBatchRenderer({
 }: LaserBatchRendererProps) {
   const capacity = instanceManager.getCapacity("lasers");
   const color = useMemo(() => new Color(), []);
+  const hiddenColor = useMemo(() => new Color(0x000000), []);
   const dummyStart = useMemo(() => new Vector3(), []);
   const dummyEnd = useMemo(() => new Vector3(), []);
   const direction = useMemo(() => new Vector3(), []);
@@ -56,10 +53,8 @@ export function LaserBatchRenderer({
   const tempQuaternion = useMemo(() => new Quaternion(), []);
   const yAxis = useMemo(() => new Vector3(0, 1, 0), []);
   const tempVelocity = useMemo(() => new Vector3(), []);
-  const activeIndicesRef = useRef<Set<number>>(new Set());
-  const previousIndicesRef = useRef<Set<number>>(new Set());
-  const meshRef = useRef<InstancedMesh | null>(null);
-  const hasInitializedRef = useRef(false);
+  const { meshRef, activeRef, previousActiveRef, initStateRef } =
+    useInstancedMeshLifecycle(capacity);
 
   const laserGeometry = useMemo(() => {
     const geometry = new CylinderGeometry(1, 1, 1, 10);
@@ -92,23 +87,6 @@ export function LaserBatchRenderer({
     [],
   );
 
-  useEffect(() => {
-    hasInitializedRef.current = false;
-  }, [capacity]);
-
-  useLayoutEffect(() => {
-    const mesh = meshRef.current;
-    if (!mesh || capacity <= 0) return;
-
-    const hadInstanceColor = Boolean(mesh.instanceColor);
-    hideAllInstances(mesh, capacity);
-    hasInitializedRef.current = true;
-
-    if (!hadInstanceColor && mesh.instanceColor) {
-      markMaterialNeedsUpdate(mesh.material);
-    }
-  }, [capacity]);
-
   useFrame(() => {
     perfMarkStart("LaserBatchRenderer.useFrame");
     const mesh = meshRef.current;
@@ -122,19 +100,11 @@ export function LaserBatchRenderer({
       return;
     }
 
-    if (!hasInitializedRef.current) {
-      // Initialize all slots to hidden/offscreen to avoid garbage draws from
-      // uninitialized instance data.
-      const hadInstanceColor = Boolean(mesh.instanceColor);
-      hideAllInstances(mesh, capacity);
-      if (!hadInstanceColor && mesh.instanceColor) {
-        markMaterialNeedsUpdate(mesh.material);
-      }
-      hasInitializedRef.current = true;
-    }
+    // Ensure slots are hidden/offscreen if initialization was missed.
+    ensureInstancedMeshReady(mesh, capacity, initStateRef);
 
-    const activeIndices = activeIndicesRef.current;
-    const previousIndices = previousIndicesRef.current;
+    const activeIndices = activeRef.current;
+    const previousIndices = previousActiveRef.current;
     activeIndices.clear();
     let matricesDirty = false;
     let colorsDirty = false;
@@ -216,33 +186,26 @@ export function LaserBatchRenderer({
 
     }
 
-    const hidden = -512;
-    scale.set(1e-6, 1e-6, 1e-6);
-    for (const index of previousIndices) {
-      if (!activeIndices.has(index)) {
-        tempMatrix.compose(
-          dummyStart.set(hidden, hidden, hidden),
-          tempQuaternion.identity(),
-          scale,
-        );
-        mesh.setMatrixAt(index, tempMatrix);
-        mesh.setColorAt(index, color.setRGB(0, 0, 0));
-        matricesDirty = true;
-        colorsDirty = true;
-      }
-    }
+    forEachInactiveInstance(activeIndices, previousIndices, (index) => {
+      applyHiddenInstanceMatrix(
+        mesh,
+        index,
+        tempMatrix,
+        dummyStart,
+        tempQuaternion,
+        scale,
+        hiddenColor,
+      );
+      matricesDirty = true;
+      colorsDirty = true;
+    });
 
-    if (matricesDirty) {
-      mesh.instanceMatrix.needsUpdate = true;
-    }
-    if (colorsDirty) {
-      if (mesh.instanceColor) {
-        mesh.instanceColor.needsUpdate = true;
-      }
-    }
+    markInstanceBuffersDirty(mesh, {
+      matrix: matricesDirty,
+      color: colorsDirty,
+    });
 
-    previousIndicesRef.current = activeIndices;
-    activeIndicesRef.current = previousIndices;
+    swapActiveInstanceSets(activeRef, previousActiveRef);
 
     perfMarkEnd("LaserBatchRenderer.useFrame");
   });

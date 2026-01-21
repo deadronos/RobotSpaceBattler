@@ -1,4 +1,13 @@
-import { BufferAttribute, BufferGeometry, Color, InstancedMesh, Object3D } from "three";
+import {
+  BufferAttribute,
+  BufferGeometry,
+  Color,
+  InstancedMesh,
+  Matrix4,
+  Object3D,
+  Quaternion,
+  Vector3,
+} from "three";
 
 export function ensureGeometryHasVertexColors(
   geometry: BufferGeometry,
@@ -116,13 +125,81 @@ export function normalizeHDRForInstance(
   return color;
 }
 
+const HIDDEN_INSTANCE_Y = -512;
+const HIDDEN_INSTANCE_SCALE = 0.001;
+
+export function applyHiddenInstance(
+  mesh: InstancedMesh,
+  index: number,
+  dummy: Object3D,
+  hiddenColor: Color,
+) {
+  dummy.position.set(0, HIDDEN_INSTANCE_Y, 0);
+  dummy.rotation.set(0, 0, 0);
+  dummy.scale.set(
+    HIDDEN_INSTANCE_SCALE,
+    HIDDEN_INSTANCE_SCALE,
+    HIDDEN_INSTANCE_SCALE,
+  );
+  dummy.updateMatrix();
+  mesh.setMatrixAt(index, dummy.matrix);
+  mesh.setColorAt(index, hiddenColor);
+}
+
+export function applyHiddenInstanceMatrix(
+  mesh: InstancedMesh,
+  index: number,
+  matrix: Matrix4,
+  position: Vector3,
+  quaternion: Quaternion,
+  scale: Vector3,
+  hiddenColor: Color,
+  hiddenPosition = -512,
+  hiddenScale = 1e-6,
+) {
+  position.set(hiddenPosition, hiddenPosition, hiddenPosition);
+  quaternion.identity();
+  scale.set(hiddenScale, hiddenScale, hiddenScale);
+  matrix.compose(position, quaternion, scale);
+  mesh.setMatrixAt(index, matrix);
+  mesh.setColorAt(index, hiddenColor);
+}
+
+export function markInstanceBuffersDirty(
+  mesh: InstancedMesh,
+  {
+    matrix,
+    color,
+    dirtyIndices,
+  }: {
+    matrix?: boolean;
+    color?: boolean;
+    dirtyIndices?: Set<number>;
+  },
+) {
+  const hasDirtyIndices = Boolean(dirtyIndices && dirtyIndices.size > 0);
+  const matrixDirty = Boolean(matrix) || hasDirtyIndices;
+  const colorDirty = Boolean(color) || hasDirtyIndices;
+
+  if (matrixDirty) {
+    mesh.instanceMatrix.needsUpdate = true;
+  }
+  if (colorDirty && mesh.instanceColor) {
+    mesh.instanceColor.needsUpdate = true;
+  }
+}
+
 export function hideAllInstances(mesh: InstancedMesh, capacity: number) {
   if (capacity <= 0) return;
 
   const dummy = new Object3D();
-  dummy.position.set(0, -512, 0);
+  dummy.position.set(0, HIDDEN_INSTANCE_Y, 0);
   dummy.rotation.set(0, 0, 0);
-  dummy.scale.set(0.001, 0.001, 0.001);
+  dummy.scale.set(
+    HIDDEN_INSTANCE_SCALE,
+    HIDDEN_INSTANCE_SCALE,
+    HIDDEN_INSTANCE_SCALE,
+  );
   dummy.updateMatrix();
 
   const black = new Color(0x000000);

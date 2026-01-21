@@ -1,30 +1,27 @@
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { Color, InstancedMesh, Material, Object3D, SphereGeometry } from "three";
+import { useEffect, useMemo, useRef } from "react";
+import { Color, InstancedMesh, Object3D, SphereGeometry } from "three";
 
 import { EffectEntity } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
 import {
+  applyHiddenInstance,
   clampHDRColor,
   ensureGeometryHasVertexColors,
-  hideAllInstances,
+  markInstanceBuffersDirty,
 } from "../../visuals/instanceColorUtils";
 import { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
+import {
+  ensureInstancedMeshReady,
+  forEachInactiveInstance,
+  swapActiveInstanceSets,
+  useInstancedMeshLifecycle,
+} from "./useInstancedMeshLifecycle";
 
 interface InstancedEffectsProps {
   effects: EffectEntity[];
   instanceManager: VisualInstanceManager;
   currentTimeMs: number;
-}
-
-function markMaterialNeedsUpdate(material: Material | Material[]) {
-  if (Array.isArray(material)) {
-    for (let i = 0; i < material.length; i += 1) {
-      material[i].needsUpdate = true;
-    }
-    return;
-  }
-  material.needsUpdate = true;
 }
 
 /**
@@ -37,7 +34,8 @@ export function InstancedEffects({
   currentTimeMs,
 }: InstancedEffectsProps) {
   const capacity = instanceManager.getCapacity("effects");
-  const meshRef = useRef<InstancedMesh | null>(null);
+  const { meshRef, activeRef, previousActiveRef, dirtyRef, initStateRef } =
+    useInstancedMeshLifecycle(capacity);
   const dummy = useMemo(() => new Object3D(), []);
   const sphereGeometry = useMemo(() => {
     const geometry = new SphereGeometry(0.9, 16, 16);
@@ -58,32 +56,11 @@ export function InstancedEffects({
   }, [meshRef]);
   const color = useMemo(() => new Color(), []);
   const hiddenColor = useMemo(() => new Color("#000000"), []);
-  const activeIndicesRef = useRef<Set<number>>(new Set());
-  const previousActiveIndicesRef = useRef<Set<number>>(new Set());
-  const dirtyIndicesRef = useRef<Set<number>>(new Set());
   const timeRef = useRef(currentTimeMs);
-
-  useLayoutEffect(() => {
-    const mesh = meshRef.current;
-    if (!mesh || capacity <= 0) return;
-
-    const hadInstanceColor = Boolean(mesh.instanceColor);
-    hideAllInstances(mesh, capacity);
-
-    if (!hadInstanceColor && mesh.instanceColor) {
-      markMaterialNeedsUpdate(mesh.material);
-    }
-  }, [capacity]);
 
   useEffect(() => {
     timeRef.current = currentTimeMs;
   }, [currentTimeMs]);
-
-  useEffect(() => {
-    if (meshRef.current) {
-      meshRef.current.count = capacity;
-    }
-  }, [capacity]);
 
   useFrame(() => {
     perfMarkStart("InstancedEffects.useFrame");
@@ -93,9 +70,11 @@ export function InstancedEffects({
       return;
     }
 
-    const activeIndices = activeIndicesRef.current;
-    const previousIndices = previousActiveIndicesRef.current;
-    const dirtyIndices = dirtyIndicesRef.current;
+    ensureInstancedMeshReady(mesh, capacity, initStateRef);
+
+    const activeIndices = activeRef.current;
+    const previousIndices = previousActiveRef.current;
+    const dirtyIndices = dirtyRef.current;
 
     activeIndices.clear();
     dirtyIndices.clear();
@@ -141,27 +120,13 @@ export function InstancedEffects({
       dirtyIndices.add(index);
     }
 
-    for (const index of previousIndices) {
-      if (!activeIndices.has(index)) {
-        dummy.position.set(0, -512, 0);
-        dummy.scale.set(0.001, 0.001, 0.001);
-        dummy.rotation.set(0, 0, 0);
-        dummy.updateMatrix();
-        mesh.setMatrixAt(index, dummy.matrix);
-        mesh.setColorAt(index, hiddenColor);
-        dirtyIndices.add(index);
-      }
-    }
+    forEachInactiveInstance(activeIndices, previousIndices, (index) => {
+      applyHiddenInstance(mesh, index, dummy, hiddenColor);
+      dirtyIndices.add(index);
+    });
 
-    if (dirtyIndices.size > 0) {
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor) {
-        mesh.instanceColor.needsUpdate = true;
-      }
-    }
-
-    previousActiveIndicesRef.current = activeIndices;
-    activeIndicesRef.current = previousIndices;
+    markInstanceBuffersDirty(mesh, { dirtyIndices });
+    swapActiveInstanceSets(activeRef, previousActiveRef);
 
     perfMarkEnd("InstancedEffects.useFrame");
   });
