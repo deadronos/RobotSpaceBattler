@@ -1,12 +1,6 @@
 import type { World as RapierWorld } from "@dimforge/rapier3d-compat";
-
-import {
-  createNavMeshResource,
-  extractArenaConfiguration,
-  NavMeshGenerator,
-  PathfindingSystem,
-} from "../../simulation/ai/pathfinding";
 import NavMesh from "navmesh";
+
 import { updateAISystem } from "../../ecs/systems/aiSystem";
 import { updateCombatSystem } from "../../ecs/systems/combatSystem";
 import { updateEffectSystem } from "../../ecs/systems/effectSystem";
@@ -16,6 +10,12 @@ import { BattleWorld, TeamId } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
 import { createXorShift32 } from "../../lib/random/xorshift";
 import { isActiveRobot } from "../../lib/robotHelpers";
+import {
+  createNavMeshResource,
+  extractArenaConfiguration,
+  NavMeshGenerator,
+  PathfindingSystem,
+} from "../../simulation/ai/pathfinding";
 import {
   MatchSpawnOptions,
   spawnMatch as spawnMatchWithFixture,
@@ -113,16 +113,15 @@ export function createBattleRunner(
   const { telemetry, matchMachine } = options;
 
   // Initialize pathfinding system
-  // Initialize pathfinding system
   const arenaConfig = extractArenaConfiguration();
   const navMeshGenerator = new NavMeshGenerator();
   const navigationMesh = navMeshGenerator.generateFromArena(arenaConfig);
   
   // Convert polygons to navmesh library format (Point2D[] where y is z)
   const libraryPolygons = navigationMesh.polygons.map((poly) =>
-    poly.vertices.map((v) => ({ x: v.x, y: v.z }))
+    poly.vertices.map((v) => ({ x: v.x, y: v.z })),
   );
-  const meshInstance = new NavMesh(libraryPolygons as any); // Type cast if necessary, usually it expects Point[]
+  const meshInstance = new NavMesh(libraryPolygons);
   
   const navMeshResource = createNavMeshResource(navigationMesh, meshInstance);
   const pathfindingSystem = new PathfindingSystem(navMeshResource);

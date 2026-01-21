@@ -1,11 +1,11 @@
 import { applyCaptaincy } from "../../lib/captainElection";
 import { createXorShift32 } from "../../lib/random/xorshift";
 import { TEAM_CONFIGS, TeamId } from "../../lib/teamConfig";
+import { createPathComponent } from "../../simulation/ai/pathfinding/integration/PathComponent";
 import {
   getWeaponProfile,
   WeaponProfile,
 } from "../../simulation/combat/weapons";
-import { createPathComponent } from "../../simulation/ai/pathfinding/integration/PathComponent";
 import { BattleWorld, RobotEntity, toVec3, UnitRole, WeaponType } from "../world";
 
 /**
