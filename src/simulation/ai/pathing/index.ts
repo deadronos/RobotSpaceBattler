@@ -26,8 +26,6 @@ import { MovementContext, MovementPlan, RapierWorldLike } from "./types";
 const SEEK_SPEED = 6;
 const RETREAT_SPEED = 7;
 const STRAFE_SPEED = 4;
-/** Reactive avoidance strength multiplier (increased for better wall clearance) */
-const AVOIDANCE_STRENGTH = 1.8;
 // Prefer Vite's import.meta.env for web builds, fallback to process.env in Node
 const viteEnv = (import.meta as unknown as { env?: Record<string, string> })
   .env;

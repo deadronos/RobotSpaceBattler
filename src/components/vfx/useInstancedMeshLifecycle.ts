@@ -13,6 +13,8 @@ export function markMaterialNeedsUpdate(material: Material | Material[]) {
   material.needsUpdate = true;
 }
 
+type InstancedMeshInitState = { capacity: number; ready: boolean };
+
 function useResizeInstanceCount(
   ref: MutableRefObject<InstancedMesh | null>,
   capacity: number,
@@ -29,7 +31,7 @@ export function useInstancedMeshLifecycle(capacity: number) {
   const activeRef = useRef<Set<number>>(new Set());
   const previousActiveRef = useRef<Set<number>>(new Set());
   const dirtyRef = useRef<Set<number>>(new Set());
-  const initStateRef = useRef({ capacity: -1, ready: false });
+  const initStateRef = useRef<InstancedMeshInitState>({ capacity: -1, ready: false });
 
   useResizeInstanceCount(meshRef, capacity);
 
@@ -58,4 +60,50 @@ export function useInstancedMeshLifecycle(capacity: number) {
     dirtyRef,
     initStateRef,
   };
+}
+
+export function ensureInstancedMeshReady(
+  mesh: InstancedMesh,
+  capacity: number,
+  initStateRef: MutableRefObject<InstancedMeshInitState>,
+) {
+  if (capacity <= 0) return false;
+
+  const initState = initStateRef.current;
+  if (initState.ready && initState.capacity === capacity) {
+    return false;
+  }
+
+  const hadInstanceColor = Boolean(mesh.instanceColor);
+  hideAllInstances(mesh, capacity);
+  if (!hadInstanceColor && mesh.instanceColor) {
+    markMaterialNeedsUpdate(mesh.material);
+  }
+  initStateRef.current = { capacity, ready: true };
+  return true;
+}
+
+export function swapActiveInstanceSets(
+  activeRef: MutableRefObject<Set<number>>,
+  previousActiveRef: MutableRefObject<Set<number>>,
+) {
+  const currentActive = activeRef.current;
+  const lastActive = previousActiveRef.current;
+  previousActiveRef.current = currentActive;
+  activeRef.current = lastActive;
+}
+
+export function forEachInactiveInstance(
+  active: Set<number>,
+  previous: Set<number>,
+  handler: (index: number) => void,
+) {
+  let count = 0;
+  for (const index of previous) {
+    if (!active.has(index)) {
+      handler(index);
+      count += 1;
+    }
+  }
+  return count;
 }
