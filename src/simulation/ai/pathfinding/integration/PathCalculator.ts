@@ -80,8 +80,19 @@ export class PathCalculator {
 
   // Worker runner is internal but kept as a separate method so tests can stub this
   protected async runWorker(req: WorkerPathRequest): Promise<{ ok: true; value: WorkerPathResult } | { ok: false; error: unknown }> {
-    const task = spawn(move(req), calculatePath);
-    return await task.join();
+    try {
+      const task = spawn(move(req), calculatePath);
+      return await task.join();
+    } catch (err) {
+      // Fallback for environments where worker spawn fails (tests / Node without worker support)
+      try {
+        // Run pathfinding in-process as a graceful fallback
+        const value = await calculatePath(req);
+        return { ok: true, value };
+      } catch (err2) {
+        return { ok: false, error: err2 };
+      }
+    }
   }
 
   async calculate(start: Point3D, pathComponent: PathComponent, robotId?: string) {
@@ -171,9 +182,12 @@ export class PathCalculator {
       };
 
       const res = await this.runWorker(req);
+      console.debug('PathCalculator.runWorker result:', res);
 
       if (res.ok) {
-        await this.handleWorkerResult(res.value);
+        // Some runtimes return the worker result wrapped in a Promise inside the value
+        const workerResult = (res.value && typeof (res.value as any).then === 'function') ? await (res.value as Promise<WorkerPathResult>) : (res.value as WorkerPathResult);
+        await this.handleWorkerResult(workerResult);
       } else {
         throw res.error;
       }
@@ -196,6 +210,7 @@ export class PathCalculator {
   }
 
   private async handleWorkerResult(result: WorkerPathResult) {
+    console.debug('handleWorkerResult received:', result);
     const request = this.pendingRequests.get(result.id);
     if (!request) return;
 
@@ -203,9 +218,73 @@ export class PathCalculator {
     const { pathComponent, robotId, start, target } = request;
 
     if (result.status === "failed" && result.error === "Worker not initialized") {
-      // Try to initialize worker and fail gracefully for now
+      // Try to initialize worker and retry the request once
       await spawn(move(this.navMeshResource.getSerializedMesh()), initWorker).join();
+
+      // Attempt to re-dispatch the original request
+      try {
+        const retryReq: WorkerPathRequest = {
+          type: "path_request",
+          id: result.id,
+          start,
+          target,
+          enableSmoothing: this.enableSmoothing,
+          enableNearestFallback: this.enableNearestFallback,
+        };
+
+        const retryRes = await this.runWorker(retryReq);
+        if (retryRes.ok) {
+          const retryResult = (retryRes.value && typeof (retryRes.value as any).then === "function") ? await (retryRes.value as Promise<WorkerPathResult>) : (retryRes.value as WorkerPathResult);
+          // Handle the retry result inline to avoid re-entrancy into handleWorkerResult
+          if (retryResult.status === "success" && retryResult.path) {
+            pathComponent.path = retryResult.path;
+            pathComponent.status = "valid" as const;
+            pathComponent.lastCalculationTime = Date.now();
+
+            if (this.cache) {
+              this.cache.set(start, target, retryResult.path);
+              const stats = this.cache.getStats();
+              this.navMeshResource.updateCacheHitRate(stats.hitRate);
+            }
+
+            this.navMeshResource.recordCalculation(retryResult.durationMs);
+
+            this.emitTelemetry({
+              type: "path-calculation-complete",
+              entityId: robotId,
+              timestamp: Date.now(),
+              success: true,
+              durationMs: retryResult.durationMs,
+              pathLength: retryResult.path.totalDistance,
+              waypointCount: retryResult.path.waypoints.length,
+              fromCache: false,
+            });
+            return;
+          }
+
+          if (retryResult.status === "no_path") {
+            pathComponent.path = null;
+            pathComponent.status = "failed" as const;
+            pathComponent.lastCalculationTime = Date.now();
+
+            this.emitTelemetry({
+              type: "path-calculation-failed",
+              entityId: robotId,
+              timestamp: Date.now(),
+              success: false,
+              durationMs: retryResult.durationMs,
+              error: "No path found",
+            });
+            return;
+          }
+        }
+      } catch (retryErr) {
+        // fallthrough to fail
+      }
+
+      // If retry didn't succeed, mark as failed and emit telemetry
       pathComponent.status = "failed" as const;
+      pathComponent.path = null;
       this.emitTelemetry({
         type: "path-calculation-failed",
         entityId: robotId,
