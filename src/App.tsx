@@ -2,7 +2,7 @@ import "./App.css";
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import sampleObstacleFixture from "../specs/fixtures/dynamic-arena-sample.json";
+import sampleObstacleFixture from "../specs/006-dynamic-arena-obstacles/dynamic-arena-sample.json";
 import { ObstacleEditor } from "./components/debug/ObstacleEditor";
 import { ObstacleSpawner } from "./components/debug/ObstacleSpawner";
 import { PerfToggles } from "./components/debug/PerfToggles";
@@ -91,7 +91,7 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/specs/fixtures/dynamic-arena-sample.json")
+    fetch("/specs/006-dynamic-arena-obstacles/dynamic-arena-sample.json")
       .then(async (res) => {
         if (!res.ok)
           throw new Error(`Failed to load obstacle fixture: ${res.status}`);

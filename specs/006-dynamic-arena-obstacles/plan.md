@@ -111,7 +111,7 @@ P1 — Gameplay systems & AI integration:
 P2 — Designer tooling & test harness:
 
 7. Add obstacle configuration formats and sample placements for `ArenaGeometry` as authoring fallback.
-   - Files: Add `specs/fixtures/dynamic-arena-sample.json` and editor-binding hooks if an inspector exists.
+   - Files: Add `specs/006-dynamic-arena-obstacles/dynamic-arena-sample.json` and editor-binding hooks if an inspector exists.
    - Tests: smoke test loading sample arena and verifying obstacle initial states.
 
 8. Instrumentation & MatchTrace events.

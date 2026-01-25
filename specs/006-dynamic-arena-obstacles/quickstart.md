@@ -47,4 +47,4 @@ Playwright E2E (requires `npm run playwright:install` once):
 npm run playwright:test -- playwright/tests/obstacle-editor.spec.ts
 ```
 
-Add a new debug fixture for rapid iteration: edit `specs/fixtures/dynamic-arena-sample.json`, start the dev server, and reload. The Obstacle Editor shows current fixtures; use the `Copy JSON` / `Apply JSON` controls to iterate.
+Add a new debug fixture for rapid iteration: edit `specs/006-dynamic-arena-obstacles/dynamic-arena-sample.json`, start the dev server, and reload. The Obstacle Editor shows current fixtures; use the `Copy JSON` / `Apply JSON` controls to iterate.

@@ -3,7 +3,7 @@
  * @module pathfinding/search
  */
 
-import NavMeshLib from "navmesh";
+import { NavMesh as NavMeshLib } from "navmesh";
 
 import type { NavigationMesh, Point2D } from "../types";
 

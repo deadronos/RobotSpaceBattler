@@ -4,7 +4,7 @@ import { loadFixture, spawnFixtureInWorld } from './obstacleFixtures';
 
 describe('obstacleFixture helpers', () => {
   it('loads sample fixture and spawns obstacles into the world', () => {
-    const fixture = loadFixture('specs/fixtures/dynamic-arena-sample.json');
+    const fixture = loadFixture('specs/006-dynamic-arena-obstacles/dynamic-arena-sample.json');
     expect(fixture).toBeDefined();
     expect(Array.isArray(fixture.obstacles)).toBe(true);
 
