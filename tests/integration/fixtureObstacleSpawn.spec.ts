@@ -4,7 +4,7 @@ import { spawnMatch } from '../../src/simulation/match/matchSpawner';
 import { loadFixture } from '../helpers/obstacleFixtures';
 
 describe('Fixture Obstacle Spawning', () => {
-  const fixturePath = 'specs/fixtures/dynamic-arena-sample.json';
+  const fixturePath = 'specs/006-dynamic-arena-obstacles/dynamic-arena-sample.json';
 
   it('spawns obstacles from fixture data into a match', () => {
     const world = createBattleWorld();

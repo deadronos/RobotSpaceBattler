@@ -20,8 +20,7 @@ Purpose: Create types, fixtures and test harness updates required to implement d
   - Outcome: Type-only files that export canonical structures matching `data-model.md`.
 
 - [x] T002 [P] Add debug fixture and example authoring JSON
-  - File: `specs/fixtures/dynamic-arena-sample.json`
-  - Outcome: Example obstacles (moving barrier, hazard, destructible cover) which can be loaded by tests and editor.
+  - File: `specs/006-dynamic-arena-obstacles/dynamic-arena-sample.json`
 
 - [x] T003 [P] Extend test harness to support obstacle fixtures and Rapier mock
   - Files: `tests/setup.ts`, add helpers under `tests/helpers/obstacleFixtures.ts`
@@ -106,7 +105,7 @@ Independent Test: Developer loads sample fixture, modifies obstacle parameters, 
   - Outcome: Designer can edit movement pattern, hazard schedule, durability in-the-browser.
 
 - [x] T016 [US2] [P] Add fixture load/save integration for the editor
-  - Files: `src/ui/fixtureLoader.ts`, `specs/fixtures/dynamic-arena-sample.json`
+  - Files: `src/ui/fixtureLoader.ts`, `specs/006-dynamic-arena-obstacles/dynamic-arena-sample.json`
   - Outcome: Editor can load/save obstacle configurations used by match spawner.
 
 - [x] T017 [US2] [P] Playwright E2E: verify editor changes affect runtime obstacle behaviour

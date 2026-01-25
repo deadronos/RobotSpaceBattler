@@ -17,7 +17,7 @@ function createStubTelemetry(): TelemetryPort {
 }
 
 describe('Match start flow with obstacle fixtures', () => {
-  const fixturePath = 'specs/fixtures/dynamic-arena-sample.json';
+  const fixturePath = 'specs/006-dynamic-arena-obstacles/dynamic-arena-sample.json';
 
   it('seeds obstacles from fixture on start and reset', () => {
     const world = createBattleWorld();
