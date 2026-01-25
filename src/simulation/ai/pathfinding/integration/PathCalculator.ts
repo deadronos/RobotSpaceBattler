@@ -186,7 +186,9 @@ export class PathCalculator {
 
       if (res.ok) {
         // Some runtimes return the worker result wrapped in a Promise inside the value
-        const workerResult = (res.value && typeof (res.value as any).then === 'function') ? await (res.value as Promise<WorkerPathResult>) : (res.value as WorkerPathResult);
+        const workerResult = (res.value && typeof (res.value as any).then === 'function')
+          ? await (res.value as unknown as Promise<WorkerPathResult>)
+          : (res.value as WorkerPathResult);
         await this.handleWorkerResult(workerResult);
       } else {
         throw res.error;
@@ -234,7 +236,9 @@ export class PathCalculator {
 
         const retryRes = await this.runWorker(retryReq);
         if (retryRes.ok) {
-          const retryResult = (retryRes.value && typeof (retryRes.value as any).then === "function") ? await (retryRes.value as Promise<WorkerPathResult>) : (retryRes.value as WorkerPathResult);
+          const retryResult = (retryRes.value && typeof (retryRes.value as any).then === "function")
+            ? await (retryRes.value as unknown as Promise<WorkerPathResult>)
+            : (retryRes.value as WorkerPathResult);
           // Handle the retry result inline to avoid re-entrancy into handleWorkerResult
           if (retryResult.status === "success" && retryResult.path) {
             pathComponent.path = retryResult.path;
