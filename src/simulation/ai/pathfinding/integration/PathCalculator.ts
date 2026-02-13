@@ -26,6 +26,12 @@ export class PathCalculator {
   private pendingRequests: Map<string, { pathComponent: PathComponent; startTime: number; robotId?: string; start: Point3D; target: Point3D; }> = new Map();
   private telemetryCallbacks: PathfindingTelemetryCallback[] = [];
 
+  private isPromiseLike<T>(value: unknown): value is Promise<T> {
+    if (typeof value !== "object" || value === null) return false;
+    const candidate = value as { then?: unknown };
+    return typeof candidate.then === "function";
+  }
+
   constructor(private navMeshResource: NavMeshResource, options?: PathCalculatorOptions) {
     this.enableSmoothing = options?.enableSmoothing ?? true;
     this.throttleInterval = options?.throttleInterval ?? 333;
@@ -83,7 +89,7 @@ export class PathCalculator {
     try {
       const task = spawn(move(req), calculatePath);
       return await task.join();
-    } catch (err) {
+    } catch {
       // Fallback for environments where worker spawn fails (tests / Node without worker support)
       try {
         // Run pathfinding in-process as a graceful fallback
@@ -186,7 +192,7 @@ export class PathCalculator {
 
       if (res.ok) {
         // Some runtimes return the worker result wrapped in a Promise inside the value
-        const workerResult = (res.value && typeof (res.value as any).then === 'function')
+        const workerResult = this.isPromiseLike<WorkerPathResult>(res.value)
           ? await (res.value as unknown as Promise<WorkerPathResult>)
           : (res.value as WorkerPathResult);
         await this.handleWorkerResult(workerResult);
@@ -236,7 +242,7 @@ export class PathCalculator {
 
         const retryRes = await this.runWorker(retryReq);
         if (retryRes.ok) {
-          const retryResult = (retryRes.value && typeof (retryRes.value as any).then === "function")
+          const retryResult = this.isPromiseLike<WorkerPathResult>(retryRes.value)
             ? await (retryRes.value as unknown as Promise<WorkerPathResult>)
             : (retryRes.value as WorkerPathResult);
           // Handle the retry result inline to avoid re-entrancy into handleWorkerResult
@@ -282,7 +288,7 @@ export class PathCalculator {
             return;
           }
         }
-      } catch (retryErr) {
+      } catch {
         // fallthrough to fail
       }
 
