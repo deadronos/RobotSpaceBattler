@@ -1,12 +1,11 @@
-import { move, spawn } from "multithreading";
-
 import { PathCache } from "../search/PathCache";
 import type { Point3D } from "../types";
-import { calculatePath, initWorker } from "../worker/pathfinding.worker";
 import type { WorkerPathRequest, WorkerPathResult } from "../worker/types";
 import type { NavMeshResource } from "./NavMeshResource";
 import type { PathComponent } from "./PathComponent";
 import type { PathfindingTelemetryCallback } from "./PathfindingTelemetry";
+import { PathResultHandler, type PendingRequest } from "./PathResultHandler";
+import { PathWorkerManager } from "./PathWorkerManager";
 
 export interface PathCalculatorOptions {
   enableSmoothing?: boolean;
@@ -17,20 +16,21 @@ export interface PathCalculatorOptions {
   timeoutMs?: number;
 }
 
+/**
+ * Orchestrates path calculation requests, managing caching, throttling, and worker execution.
+ * Delegates worker management to PathWorkerManager and result handling to PathResultHandler.
+ */
 export class PathCalculator {
   private cache?: PathCache;
   private throttleInterval: number;
   private enableSmoothing: boolean;
   private enableNearestFallback: boolean;
   private lastCalculationTimes: Map<string, number> = new Map();
-  private pendingRequests: Map<string, { pathComponent: PathComponent; startTime: number; robotId?: string; start: Point3D; target: Point3D; }> = new Map();
+  private pendingRequests: Map<string, PendingRequest> = new Map();
   private telemetryCallbacks: PathfindingTelemetryCallback[] = [];
 
-  private isPromiseLike<T>(value: unknown): value is Promise<T> {
-    if (typeof value !== "object" || value === null) return false;
-    const candidate = value as { then?: unknown };
-    return typeof candidate.then === "function";
-  }
+  private workerManager: PathWorkerManager;
+  private resultHandler: PathResultHandler;
 
   constructor(private navMeshResource: NavMeshResource, options?: PathCalculatorOptions) {
     this.enableSmoothing = options?.enableSmoothing ?? true;
@@ -41,17 +41,17 @@ export class PathCalculator {
       this.cache = new PathCache({ maxSize: options?.maxCacheSize ?? 100 });
     }
 
+    // Initialize worker and result handler
+    this.workerManager = new PathWorkerManager(navMeshResource);
+    this.resultHandler = new PathResultHandler(
+      this.workerManager,
+      navMeshResource,
+      this.telemetryCallbacks,
+      this.cache,
+    );
+
     // Worker initialization is lazy: workers will be initialized on demand if a worker
     // reports it is uninitialized. Avoid eager init in constructor to keep tests simple.
-  }
-
-  private async initializeWorker() {
-    // Initialize worker with serialized mesh so worker-level search state can be primed.
-    try {
-      await spawn(move(this.navMeshResource.getSerializedMesh()), initWorker).join();
-    } catch (err) {
-      console.error("Failed to initialize pathfinding worker:", err);
-    }
   }
 
   /**
@@ -59,19 +59,19 @@ export class PathCalculator {
    * This avoids initializing with empty test doubles in unit tests.
    */
   async ensureInitialized() {
-    try {
-      const mesh = this.navMeshResource.getSerializedMesh();
-      const polygons = (mesh as { polygons?: unknown }).polygons;
-      if (Array.isArray(polygons) && polygons.length > 0) {
-        await this.initializeWorker();
-      }
-    } catch (err) {
-      console.error("PathCalculator ensureInitialized failed:", err);
-    }
+    await this.workerManager.ensureInitialized();
   }
 
   onTelemetry(cb: PathfindingTelemetryCallback) {
     this.telemetryCallbacks.push(cb);
+  }
+
+  /**
+   * Worker execution method - kept as a separate method on PathCalculator
+   * so tests can stub/monkeypatch this for testing purposes.
+   */
+  protected async runWorker(req: WorkerPathRequest): Promise<{ ok: true; value: WorkerPathResult } | { ok: false; error: unknown }> {
+    return this.workerManager.runWorker(req);
   }
 
   private emitTelemetry(event: Parameters<PathfindingTelemetryCallback>[0]) {
@@ -84,28 +84,15 @@ export class PathCalculator {
     }
   }
 
-  // Worker runner is internal but kept as a separate method so tests can stub this
-  protected async runWorker(req: WorkerPathRequest): Promise<{ ok: true; value: WorkerPathResult } | { ok: false; error: unknown }> {
-    try {
-      const task = spawn(move(req), calculatePath);
-      return await task.join();
-    } catch {
-      // Fallback for environments where worker spawn fails (tests / Node without worker support)
-      try {
-        // Run pathfinding in-process as a graceful fallback
-        const value = await calculatePath(req);
-        return { ok: true, value };
-      } catch (err2) {
-        return { ok: false, error: err2 };
-      }
-    }
-  }
-
+  /**
+   * Calculate a path from start to the requested target on the pathComponent.
+   * Uses caching and request throttling to optimize performance.
+   */
   async calculate(start: Point3D, pathComponent: PathComponent, robotId?: string) {
     const target = pathComponent.requestedTarget;
     if (!target) return;
 
-    // Cache hit (check before mesh validation so unit tests can verify cache behavior without a full mesh)
+    // Check cache first (check before mesh validation so unit tests can verify cache behavior)
     if (this.cache) {
       const cached = this.cache.get(start, target);
       if (cached) {
@@ -131,13 +118,10 @@ export class PathCalculator {
       }
     }
 
-    // If the worker runner is the library's default implementation, then
-    // verify the serialized mesh looks valid (has polygons) before dispatching.
-    // This avoids asking real workers to initialize with empty meshes during tests.
+    // Validate mesh has polygons before dispatching to worker
+    // (Skip this check if runWorker has been monkeypatched for testing)
     if (this.runWorker === (PathCalculator.prototype as unknown as { runWorker: unknown }).runWorker) {
-      const mesh = this.navMeshResource.getSerializedMesh();
-      const polygons = (mesh as { polygons?: unknown }).polygons;
-      if (!Array.isArray(polygons) || polygons.length === 0) {
+      if (!this.workerManager.isValidMesh()) {
         pathComponent.status = "failed" as const;
         pathComponent.path = null;
 
@@ -154,6 +138,7 @@ export class PathCalculator {
       }
     }
 
+    // Apply throttling for repeated requests from same robot
     if (robotId) {
       const last = this.lastCalculationTimes.get(robotId) || 0;
       const now = Date.now();
@@ -161,13 +146,28 @@ export class PathCalculator {
       this.lastCalculationTimes.set(robotId, now);
     }
 
-    // Not cached: dispatch to worker
+    // Dispatch to worker
+    await this.dispatchWorkerRequest(start, target, pathComponent, robotId);
+  }
+
+  private async dispatchWorkerRequest(
+    start: Point3D,
+    target: Point3D,
+    pathComponent: PathComponent,
+    robotId?: string,
+  ) {
     pathComponent.status = "calculating" as const;
 
     const requestId = robotId || Math.random().toString(36).substr(2, 9);
     const startTime = performance.now();
 
-    this.pendingRequests.set(requestId, { pathComponent, startTime, robotId, start, target });
+    this.pendingRequests.set(requestId, {
+      pathComponent,
+      startTime,
+      robotId,
+      start,
+      target,
+    });
 
     this.emitTelemetry({
       type: "path-calculation-start",
@@ -191,11 +191,13 @@ export class PathCalculator {
       console.debug('PathCalculator.runWorker result:', res);
 
       if (res.ok) {
-        // Some runtimes return the worker result wrapped in a Promise inside the value
-        const workerResult = this.isPromiseLike<WorkerPathResult>(res.value)
-          ? await (res.value as unknown as Promise<WorkerPathResult>)
-          : (res.value as WorkerPathResult);
-        await this.handleWorkerResult(workerResult);
+        const workerResult = await this.workerManager.unwrapWorkerResult(res.value);
+        await this.resultHandler.handleWorkerResult(
+          workerResult,
+          this.pendingRequests,
+          this.enableSmoothing,
+          this.enableNearestFallback,
+        );
       } else {
         throw res.error;
       }
@@ -215,152 +217,5 @@ export class PathCalculator {
         error: String(err),
       });
     }
-  }
-
-  private async handleWorkerResult(result: WorkerPathResult) {
-    console.debug('handleWorkerResult received:', result);
-    const request = this.pendingRequests.get(result.id);
-    if (!request) return;
-
-    this.pendingRequests.delete(result.id);
-    const { pathComponent, robotId, start, target } = request;
-
-    if (result.status === "failed" && result.error === "Worker not initialized") {
-      // Try to initialize worker and retry the request once
-      await spawn(move(this.navMeshResource.getSerializedMesh()), initWorker).join();
-
-      // Attempt to re-dispatch the original request
-      try {
-        const retryReq: WorkerPathRequest = {
-          type: "path_request",
-          id: result.id,
-          start,
-          target,
-          enableSmoothing: this.enableSmoothing,
-          enableNearestFallback: this.enableNearestFallback,
-        };
-
-        const retryRes = await this.runWorker(retryReq);
-        if (retryRes.ok) {
-          const retryResult = this.isPromiseLike<WorkerPathResult>(retryRes.value)
-            ? await (retryRes.value as unknown as Promise<WorkerPathResult>)
-            : (retryRes.value as WorkerPathResult);
-          // Handle the retry result inline to avoid re-entrancy into handleWorkerResult
-          if (retryResult.status === "success" && retryResult.path) {
-            pathComponent.path = retryResult.path;
-            pathComponent.status = "valid" as const;
-            pathComponent.lastCalculationTime = Date.now();
-
-            if (this.cache) {
-              this.cache.set(start, target, retryResult.path);
-              const stats = this.cache.getStats();
-              this.navMeshResource.updateCacheHitRate(stats.hitRate);
-            }
-
-            this.navMeshResource.recordCalculation(retryResult.durationMs);
-
-            this.emitTelemetry({
-              type: "path-calculation-complete",
-              entityId: robotId,
-              timestamp: Date.now(),
-              success: true,
-              durationMs: retryResult.durationMs,
-              pathLength: retryResult.path.totalDistance,
-              waypointCount: retryResult.path.waypoints.length,
-              fromCache: false,
-            });
-            return;
-          }
-
-          if (retryResult.status === "no_path") {
-            pathComponent.path = null;
-            pathComponent.status = "failed" as const;
-            pathComponent.lastCalculationTime = Date.now();
-
-            this.emitTelemetry({
-              type: "path-calculation-failed",
-              entityId: robotId,
-              timestamp: Date.now(),
-              success: false,
-              durationMs: retryResult.durationMs,
-              error: "No path found",
-            });
-            return;
-          }
-        }
-      } catch {
-        // fallthrough to fail
-      }
-
-      // If retry didn't succeed, mark as failed and emit telemetry
-      pathComponent.status = "failed" as const;
-      pathComponent.path = null;
-      this.emitTelemetry({
-        type: "path-calculation-failed",
-        entityId: robotId,
-        timestamp: Date.now(),
-        success: false,
-        durationMs: result.durationMs,
-        error: "Worker not initialized",
-      });
-      return;
-    }
-
-    if (result.status === "success" && result.path) {
-      const path = result.path;
-      pathComponent.path = path;
-      pathComponent.status = "valid" as const;
-      pathComponent.lastCalculationTime = Date.now();
-
-      if (this.cache) {
-        this.cache.set(start, target, path);
-        const stats = this.cache.getStats();
-        this.navMeshResource.updateCacheHitRate(stats.hitRate);
-      }
-
-      this.navMeshResource.recordCalculation(result.durationMs);
-
-      this.emitTelemetry({
-        type: "path-calculation-complete",
-        entityId: robotId,
-        timestamp: Date.now(),
-        success: true,
-        durationMs: result.durationMs,
-        pathLength: path.totalDistance,
-        waypointCount: path.waypoints.length,
-        fromCache: false,
-      });
-
-      return;
-    }
-
-    if (result.status === "no_path") {
-      pathComponent.path = null;
-      pathComponent.status = "failed" as const;
-      pathComponent.lastCalculationTime = Date.now();
-
-      this.emitTelemetry({
-        type: "path-calculation-failed",
-        entityId: robotId,
-        timestamp: Date.now(),
-        success: false,
-        durationMs: result.durationMs,
-        error: "No path found",
-      });
-      return;
-    }
-
-    pathComponent.path = null;
-    pathComponent.status = "failed" as const;
-    pathComponent.lastCalculationTime = Date.now();
-
-    this.emitTelemetry({
-      type: "path-calculation-failed",
-      entityId: robotId,
-      timestamp: Date.now(),
-      success: false,
-      durationMs: result.durationMs,
-      error: result.error || "Unknown worker error",
-    });
   }
 }
