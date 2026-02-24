@@ -1,5 +1,5 @@
 import fs from 'fs';
-import path from 'path';
+import path from 'node:path';
 import { BattleWorld } from '../../src/ecs/world';
 import { ObstacleFixture, spawnObstaclesFromFixture } from '../../src/simulation/match/matchSpawner';
 

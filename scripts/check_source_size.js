@@ -6,7 +6,7 @@
 //    `tests/`, and `playwright/` directories.
 
 import { promises as fs } from 'fs';
-import path from 'path';
+import path from 'node:path';
 
 const THRESHOLD = 300;
 const EXT_RE = /\.(js|jsx|ts|tsx)$/i;
