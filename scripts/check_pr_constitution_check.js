@@ -1,8 +1,13 @@
 #!/usr/bin/env node
-// Validate that a PR body contains a CONSTITUTION-CHECK section.
+// Validate that a PR body or a .constitution-check file contains a CONSTITUTION-CHECK section.
 // Usage: set env PR_BODY to the pull request body text.
 
+const fs = require('fs');
+const path = require('path');
+
 const body = process.env.PR_BODY || '';
+const filePath = path.join(process.cwd(), '.constitution-check');
+const fileContent = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : '';
 
 function hasConstitutionCheck(text) {
   if (!text) return false;
@@ -11,13 +16,13 @@ function hasConstitutionCheck(text) {
   return regex.test(text);
 }
 
-if (!process.env.GITHUB_EVENT_PATH && !process.env.PR_BODY) {
-  console.log('No PR body provided; skipping check (this script is intended for pull_request events).');
+if (!process.env.GITHUB_EVENT_PATH && !process.env.PR_BODY && !fs.existsSync(filePath)) {
+  console.log('No PR body or .constitution-check file provided; skipping check (this script is intended for pull_request events).');
   process.exit(0);
 }
 
-if (hasConstitutionCheck(body)) {
-  console.log('PR contains CONSTITUTION-CHECK section.');
+if (hasConstitutionCheck(body) || hasConstitutionCheck(fileContent)) {
+  console.log('CONSTITUTION-CHECK found in PR body or .constitution-check file.');
   process.exit(0);
 } else {
   console.error('\nCONSTITUTION CHECK MISSING: Pull request body must include a `CONSTITUTION-CHECK` section.');
