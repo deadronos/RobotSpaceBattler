@@ -3,7 +3,7 @@
  * T069: Phase 7 - Observability
  */
 
-/* eslint-disable react/no-unknown-property */
+
 
 import { Line } from "@react-three/drei";
 import React, { useMemo } from "react";

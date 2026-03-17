@@ -1,4 +1,4 @@
-/* eslint-disable react/no-unknown-property */
+
 
 /**
  * Props for the Lighting component.

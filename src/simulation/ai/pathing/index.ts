@@ -57,7 +57,7 @@ export function planRobotMovement(
   const formationAnchor =
     context?.formationAnchor ?? robot.ai.anchorPosition ?? null;
 
-  let desiredVelocity = robot.velocity;
+  let desiredVelocity;
 
   if (mode === RobotBehaviorMode.Retreat) {
     const retreatDirection = computeForwardDirection(

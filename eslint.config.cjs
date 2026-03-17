@@ -53,7 +53,14 @@ module.exports = [
   // base JS recommended rules
   js.configs.recommended,
   // reintroduce recommended rules from commonly used plugins as flat-config objects
-  mapSafeToEntry(safeRecommendedFrom(reactPlugin)),
+  // (Disabled due to incompatibility with ESLint 10: context.getFilename() is removed)
+  // Object.assign({}, reactPlugin.configs.flat.recommended, {
+  //   settings: {
+  //     react: {
+  //       version: "detect",
+  //     },
+  //   },
+  // }),
   mapSafeToEntry(safeRecommendedFrom(jsxA11yPlugin)),
   mapSafeToEntry(safeRecommendedFrom(importPlugin)),
 
@@ -79,6 +86,7 @@ module.exports = [
       'unused-imports': require('eslint-plugin-unused-imports')
     },
     rules: Object.assign({}, (tsRecommended && tsRecommended.rules) ? tsRecommended.rules : {}, {
+      'react/display-name': 'off',
       // Typescript handles undefined vars at type level; disable core no-undef for TS to avoid false positives
       'no-undef': 'off',
       '@typescript-eslint/no-var-requires': 'error',
@@ -89,6 +97,10 @@ module.exports = [
       // modern JSX transform does not require React in scope
       'react/react-in-jsx-scope': 'off',
       'react/jsx-uses-react': 'off',
+      'react/jsx-no-target-blank': 'error',
+      'react/jsx-no-duplicate-props': 'error',
+      'react/jsx-no-undef': 'error',
+      'react/jsx-key': 'error',
 
       // import / sorting / unused helpers
       'simple-import-sort/imports': 'error',
