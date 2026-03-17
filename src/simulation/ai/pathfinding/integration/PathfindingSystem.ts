@@ -1,13 +1,6 @@
 /**
  * ECS system for pathfinding operations
  * @module pathfinding/integration
- *
- * CONSTITUTION-EXEMPT: 315 LOC (exceeds 300 limit)
- * Justification: Core integration system that manages telemetry, caching, throttling,
- * and path calculation in a cohesive unit. Splitting would create artificial boundaries
- * between tightly coupled concerns (e.g., telemetry emission during calculation, cache
- * coordination with throttling). The file is well-structured with clear method boundaries
- * and remains maintainable at current size.
  */
 
 import type { Point3D } from "../types";

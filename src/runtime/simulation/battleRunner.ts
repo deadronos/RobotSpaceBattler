@@ -1,5 +1,5 @@
 import type { World as RapierWorld } from "@dimforge/rapier3d-compat";
-import NavMesh from "navmesh";
+import { NavMesh } from "navmesh";
 
 import { updateAISystem } from "../../ecs/systems/aiSystem";
 import { updateCombatSystem } from "../../ecs/systems/combatSystem";

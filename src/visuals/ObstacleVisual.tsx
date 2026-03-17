@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unknown-property */
 import { ThreeElements } from "@react-three/fiber";
 import { Color } from "three";
 

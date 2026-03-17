@@ -3,7 +3,7 @@
  * @module pathfinding/integration
  */
 
-import type NavMesh from "navmesh";
+import type { NavMesh } from "navmesh";
 
 import type { NavigationMesh, NavigationPath } from "../types";
 
