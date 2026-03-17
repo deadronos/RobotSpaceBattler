@@ -2,8 +2,8 @@
 // Validate that a PR body or a .constitution-check file contains a CONSTITUTION-CHECK section.
 // Usage: set env PR_BODY to the pull request body text.
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 const body = process.env.PR_BODY || '';
 const filePath = path.join(process.cwd(), '.constitution-check');
