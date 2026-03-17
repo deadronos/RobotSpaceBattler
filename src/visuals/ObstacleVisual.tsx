@@ -1,4 +1,3 @@
-
 import { ThreeElements } from "@react-three/fiber";
 import { Color } from "three";
 

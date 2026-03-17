@@ -1,5 +1,3 @@
-
-
 /**
  * Props for the Lighting component.
  */

@@ -3,8 +3,6 @@
  * T069: Phase 7 - Observability
  */
 
-
-
 import { Line } from "@react-three/drei";
 import React, { useMemo } from "react";
 
