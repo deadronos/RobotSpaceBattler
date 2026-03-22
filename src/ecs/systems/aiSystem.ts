@@ -51,6 +51,7 @@ export function updateAISystem(
       potentialEnemies,
       battleWorld,
       rng,
+      allies,
     );
 
     const assignment = anchors[robot.id];
@@ -105,13 +106,17 @@ export function updateAISystem(
     } else if (robot.ai.searchPosition) {
       navTarget = robot.ai.searchPosition;
     } else if (anchorCandidate) {
-        navTarget = anchorCandidate;
+      navTarget = anchorCandidate;
     } else if (!target) {
-        navTarget = resolveSpawnCenter(robot, neighborsContext);
+      navTarget = resolveSpawnCenter(robot, neighborsContext);
     }
 
     if (navTarget) {
-      robot.pathComponent.requestedTarget = { x: navTarget.x, y: navTarget.y, z: navTarget.z };
+      robot.pathComponent.requestedTarget = {
+        x: navTarget.x,
+        y: navTarget.y,
+        z: navTarget.z,
+      };
     } else {
       robot.pathComponent.requestedTarget = null;
     }
