@@ -33,9 +33,12 @@ export function useSimulation({
   obstacleFixture,
 }: UseSimulationOptions) {
   const runnerRef = useRef<BattleRunner | null>(null);
+  const rapierWorldRef = useRef<RapierWorld | null>(null);
   const [version, setVersion] = useState(0);
   const accumulator = useRef(0);
   const { world: rapierWorld } = useRapier();
+
+  rapierWorldRef.current = (rapierWorld as unknown as RapierWorld | null) ?? null;
 
   // Initialize BattleRunner
   useEffect(() => {
@@ -47,12 +50,24 @@ export function useSimulation({
     });
 
     runnerRef.current = runner;
+    if (rapierWorldRef.current) {
+      runner.setRapierWorld(rapierWorldRef.current);
+    }
     onRunnerReady?.(runner);
 
     return () => {
-      runnerRef.current = null;
+      runner.setRapierWorld(null);
+      if (runnerRef.current === runner) {
+        runnerRef.current = null;
+      }
     };
-  }, [battleWorld, matchMachine, telemetry, onRunnerReady, obstacleFixture]);
+  }, [
+    battleWorld,
+    matchMachine,
+    obstacleFixture,
+    onRunnerReady,
+    telemetry,
+  ]);
 
   // Expose for debugging
   useEffect(() => {
@@ -82,9 +97,10 @@ export function useSimulation({
     runnerRef.current?.step(delta);
 
     accumulator.current += delta;
-    if (accumulator.current >= FRAME_SAMPLE_INTERVAL) {
-      accumulator.current = 0;
-      setVersion((v) => v + 1);
+    const sampleCount = Math.floor(accumulator.current / FRAME_SAMPLE_INTERVAL);
+    if (sampleCount > 0) {
+      accumulator.current -= FRAME_SAMPLE_INTERVAL * sampleCount;
+      setVersion((v) => v + sampleCount);
     }
   });
 

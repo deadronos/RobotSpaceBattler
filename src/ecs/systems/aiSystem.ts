@@ -51,7 +51,7 @@ export function updateAISystem(
       potentialEnemies,
       battleWorld,
       rng,
-      allies.filter((a) => a.id !== robot.id),
+      allies,
     );
 
     const assignment = anchors[robot.id];

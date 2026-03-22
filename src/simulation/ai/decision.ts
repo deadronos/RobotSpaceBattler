@@ -43,16 +43,21 @@ export function updateTargeting(
 
   // Medic Logic: Target Allies
   if (robot.role === "medic") {
-     const allies = potentialAllies ?? robots.filter(r => r.team === robot.team && r.id !== robot.id);
+    const allies = potentialAllies ?? robots;
 
-     // Filter allies by Line of Sight for the medic
-     const visibleAllies = allies.filter(ally =>
-       !isLineOfSightBlockedRuntime(robot.position, ally.position, {
-         obstacles: battleWorld.obstacles.entities,
-       })
-     );
+    const visibleAllies = allies.filter(
+      (ally) =>
+        ally.id !== robot.id &&
+        ally.team === robot.team &&
+        !isLineOfSightBlockedRuntime(robot.position, ally.position, {
+          obstacles: battleWorld.obstacles.entities,
+        }),
+    );
 
-     target = findClosestAlly(robot, visibleAllies);
+    target = findClosestAlly(
+      robot,
+      visibleAllies.length > 0 ? visibleAllies : allies,
+    );
   } else {
     // Offensive Logic
     if (robot.ai.targetId) {
@@ -76,30 +81,29 @@ export function updateTargeting(
     robot.ai.roamTarget = null;
     robot.ai.roamUntil = null;
   } else {
-    // Only search/roam if we are not a medic (or if medic has no one to heal, maybe it should roam?)
     if (robot.role !== "medic") {
-        const latestMemory = getLatestEnemyMemory(robot);
-        const memoryEntry = latestMemory?.[1] ?? null;
+      const latestMemory = getLatestEnemyMemory(robot);
+      const memoryEntry = latestMemory?.[1] ?? null;
 
-        // Only pursue memory if it is recent enough
-        if (
+      // Only pursue memory if it is recent enough
+      if (
         latestMemory &&
         latestMemory[1].timestamp >=
-            battleWorld.state.elapsedMs - ENGAGE_MEMORY_TIMEOUT_MS
-        ) {
+        battleWorld.state.elapsedMs - ENGAGE_MEMORY_TIMEOUT_MS
+      ) {
         robot.ai.searchPosition = predictSearchAnchor(memoryEntry);
         robot.ai.targetId = latestMemory?.[0];
-        } else {
+      } else {
         // Memory stale - clear pursuit and consider roaming
         robot.ai.searchPosition = null;
         robot.ai.targetId = undefined;
         refreshRoamTarget(robot.ai, battleWorld.state.elapsedMs, rng);
-        }
+      }
     } else {
-        // Medic roaming logic
-        robot.ai.searchPosition = null;
-        robot.ai.targetId = undefined;
-        refreshRoamTarget(robot.ai, battleWorld.state.elapsedMs, rng);
+      // Medic roaming logic
+      robot.ai.searchPosition = null;
+      robot.ai.targetId = undefined;
+      refreshRoamTarget(robot.ai, battleWorld.state.elapsedMs, rng);
     }
   }
 
