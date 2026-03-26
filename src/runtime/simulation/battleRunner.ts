@@ -173,7 +173,7 @@ export function createBattleRunner(
         perfMarkEnd("pathfindingSystem");
 
         perfMarkStart("updateCombatSystem");
-        updateCombatSystem(world, telemetry);
+        updateCombatSystem(world, telemetry, deltaSeconds);
         perfMarkEnd("updateCombatSystem");
 
         perfMarkStart("updateMovementSystem");

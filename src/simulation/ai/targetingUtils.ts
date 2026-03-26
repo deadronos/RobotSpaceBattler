@@ -1,4 +1,5 @@
-import { distanceSquaredVec3, Vec3 } from "../../lib/math/vec3";
+import { distanceSquaredXZ } from "../../lib/math/geometry";
+import { Vec3 } from "../../lib/math/vec3";
 
 /**
  * Interface for entities with a position.
@@ -28,7 +29,7 @@ export function findClosestEntity<T extends PositionedEntity>(
     if (filter && !filter(entity)) {
       continue;
     }
-    const distSq = distanceSquaredVec3(origin, entity.position);
+    const distSq = distanceSquaredXZ(origin, entity.position);
     if (distSq < minDistSq) {
       minDistSq = distSq;
       best = entity;

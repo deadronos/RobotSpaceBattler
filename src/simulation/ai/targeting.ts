@@ -76,24 +76,7 @@ export function findClosestAlly(
   const allies = pool.filter((robot) => isAlly(seeker, robot) && robot.health < robot.maxHealth);
 
   if (allies.length === 0) {
-    // Fallback: Follow closest ally even if healthy? Or just stick to default seek?
-    // For now, if everyone is healthy, maybe just follow the captain or closest ally.
-    // Let's stick to injured for now. If no one is injured, maybe we target healthy allies just to follow?
-    // But `decision.ts` will use this target to engage/heal.
-    // If we return a healthy ally, the medic will shoot them (heal them) even if full health.
-    // That's fine, it just won't add health.
-    const healthyAllies = pool.filter((robot) => isAlly(seeker, robot));
-    if (healthyAllies.length === 0) return undefined;
-
-    // Just follow closest ally
-    return findBestEntity(
-        healthyAllies,
-        (entity) => ({
-            entity,
-            distanceSq: distanceSquaredVec3(seeker.position, entity.position),
-        }),
-        (a, b) => a.distanceSq - b.distanceSq
-    );
+    return undefined;
   }
 
   // Prioritize lowest health percentage first, then distance.

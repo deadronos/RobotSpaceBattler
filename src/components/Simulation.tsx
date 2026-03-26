@@ -63,7 +63,7 @@ function SimulationContent(props: SimulationProps) {
 
   // Custom hook manages the ECS world lifecycle and system updates.
   const { version } = useSimulation(props);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   void version;
 
   const qualitySettings = useQualitySettings();

@@ -5,9 +5,9 @@ import { useEffect, useRef, useState } from "react";
 
 import { BattleWorld } from "../../ecs/world";
 import { recordRendererFrame } from "../../visuals/rendererStats";
+import { MatchStateMachine } from "../state/matchStateMachine";
 import { BattleRunner, createBattleRunner } from "./battleRunner";
 import { TelemetryPort } from "./ports";
-import { MatchStateMachine } from "../state/matchStateMachine";
 
 const FRAME_SAMPLE_INTERVAL = 1 / 30;
 
