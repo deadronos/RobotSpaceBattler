@@ -85,6 +85,7 @@ function createProjectile(
 export function updateCombatSystem(
   world: BattleWorld,
   telemetry: TelemetryPort,
+  deltaSeconds: number,
 ): void {
   const robots = world.robots.entities;
   if (robots.length === 0) {
@@ -99,6 +100,8 @@ export function updateCombatSystem(
 
   for (let i = 0; i < robots.length; i += 1) {
     const robot = robots[i];
+    robot.fireCooldown = Math.max(0, robot.fireCooldown - deltaSeconds);
+
     if (robot.health <= 0) {
       continue;
     }

@@ -1,5 +1,5 @@
 import {
-  closestPointOnAABB,
+  closestPointOnAABBInPlace,
   distanceSquaredPointToAABB,
   distanceSquaredXZ,
 } from "../../lib/math/geometry";
@@ -23,8 +23,9 @@ import { BattleWorld } from "../world";
 
 const FRICTION = 0.92;
 const { min: MIN_BOUNDS, max: MAX_BOUNDS } = ARENA_BOUNDS;
+const scratchClosest = vec3(0, 0, 0);
 
-function resolveCollision(pos: Vec3): void {
+function resolveCollision(pos: Vec3, world: BattleWorld): void {
   // Check walls
   for (const wall of ARENA_WALLS) {
     const wallCenter = vec3(wall.x, 0, wall.z);
@@ -40,18 +41,19 @@ function resolveCollision(pos: Vec3): void {
       ROBOT_RADIUS * ROBOT_RADIUS
     ) {
       // Resolve collision
-      const closest = closestPointOnAABB(
+      closestPointOnAABBInPlace(
         pos,
         wallCenter,
         wall.halfWidth,
         wall.halfDepth,
+        scratchClosest,
       );
-      const dist = distanceVec3(pos, closest);
+      const dist = distanceVec3(pos, scratchClosest);
 
       if (dist > 0) {
         const pushDist = ROBOT_RADIUS - dist;
-        const dx = pos.x - closest.x;
-        const dz = pos.z - closest.z;
+        const dx = pos.x - scratchClosest.x;
+        const dz = pos.z - scratchClosest.z;
         // Normalize and scale
         pos.x += (dx / dist) * pushDist;
         pos.z += (dz / dist) * pushDist;
@@ -77,6 +79,59 @@ function resolveCollision(pos: Vec3): void {
       }
     }
   }
+
+  // Check dynamic obstacles
+  for (const obstacle of world.obstacles.entities) {
+    if (!obstacle.blocksMovement) continue;
+    if (!obstacle.shape) continue;
+
+    const obstacleCenter = obstacle.shape.center
+      ? vec3(obstacle.position.x + obstacle.shape.center.x, 0, obstacle.position.z + obstacle.shape.center.z)
+      : vec3(obstacle.position.x, 0, obstacle.position.z);
+
+    if (obstacle.shape.kind === 'circle') {
+      const combinedRadius = obstacle.shape.radius + ROBOT_RADIUS;
+      const distSq = distanceSquaredXZ(pos, obstacleCenter);
+
+      if (distSq < combinedRadius * combinedRadius) {
+        const dist = Math.sqrt(distSq);
+        if (dist > 0) {
+          const dx = pos.x - obstacleCenter.x;
+          const dz = pos.z - obstacleCenter.z;
+          const pushDist = combinedRadius - dist;
+          pos.x += (dx / dist) * pushDist;
+          pos.z += (dz / dist) * pushDist;
+        }
+      }
+    } else if (obstacle.shape.kind === 'box') {
+      if (
+        distanceSquaredPointToAABB(
+          pos,
+          obstacleCenter,
+          obstacle.shape.halfWidth,
+          obstacle.shape.halfDepth,
+        ) <
+        ROBOT_RADIUS * ROBOT_RADIUS
+      ) {
+        closestPointOnAABBInPlace(
+          pos,
+          obstacleCenter,
+          obstacle.shape.halfWidth,
+          obstacle.shape.halfDepth,
+          scratchClosest,
+        );
+        const dist = distanceVec3(pos, scratchClosest);
+
+        if (dist > 0) {
+          const pushDist = ROBOT_RADIUS - dist;
+          const dx = pos.x - scratchClosest.x;
+          const dz = pos.z - scratchClosest.z;
+          pos.x += (dx / dist) * pushDist;
+          pos.z += (dz / dist) * pushDist;
+        }
+      }
+    }
+  }
 }
 
 /**
@@ -93,14 +148,12 @@ export function updateMovementSystem(
   const { robots } = world;
 
   robots.entities.forEach((robot) => {
-    robot.fireCooldown = Math.max(0, robot.fireCooldown - deltaSeconds);
-
     const multiplier = robot.slowMultiplier ?? 1;
     const displacement = scaleVec3(robot.velocity, deltaSeconds * multiplier);
     addInPlaceVec3(robot.position, displacement);
 
     // Apply collision detection
-    resolveCollision(robot.position);
+    resolveCollision(robot.position, world);
 
     clampVec3(robot.position, MIN_BOUNDS, MAX_BOUNDS);
     robot.position.y = 0;

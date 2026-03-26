@@ -25,6 +25,25 @@ export function closestPointOnAABB(
 }
 
 /** Squared distance from point to AABB (XZ plane). */
+
+/** Closest point on an AABB (XZ plane; preserves Y), in place to avoid allocation. */
+export function closestPointOnAABBInPlace(
+  point: Vec3,
+  center: Vec3,
+  halfWidth: number,
+  halfDepth: number,
+  out: Vec3,
+): void {
+  const minX = center.x - halfWidth;
+  const maxX = center.x + halfWidth;
+  const minZ = center.z - halfDepth;
+  const maxZ = center.z + halfDepth;
+
+  out.x = Math.max(minX, Math.min(point.x, maxX));
+  out.y = point.y;
+  out.z = Math.max(minZ, Math.min(point.z, maxZ));
+}
+
 export function distanceSquaredPointToAABB(
   point: Vec3,
   center: Vec3,
