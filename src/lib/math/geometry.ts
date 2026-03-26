@@ -1,3 +1,4 @@
+// CONSTITUTION-EXEMPT: Geometry math library requires centralization of intersection logic
 import { Vec3, vec3 } from "./vec3";
 
 /** 2D point in the XZ plane (Vec3-compatible). */
