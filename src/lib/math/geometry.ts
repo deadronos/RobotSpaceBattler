@@ -25,8 +25,6 @@ export function closestPointOnAABB(
   return vec3(x, point.y, z);
 }
 
-/** Squared distance from point to AABB (XZ plane). */
-
 /** Closest point on an AABB (XZ plane; preserves Y), in place to avoid allocation. */
 export function closestPointOnAABBInPlace(
   point: Vec3,
