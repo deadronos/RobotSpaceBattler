@@ -1,4 +1,4 @@
-import { BattleWorld } from "../../ecs/world";
+import { BattleWorld, ObstacleEntity } from "../../ecs/world";
 import {
   pointAtDistance,
   segmentLengths,
@@ -7,6 +7,30 @@ import {
 import { cloneVec3, subtractVec3, vec3 } from "../../lib/math/vec3";
 import { TelemetryPort } from "../../runtime/simulation/ports";
 import { updateRapierObstacleTransforms } from "./rapierIntegration";
+
+function recordObstacleTelemetry(
+  obstacle: ObstacleEntity,
+  prevPos: { x: number; y: number; z: number } | undefined,
+  world: BattleWorld,
+  telemetry: TelemetryPort | undefined,
+) {
+  if (telemetry && obstacle.id) {
+    const moved =
+      !prevPos ||
+      prevPos.x !== obstacle.position.x ||
+      prevPos.z !== obstacle.position.z ||
+      prevPos.y !== obstacle.position.y;
+    if (moved) {
+      telemetry.recordObstacleMove?.({
+        frameIndex: world.state.frameIndex ?? 0,
+        timestampMs: world.state.elapsedMs,
+        obstacleId: obstacle.id,
+        position: cloneVec3(obstacle.position),
+        orientation: obstacle.orientation,
+      });
+    }
+  }
+}
 
 export function updateObstacleMovement(
   world: BattleWorld,
@@ -68,23 +92,8 @@ export function updateObstacleMovement(
       obstacle.position = vec3(x, prevY, z);
       // Update orientation if present
       obstacle.orientation = ((obstacle.orientation ?? 0) + deltaAngle) % twoPi;
-      // emit telemetry for obstacle movement
-      if (telemetry && obstacle.id) {
-        const moved =
-          !prevPos ||
-          prevPos.x !== obstacle.position.x ||
-          prevPos.z !== obstacle.position.z ||
-          prevPos.y !== obstacle.position.y;
-        if (moved) {
-          telemetry.recordObstacleMove?.({
-            frameIndex: world.state.frameIndex ?? 0,
-            timestampMs: world.state.elapsedMs,
-            obstacleId: obstacle.id,
-            position: cloneVec3(obstacle.position),
-            orientation: obstacle.orientation,
-          });
-        }
-      }
+
+      recordObstacleTelemetry(obstacle, prevPos, world, telemetry);
       continue;
     }
 
@@ -130,22 +139,8 @@ export function updateObstacleMovement(
       : undefined;
     const prevY = obstacle.position?.y ?? 0;
     obstacle.position = vec3(pos.x, prevY, pos.z);
-    if (telemetry && obstacle.id) {
-      const moved =
-        !prevPos ||
-        prevPos.x !== obstacle.position.x ||
-        prevPos.z !== obstacle.position.z ||
-        prevPos.y !== obstacle.position.y;
-      if (moved) {
-        telemetry.recordObstacleMove?.({
-          frameIndex: world.state.frameIndex ?? 0,
-          timestampMs: world.state.elapsedMs,
-          obstacleId: obstacle.id,
-          position: cloneVec3(obstacle.position),
-          orientation: obstacle.orientation,
-        });
-      }
-    }
+
+    recordObstacleTelemetry(obstacle, prevPos, world, telemetry);
   }
 
   // If a Rapier world is attached, sync obstacle transforms so physics queries see runtime geometry.

@@ -1,11 +1,14 @@
-
 import type { NavigationMesh, Point2D, Point3D } from "../types";
 import type { WorkerPathRequest, WorkerPathResult } from "./types";
 
 interface PathfindingWorkerState {
-  astar: { findPath: (start: Point2D, target: Point2D) => Point2D[] | null } | null;
+  astar: {
+    findPath: (start: Point2D, target: Point2D) => Point2D[] | null;
+  } | null;
   optimizer: { smoothPath: (path: Point2D[]) => Point2D[] } | null;
-  nearestFinder: { findNearest: (target: Point3D, start: Point3D) => Point3D | null } | null;
+  nearestFinder: {
+    findNearest: (target: Point3D, start: Point3D) => Point3D | null;
+  } | null;
 }
 
 interface PathfindingWorkerModules {
@@ -17,6 +20,34 @@ interface PathfindingWorkerModules {
     findNearest: (target: Point3D, start: Point3D) => Point3D | null;
   };
   PathOptimizer: new () => { smoothPath: (path: Point2D[]) => Point2D[] };
+}
+
+async function loadModules(
+  scope: typeof globalThis & {
+    __pathfindingWorkerModules?: PathfindingWorkerModules;
+  },
+) {
+  if (!scope.__pathfindingWorkerModules) {
+    const [geometry, astarModule, nearestModule, optimizerModule] =
+      await Promise.all([
+        import("../../../../lib/math/geometry"),
+        import("../search/AStarSearch"),
+        import("../search/NearestAccessiblePoint"),
+        import("../smoothing/PathOptimizer"),
+      ]);
+    scope.__pathfindingWorkerModules = {
+      distanceXZ: geometry.distanceXZ as (a: Point3D, b: Point3D) => number,
+      AStarSearch: astarModule.AStarSearch as new (mesh: NavigationMesh) => {
+        findPath: (start: Point2D, target: Point2D) => Point2D[] | null;
+      },
+      NearestAccessiblePoint: nearestModule.NearestAccessiblePoint as new (
+        mesh: NavigationMesh,
+      ) => { findNearest: (target: Point3D, start: Point3D) => Point3D | null },
+      PathOptimizer: optimizerModule.PathOptimizer as new () => {
+        smoothPath: (path: Point2D[]) => Point2D[];
+      },
+    };
+  }
 }
 
 // Initialize the worker with the navigation mesh
@@ -31,29 +62,11 @@ export async function initWorker(mesh: NavigationMesh): Promise<boolean> {
       optimizer: null,
       nearestFinder: null,
     };
-    if (!scope.__pathfindingWorkerModules) {
-      const [geometry, astarModule, nearestModule, optimizerModule] =
-        await Promise.all([
-          import("../../../../lib/math/geometry"),
-          import("../search/AStarSearch"),
-          import("../search/NearestAccessiblePoint"),
-          import("../smoothing/PathOptimizer"),
-        ]);
-      scope.__pathfindingWorkerModules = {
-        distanceXZ: geometry.distanceXZ as (a: Point3D, b: Point3D) => number,
-        AStarSearch: astarModule.AStarSearch as new (mesh: NavigationMesh) => {
-          findPath: (start: Point2D, target: Point2D) => Point2D[] | null;
-        },
-        NearestAccessiblePoint: nearestModule.NearestAccessiblePoint as new (
-          mesh: NavigationMesh,
-        ) => { findNearest: (target: Point3D, start: Point3D) => Point3D | null },
-        PathOptimizer: optimizerModule.PathOptimizer as new () => {
-          smoothPath: (path: Point2D[]) => Point2D[];
-        },
-      };
-    }
+
+    await loadModules(scope);
+
     const { AStarSearch, NearestAccessiblePoint, PathOptimizer } =
-      scope.__pathfindingWorkerModules;
+      scope.__pathfindingWorkerModules!;
     state.astar = new AStarSearch(mesh);
     state.optimizer = new PathOptimizer();
     state.nearestFinder = new NearestAccessiblePoint(mesh);
@@ -81,28 +94,10 @@ export async function calculatePath(
     nearestFinder: null,
   };
   scope.__pathfindingWorkerState = state;
-  if (!scope.__pathfindingWorkerModules) {
-    const [geometry, astarModule, nearestModule, optimizerModule] =
-      await Promise.all([
-        import("../../../../lib/math/geometry"),
-        import("../search/AStarSearch"),
-        import("../search/NearestAccessiblePoint"),
-        import("../smoothing/PathOptimizer"),
-      ]);
-    scope.__pathfindingWorkerModules = {
-      distanceXZ: geometry.distanceXZ as (a: Point3D, b: Point3D) => number,
-      AStarSearch: astarModule.AStarSearch as new (mesh: NavigationMesh) => {
-        findPath: (start: Point2D, target: Point2D) => Point2D[] | null;
-      },
-      NearestAccessiblePoint: nearestModule.NearestAccessiblePoint as new (
-        mesh: NavigationMesh,
-      ) => { findNearest: (target: Point3D, start: Point3D) => Point3D | null },
-      PathOptimizer: optimizerModule.PathOptimizer as new () => {
-        smoothPath: (path: Point2D[]) => Point2D[];
-      },
-    };
-  }
-  const modules = scope.__pathfindingWorkerModules;
+
+  await loadModules(scope);
+
+  const modules = scope.__pathfindingWorkerModules!;
   const { astar, optimizer, nearestFinder } = state;
   if (!astar || !optimizer || !nearestFinder) {
     return {
@@ -110,7 +105,7 @@ export async function calculatePath(
       path: null,
       status: "failed",
       error: "Worker not initialized",
-      durationMs: 0
+      durationMs: 0,
     };
   }
 
@@ -127,7 +122,10 @@ export async function calculatePath(
       const nearestPoint = nearestFinder.findNearest(target, start);
 
       if (nearestPoint) {
-        const nearestTarget2D: Point2D = { x: nearestPoint.x, z: nearestPoint.z };
+        const nearestTarget2D: Point2D = {
+          x: nearestPoint.x,
+          z: nearestPoint.z,
+        };
         waypoints2D = astar.findPath(start2D, nearestTarget2D);
       }
     }
@@ -158,10 +156,10 @@ export async function calculatePath(
         path: {
           waypoints: waypoints3D,
           totalDistance,
-          smoothed: enableSmoothing
+          smoothed: enableSmoothing,
         },
         status: "success",
-        durationMs
+        durationMs,
       };
     } else {
       const durationMs = performance.now() - startTime;
@@ -169,7 +167,7 @@ export async function calculatePath(
         id: req.id,
         path: null,
         status: "no_path",
-        durationMs
+        durationMs,
       };
     }
   } catch (error) {
@@ -179,7 +177,7 @@ export async function calculatePath(
       path: null,
       status: "failed",
       error: error instanceof Error ? error.message : String(error),
-      durationMs
+      durationMs,
     };
   }
 }

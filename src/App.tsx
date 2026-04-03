@@ -247,7 +247,7 @@ export default function App() {
           ) : null}
           <button
             type="button"
-            className="app-victory-button"
+            className="app-button app-victory-button"
             onClick={() => {
               setIsBattleStatsOpen(true);
             }}

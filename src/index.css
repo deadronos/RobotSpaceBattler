@@ -32,7 +32,7 @@ canvas {
   letter-spacing: 0.02em;
 }
 
-.settings-modal-backdrop {
+.modal-backdrop {
   position: fixed;
   top: 0;
   left: 0;
@@ -45,7 +45,7 @@ canvas {
   z-index: 1000;
 }
 
-.settings-modal-content {
+.modal-content {
   background-color: #2a2a2a;
   padding: 24px;
   border-radius: 12px;
@@ -55,19 +55,19 @@ canvas {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
-.settings-modal-header {
+.modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
 }
 
-.settings-modal-header h2 {
+.modal-header h2 {
   margin: 0;
   font-size: 20px;
 }
 
-.settings-modal-close {
+.modal-close {
   background: none;
   border: none;
   color: #aaa;
@@ -76,7 +76,7 @@ canvas {
   padding: 0 8px;
 }
 
-.settings-modal-body {
+.modal-body {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -124,7 +124,7 @@ canvas {
 }
 
 /* Battle Stats Modal */
-.battle-stats-backdrop {
+.battle-stats-backdrop-removed {
   position: fixed;
   top: 0;
   left: 0;
@@ -172,7 +172,7 @@ canvas {
   }
 }
 
-.battle-stats-header {
+.battle-stats-header-removed {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -181,7 +181,7 @@ canvas {
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
 }
 
-.battle-stats-header h2 {
+.battle-stats-header-removed h2 {
   margin: 0;
   font-size: 24px;
   font-weight: 600;
@@ -191,7 +191,7 @@ canvas {
   background-clip: text;
 }
 
-.battle-stats-close {
+.battle-stats-close-removed {
   background: none;
   border: none;
   color: #aaa;
@@ -201,11 +201,11 @@ canvas {
   transition: color 0.2s;
 }
 
-.battle-stats-close:hover {
+.battle-stats-close-removed:hover {
   color: #fff;
 }
 
-.battle-stats-body {
+.battle-stats-body-removed {
   display: flex;
   flex-direction: column;
   gap: 24px;

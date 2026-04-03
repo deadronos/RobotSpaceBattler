@@ -52,60 +52,7 @@
   margin: 12px 0 0 0;
 }
 
-.app-victory-button {
-  margin-top: 16px;
-  padding: 12px 32px;
-  font-size: 16px;
-  font-weight: 600;
-  border: none;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
-  position: relative;
-  overflow: hidden;
-}
-
-.app-victory-button::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
-}
-
-.app-victory-button:hover::before {
-  width: 300px;
-  height: 300px;
-}
-
-.app-victory-button:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  box-shadow: 0 6px 24px rgba(59, 130, 246, 0.6);
-  transform: translateY(-2px);
-}
-
-.app-victory-button:active {
-  transform: translateY(0);
-}
-
-.app-controls {
-  position: absolute;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 12px;
-}
-
-.app-controls button {
+.app-button {
   padding: 12px 24px;
   font-size: 14px;
   font-weight: 600;
@@ -118,8 +65,8 @@
   overflow: hidden;
 }
 
-.app-controls button::before {
-  content: '';
+.app-button::before {
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -128,16 +75,46 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.2);
   transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  transition:
+    width 0.6s,
+    height 0.6s;
 }
 
-.app-controls button:hover::before {
+.app-button:hover::before {
   width: 300px;
   height: 300px;
 }
 
-.app-controls button:active {
+.app-button:active {
   transform: scale(0.95);
+}
+
+.app-victory-button {
+  padding: 12px 32px;
+  font-size: 16px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  margin-top: 16px;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+}
+
+.app-victory-button:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  box-shadow: 0 6px 24px rgba(59, 130, 246, 0.6);
+  transform: translateY(-2px);
+}
+
+.app-victory-button:active {
+  transform: translateY(0) scale(0.95);
+}
+
+.app-controls {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
 }
 
 .app-controls button:nth-child(1) {
