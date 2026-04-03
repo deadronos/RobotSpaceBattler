@@ -13,11 +13,7 @@ import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
 import { isActiveRobot } from "../../lib/robotHelpers";
 import { TelemetryPort } from "../../runtime/simulation/ports";
 import { applyDamageToObstacle } from "../../simulation/obstacles/destructibleSystem";
-import {
-  BattleWorld,
-  ObstacleEntity,
-  RobotEntity,
-} from "../world";
+import { BattleWorld, ObstacleEntity, RobotEntity } from "../world";
 import {
   applyDirectHit,
   applyRocketExplosion,
@@ -72,31 +68,32 @@ export function updateProjectileSystem(
       let collided = false;
       const projPos = projectile.position;
 
-      if (obs.shape && obs.shape.kind === "box") {
+      if (
+        obs.shape &&
+        (obs.shape.kind === "box" || obs.shape.kind === "circle")
+      ) {
         const center = {
           x: obs.shape.center?.x ?? obs.position?.x ?? 0,
           y: projPos.y,
           z: obs.shape.center?.z ?? obs.position?.z ?? 0,
         };
-        const gapSq = distanceSquaredPointToAABB(
-          projPos,
-          center,
-          obs.shape.halfWidth,
-          obs.shape.halfDepth,
-        );
-        collided = gapSq <= 0.000001;
-      } else if (obs.shape && obs.shape.kind === "circle") {
-        const center = {
-          x: obs.shape.center?.x ?? obs.position?.x ?? 0,
-          y: projPos.y,
-          z: obs.shape.center?.z ?? obs.position?.z ?? 0,
-        };
-        const gapSq = distanceSquaredPointToCircle(
-          projPos,
-          center,
-          obs.shape.radius,
-        );
-        collided = gapSq <= 0.000001;
+
+        if (obs.shape.kind === "box") {
+          const gapSq = distanceSquaredPointToAABB(
+            projPos,
+            center,
+            obs.shape.halfWidth,
+            obs.shape.halfDepth,
+          );
+          collided = gapSq <= 0.000001;
+        } else {
+          const gapSq = distanceSquaredPointToCircle(
+            projPos,
+            center,
+            obs.shape.radius,
+          );
+          collided = gapSq <= 0.000001;
+        }
       }
 
       if (collided) {

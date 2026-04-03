@@ -5,6 +5,25 @@ import { TEAM_CONFIGS } from "../../lib/teamConfig";
 import { findBestEntity } from "./targetingUtils";
 
 /**
+ * Common tie-breaker logic for enemies and captains.
+ */
+function tieBreaker(
+  a: { distanceSq: number; spawnDistanceSq: number; entity: RobotEntity },
+  b: { distanceSq: number; spawnDistanceSq: number; entity: RobotEntity },
+): number {
+  if (a.distanceSq !== b.distanceSq) {
+    return a.distanceSq - b.distanceSq;
+  }
+  if (b.entity.kills !== a.entity.kills) {
+    return b.entity.kills - a.entity.kills;
+  }
+  if (a.spawnDistanceSq !== b.spawnDistanceSq) {
+    return a.spawnDistanceSq - b.spawnDistanceSq;
+  }
+  return a.entity.id.localeCompare(b.entity.id);
+}
+
+/**
  * Finds the best enemy target for a robot.
  * Prioritizes closest enemies.
  *
@@ -25,14 +44,6 @@ export function findClosestEnemy(
     return undefined;
   }
 
-  // Use sortEntities to preserve tie-breaking logic (Health, Kills, SpawnDist, ID)
-  // Logic from original code: DistanceSq > Kills (desc) > SpawnDist (asc) > ID
-  // Wait, original sortByPriority:
-  // if (a.distanceSq !== b.distanceSq) return a.distanceSq - b.distanceSq;
-  // if (b.entity.kills !== a.entity.kills) return b.entity.kills - a.entity.kills;
-  // if (a.spawnDistanceSq !== b.spawnDistanceSq) return a.spawnDistanceSq - b.spawnDistanceSq;
-  // return a.entity.id.localeCompare(b.entity.id);
-
   const spawnCenter = TEAM_CONFIGS[enemies[0].team].spawnCenter;
 
   return findBestEntity(
@@ -42,18 +53,7 @@ export function findClosestEnemy(
       distanceSq: distanceSquaredVec3(seeker.position, entity.position),
       spawnDistanceSq: distanceSquaredVec3(entity.position, spawnCenter),
     }),
-    (a, b) => {
-      if (a.distanceSq !== b.distanceSq) {
-        return a.distanceSq - b.distanceSq;
-      }
-      if (b.entity.kills !== a.entity.kills) {
-        return b.entity.kills - a.entity.kills;
-      }
-      if (a.spawnDistanceSq !== b.spawnDistanceSq) {
-        return a.spawnDistanceSq - b.spawnDistanceSq;
-      }
-      return a.entity.id.localeCompare(b.entity.id);
-    },
+    tieBreaker,
   );
 }
 
@@ -73,7 +73,9 @@ export function findClosestAlly(
 ): RobotEntity | undefined {
   const pool = candidates ?? robots;
   // Only target injured allies
-  const allies = pool.filter((robot) => isAlly(seeker, robot) && robot.health < robot.maxHealth);
+  const allies = pool.filter(
+    (robot) => isAlly(seeker, robot) && robot.health < robot.maxHealth,
+  );
 
   if (allies.length === 0) {
     return undefined;
@@ -88,15 +90,14 @@ export function findClosestAlly(
       distanceSq: distanceSquaredVec3(seeker.position, entity.position),
     }),
     (a, b) => {
-        // Lower health ratio is better
+      // Lower health ratio is better
       if (Math.abs(a.healthRatio - b.healthRatio) > 0.1) {
-          return a.healthRatio - b.healthRatio;
+        return a.healthRatio - b.healthRatio;
       }
       return a.distanceSq - b.distanceSq;
     },
   );
 }
-
 
 /**
  * Selects a target for a captain robot.
@@ -118,10 +119,6 @@ export function pickCaptainTarget(
   // 1. Prefer closest enemy captain
   const enemyCaptains = enemies.filter((robot) => robot.isCaptain);
   if (enemyCaptains.length > 0) {
-    // Also use sortEntities here to be safe?
-    // Original code used rankCandidates which uses sortByPriority.
-    // So yes, captains also used the tie-breaker logic!
-    // rankCandidates(captain, captains).sort(sortByPriority)
     const spawnCenter = TEAM_CONFIGS[enemies[0].team].spawnCenter;
     return findBestEntity(
       enemyCaptains,
@@ -130,18 +127,7 @@ export function pickCaptainTarget(
         distanceSq: distanceSquaredVec3(captain.position, entity.position),
         spawnDistanceSq: distanceSquaredVec3(entity.position, spawnCenter),
       }),
-      (a, b) => {
-        if (a.distanceSq !== b.distanceSq) {
-          return a.distanceSq - b.distanceSq;
-        }
-        if (b.entity.kills !== a.entity.kills) {
-          return b.entity.kills - a.entity.kills;
-        }
-        if (a.spawnDistanceSq !== b.spawnDistanceSq) {
-          return a.spawnDistanceSq - b.spawnDistanceSq;
-        }
-        return a.entity.id.localeCompare(b.entity.id);
-      },
+      tieBreaker,
     );
   }
 
