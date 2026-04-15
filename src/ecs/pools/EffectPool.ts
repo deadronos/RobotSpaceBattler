@@ -1,6 +1,6 @@
 import { vec3 } from "../../lib/math/vec3";
 import type { EffectEntity } from "../worldTypes";
-import { GenericPool, GenericPoolStats, createGenericPool } from "./poolUtils";
+import { createGenericPool,GenericPool, GenericPoolStats } from "./poolUtils";
 
 export type EffectPoolStats = GenericPoolStats;
 export type EffectPool = GenericPool<EffectEntity>;

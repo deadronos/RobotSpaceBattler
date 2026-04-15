@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test';
 
-test('verify neon visuals (local port 5175)', async ({ page }) => {
+test('verify neon visuals (local port 5174)', async ({ page }) => {
   page.on('console', (m) => console.log('PAGE LOG:', m.text()));
-  // Try to navigate to the dev server on 5175 where Vite started in this run.
+  // Try to navigate to the dev server on 5174 where Vite started in this run.
   // Retry the navigation for up to 20s to handle startup races.
   const start = Date.now();
   let navigated = false;
   while (Date.now() - start < 20000) {
     try {
-      await page.goto('http://localhost:5175/RobotSpaceBattler/', { timeout: 3000 });
+      await page.goto('http://localhost:5174/RobotSpaceBattler/', { timeout: 3000 });
       navigated = true;
       break;
     } catch (e) {
@@ -16,7 +16,7 @@ test('verify neon visuals (local port 5175)', async ({ page }) => {
       await page.waitForTimeout(500);
     }
   }
-  if (!navigated) throw new Error('Could not reach http://localhost:5175/RobotSpaceBattler/ after 20s');
+  if (!navigated) throw new Error('Could not reach http://localhost:5174/RobotSpaceBattler/ after 20s');
 
   // Wait for the canvas to be present
   await page.waitForSelector('canvas', { timeout: 10000 });
@@ -25,7 +25,7 @@ test('verify neon visuals (local port 5175)', async ({ page }) => {
   await page.waitForTimeout(5000);
 
   // Take a screenshot
-  await page.screenshot({ path: 'verification/visuals-5175.png' });
+  await page.screenshot({ path: 'verification/visuals-5174.png' });
 
   // Inspect instance colors for bullets, rockets, lasers, and effects via the
   // exposed scene object so we can detect whether instanceColor values are
