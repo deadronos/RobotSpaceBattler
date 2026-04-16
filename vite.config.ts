@@ -13,8 +13,9 @@ import { setupPlugins as responsiveSetupPlugins } from '@responsive-image/vite-p
 export default defineConfig({
   // Build base for GitHub Pages (repo published at /RobotSpaceBattler/)
   base: '/RobotSpaceBattler/',
+  esbuild: false,
   plugins: [
-    react(),
+    react({ tsDecorators: true }),
     svgr(),
     glsl(),
     checker({ typescript: true }),

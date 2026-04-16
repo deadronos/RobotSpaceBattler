@@ -1,7 +1,6 @@
-import { Modal } from "./Modal";
-
 import { TEAM_CONFIGS } from "../../lib/teamConfig";
 import { useTelemetryStore } from "../../state/telemetryStore";
+import { Modal } from "./Modal";
 
 interface BattleStatsModalProps {
   isOpen: boolean;
