@@ -11,6 +11,8 @@ import {
   isPathBlockedByMovementRuntime,
 } from "../../environment/arenaGeometry";
 import { RobotBehaviorMode } from "../behaviorState";
+import { BehaviorBlender } from "../coordination/BehaviorBlender";
+import { MovementDesire } from "../coordination/types";
 import {
   applySeparation,
   clampVelocity,
@@ -26,13 +28,17 @@ import { MovementContext, MovementPlan, RapierWorldLike } from "./types";
 const SEEK_SPEED = 6;
 const RETREAT_SPEED = 7;
 const STRAFE_SPEED = 4;
+const NAV_DISTANCE_THRESHOLD = 15.0; // Use NavMesh for targets further than this even if LOS is clear
+
 // Prefer Vite's import.meta.env for web builds, fallback to process.env in Node
 const viteEnv = (import.meta as unknown as { env?: Record<string, string> })
   .env;
 const DEBUG_AI = Boolean(
   viteEnv?.VITE_DEBUG_AI ??
-  (typeof process !== "undefined" && process.env?.DEBUG_AI),
+    (typeof process !== "undefined" && process.env?.DEBUG_AI),
 );
+
+const blender = new BehaviorBlender();
 
 /**
  * Plans the movement for a robot based on its behavior mode, target, and environment.
@@ -57,14 +63,21 @@ export function planRobotMovement(
   const formationAnchor =
     context?.formationAnchor ?? robot.ai.anchorPosition ?? null;
 
-  let desiredVelocity;
+  const desires: MovementDesire[] = [];
 
+  // 1. BASE MOVEMENT DESIRE (Combat/Seeking)
+  let baseVelocity: Vec3 = { x: 0, y: 0, z: 0 };
   if (mode === RobotBehaviorMode.Retreat) {
     const retreatDirection = computeForwardDirection(
       robot.position,
       spawnCenter,
     );
-    desiredVelocity = scaleVec3(retreatDirection, RETREAT_SPEED);
+    baseVelocity = scaleVec3(retreatDirection, RETREAT_SPEED);
+    desires.push({
+      velocity: baseVelocity,
+      priority: "retreat",
+      weight: 1.0,
+    });
   } else if (mode === RobotBehaviorMode.Engage && target) {
     const forward = computeForwardDirection(robot.position, target.position);
     const right = normalizeVec3({
@@ -75,10 +88,15 @@ export function planRobotMovement(
     const forwardComponent = scaleVec3(forward, SEEK_SPEED);
     const strafeComponent = scaleVec3(right, STRAFE_SPEED * strafeSign);
     const blend = normalizeVec3(addVec3(forwardComponent, strafeComponent));
-    desiredVelocity = scaleVec3(blend, STRAFE_SPEED + SEEK_SPEED * 0.25);
+    baseVelocity = scaleVec3(blend, STRAFE_SPEED + SEEK_SPEED * 0.25);
+    desires.push({
+      velocity: baseVelocity,
+      priority: "combat",
+      weight: 1.0,
+    });
   } else if (target) {
     const direction = computeForwardDirection(robot.position, target.position);
-    desiredVelocity = scaleVec3(direction, SEEK_SPEED);
+    baseVelocity = scaleVec3(direction, SEEK_SPEED);
 
     if (context?.formationAnchor) {
       const strafeDirection = normalizeVec3({
@@ -87,19 +105,35 @@ export function planRobotMovement(
         z: -direction.x,
       });
       const strafeStrength = context.strafeSign ?? robot.ai.strafeSign ?? 1;
-      desiredVelocity = addVec3(
-        desiredVelocity,
+      baseVelocity = addVec3(
+        baseVelocity,
         scaleVec3(strafeDirection, STRAFE_SPEED * 0.5 * strafeStrength),
       );
     }
+    desires.push({
+      velocity: baseVelocity,
+      priority: "combat",
+      weight: 1.0,
+    });
   } else if (formationAnchor) {
     const direction = computeForwardDirection(robot.position, formationAnchor);
-    desiredVelocity = scaleVec3(direction, SEEK_SPEED * 0.75);
+    baseVelocity = scaleVec3(direction, SEEK_SPEED * 0.75);
+    desires.push({
+      velocity: baseVelocity,
+      priority: "idle",
+      weight: 1.0,
+    });
   } else {
     const direction = computeForwardDirection(robot.position, spawnCenter);
-    desiredVelocity = scaleVec3(direction, SEEK_SPEED * 0.5);
+    baseVelocity = scaleVec3(direction, SEEK_SPEED * 0.5);
+    desires.push({
+      velocity: baseVelocity,
+      priority: "idle",
+      weight: 0.5,
+    });
   }
 
+  // 2. NAVMESH PATH DESIRE
   const visionBlocked =
     !!target &&
     context?.obstacles &&
@@ -119,56 +153,60 @@ export function planRobotMovement(
       rapierWorld: context?.rapierWorld as RapierWorldLike,
     });
 
-  const pathBlocked = !!target && (visionBlocked || movementBlocked);
+  const distanceToTarget = target
+    ? lengthVec3({
+        x: robot.position.x - target.position.x,
+        y: robot.position.y - target.position.y,
+        z: robot.position.z - target.position.z,
+      })
+    : 0;
 
-  // NavMesh Path Following
-  // If the direct path is blocked, we rely on the NavMesh path to guide us around obstacles.
-  if (pathBlocked && robot.pathComponent && robot.pathComponent.status === "valid" && robot.pathComponent.path) {
+  const pathBlocked = !!target && (visionBlocked || movementBlocked);
+  const needsPathfinding = pathBlocked || distanceToTarget > NAV_DISTANCE_THRESHOLD;
+
+  if (robot.pathComponent && robot.pathComponent.status === "valid" && robot.pathComponent.path) {
     const path = robot.pathComponent.path;
     const waypoints = path.waypoints;
     let idx = robot.pathComponent.currentWaypointIndex;
 
-    // Advance waypoint if close enough
     const REACH_THRESHOLD = 0.5;
-    // Iterate to find the furthest reachable waypoint or the next one
     while (idx < waypoints.length) {
       const wp = waypoints[idx];
       const dist = lengthVec3({
         x: robot.position.x - wp.x,
         y: robot.position.y - wp.y,
-        z: robot.position.z - wp.z
+        z: robot.position.z - wp.z,
       });
-      
-      // If we reached this waypoint, move to next
+
       if (dist < REACH_THRESHOLD && idx < waypoints.length - 1) {
         idx++;
       } else {
         break;
       }
     }
-    
-    // Update state
+
     robot.pathComponent.currentWaypointIndex = idx;
-    
-    // Steer towards current waypoint
+
     if (idx < waypoints.length) {
-       const wp = waypoints[idx];
-       const steeringTarget = { x: wp.x, y: wp.y, z: wp.z };
-       const direction = computeForwardDirection(robot.position, steeringTarget);
-       // Preserve speed from mode
-       const speed = lengthVec3(desiredVelocity); 
-       desiredVelocity = scaleVec3(direction, Math.max(speed, SEEK_SPEED * 0.5));
+      const wp = waypoints[idx];
+      const steeringTarget = { x: wp.x, y: wp.y, z: wp.z };
+      const direction = computeForwardDirection(robot.position, steeringTarget);
+      const speed = lengthVec3(baseVelocity) || SEEK_SPEED;
+      const pathfindingVelocity = scaleVec3(direction, speed);
+
+      desires.push({
+        velocity: pathfindingVelocity,
+        priority: "pathfinding",
+        // Increase weight if path is explicitly blocked, otherwise use it as a guide
+        weight: needsPathfinding ? 1.0 : 0.4,
+      });
     }
-  } else if (pathBlocked && target) {
-     // Fallback if path not ready: basic lateral steering
-     // This is the old "slide around" logic, kept for the few frames while path is calculating
-     const forward = computeForwardDirection(robot.position, target.position);
-     const lateral = normalizeVec3({ x: forward.z, y: 0, z: -forward.x });
-     desiredVelocity = scaleVec3(lateral, SEEK_SPEED * 0.9);
   }
 
-  // Apply predictive avoidance when Rapier world is available
-  // Only raycast on scheduled frames to distribute load across entities
+  // 3. BLEND DESIRES
+  let desiredVelocity = blender.blend(desires);
+
+  // 4. APPLY PREDICTIVE AVOIDANCE (DEPRECATED)
   if (context?.rapierWorld) {
     const entityId = context.entityId ?? 0;
     const frameCount = context.frameCount ?? 0;
@@ -181,30 +219,25 @@ export function planRobotMovement(
         queryService,
       );
 
-      // Blend predictive avoidance with existing velocity
       if (lengthVec3(predictiveAvoidance) > 0) {
         desiredVelocity = addVec3(desiredVelocity, predictiveAvoidance);
       }
     }
   }
 
-  // If path is blocked by dynamic obstacle, force a reroute by steering perpendicular to target vector.
   if (DEBUG_AI) {
-    // Debug helper showing whether LOS detection considers obstacles as blocking
-    // This is opt-in via DEBUG_AI environment variable during test runs.
     console.log("planRobotMovement", {
       robot: robot.id,
       target: target?.id,
       pathBlocked,
-      obstacles: context?.obstacles?.length ?? 0,
+      needsPathfinding,
+      desires: desires.length,
     });
   }
 
-  // (Fallback logic moved above)
   robot.ai.blockedFrames = pathBlocked ? (robot.ai.blockedFrames ?? 0) + 1 : 0;
 
   if (robot.ai.blockedFrames && robot.ai.blockedFrames >= 3) {
-    // After repeated blockage, pause movement to avoid deadlock and let avoidance push us free.
     desiredVelocity = { x: 0, y: 0, z: 0 };
   }
 
@@ -221,6 +254,7 @@ export function planRobotMovement(
     orientation,
   };
 }
+
 
 /**
  * Updates a position by integrating velocity over time.
