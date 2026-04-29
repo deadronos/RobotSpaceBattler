@@ -17,7 +17,7 @@
 
 - update-memory-bank — Core memory-bank files created/updated (2025-10-17)
 - update-memory-bank-refresh — Updated memory-bank to match current implementation (2025-12-19)
-- TASK002 — NavMesh pathfinding implementation (completed 2025-12-19)
+- TASK002 — NavMesh pathfinding implementation (fully completed 2026-04-29)
 - TASK004 — Dynamic arena obstacles (completed 2025-12-10)
 
 ## Later

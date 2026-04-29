@@ -7,7 +7,12 @@ import {
   Vec3,
   vec3,
 } from "../lib/math/vec3";
-import { TEAM_CONFIGS, TeamConfig, TeamId } from "../lib/teamConfig";
+import {
+  generateTeamConfigs,
+  TEAM_CONFIGS,
+  TeamConfig,
+  TeamId,
+} from "../lib/teamConfig";
 import { qualityManager } from "../state/quality/QualityManager";
 import {
   createVisualInstanceManager,
@@ -181,7 +186,7 @@ export function createBattleWorld(): BattleWorld {
     projectiles,
     effects,
     obstacles,
-    teams: TEAM_CONFIGS,
+    teams: generateTeamConfigs(state.seed),
     state,
     visuals: {
       instanceManager,

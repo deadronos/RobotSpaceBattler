@@ -47,9 +47,15 @@ function cross(a: Vec3Like, b: Vec3Like): Vec3Like {
   };
 }
 
+let deprecationWarned = false;
+
 /**
  * Computes an avoidance vector based on forward-looking raycasts.
  * Returns a steering vector pointing away from nearby obstacles.
+ *
+ * @deprecated Use NavMesh pathfinding (PathfindingSystem) instead.
+ * NavMesh provides superior obstacle avoidance through planned paths and clearance zones.
+ * Scheduled for removal: v2.0.0
  *
  * @param position Current entity position
  * @param velocity Current entity velocity (direction of movement)
@@ -63,7 +69,14 @@ export function computePredictiveAvoidance(
   queryService: PhysicsQueryService,
   config?: Partial<PredictiveAvoidanceConfig>,
 ): Vec3Like {
+  if (!deprecationWarned) {
+    console.warn(
+      "Predictive Avoidance (predictiveAvoidance.ts) is deprecated and scheduled for removal in v2.0.0. Please use NavMesh pathfinding instead.",
+    );
+    deprecationWarned = true;
+  }
   const cfg = { ...DEFAULT_AVOIDANCE_CONFIG, ...config };
+
 
   // Check if velocity is near zero
   const speed = lengthVec3(velocity);

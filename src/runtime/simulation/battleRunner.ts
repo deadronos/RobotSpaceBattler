@@ -124,7 +124,7 @@ export function createBattleRunner(
   const meshInstance = new NavMesh(libraryPolygons);
   
   const navMeshResource = createNavMeshResource(navigationMesh, meshInstance);
-  const pathfindingSystem = new PathfindingSystem(navMeshResource);
+  const pathfindingSystem = new PathfindingSystem(navMeshResource, { telemetry });
 
   // Wire up pathfinding telemetry
   pathfindingSystem.onTelemetry((event) => {

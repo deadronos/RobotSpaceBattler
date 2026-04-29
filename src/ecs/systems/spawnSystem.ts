@@ -1,6 +1,6 @@
 import { applyCaptaincy } from "../../lib/captainElection";
 import { createXorShift32 } from "../../lib/random/xorshift";
-import { TEAM_CONFIGS, TeamId } from "../../lib/teamConfig";
+import { generateTeamConfigs, TeamId } from "../../lib/teamConfig";
 import { createPathComponent } from "../../simulation/ai/pathfinding/integration/PathComponent";
 import {
   getWeaponProfile,
@@ -130,7 +130,7 @@ function spawnTeamRobots(
   options: SpawnOptions,
 ) {
   const generator = createXorShift32(seed);
-  const teamConfig = TEAM_CONFIGS[team];
+  const teamConfig = battleWorld.teams[team];
   const { world } = battleWorld;
 
   teamConfig.spawnPoints.slice(0, 10).forEach((spawnPoint, index) => {
@@ -170,6 +170,10 @@ export function spawnTeams(
   const baseSeed = options.seed ?? Date.now();
   battleWorld.state.seed = baseSeed;
 
+  // Generate and store seeded team configurations for this match
+  battleWorld.teams = generateTeamConfigs(baseSeed);
+
   spawnTeamRobots(battleWorld, "red", baseSeed ^ 0x9e3779b9, options);
   spawnTeamRobots(battleWorld, "blue", baseSeed ^ 0x4f1bbcdc, options);
 }
+

@@ -73,4 +73,14 @@ export interface TelemetryPort {
     obstacleId: string;
     destroyedBy?: string;
   }) => void;
+  /** Records a pathfinding event (calculation, hit, fail). */
+  recordPathfinding?: (event: {
+    type: "calculation" | "cache_hit" | "failure";
+    entityId?: string;
+    durationMs: number;
+    pathLength?: number;
+    waypointCount?: number;
+    error?: string;
+  }) => void;
 }
+

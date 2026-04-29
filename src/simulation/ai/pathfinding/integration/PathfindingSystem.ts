@@ -1,9 +1,5 @@
-/**
- * ECS system for pathfinding operations
- * @module pathfinding/integration
- */
-
 import type { Point3D } from "../types";
+import type { TelemetryPort } from "../../../../runtime/simulation/ports";
 import type { NavMeshResource } from "./NavMeshResource";
 import { PathCalculator } from "./PathCalculator";
 import type { PathComponent } from "./PathComponent";
@@ -19,6 +15,7 @@ interface PathfindingSystemOptions {
   timeoutMs?: number; // Timeout threshold (default: 100ms)
   enableNearestFallback?: boolean; // Enable nearest accessible point fallback
   maxWorkers?: number;
+  telemetry?: TelemetryPort;
 }
 
 export interface PathfindingTelemetryEvent {
@@ -49,10 +46,11 @@ export type PathfindingTelemetryCallback = (
 export class PathfindingSystem {
   private calculator: PathCalculator;
   private frameBudget: number;
-  private telemetry = new PathfindingTelemetry();
+  private telemetry: PathfindingTelemetry;
 
   constructor(private navMeshResource: NavMeshResource, options?: PathfindingSystemOptions) {
     this.frameBudget = options?.frameBudget ?? 2.4;
+    this.telemetry = new PathfindingTelemetry(options?.telemetry);
     this.calculator = new PathCalculator(navMeshResource, options);
     // Forward telemetry: keep the system observable
     this.calculator.onTelemetry((e) => this.telemetry.emit(e));
@@ -60,6 +58,7 @@ export class PathfindingSystem {
     // Attempt to initialize worker if mesh is present (non-blocking)
     void this.calculator.ensureInitialized();
   }
+
 
   onTelemetry(callback: PathfindingTelemetryCallback): void {
     this.telemetry.on(callback);
