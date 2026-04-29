@@ -1,8 +1,8 @@
 # TASK002 - NavMesh Pathfinding Implementation
 
-**Status:** Completed  
+**Status:** Fully Completed  
 **Added:** 2025-12-10  
-**Updated:** 2025-12-19
+**Updated:** 2026-04-29
 
 ## Summary
 
@@ -37,11 +37,8 @@ This task documents the work, links to relevant specs, and records remaining fol
 - Pathfinding enables obstacle-aware navigation and opens up more robust AI behaviors (narrow passage handling, caching for performance, and smoothing to produce natural paths).
 - Tests increase confidence and document intended behavior.
 
-## Remaining follow-ups (covered by TASK003)
-
-- PathfindingSystem refactor (reduce LOC, extract PathCalculator/telemetry, improved unitability).
-- Improve pathfinding telemetry and runtime observability (PathfindingTelemetry).
-- Add optional UI toggles to enable/disable NavMesh debug visuals from the debug menu.
+## Remaining follow-ups
+- All remaining pathfinding follow-ups (telemetry, refactor, observability) have been moved to [TASK003](file:///Users/openclaw/Github/RobotSpaceBattler/memory-bank/tasks/TASK003-pathfinding-refactor-and-telemetry.md). This task is considered fully completed.
 
 ## References
 
