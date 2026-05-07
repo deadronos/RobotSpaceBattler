@@ -66,7 +66,7 @@ export function planRobotMovement(
   const desires: MovementDesire[] = [];
 
   // 1. BASE MOVEMENT DESIRE (Combat/Seeking)
-  let baseVelocity: Vec3 = { x: 0, y: 0, z: 0 };
+  let baseVelocity: Vec3;
   if (mode === RobotBehaviorMode.Retreat) {
     const retreatDirection = computeForwardDirection(
       robot.position,

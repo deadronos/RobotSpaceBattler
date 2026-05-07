@@ -1,5 +1,5 @@
-import { createXorShift32, RandomGenerator } from "./random/xorshift";
 import { addVec3, Vec3, vec3 } from "./math/vec3";
+import { createXorShift32, RandomGenerator } from "./random/xorshift";
 
 /**
  * Identifier for the teams.
