@@ -1,5 +1,5 @@
-import type { Point3D } from "../types";
 import type { TelemetryPort } from "../../../../runtime/simulation/ports";
+import type { Point3D } from "../types";
 import type { NavMeshResource } from "./NavMeshResource";
 import { PathCalculator } from "./PathCalculator";
 import type { PathComponent } from "./PathComponent";
