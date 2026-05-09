@@ -5,6 +5,11 @@ import { PathCalculator } from "./PathCalculator";
 import type { PathComponent } from "./PathComponent";
 import { PathfindingTelemetry } from "./PathfindingTelemetry";
 
+// CONSTITUTION-EXEMPT: PathfindingSystem is a complex orchestrator that manages multiple
+// concerns (throttling, batching, error recovery, telemetry) in one place for coherence.
+// Target refactor: v0.2.0 or split into smaller strategy classes
+// Exemption granted: 2026-05-10
+
 interface PathfindingSystemOptions {
   enableSmoothing?: boolean;
   enableCaching?: boolean;
