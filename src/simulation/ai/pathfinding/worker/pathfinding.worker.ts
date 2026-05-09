@@ -1,6 +1,10 @@
 import type { NavigationMesh, Point2D, Point3D } from "../types";
 import type { WorkerPathRequest, WorkerPathResult } from "./types";
 
+// Note: This module is executed in a Worker context via multithreading's spawn().
+// The functions are serialized by the multithreading library and executed as the
+// default export in the worker. Ensure all dependencies are self-contained.
+
 interface PathfindingWorkerState {
   astar: {
     findPath: (start: Point2D, target: Point2D) => Point2D[] | null;
@@ -22,55 +26,60 @@ interface PathfindingWorkerModules {
   PathOptimizer: new () => { smoothPath: (path: Point2D[]) => Point2D[] };
 }
 
-async function loadModules(
-  scope: typeof globalThis & {
-    __pathfindingWorkerModules?: PathfindingWorkerModules;
-  },
-) {
-  if (!scope.__pathfindingWorkerModules) {
-    const [geometry, astarModule, nearestModule, optimizerModule] =
-      await Promise.all([
-        import("../../../../lib/math/geometry"),
-        import("../search/AStarSearch"),
-        import("../search/NearestAccessiblePoint"),
-        import("../smoothing/PathOptimizer"),
-      ]);
-    scope.__pathfindingWorkerModules = {
-      distanceXZ: geometry.distanceXZ as (a: Point3D, b: Point3D) => number,
-      AStarSearch: astarModule.AStarSearch as new (mesh: NavigationMesh) => {
-        findPath: (start: Point2D, target: Point2D) => Point2D[] | null;
-      },
-      NearestAccessiblePoint: nearestModule.NearestAccessiblePoint as new (
-        mesh: NavigationMesh,
-      ) => { findNearest: (target: Point3D, start: Point3D) => Point3D | null },
-      PathOptimizer: optimizerModule.PathOptimizer as new () => {
-        smoothPath: (path: Point2D[]) => Point2D[];
-      },
-    };
-  }
+// Web Worker scope types for module caching
+interface WorkerScope {
+  __pathfindingWorkerModules?: PathfindingWorkerModules;
+  __pathfindingWorkerState?: PathfindingWorkerState;
 }
+
+const workerScope = self as unknown as WorkerScope;
+
+// Cache modules on worker scope to avoid re-importing
+async function loadModules(): Promise<PathfindingWorkerModules> {
+  if (workerScope.__pathfindingWorkerModules) {
+    return workerScope.__pathfindingWorkerModules;
+  }
+
+  const [geometry, astarModule, nearestModule, optimizerModule] =
+    await Promise.all([
+      import("../../../../lib/math/geometry"),
+      import("../search/AStarSearch"),
+      import("../search/NearestAccessiblePoint"),
+      import("../smoothing/PathOptimizer"),
+    ]);
+
+  workerScope.__pathfindingWorkerModules = {
+    distanceXZ: geometry.distanceXZ as (a: Point3D, b: Point3D) => number,
+    AStarSearch: astarModule.AStarSearch as new (mesh: NavigationMesh) => {
+      findPath: (start: Point2D, target: Point2D) => Point2D[] | null;
+    },
+    NearestAccessiblePoint: nearestModule.NearestAccessiblePoint as new (
+      mesh: NavigationMesh,
+    ) => { findNearest: (target: Point3D, start: Point3D) => Point3D | null },
+    PathOptimizer: optimizerModule.PathOptimizer as new () => {
+      smoothPath: (path: Point2D[]) => Point2D[];
+    },
+  };
+
+  return workerScope.__pathfindingWorkerModules;
+}
+
+// Cache pathfinding state on worker scope
+const workerState: PathfindingWorkerState = {
+  astar: null,
+  optimizer: null,
+  nearestFinder: null,
+};
 
 // Initialize the worker with the navigation mesh
 export async function initWorker(mesh: NavigationMesh): Promise<boolean> {
   try {
-    const scope = globalThis as typeof globalThis & {
-      __pathfindingWorkerState?: PathfindingWorkerState;
-      __pathfindingWorkerModules?: PathfindingWorkerModules;
-    };
-    const state = scope.__pathfindingWorkerState ?? {
-      astar: null,
-      optimizer: null,
-      nearestFinder: null,
-    };
+    const modules = await loadModules();
 
-    await loadModules(scope);
+    workerState.astar = new modules.AStarSearch(mesh);
+    workerState.optimizer = new modules.PathOptimizer();
+    workerState.nearestFinder = new modules.NearestAccessiblePoint(mesh);
 
-    const { AStarSearch, NearestAccessiblePoint, PathOptimizer } =
-      scope.__pathfindingWorkerModules!;
-    state.astar = new AStarSearch(mesh);
-    state.optimizer = new PathOptimizer();
-    state.nearestFinder = new NearestAccessiblePoint(mesh);
-    scope.__pathfindingWorkerState = state;
     return true;
   } catch (error) {
     console.error("Failed to initialize pathfinding worker:", error);
@@ -84,21 +93,9 @@ export async function calculatePath(
 ): Promise<WorkerPathResult> {
   const startTime = performance.now();
 
-  const scope = globalThis as typeof globalThis & {
-    __pathfindingWorkerState?: PathfindingWorkerState;
-    __pathfindingWorkerModules?: PathfindingWorkerModules;
-  };
-  const state = scope.__pathfindingWorkerState ?? {
-    astar: null,
-    optimizer: null,
-    nearestFinder: null,
-  };
-  scope.__pathfindingWorkerState = state;
+  const modules = await loadModules();
+  const { astar, optimizer, nearestFinder } = workerState;
 
-  await loadModules(scope);
-
-  const modules = scope.__pathfindingWorkerModules!;
-  const { astar, optimizer, nearestFinder } = state;
   if (!astar || !optimizer || !nearestFinder) {
     return {
       id: req.id,

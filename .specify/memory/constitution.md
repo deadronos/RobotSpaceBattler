@@ -27,7 +27,7 @@ SYNC IMPACT REPORT
     needs exemption or refactor per Principle III
   - ✅ Validate CI checks enforce updated principles
 - Active LOC Exemptions & Refactor Backlog:
-  - src/simulation/ai/pathfinding/integration/PathfindingSystem.ts (333 LOC) - NEEDS EXEMPTION or refactor
+  - PathfindingSystem.ts (333 LOC) - EXEMPTED 2026-05-10 | Refactor: v0.2.0
 -->
 
 # RobotSpaceBattler Constitution
