@@ -73,8 +73,8 @@ function HookHarness(props: {
   matchMachine: ReturnType<typeof createMatchMachineStub>;
   telemetry: ReturnType<typeof createTelemetryStub>;
 }) {
-  const { version } = useSimulation(props);
-  return <div data-testid="version">{version}</div>;
+  useSimulation(props);
+  return <div data-testid="ready">ready</div>;
 }
 
 describe('useSimulation', () => {
@@ -134,7 +134,7 @@ describe('useSimulation', () => {
     expect(secondRunner.setRapierWorld).toHaveBeenLastCalledWith(null);
   });
 
-  it('preserves leftover frame time when sampling version updates', () => {
+  it('runs the simulation frame loop without forcing React version updates', () => {
     const runner = {
       step: vi.fn(),
       reset: vi.fn(),
@@ -163,6 +163,6 @@ describe('useSimulation', () => {
 
     expect(runner.step).toHaveBeenCalledTimes(5);
     expect(simulationTestState.mockRecordRendererFrame).toHaveBeenCalledTimes(5);
-    expect(screen.getByTestId('version')).toHaveTextContent('3');
+    expect(screen.getByTestId('ready')).toHaveTextContent('ready');
   });
 });

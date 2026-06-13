@@ -62,9 +62,7 @@ function SimulationContent(props: SimulationProps) {
   const { battleWorld } = props;
 
   // Custom hook manages the ECS world lifecycle and system updates.
-  const { version } = useSimulation(props);
-
-  void version;
+  useSimulation(props);
 
   const qualitySettings = useQualitySettings();
   const instancingEnabled = qualitySettings.visuals.instancing.enabled;

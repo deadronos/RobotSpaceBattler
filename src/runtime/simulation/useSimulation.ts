@@ -1,7 +1,7 @@
 import type { World as RapierWorld } from "@dimforge/rapier3d-compat";
 import { useFrame } from "@react-three/fiber";
 import { useRapier } from "@react-three/rapier";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 import { BattleWorld } from "../../ecs/world";
 import { recordRendererFrame } from "../../visuals/rendererStats";
@@ -9,7 +9,6 @@ import { MatchStateMachine } from "../state/matchStateMachine";
 import { BattleRunner, createBattleRunner } from "./battleRunner";
 import { TelemetryPort } from "./ports";
 
-const FRAME_SAMPLE_INTERVAL = 1 / 30;
 
 interface UseSimulationOptions {
   battleWorld: BattleWorld;
@@ -34,8 +33,6 @@ export function useSimulation({
 }: UseSimulationOptions) {
   const runnerRef = useRef<BattleRunner | null>(null);
   const rapierWorldRef = useRef<RapierWorld | null>(null);
-  const [version, setVersion] = useState(0);
-  const accumulator = useRef(0);
   const { world: rapierWorld } = useRapier();
 
   rapierWorldRef.current = (rapierWorld as unknown as RapierWorld | null) ?? null;
@@ -95,14 +92,7 @@ export function useSimulation({
   useFrame((state, delta) => {
     recordRendererFrame(state.gl, delta);
     runnerRef.current?.step(delta);
-
-    accumulator.current += delta;
-    const sampleCount = Math.floor(accumulator.current / FRAME_SAMPLE_INTERVAL);
-    if (sampleCount > 0) {
-      accumulator.current -= FRAME_SAMPLE_INTERVAL * sampleCount;
-      setVersion((v) => v + sampleCount);
-    }
   });
 
-  return { version, runner: runnerRef.current };
+  return { runner: runnerRef.current };
 }

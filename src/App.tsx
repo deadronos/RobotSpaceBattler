@@ -22,7 +22,6 @@ import {
   MatchStateSnapshot,
 } from "./runtime/state/matchStateMachine";
 import { ObstacleFixture } from "./simulation/match/matchSpawner";
-import { useTelemetryStore } from "./state/telemetryStore";
 
 function formatStatus({
   phase,
@@ -47,15 +46,6 @@ function formatStatus({
 export default function App() {
   const battleWorld = useMemo(() => createBattleWorld(), []);
   const telemetryPort = useMemo(() => createTelemetryPort(), []);
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      (
-        window as Window & {
-          __battleWorld?: ReturnType<typeof createBattleWorld>;
-        }
-      ).__battleWorld = battleWorld;
-    }
-  }, [battleWorld]);
   const [matchSnapshot, setMatchSnapshot] = useState<MatchStateSnapshot>({
     phase: "initializing",
     elapsedMs: 0,
@@ -115,10 +105,8 @@ export default function App() {
   }, []);
 
   const runnerRef = useRef<BattleRunner | null>(null);
-  const telemetryEvents = useTelemetryStore((state) => state.events);
 
   const aliveCounts = useMemo(() => {
-    void telemetryEvents;
     const counts = { red: 0, blue: 0 };
     battleWorld.robots.entities.forEach((robot) => {
       if (isActiveRobot(robot)) {
@@ -126,7 +114,7 @@ export default function App() {
       }
     });
     return counts;
-  }, [battleWorld, telemetryEvents]);
+  }, [battleWorld]);
 
   const handleRunnerReady = useCallback((runner: BattleRunner) => {
     runnerRef.current = runner;

@@ -1,5 +1,5 @@
 import { CapsuleCollider, RigidBody } from "@react-three/rapier";
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { Color } from "three";
 
 /**
@@ -21,8 +21,14 @@ export const RobotPlaceholder = memo(function RobotPlaceholder({
   color = "#ff4d5a",
   position = [0, 0.8, 0],
 }: RobotPlaceholderProps) {
-  const emissivePrimary = new Color(color).multiplyScalar(0.2);
-  const emissiveSecondary = new Color(color).multiplyScalar(0.25);
+  const emissivePrimary = useMemo(
+    () => new Color(color).multiplyScalar(0.2),
+    [color],
+  );
+  const emissiveSecondary = useMemo(
+    () => new Color(color).multiplyScalar(0.25),
+    [color],
+  );
 
   return (
     <RigidBody type="fixed" colliders={false} position={position}>
