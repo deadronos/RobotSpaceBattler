@@ -44,8 +44,8 @@ export default defineConfig({
   // bundled or prebundled which would create duplicate WASM runtimes.
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
-      '@dimforge/rapier3d-compat': path.resolve(__dirname, 'node_modules', '@dimforge', 'rapier3d-compat')
+      '@': path.resolve(import.meta.dirname, 'src'),
+      '@dimforge/rapier3d-compat': path.resolve(import.meta.dirname, 'node_modules', '@dimforge', 'rapier3d-compat')
     }
   },
   server: {
