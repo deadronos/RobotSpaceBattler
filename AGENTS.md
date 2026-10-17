@@ -9,7 +9,8 @@
 - `npm run dev` – Start Vite dev server.
 - `npm run build` – Build to `dist/`.
 - `npm run test` – Run Vitest unit tests.
-- `npm run lint` – Run ESLint and check constitution compliance.
+- `npm run lint` – Run oxlint and check constitution compliance.
+- `npm run format` – Format `src/` with oxfmt.
 
 ## Contributor Documentation
 

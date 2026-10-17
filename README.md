@@ -48,8 +48,8 @@ Open your browser to `http://localhost:5173`.
 
 - **Build**: `npm run build` - Builds the project for production.
 - **Preview**: `npm run preview` - Serves the production build locally.
-- **Lint**: `npm run lint` - Runs ESLint.
-- **Format**: `npm run format` - formats code with Prettier.
+- **Lint**: `npm run lint` - Runs oxlint.
+- **Format**: `npm run format` - formats code with oxfmt.
 - **Test**: `npm run test` - Runs unit tests with Vitest.
 - **E2E Test**: `npm run playwright:test` - Runs end-to-end tests.
 
