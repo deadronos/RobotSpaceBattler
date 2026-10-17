@@ -11,9 +11,9 @@
     "build": "vite build",
     "build:analyze": "vite build --mode production",
     "preview": "vite preview",
-    "lint": "eslint \"src/**/*.{ts,tsx}\" --config eslint.config.cjs",
-    "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --config eslint.config.cjs --fix",
-    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "lint": "oxlint src",
+    "lint:fix": "oxlint src --fix",
+    "format": "oxfmt src",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -27,11 +27,11 @@
   },
   "lint-staged": {
     "src/**/*.{ts,tsx,js,jsx}": [
-      "eslint --fix",
-      "npm run format"
+      "oxlint --fix",
+      "oxfmt --no-error-on-unmatched-pattern"
     ],
     "**/*.{md,json}": [
-      "npm run format"
+      "oxfmt --no-error-on-unmatched-pattern"
     ]
   },
   "dependencies": {
@@ -53,7 +53,6 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@gltf-transform/cli": "^4.5.1",
     "@gltf-transform/core": "^4.5.1",
     "@gltf-transform/extensions": "^4.5.1",
@@ -67,35 +66,20 @@
     "@types/pngjs": "^6.0.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@typescript-eslint/eslint-plugin": "^8.71.2",
-    "@typescript-eslint/parser": "^8.71.2",
     "@vitejs/plugin-react-swc": "^4.3.3",
     "@vitest/coverage-v8": "^5.0.5",
     "ajv": "^8.20.0",
     "cross-env": "^10.1.0",
-    "eslint": "^10.13.0",
-    "eslint-config-auto": "^0.9.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-import-resolver-typescript": "^4.4.5",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-playwright": "^2.12.1",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-simple-import-sort": "^14.0.0",
-    "eslint-plugin-sonarjs": "^4.2.2",
-    "eslint-plugin-unicorn": "^78.0.0",
-    "eslint-plugin-unused-imports": "^4.4.1",
-    "eslint-plugin-vitest": "^0.5.4",
     "gltf-pipeline": "^4.3.1",
     "jsdom": "^30.1.3",
     "lint-staged": "^17.6.0",
+    "oxfmt": "^0.73.0",
+    "oxlint": "^1.88.0",
     "pixelmatch": "^8.0.0",
     "playwright": "^1.64.1",
     "pngjs": "^7.0.0",
-    "prettier": "^3.9.10",
     "rollup-plugin-visualizer": "^7.1.1",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "unplugin-auto-import": "^21.1.0",
     "vite": "^8.3.4",
     "vite-plugin-checker": "^0.14.5",
@@ -103,8 +87,5 @@
     "vite-plugin-svgr": "^5.2.0",
     "vite-plugin-wasm": "^3.6.0",
     "vitest": "^5.0.5"
-  },
-  "overrides": {
-    "@typescript-eslint/utils": "^8.71.2"
   }
 }

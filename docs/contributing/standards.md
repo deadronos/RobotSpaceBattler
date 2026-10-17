@@ -5,8 +5,8 @@ We enforce strict TypeScript and React patterns to ensure a high-quality, mainta
 ## Language & Frameworks
 
 - **Standard**: TypeScript 5.9+, React 19+.
-- **Formatting**: Prettier (trailing commas, single quotes, 100 char width).
-- **Linting**: ESLint with `eslint-config-prettier` and strict rules.
+- **Formatting**: oxfmt, configured in `.oxfmtrc.json` (trailing commas, single quotes, 100 char width).
+- **Linting**: oxlint, configured in `.oxlintrc.json` (react, react-hooks, jsx-a11y, import and vitest rules).
 
 ## Core Principles
 

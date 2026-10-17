@@ -48,8 +48,8 @@ specs/            # Feature specifications and plans
 ## Code Style
 - **Strict TypeScript:** No `any`, strict null checks.
 - **React:** Functional components, Hooks.
-- **Formatting:** Prettier is enforced.
-- **Linting:** ESLint with strict rules (including imports and unused vars).
+- **Formatting:** oxfmt (`npm run format`).
+- **Linting:** oxlint with strict rules (including imports and unused vars).
 
 ## Agentic AI Usage & Governance
 When agents are used to automate development tasks, include a short section describing
