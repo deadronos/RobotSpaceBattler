@@ -8,6 +8,7 @@ export default defineConfig({
     reuseExistingServer: true,
   },
   use: {
+    baseURL: "http://localhost:5174/RobotSpaceBattler/",
     headless: true,
     viewport: { width: 1280, height: 720 },
   },
