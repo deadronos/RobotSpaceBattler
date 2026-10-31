@@ -33,6 +33,7 @@ import { ObstacleFixture } from "./simulation/match/matchSpawner";
 function formatStatus({
   phase,
   winner,
+  isDraw,
   restartTimerMs,
 }: MatchStateSnapshot): string {
   switch (phase) {
@@ -43,7 +44,7 @@ function formatStatus({
     case "victory": {
       const countdown =
         restartTimerMs != null ? Math.ceil(restartTimerMs / 1000) : null;
-      return `Victory: ${winner ?? "unknown"}${countdown != null ? ` · restart in ${countdown}s` : ""}`;
+      return `${isDraw ? "Draw" : `Victory: ${winner ?? "unknown"}`}${countdown != null ? ` · restart in ${countdown}s` : ""}`;
     }
     default:
       return "Initializing space match...";
@@ -58,6 +59,7 @@ export default function App() {
     elapsedMs: 0,
     restartTimerMs: null,
     winner: null,
+    isDraw: false,
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isBattleStatsOpen, setIsBattleStatsOpen] = useState(false);
@@ -173,6 +175,7 @@ export default function App() {
     matchSnapshot.phase === "victory" && matchSnapshot.winner
       ? TEAM_CONFIGS[matchSnapshot.winner].label
       : null;
+  const isDraw = matchSnapshot.phase === "victory" && !!matchSnapshot.isDraw;
 
   const restartSeconds =
     matchSnapshot.phase === "victory" && matchSnapshot.restartTimerMs != null
@@ -234,9 +237,11 @@ export default function App() {
         <div>{`${TEAM_CONFIGS.red.label}: ${aliveCounts.red}`}</div>
         <div>{`${TEAM_CONFIGS.blue.label}: ${aliveCounts.blue}`}</div>
       </div>
-      {matchSnapshot.phase === "victory" && winnerLabel ? (
+      {matchSnapshot.phase === "victory" && (winnerLabel || isDraw) ? (
         <div className="app-victory-overlay">
-          <h2 className="app-victory-title">{winnerLabel} Triumphs!</h2>
+          <h2 className="app-victory-title">
+            {isDraw ? "Draw!" : `${winnerLabel} Triumphs!`}
+          </h2>
           {restartSeconds != null ? (
             <p className="app-victory-subtitle">{`Restarting in ${restartSeconds}s`}</p>
           ) : null}
