@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildQualitySettings,
   detectPerformanceTier,
+  resolveDefaultDpr,
 } from "../../../src/state/quality/qualityDefaults";
 
 describe("detectPerformanceTier", () => {
@@ -61,12 +62,28 @@ describe("buildQualitySettings", () => {
     expect(settings.visuals.instancing.enabled).toBe(false);
   });
 
-  it("defaults to a conservative DPR baseline and relies on dynamic scaling", () => {
-    const lowTier = buildQualitySettings({ perfTier: "low" });
-    const highTier = buildQualitySettings({ perfTier: "high" });
-    // We now start conservatively at 0.5 DPR and allow the DynamicResScaler to
-    // increase DPR at runtime when performance allows.
-    expect(lowTier.visuals.render.dpr).toBe(0.5);
-    expect(highTier.visuals.render.dpr).toBe(0.5);
+  it("defaults to native DPR capped at 1.5", () => {
+    const original = window.devicePixelRatio;
+    const setRatio = (value: number | undefined) =>
+      Object.defineProperty(window, "devicePixelRatio", {
+        value,
+        configurable: true,
+      });
+    try {
+      setRatio(1);
+      expect(buildQualitySettings({ perfTier: "low" }).visuals.render.dpr).toBe(
+        1,
+      );
+      setRatio(2);
+      expect(
+        buildQualitySettings({ perfTier: "high" }).visuals.render.dpr,
+      ).toBe(1.5);
+      setRatio(1.25);
+      expect(resolveDefaultDpr()).toBe(1.25);
+      setRatio(undefined);
+      expect(resolveDefaultDpr()).toBe(1);
+    } finally {
+      setRatio(original);
+    }
   });
 });
