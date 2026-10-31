@@ -4,12 +4,12 @@
 A React + Three.js 3D space battle simulator with real-time physics (Rapier), ECS architecture, and dynamic camera modes. MVP feature: 3D team-vs battle graphics with accessibility support.
 
 ## Tech Stack
-- **Frontend**: React 19, TypeScript 5, React Three Fiber (r3f) 9.3, Three.js 0.180, PostProcessing
+- **Frontend**: React 19, TypeScript 7 (native tsc), React Three Fiber (r3f) 9.3, Three.js 0.180, PostProcessing
 - **3D Physics**: Rapier3D 0.19.1 (@react-three/rapier)
 - **State Management**: Zustand 5.0.8
 - **ECS**: Miniplex 2.0.0
 - **Testing**: Vitest 3.2.4, Playwright 1.55.1, Testing Library, @react-three/test-renderer
-- **Build**: Vite + React SWC, ESLint, Prettier
+- **Build**: Vite + React SWC; lint: oxlint (`npm run lint`, src/); format: oxfmt (`npm run format` / `npm run format:check`)
 - **Asset Processing**: glTF Transform 4.2.1
 
 ## Project Structure
@@ -46,8 +46,8 @@ playwright/utils/   # Playwright helpers (visualDiff, latency measurement)
 - **File naming**: Components: `ComponentName.tsx`, types: lowercase (e.g., `ui.ts`), tests: `*.test.ts(x)`
 - **TypeScript**: ES2022 target, strict mode enabled
 - **React**: Functional components, hooks, r3f best practices (pure renderers, minimal render-loop hooks)
-- **Imports**: Single quotes, semicolons, `simple-import-sort` ESLint plugin
-- **Spacing**: 2-space indentation, 100-char printWidth (Prettier)
+- **Imports**: Double quotes, semicolons, trailing commas
+- **Spacing**: 2-space indentation, 80-char printWidth (oxfmt, Prettier-compatible)
 - **Comments**: Minimal; code should be self-explanatory (see self-explanatory-code-commenting.instructions.md)
 - **Testing**: TDD-first approach required; ARIA accessibility testing, SSIM visual diffs (threshold 0.97)
 
@@ -63,7 +63,7 @@ playwright/utils/   # Playwright helpers (visualDiff, latency measurement)
 # Formatting & Linting
 npm run format                    # Format src/**/*.{ts,tsx,js,json,md}
 npm run lint:fix                  # Fix linting errors
-npm run lint                      # Check ESLint (no fix)
+npm run lint                      # Check oxlint (no fix)
 
 # Testing
 npm run test                      # Run Vitest once
