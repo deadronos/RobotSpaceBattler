@@ -21,6 +21,8 @@ export interface MatchStateSnapshot {
   restartTimerMs: number | null;
   /** The winning team ID (if victory declared). */
   winner: TeamId | null;
+  /** True when the match ended with no winner (both teams wiped or timeout tie). */
+  isDraw: boolean;
 }
 
 /**
@@ -49,6 +51,11 @@ export interface MatchStateMachine {
    * @param restartDelayMs - Optional delay before restart.
    */
   declareVictory: (winner: TeamId, restartDelayMs?: number) => void;
+  /**
+   * Ends the match with no winner and transitions to the victory phase.
+   * @param restartDelayMs - Optional delay before restart.
+   */
+  declareDraw: (restartDelayMs?: number) => void;
   /** Resets the match to the initializing phase. */
   reset: () => void;
   /**
@@ -67,6 +74,7 @@ const INITIAL_STATE: MatchStateSnapshot = {
   elapsedMs: 0,
   restartTimerMs: null,
   winner: null,
+  isDraw: false,
 };
 
 /**
@@ -110,6 +118,15 @@ export function createMatchStateMachine(
       transition({
         phase: "victory",
         winner,
+        isDraw: false,
+        restartTimerMs: restartDelayMs ?? autoRestartDelayMs,
+      });
+    },
+    declareDraw: (restartDelayMs) => {
+      transition({
+        phase: "victory",
+        winner: null,
+        isDraw: true,
         restartTimerMs: restartDelayMs ?? autoRestartDelayMs,
       });
     },

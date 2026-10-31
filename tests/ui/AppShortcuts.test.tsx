@@ -69,6 +69,7 @@ describe("App Keyboard Shortcuts", () => {
       resume: mockResume as any,
       reset: mockReset as any,
       declareVictory: vi.fn(),
+      declareDraw: vi.fn(),
       tick: vi.fn(),
       getSnapshot: mockGetSnapshot as any,
     });

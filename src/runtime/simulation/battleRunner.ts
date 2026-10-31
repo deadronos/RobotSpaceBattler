@@ -6,10 +6,10 @@ import { updateCombatSystem } from "../../ecs/systems/combatSystem";
 import { updateEffectSystem } from "../../ecs/systems/effectSystem";
 import { updateMovementSystem } from "../../ecs/systems/movementSystem";
 import { updateProjectileSystem } from "../../ecs/systems/projectileSystem";
-import { BattleWorld, TeamId } from "../../ecs/world";
+import { BattleWorld } from "../../ecs/world";
+import { MATCH_TIME_LIMIT_MS } from "../../lib/constants";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
 import { createXorShift32 } from "../../lib/random/xorshift";
-import { isActiveRobot } from "../../lib/robotHelpers";
 import {
   createNavMeshResource,
   extractArenaConfiguration,
@@ -27,9 +27,8 @@ import {
   syncObstaclesToRapier,
 } from "../../simulation/obstacles/rapierIntegration";
 import { MatchStateMachine } from "../state/matchStateMachine";
+import { evaluateMatchOutcome } from "./matchOutcome";
 import { TelemetryPort } from "./ports";
-
-const VICTORY_DELAY_MS = 5000;
 
 /**
  * Options to configure a BattleRunner.
@@ -43,6 +42,12 @@ export interface BattleRunnerOptions {
   matchMachine: MatchStateMachine;
   /** Optional obstacle fixture data to seed matches. */
   obstacleFixture?: MatchSpawnOptions["obstacleFixture"];
+  /**
+   * Match time limit in ms (defaults to MATCH_TIME_LIMIT_MS). When reached
+   * the match resolves by remaining robots, then total HP, else a draw.
+   * Pass null to disable the limit.
+   */
+  maxMatchDurationMs?: number | null;
 }
 
 /**
@@ -66,36 +71,6 @@ export interface BattleRunner {
   getRapierWorld: () => RapierWorld | undefined;
 }
 
-function evaluateVictory(
-  world: BattleWorld,
-  matchMachine: MatchStateMachine,
-): void {
-  const snapshot = matchMachine.getSnapshot();
-  if (snapshot.phase !== "running") {
-    return;
-  }
-
-  const alive = world.robots.entities.reduce(
-    (acc, robot) => {
-      if (isActiveRobot(robot)) {
-        acc[robot.team] += 1;
-      }
-      return acc;
-    },
-    { red: 0, blue: 0 },
-  );
-
-  const teams: TeamId[] = ["red", "blue"];
-  const defeated = teams.filter((team) => alive[team] === 0);
-
-  if (defeated.length === 0 || defeated.length === teams.length) {
-    return;
-  }
-
-  const winner = defeated[0] === "red" ? "blue" : "red";
-  matchMachine.declareVictory(winner, VICTORY_DELAY_MS);
-}
-
 /**
  * Creates a new BattleRunner instance.
  *
@@ -111,6 +86,10 @@ export function createBattleRunner(
   const rng = createXorShift32(seed);
 
   const { telemetry, matchMachine } = options;
+  const matchTimeLimitMs =
+    options.maxMatchDurationMs === undefined
+      ? MATCH_TIME_LIMIT_MS
+      : options.maxMatchDurationMs;
 
   // Initialize pathfinding system
   const arenaConfig = extractArenaConfiguration();
@@ -166,7 +145,6 @@ export function createBattleRunner(
       if (snapshot.phase === "running") {
         perfMarkStart("updateAISystem");
         updateAISystem(world, () => rng.next());
-        updateAISystem(world, () => rng.next());
         perfMarkEnd("updateAISystem");
 
         perfMarkStart("pathfindingSystem");
@@ -188,7 +166,7 @@ export function createBattleRunner(
         updateEffectSystem(world);
         perfMarkEnd("updateEffectSystem");
 
-        evaluateVictory(world, matchMachine);
+        evaluateMatchOutcome(world, matchMachine, matchTimeLimitMs);
       }
 
       const shouldRestart = matchMachine.tick(deltaMs);

@@ -125,6 +125,22 @@ export function detectPerformanceTier(
   return "medium";
 }
 
+/** Upper bound for the initial render DPR. */
+export const MAX_DEFAULT_DPR = 1.5;
+
+/**
+ * Native device pixel ratio capped at MAX_DEFAULT_DPR. Falls back to 1 outside
+ * the browser (SSR, tests) or when the ratio is unavailable.
+ */
+export function resolveDefaultDpr(): number {
+  const ratio =
+    typeof window !== "undefined" ? window.devicePixelRatio : undefined;
+  if (typeof ratio !== "number" || !Number.isFinite(ratio) || ratio <= 0) {
+    return 1;
+  }
+  return Math.min(ratio, MAX_DEFAULT_DPR);
+}
+
 export function buildQualitySettings({
   perfTier,
   instancingEnabled,
@@ -138,8 +154,8 @@ export function buildQualitySettings({
 }): QualitySettings {
   const postprocessingQuality: PostprocessingQualityLevel =
     perfTier === "high" ? "high" : "low";
-  // Start conservatively at 0.5 DPR; DynamicResScaler will scale up if performance allows.
-  const dpr = 0.5;
+  // Start at native DPR (capped); DynamicResScaler only steps down under load.
+  const dpr = resolveDefaultDpr();
   const shadowMapSize = perfTier === "high" ? 1024 : 512;
   const resolvedPostprocessing = postprocessingEnabled ?? perfTier !== "low";
   const resolvedShadows = shadowsEnabled ?? perfTier !== "low";

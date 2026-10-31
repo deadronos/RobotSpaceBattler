@@ -20,7 +20,7 @@ import { SettingsIcon } from "./components/ui/SettingsIcon";
 import { SettingsModal } from "./components/ui/SettingsModal";
 import { createBattleWorld } from "./ecs/world";
 import { AUTO_RESTART_DELAY_MS } from "./lib/constants";
-import { isActiveRobot } from "./lib/robotHelpers";
+import { countAliveByTeam } from "./lib/robotHelpers";
 import { TEAM_CONFIGS } from "./lib/teamConfig";
 import { BattleRunner } from "./runtime/simulation/battleRunner";
 import { createTelemetryPort } from "./runtime/simulation/telemetryAdapter";
@@ -30,9 +30,14 @@ import {
 } from "./runtime/state/matchStateMachine";
 import { ObstacleFixture } from "./simulation/match/matchSpawner";
 
+// Bundled at build time (no network fetch, independent of Vite `base`). Kept at
+// module scope so its identity is stable and never recreates the battle runner.
+const OBSTACLE_FIXTURE = sampleObstacleFixture as unknown as ObstacleFixture;
+
 function formatStatus({
   phase,
   winner,
+  isDraw,
   restartTimerMs,
 }: MatchStateSnapshot): string {
   switch (phase) {
@@ -43,7 +48,7 @@ function formatStatus({
     case "victory": {
       const countdown =
         restartTimerMs != null ? Math.ceil(restartTimerMs / 1000) : null;
-      return `Victory: ${winner ?? "unknown"}${countdown != null ? ` · restart in ${countdown}s` : ""}`;
+      return `${isDraw ? "Draw" : `Victory: ${winner ?? "unknown"}`}${countdown != null ? ` · restart in ${countdown}s` : ""}`;
     }
     default:
       return "Initializing space match...";
@@ -58,20 +63,13 @@ export default function App() {
     elapsedMs: 0,
     restartTimerMs: null,
     winner: null,
+    isDraw: false,
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isBattleStatsOpen, setIsBattleStatsOpen] = useState(false);
   const [showDebugUI, setShowDebugUI] = useState(false);
   const [showPerfOverlay, setShowPerfOverlay] = useState(false);
   const [showRobotList, setShowRobotList] = useState(true);
-
-  const [obstacleFixture, setObstacleFixture] = useState<
-    ObstacleFixture | undefined
-  >(
-    // Use the compiled-in sample fixture as the initial state to ensure the
-    // world has obstacles even if the network fetch fails in some environments.
-    sampleObstacleFixture as unknown as ObstacleFixture,
-  );
 
   const matchMachine = useMemo(
     () =>
@@ -86,42 +84,11 @@ export default function App() {
     setMatchSnapshot(matchMachine.getSnapshot());
   }, [matchMachine]);
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/specs/006-dynamic-arena-obstacles/dynamic-arena-sample.json")
-      .then(async (res) => {
-        if (!res.ok)
-          throw new Error(`Failed to load obstacle fixture: ${res.status}`);
-        return (await res.json()) as ObstacleFixture;
-      })
-      .then((fixture) => {
-        if (!cancelled) setObstacleFixture(fixture);
-      })
-      .catch(() => {
-        // Keep the compiled-in sample fixture if the network fetch fails in
-        // this environment (e.g., Playwright dev server path differences).
-        if (!cancelled) {
-          // Optional: preserve existing fixture state. Log for debug.
-          // console.warn('Obstacle fixture fetch failed, using default sample fixture', err);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const runnerRef = useRef<BattleRunner | null>(null);
 
-  const aliveCounts = useMemo(() => {
-    const counts = { red: 0, blue: 0 };
-    battleWorld.robots.entities.forEach((robot) => {
-      if (isActiveRobot(robot)) {
-        counts[robot.team] += 1;
-      }
-    });
-    return counts;
-  }, [battleWorld]);
+  // Recomputed every render: the match machine emits a new snapshot on every
+  // tick, reset and restart, so the counts stay live and reset-correct.
+  const aliveCounts = countAliveByTeam(battleWorld.robots.entities);
 
   const handleRunnerReady = useCallback((runner: BattleRunner) => {
     runnerRef.current = runner;
@@ -173,6 +140,7 @@ export default function App() {
     matchSnapshot.phase === "victory" && matchSnapshot.winner
       ? TEAM_CONFIGS[matchSnapshot.winner].label
       : null;
+  const isDraw = matchSnapshot.phase === "victory" && !!matchSnapshot.isDraw;
 
   const restartSeconds =
     matchSnapshot.phase === "victory" && matchSnapshot.restartTimerMs != null
@@ -218,13 +186,16 @@ export default function App() {
           matchMachine={matchMachine}
           telemetry={telemetryPort}
           onRunnerReady={handleRunnerReady}
-          obstacleFixture={obstacleFixture}
+          obstacleFixture={OBSTACLE_FIXTURE}
           showPerfOverlay={showPerfOverlay}
         />
       </Suspense>
       {showDebugUI && (
         <div className="app-debug-ui">
-          <ObstacleEditor world={battleWorld} sampleFixture={obstacleFixture} />
+          <ObstacleEditor
+            world={battleWorld}
+            sampleFixture={OBSTACLE_FIXTURE}
+          />
           <ObstacleSpawner world={battleWorld} />
           <PerfToggles />
         </div>
@@ -234,9 +205,11 @@ export default function App() {
         <div>{`${TEAM_CONFIGS.red.label}: ${aliveCounts.red}`}</div>
         <div>{`${TEAM_CONFIGS.blue.label}: ${aliveCounts.blue}`}</div>
       </div>
-      {matchSnapshot.phase === "victory" && winnerLabel ? (
+      {matchSnapshot.phase === "victory" && (winnerLabel || isDraw) ? (
         <div className="app-victory-overlay">
-          <h2 className="app-victory-title">{winnerLabel} Triumphs!</h2>
+          <h2 className="app-victory-title">
+            {isDraw ? "Draw!" : `${winnerLabel} Triumphs!`}
+          </h2>
           {restartSeconds != null ? (
             <p className="app-victory-subtitle">{`Restarting in ${restartSeconds}s`}</p>
           ) : null}

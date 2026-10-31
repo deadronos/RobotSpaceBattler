@@ -61,6 +61,22 @@ describe("matchStateMachine", () => {
       elapsedMs: 0,
       restartTimerMs: null,
       winner: null,
+      isDraw: false,
     });
+  });
+
+  it("declares a draw with no winner and auto-restarts", () => {
+    const machine = createMatchStateMachine({ autoRestartDelayMs: 1000 });
+    machine.start();
+    machine.declareDraw();
+
+    expect(machine.getSnapshot()).toMatchObject({
+      phase: "victory",
+      winner: null,
+      isDraw: true,
+      restartTimerMs: 1000,
+    });
+    expect(machine.tick(1500)).toBe(true);
+    expect(machine.getSnapshot().isDraw).toBe(false);
   });
 });
