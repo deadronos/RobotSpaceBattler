@@ -69,7 +69,6 @@ npm run lint                      # Check ESLint (no fix)
 npm run test                      # Run Vitest once
 npm run test:watch               # Watch mode
 npm run test:coverage            # Coverage report
-npm run ci:test                  # CI coverage mode (cross-env CI=true)
 
 # E2E Testing
 npm run playwright:install       # Install Playwright browsers
