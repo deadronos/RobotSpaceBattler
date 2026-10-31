@@ -85,5 +85,10 @@
     "vite-plugin-svgr": "^5.2.0",
     "vite-plugin-wasm": "^3.6.0",
     "vitest": "^5.0.5"
+  },
+  "allowScripts": {
+    "@swc/core@1.15.47": true,
+    "core-js@3.49.0": true,
+    "fsevents@2.3.3": true
   }
 }
