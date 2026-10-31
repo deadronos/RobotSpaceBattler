@@ -3,14 +3,15 @@ import { createBattleWorld } from "../../src/ecs/world";
 import * as destructible from "../../src/simulation/obstacles/destructibleSystem";
 import { vec3 } from "../../src/lib/math/vec3";
 import { updateProjectileSystem } from "../../src/ecs/systems/projectileSystem";
+import type { TelemetryPort } from "../../src/runtime/simulation/ports";
 
 function createNoopTelemetry() {
   return {
-    reset: vi.fn(),
-    recordSpawn: vi.fn(),
-    recordFire: vi.fn(),
-    recordDamage: vi.fn(),
-    recordDeath: vi.fn(),
+    reset: vi.fn<TelemetryPort["reset"]>(),
+    recordSpawn: vi.fn<TelemetryPort["recordSpawn"]>(),
+    recordFire: vi.fn<TelemetryPort["recordFire"]>(),
+    recordDamage: vi.fn<TelemetryPort["recordDamage"]>(),
+    recordDeath: vi.fn<TelemetryPort["recordDeath"]>(),
   } as any;
 }
 

@@ -16,8 +16,8 @@ function createMockQueryService(
   ) => Array<{ point: Vec3Like; normal: Vec3Like; distance: number } | null>,
 ): PhysicsQueryService {
   return {
-    castRay: vi.fn().mockReturnValue(null),
-    castRayFan: vi.fn(castRayFanImpl),
+    castRay: vi.fn<PhysicsQueryService["castRay"]>().mockReturnValue(null),
+    castRayFan: vi.fn<PhysicsQueryService["castRayFan"]>(castRayFanImpl),
   };
 }
 describe("computePredictiveAvoidance", () => {

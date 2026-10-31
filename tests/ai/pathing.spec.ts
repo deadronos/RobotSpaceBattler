@@ -6,17 +6,18 @@ import {
   planRobotMovement,
 } from "../../src/simulation/ai/pathing";
 import { createTestRobot } from "../helpers/robotFactory";
+import type { RapierWorldLike } from "../../src/simulation/ai/pathing/types";
 
 /** Interface for our mock Rapier world with spyable castRayAndGetNormal */
 interface MockRapierWorld {
-  castRayAndGetNormal: Mock;
+  castRayAndGetNormal: Mock<RapierWorldLike["castRayAndGetNormal"]>;
 }
 
 /** Helper to create a mock Rapier world that returns a predictable raycast result */
 function createMockRapierWorld(hitDistance?: number): MockRapierWorld {
   return {
     castRayAndGetNormal: vi
-      .fn()
+      .fn<RapierWorldLike["castRayAndGetNormal"]>()
       .mockReturnValue(
         hitDistance !== undefined
           ? { timeOfImpact: hitDistance, normal: { x: 0, y: 0, z: -1 } }

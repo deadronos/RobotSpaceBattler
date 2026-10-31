@@ -4,10 +4,10 @@ import React from "react";
 
 describe("SettingsModal", () => {
   it("shows the perf overlay toggle and calls handler when changed", () => {
-    const onClose = vi.fn();
-    const onToggleDebugUI = vi.fn();
-    const onTogglePerfOverlay = vi.fn();
-    const onToggleRobotList = vi.fn();
+    const onClose = vi.fn<() => void>();
+    const onToggleDebugUI = vi.fn<(show: boolean) => void>();
+    const onTogglePerfOverlay = vi.fn<(show: boolean) => void>();
+    const onToggleRobotList = vi.fn<(show: boolean) => void>();
 
     render(
       <SettingsModal

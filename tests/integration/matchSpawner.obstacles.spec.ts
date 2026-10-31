@@ -8,11 +8,11 @@ import { loadFixture } from "../helpers/obstacleFixtures";
 
 function createStubTelemetry(): TelemetryPort {
   return {
-    reset: vi.fn(),
-    recordSpawn: vi.fn(),
-    recordFire: vi.fn(),
-    recordDamage: vi.fn(),
-    recordDeath: vi.fn(),
+    reset: vi.fn<TelemetryPort["reset"]>(),
+    recordSpawn: vi.fn<TelemetryPort["recordSpawn"]>(),
+    recordFire: vi.fn<TelemetryPort["recordFire"]>(),
+    recordDamage: vi.fn<TelemetryPort["recordDamage"]>(),
+    recordDeath: vi.fn<TelemetryPort["recordDeath"]>(),
   };
 }
 

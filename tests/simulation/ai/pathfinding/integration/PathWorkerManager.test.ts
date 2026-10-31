@@ -20,7 +20,7 @@ type Listener = (event: unknown) => void;
 
 class FakeWorker implements WorkerLike {
   posted: WorkerInbound[] = [];
-  terminate = vi.fn();
+  terminate = vi.fn<WorkerLike["terminate"]>();
   private listeners = new Map<string, Listener[]>();
   private state = createWorkerHandlerState();
 

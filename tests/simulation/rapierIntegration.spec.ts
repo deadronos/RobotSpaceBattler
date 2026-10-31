@@ -7,6 +7,19 @@ import {
 } from "../../src/simulation/obstacles/rapierIntegration";
 import { updateObstacleMovement } from "../../src/simulation/obstacles/movementSystem";
 import { vec3 } from "../../src/lib/math/vec3";
+import type { ObstacleEntity } from "../../src/ecs/world";
+
+type CreateObstacleCollider = (
+  id: string,
+  shape: ObstacleEntity["shape"],
+  position: ObstacleEntity["position"],
+  orientation: number,
+) => unknown;
+type UpdateObstacleTransform = (
+  id: string,
+  position: ObstacleEntity["position"],
+  orientation: number,
+) => void;
 
 describe("Rapier integration for obstacles", () => {
   it("creates colliders in rapier world when available", () => {
@@ -25,8 +38,8 @@ describe("Rapier integration for obstacles", () => {
     world.world.add(obstacle);
 
     const mockRapierWorld = {
-      createObstacleCollider: vi.fn(
-        (id: string, shape: any, position: any) => ({ id, shape, position }),
+      createObstacleCollider: vi.fn<CreateObstacleCollider>(
+        (id, shape, position) => ({ id, shape, position }),
       ),
     } as any;
 
@@ -64,8 +77,8 @@ describe("Rapier integration for obstacles", () => {
     world.world.add(obstacle);
 
     const mockRapierWorld = {
-      createObstacleCollider: vi.fn((id: string) => ({ id })),
-      updateObstacleTransform: vi.fn((id: string, position: any) => true),
+      createObstacleCollider: vi.fn<CreateObstacleCollider>((id) => ({ id })),
+      updateObstacleTransform: vi.fn<UpdateObstacleTransform>(() => undefined),
     } as any;
 
     world.rapierWorld = mockRapierWorld;
