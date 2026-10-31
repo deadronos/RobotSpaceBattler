@@ -47,7 +47,6 @@ export class PathCalculator {
     // Initialize worker and result handler
     this.workerManager = new PathWorkerManager(navMeshResource);
     this.resultHandler = new PathResultHandler(
-      this.workerManager,
       navMeshResource,
       this.telemetryCallbacks,
       this.cache,
@@ -63,6 +62,10 @@ export class PathCalculator {
    */
   async ensureInitialized() {
     await this.workerManager.ensureInitialized();
+  }
+
+  dispose(): void {
+    this.workerManager.dispose();
   }
 
   onTelemetry(cb: PathfindingTelemetryCallback) {
@@ -202,18 +205,9 @@ export class PathCalculator {
       };
 
       const res = await this.runWorker(req);
-      console.debug("PathCalculator.runWorker result:", res);
 
       if (res.ok) {
-        const workerResult = await this.workerManager.unwrapWorkerResult(
-          res.value,
-        );
-        await this.resultHandler.handleWorkerResult(
-          workerResult,
-          this.pendingRequests,
-          this.enableSmoothing,
-          this.enableNearestFallback,
-        );
+        this.resultHandler.handleWorkerResult(res.value, this.pendingRequests);
       } else {
         throw res.error;
       }

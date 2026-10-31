@@ -1,13 +1,9 @@
-import { move, spawn } from "multithreading";
-
 import type { PathCache } from "../search/PathCache";
 import type { Point3D } from "../types";
-import { initWorker } from "../worker/pathfinding.worker";
-import type { WorkerPathRequest, WorkerPathResult } from "../worker/types";
+import type { WorkerPathResult } from "../worker/types";
 import type { NavMeshResource } from "./NavMeshResource";
 import type { PathComponent } from "./PathComponent";
 import type { PathfindingTelemetryCallback } from "./PathfindingTelemetry";
-import type { PathWorkerManager } from "./PathWorkerManager";
 
 export interface PendingRequest {
   pathComponent: PathComponent;
@@ -20,11 +16,9 @@ export interface PendingRequest {
 /**
  * Handles results from pathfinding worker calculations.
  * Processes success/failure states, updates path components, and emits telemetry.
- * Manages worker initialization retry logic.
  */
 export class PathResultHandler {
   constructor(
-    private workerManager: PathWorkerManager,
     private navMeshResource: NavMeshResource,
     private telemetryCallbacks: PathfindingTelemetryCallback[],
     private cache?: PathCache,
@@ -42,36 +36,15 @@ export class PathResultHandler {
 
   /**
    * Process worker result, handling success, failure, and no-path cases.
-   * If worker not initialized, attempts recovery by initializing and retrying.
    */
-  async handleWorkerResult(
+  handleWorkerResult(
     result: WorkerPathResult,
     pendingRequests: Map<string, PendingRequest>,
-    enableSmoothing: boolean,
-    enableNearestFallback: boolean,
   ) {
-    console.debug("handleWorkerResult received:", result);
     const request = pendingRequests.get(result.id);
     if (!request) return;
 
     const { pathComponent, robotId, start, target } = request;
-
-    // If worker not initialized, try to initialize it once and retry
-    if (
-      result.status === "failed" &&
-      result.error === "Worker not initialized"
-    ) {
-      await this.handleWorkerNotInitialized(
-        result,
-        request,
-        pendingRequests,
-        enableSmoothing,
-        enableNearestFallback,
-      );
-      return;
-    }
-
-    // Process result normally (success, failure, or no_path)
     this.processResult(
       result,
       pathComponent,
@@ -80,70 +53,6 @@ export class PathResultHandler {
       target,
       pendingRequests,
     );
-  }
-
-  /**
-   * Handle the case where worker was not initialized.
-   * Attempts to initialize and retry the request once.
-   */
-  private async handleWorkerNotInitialized(
-    result: WorkerPathResult,
-    request: PendingRequest,
-    pendingRequests: Map<string, PendingRequest>,
-    enableSmoothing: boolean,
-    enableNearestFallback: boolean,
-  ) {
-    const { pathComponent, robotId, start, target } = request;
-
-    try {
-      // Attempt to initialize worker
-      await spawn(
-        move(this.navMeshResource.getSerializedMesh()),
-        initWorker,
-      ).join();
-
-      // Retry the original request exactly once
-      const retryReq: WorkerPathRequest = {
-        type: "path_request",
-        id: result.id,
-        start,
-        target,
-        enableSmoothing,
-        enableNearestFallback,
-      };
-
-      const retryRes = await this.workerManager.runWorker(retryReq);
-      if (retryRes.ok) {
-        const retryResult = await this.workerManager.unwrapWorkerResult(
-          retryRes.value,
-        );
-        this.processResult(
-          retryResult,
-          pathComponent,
-          robotId,
-          start,
-          target,
-          pendingRequests,
-        );
-        return;
-      }
-    } catch {
-      // fallthrough to fail handler
-    }
-
-    // If retry didn't succeed, mark as failed
-    pendingRequests.delete(result.id);
-    pathComponent.status = "failed" as const;
-    pathComponent.path = null;
-
-    this.emitTelemetry({
-      type: "path-calculation-failed",
-      entityId: robotId,
-      timestamp: Date.now(),
-      success: false,
-      durationMs: result.durationMs,
-      error: "Worker not initialized",
-    });
   }
 
   /**

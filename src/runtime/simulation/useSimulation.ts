@@ -54,6 +54,7 @@ export function useSimulation({
 
     return () => {
       runner.setRapierWorld(null);
+      runner.dispose();
       if (runnerRef.current === runner) {
         runnerRef.current = null;
       }
