@@ -5,7 +5,7 @@ We enforce strict TypeScript and React patterns to ensure a high-quality, mainta
 ## Language & Frameworks
 
 - **Standard**: TypeScript 5.9+, React 19+.
-- **Formatting**: oxfmt, configured in `.oxfmtrc.json` (trailing commas, single quotes, 100 char width).
+- **Formatting**: oxfmt, configured in `.oxfmtrc.json` (Prettier-compatible defaults: double quotes, semicolons, trailing commas everywhere, 80 char width). Run `npm run format`; CI runs `npm run format:check`.
 - **Linting**: oxlint, configured in `.oxlintrc.json` (react, react-hooks, jsx-a11y, import and vitest rules).
 
 ## Core Principles
