@@ -142,7 +142,7 @@ function checkIntersectionRuntime(
   start: Vec3,
   end: Vec3,
   options: RuntimeCheckOptions | undefined,
-  checkType: "vision" | "movement"
+  checkType: "vision" | "movement",
 ): boolean {
   const rapierWorld = options?.rapierWorld;
   if (rapierWorld && typeof rapierWorld.castRayAndGetNormal === "function") {

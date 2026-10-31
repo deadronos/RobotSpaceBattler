@@ -1,6 +1,12 @@
-import { describe, expect, it, vi } from 'vitest';
-import { computePredictiveAvoidance, DEFAULT_AVOIDANCE_CONFIG } from '../../src/simulation/ai/pathing/predictiveAvoidance';
-import type { PhysicsQueryService, Vec3Like } from '../../src/simulation/ai/pathing/physicsQueryService';
+import { describe, expect, it, vi } from "vitest";
+import {
+  computePredictiveAvoidance,
+  DEFAULT_AVOIDANCE_CONFIG,
+} from "../../src/simulation/ai/pathing/predictiveAvoidance";
+import type {
+  PhysicsQueryService,
+  Vec3Like,
+} from "../../src/simulation/ai/pathing/physicsQueryService";
 
 /** Helper to create a mock PhysicsQueryService */
 function createMockQueryService(
@@ -8,52 +14,53 @@ function createMockQueryService(
     origin: Vec3Like,
     directions: Vec3Like[],
     maxDistance: number,
-    filterMask?: number
-  ) => Array<{ point: Vec3Like; normal: Vec3Like; distance: number } | null>
+    filterMask?: number,
+  ) => Array<{ point: Vec3Like; normal: Vec3Like; distance: number } | null>,
 ): PhysicsQueryService {
   return {
     castRay: vi.fn().mockReturnValue(null),
     castRayFan: vi.fn(castRayFanImpl),
   };
 }
-describe('computePredictiveAvoidance', () => {
-  describe('config overrides', () => {
-    it('uses default config values', () => {
+describe("computePredictiveAvoidance", () => {
+  describe("config overrides", () => {
+    it("uses default config values", () => {
       expect(DEFAULT_AVOIDANCE_CONFIG.lookaheadDistance).toBe(5.0);
       expect(DEFAULT_AVOIDANCE_CONFIG.fanAngle).toBeCloseTo(Math.PI / 6, 5); // 30 degrees
       expect(DEFAULT_AVOIDANCE_CONFIG.avoidanceStrength).toBe(2.0);
     });
 
-    it('custom lookahead distance is passed to castRayFan', () => {
+    it("custom lookahead distance is passed to castRayFan", () => {
       const service = createMockQueryService(() => [null, null, null]);
 
       computePredictiveAvoidance(
         { x: 0, y: 0, z: 0 },
         { x: 0, y: 0, z: 1 },
         service,
-        { lookaheadDistance: 10.0 }
+        { lookaheadDistance: 10.0 },
       );
 
       expect(service.castRayFan).toHaveBeenCalledWith(
         expect.any(Object),
         expect.any(Array),
         10.0,
-        expect.any(Number)
+        expect.any(Number),
       );
     });
 
-    it('custom fan angle affects ray directions', () => {
+    it("custom fan angle affects ray directions", () => {
       const service = createMockQueryService(() => [null, null, null]);
 
       computePredictiveAvoidance(
         { x: 0, y: 0, z: 0 },
         { x: 0, y: 0, z: 1 },
         service,
-        { fanAngle: Math.PI / 4 } // 45 degrees
+        { fanAngle: Math.PI / 4 }, // 45 degrees
       );
 
       // Check that 3 directions were passed
-      const directions = (service.castRayFan as ReturnType<typeof vi.fn>).mock.calls[0][1] as Vec3Like[];
+      const directions = (service.castRayFan as ReturnType<typeof vi.fn>).mock
+        .calls[0][1] as Vec3Like[];
       expect(directions).toHaveLength(3);
 
       // Center ray should be forward (0, 0, 1)
@@ -65,10 +72,14 @@ describe('computePredictiveAvoidance', () => {
       expect(Math.abs(directions[2].x)).toBeCloseTo(Math.sin(Math.PI / 4), 2);
     });
 
-    it('custom avoidance strength scales the result', () => {
+    it("custom avoidance strength scales the result", () => {
       // Hit at distance 2.5 (50% weight with default 5 lookahead)
       const service = createMockQueryService(() => [
-        { point: { x: 0, y: 0, z: 2.5 }, normal: { x: 0, y: 0, z: -1 }, distance: 2.5 },
+        {
+          point: { x: 0, y: 0, z: 2.5 },
+          normal: { x: 0, y: 0, z: -1 },
+          distance: 2.5,
+        },
         null,
         null,
       ]);
@@ -77,14 +88,14 @@ describe('computePredictiveAvoidance', () => {
         { x: 0, y: 0, z: 0 },
         { x: 0, y: 0, z: 1 },
         service,
-        { avoidanceStrength: 1.0 }
+        { avoidanceStrength: 1.0 },
       );
 
       const result2 = computePredictiveAvoidance(
         { x: 0, y: 0, z: 0 },
         { x: 0, y: 0, z: 1 },
         service,
-        { avoidanceStrength: 2.0 }
+        { avoidanceStrength: 2.0 },
       );
 
       const mag1 = Math.sqrt(result1.x ** 2 + result1.y ** 2 + result1.z ** 2);
@@ -94,14 +105,14 @@ describe('computePredictiveAvoidance', () => {
     });
   });
 
-  describe('ray direction calculation', () => {
-    it('generates 3 ray directions in a fan pattern', () => {
+  describe("ray direction calculation", () => {
+    it("generates 3 ray directions in a fan pattern", () => {
       const service = createMockQueryService(() => [null, null, null]);
 
       computePredictiveAvoidance(
         { x: 0, y: 0, z: 0 },
         { x: 0, y: 0, z: 1 },
-        service
+        service,
       );
 
       const directions = (service.castRayFan as ReturnType<typeof vi.fn>).mock
@@ -116,14 +127,14 @@ describe('computePredictiveAvoidance', () => {
       }
     });
 
-    it('ray directions rotate correctly for non-forward velocity', () => {
+    it("ray directions rotate correctly for non-forward velocity", () => {
       const service = createMockQueryService(() => [null, null, null]);
 
       // Moving in +X direction
       computePredictiveAvoidance(
         { x: 0, y: 0, z: 0 },
         { x: 1, y: 0, z: 0 },
-        service
+        service,
       );
 
       const directions = (service.castRayFan as ReturnType<typeof vi.fn>).mock

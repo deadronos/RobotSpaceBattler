@@ -47,7 +47,9 @@ export function Scene({ children, showPerfOverlay = false }: SceneProps) {
         initializeRendererStats(gl);
         // Expose the scene for debugging/visual verification in Playwright
         // This is temporary and safe to remove later.
-        const win = (window as unknown) as { __robotScene?: Record<string, unknown> };
+        const win = window as unknown as {
+          __robotScene?: Record<string, unknown>;
+        };
         win.__robotScene = { scene, camera, gl } as Record<string, unknown>;
       }}
     >

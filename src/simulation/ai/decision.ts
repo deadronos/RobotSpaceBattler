@@ -8,7 +8,11 @@ import {
   predictSearchAnchor,
   updateRobotSensors,
 } from "./sensors";
-import { findClosestAlly, findClosestEnemy, pickCaptainTarget } from "./targeting";
+import {
+  findClosestAlly,
+  findClosestEnemy,
+  pickCaptainTarget,
+} from "./targeting";
 
 /**
  * Updates the targeting and sensor logic for a single robot.
@@ -89,7 +93,7 @@ export function updateTargeting(
       if (
         latestMemory &&
         latestMemory[1].timestamp >=
-        battleWorld.state.elapsedMs - ENGAGE_MEMORY_TIMEOUT_MS
+          battleWorld.state.elapsedMs - ENGAGE_MEMORY_TIMEOUT_MS
       ) {
         robot.ai.searchPosition = predictSearchAnchor(memoryEntry);
         robot.ai.targetId = latestMemory?.[0];

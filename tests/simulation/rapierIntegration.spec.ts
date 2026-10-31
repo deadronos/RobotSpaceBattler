@@ -1,20 +1,23 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from "vitest";
 
-import { createBattleWorld } from '../../src/ecs/world';
-import { syncObstaclesToRapier, updateRapierObstacleTransforms } from '../../src/simulation/obstacles/rapierIntegration';
-import { updateObstacleMovement } from '../../src/simulation/obstacles/movementSystem';
-import { vec3 } from '../../src/lib/math/vec3';
+import { createBattleWorld } from "../../src/ecs/world";
+import {
+  syncObstaclesToRapier,
+  updateRapierObstacleTransforms,
+} from "../../src/simulation/obstacles/rapierIntegration";
+import { updateObstacleMovement } from "../../src/simulation/obstacles/movementSystem";
+import { vec3 } from "../../src/lib/math/vec3";
 
-describe('Rapier integration for obstacles', () => {
-  it('creates colliders in rapier world when available', () => {
+describe("Rapier integration for obstacles", () => {
+  it("creates colliders in rapier world when available", () => {
     const world = createBattleWorld();
 
     const obstacle = {
-      id: 'r1',
-      kind: 'obstacle' as const,
-      obstacleType: 'barrier' as const,
+      id: "r1",
+      kind: "obstacle" as const,
+      obstacleType: "barrier" as const,
       position: vec3(1, 0, 0),
-      shape: { kind: 'box' as const, halfWidth: 1, halfDepth: 1 },
+      shape: { kind: "box" as const, halfWidth: 1, halfDepth: 1 },
       blocksMovement: true,
       blocksVision: true,
     };
@@ -22,7 +25,9 @@ describe('Rapier integration for obstacles', () => {
     world.world.add(obstacle);
 
     const mockRapierWorld = {
-      createObstacleCollider: vi.fn((id: string, shape: any, position: any) => ({ id, shape, position })),
+      createObstacleCollider: vi.fn(
+        (id: string, shape: any, position: any) => ({ id, shape, position }),
+      ),
     } as any;
 
     world.rapierWorld = mockRapierWorld;
@@ -30,21 +35,26 @@ describe('Rapier integration for obstacles', () => {
     syncObstaclesToRapier(world);
 
     expect(mockRapierWorld.createObstacleCollider).toHaveBeenCalledTimes(1);
-    expect(mockRapierWorld.createObstacleCollider).toHaveBeenCalledWith('r1', obstacle.shape, obstacle.position, 0);
+    expect(mockRapierWorld.createObstacleCollider).toHaveBeenCalledWith(
+      "r1",
+      obstacle.shape,
+      obstacle.position,
+      0,
+    );
   });
 
-  it('updates rapier transforms when obstacles move', () => {
+  it("updates rapier transforms when obstacles move", () => {
     const world = createBattleWorld();
 
     const obstacle = {
-      id: 'r2',
-      kind: 'obstacle' as const,
-      obstacleType: 'barrier' as const,
+      id: "r2",
+      kind: "obstacle" as const,
+      obstacleType: "barrier" as const,
       position: vec3(-2, 0, 0),
       blocksMovement: true,
       blocksVision: true,
       movementPattern: {
-        patternType: 'linear' as const,
+        patternType: "linear" as const,
         points: [vec3(-2, 0, 0), vec3(2, 0, 0)],
         speed: 1,
         loop: false,
@@ -71,7 +81,8 @@ describe('Rapier integration for obstacles', () => {
 
     // Confirm that update was invoked for the specific obstacle id with new position
     const calledWith = mockRapierWorld.updateObstacleTransform.mock.calls.some(
-      (args: any[]) => args[0] === 'r2' && args[1] && typeof args[1].x === 'number'
+      (args: any[]) =>
+        args[0] === "r2" && args[1] && typeof args[1].x === "number",
     );
     expect(calledWith).toBe(true);
   });

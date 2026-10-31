@@ -7,8 +7,8 @@
  * helps identify areas for consolidation.
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from "fs";
+import * as path from "path";
 
 /**
  * Metadata for a scanned module.
@@ -38,7 +38,10 @@ interface DuplicateGroup {
  * @param extensions - List of file extensions to include (default: .ts, .tsx, .js, .jsx).
  * @returns Array of file paths.
  */
-function scanDirectory(dir: string, extensions = ['.ts', '.tsx', '.js', '.jsx']): string[] {
+function scanDirectory(
+  dir: string,
+  extensions = [".ts", ".tsx", ".js", ".jsx"],
+): string[] {
   const files: string[] = [];
 
   function walk(currentPath: string) {
@@ -49,7 +52,7 @@ function scanDirectory(dir: string, extensions = ['.ts', '.tsx', '.js', '.jsx'])
 
       // Skip node_modules, dist, and hidden directories
       if (entry.isDirectory()) {
-        if (!['node_modules', 'dist', '.git', '.github'].includes(entry.name)) {
+        if (!["node_modules", "dist", ".git", ".github"].includes(entry.name)) {
           walk(fullPath);
         }
       } else if (entry.isFile()) {
@@ -73,8 +76,8 @@ function scanDirectory(dir: string, extensions = ['.ts', '.tsx', '.js', '.jsx'])
  * @returns ModuleInfo object.
  */
 function analyzeModule(filePath: string): ModuleInfo {
-  const content = fs.readFileSync(filePath, 'utf8');
-  const lines = content.split('\n');
+  const content = fs.readFileSync(filePath, "utf8");
+  const lines = content.split("\n");
 
   // Simple regex-based extraction (not perfect but good enough for health check)
   const exports: string[] = [];
@@ -82,13 +85,17 @@ function analyzeModule(filePath: string): ModuleInfo {
 
   for (const line of lines) {
     // Match export statements
-    const exportMatch = line.match(/export\s+(default\s+)?(class|function|const|let|var|interface|type)\s+(\w+)/);
+    const exportMatch = line.match(
+      /export\s+(default\s+)?(class|function|const|let|var|interface|type)\s+(\w+)/,
+    );
     if (exportMatch) {
       exports.push(exportMatch[3]);
     }
 
     // Match import statements
-    const importMatch = line.match(/import\s+(?:{[^}]+}|\w+)\s+from\s+['"]([^'"]+)['"]/);
+    const importMatch = line.match(
+      /import\s+(?:{[^}]+}|\w+)\s+from\s+['"]([^'"]+)['"]/,
+    );
     if (importMatch) {
       imports.push(importMatch[1]);
     }
@@ -116,8 +123,8 @@ function findDuplicates(modules: ModuleInfo[]): DuplicateGroup[] {
   // Group by similar base names (e.g., "Robot.ts" and "RobotEntity.ts")
   for (const module of modules) {
     const baseName = module.name
-      .replace(/\.(ts|tsx|js|jsx)$/, '')
-      .replace(/(Component|Entity|Service|System|Hook|Utils?)$/i, '');
+      .replace(/\.(ts|tsx|js|jsx)$/, "")
+      .replace(/(Component|Entity|Service|System|Hook|Utils?)$/i, "");
 
     if (!groups.has(baseName)) {
       groups.set(baseName, []);
@@ -152,8 +159,12 @@ function calculateSimilarity(modules: ModuleInfo[]): number {
 
   // Simple heuristic: compare export counts and naming patterns
   const exportCounts = modules.map((m) => m.exports.length);
-  const avgExports = exportCounts.reduce((a, b) => a + b, 0) / exportCounts.length;
-  const variance = exportCounts.reduce((sum, count) => sum + Math.abs(count - avgExports), 0);
+  const avgExports =
+    exportCounts.reduce((a, b) => a + b, 0) / exportCounts.length;
+  const variance = exportCounts.reduce(
+    (sum, count) => sum + Math.abs(count - avgExports),
+    0,
+  );
 
   // Lower variance = higher similarity
   return Math.max(0, 100 - variance * 10);
@@ -167,11 +178,11 @@ function calculateSimilarity(modules: ModuleInfo[]): number {
  */
 function generateDeprecationPlan(duplicates: DuplicateGroup[]): string {
   if (duplicates.length === 0) {
-    return '✅ No duplicate modules detected. Code health is good.';
+    return "✅ No duplicate modules detected. Code health is good.";
   }
 
-  let report = '⚠️  Potential Duplicate Modules Detected\n\n';
-  report += 'The following modules may have overlapping functionality:\n\n';
+  let report = "⚠️  Potential Duplicate Modules Detected\n\n";
+  report += "The following modules may have overlapping functionality:\n\n";
 
   for (const group of duplicates) {
     report += `## Pattern: "${group.pattern}" (Similarity: ${group.similarity.toFixed(0)}%)\n\n`;
@@ -179,19 +190,22 @@ function generateDeprecationPlan(duplicates: DuplicateGroup[]): string {
     for (const module of group.modules) {
       report += `- **${module.name}** (${module.size} LOC)\n`;
       report += `  Path: ${module.path}\n`;
-      report += `  Exports: ${module.exports.join(', ') || 'none'}\n`;
+      report += `  Exports: ${module.exports.join(", ") || "none"}\n`;
     }
 
-    report += '\n**Recommended Action:**\n';
+    report += "\n**Recommended Action:**\n";
     if (group.similarity > 70) {
-      report += '- High similarity detected. Consider consolidating into a single module.\n';
-      report += '- Review exports to identify overlapping functionality.\n';
-      report += '- Create migration plan with backward compatibility.\n';
+      report +=
+        "- High similarity detected. Consider consolidating into a single module.\n";
+      report += "- Review exports to identify overlapping functionality.\n";
+      report += "- Create migration plan with backward compatibility.\n";
     } else {
-      report += '- Moderate similarity. Review to ensure no unintended duplication.\n';
-      report += '- Consider extracting common functionality into shared utilities.\n';
+      report +=
+        "- Moderate similarity. Review to ensure no unintended duplication.\n";
+      report +=
+        "- Consider extracting common functionality into shared utilities.\n";
     }
-    report += '\n---\n\n';
+    report += "\n---\n\n";
   }
 
   return report;
@@ -202,14 +216,14 @@ function generateDeprecationPlan(duplicates: DuplicateGroup[]): string {
  */
 function main() {
   const projectRoot = process.cwd();
-  const srcDir = path.join(projectRoot, 'src');
+  const srcDir = path.join(projectRoot, "src");
 
   if (!fs.existsSync(srcDir)) {
-    console.log('ℹ️  No src/ directory found. Skipping code health check.');
+    console.log("ℹ️  No src/ directory found. Skipping code health check.");
     process.exit(0);
   }
 
-  console.log('🔍 Scanning codebase for potential duplicates...\n');
+  console.log("🔍 Scanning codebase for potential duplicates...\n");
 
   const files = scanDirectory(srcDir);
   const modules = files.map(analyzeModule);
@@ -223,7 +237,7 @@ function main() {
 
   // Create deprecation plan file if duplicates found
   if (duplicates.length > 0) {
-    const planPath = path.join(projectRoot, 'DEPRECATION_PLAN.md');
+    const planPath = path.join(projectRoot, "DEPRECATION_PLAN.md");
     fs.writeFileSync(planPath, report);
     console.log(`\n📝 Deprecation plan saved to: ${planPath}`);
   }

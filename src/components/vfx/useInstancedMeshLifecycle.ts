@@ -31,7 +31,10 @@ export function useInstancedMeshLifecycle(capacity: number) {
   const activeRef = useRef<Set<number>>(new Set());
   const previousActiveRef = useRef<Set<number>>(new Set());
   const dirtyRef = useRef<Set<number>>(new Set());
-  const initStateRef = useRef<InstancedMeshInitState>({ capacity: -1, ready: false });
+  const initStateRef = useRef<InstancedMeshInitState>({
+    capacity: -1,
+    ready: false,
+  });
 
   useResizeInstanceCount(meshRef, capacity);
 

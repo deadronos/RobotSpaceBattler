@@ -15,7 +15,9 @@ describe("PathCalculator", () => {
       updateCacheHitRate: vi.fn(),
     };
 
-    const calculator = new PathCalculator(navMeshResource, { enableCaching: true });
+    const calculator = new PathCalculator(navMeshResource, {
+      enableCaching: true,
+    });
 
     // Access private cache to seed a cached path
     const cache = (calculator as any).cache;
@@ -47,7 +49,9 @@ describe("PathCalculator", () => {
       updateCacheHitRate: vi.fn(),
     };
 
-    const calculator = new PathCalculator(navMeshResource, { enableCaching: false });
+    const calculator = new PathCalculator(navMeshResource, {
+      enableCaching: false,
+    });
 
     const start = makePoint(0, 0);
     const target = makePoint(5, 5);
@@ -87,7 +91,9 @@ describe("PathCalculator", () => {
       updateCacheHitRate: vi.fn(),
     };
 
-    const calculator = new PathCalculator(navMeshResource, { enableCaching: false });
+    const calculator = new PathCalculator(navMeshResource, {
+      enableCaching: false,
+    });
 
     const start = makePoint(0, 0);
     const target = makePoint(50, 50);
@@ -95,7 +101,10 @@ describe("PathCalculator", () => {
     const pc = createPathComponent();
     pc.requestedTarget = target;
 
-    (calculator as any).runWorker = async (req: any) => ({ ok: true, value: { id: req.id, path: null, status: "no_path", durationMs: 3 } });
+    (calculator as any).runWorker = async (req: any) => ({
+      ok: true,
+      value: { id: req.id, path: null, status: "no_path", durationMs: 3 },
+    });
 
     const events: any[] = [];
     calculator.onTelemetry((e) => events.push(e));

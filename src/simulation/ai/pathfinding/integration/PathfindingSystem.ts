@@ -53,7 +53,10 @@ export class PathfindingSystem {
   private frameBudget: number;
   private telemetry: PathfindingTelemetry;
 
-  constructor(private navMeshResource: NavMeshResource, options?: PathfindingSystemOptions) {
+  constructor(
+    private navMeshResource: NavMeshResource,
+    options?: PathfindingSystemOptions,
+  ) {
     this.frameBudget = options?.frameBudget ?? 2.4;
     this.telemetry = new PathfindingTelemetry(options?.telemetry);
     this.calculator = new PathCalculator(navMeshResource, options);
@@ -64,7 +67,6 @@ export class PathfindingSystem {
     void this.calculator.ensureInitialized();
   }
 
-
   onTelemetry(callback: PathfindingTelemetryCallback): void {
     this.telemetry.on(callback);
   }
@@ -72,7 +74,11 @@ export class PathfindingSystem {
   /**
    * Backwards-compatible helper: calculate a single path synchronously (returns a Promise)
    */
-  calculatePath(start: Point3D, pathComponent: PathComponent, robotId?: string): Promise<void> {
+  calculatePath(
+    start: Point3D,
+    pathComponent: PathComponent,
+    robotId?: string,
+  ): Promise<void> {
     return this.calculator.calculate(start, pathComponent, robotId);
   }
 
@@ -89,8 +95,16 @@ export class PathfindingSystem {
       const elapsed = performance.now() - startTime;
       if (elapsed > this.frameBudget) break;
 
-      if ((robot.pathComponent.status === "pending" || robot.pathComponent.status === "failed") && robot.pathComponent.requestedTarget) {
-        void this.calculator.calculate(robot.position, robot.pathComponent, robot.id);
+      if (
+        (robot.pathComponent.status === "pending" ||
+          robot.pathComponent.status === "failed") &&
+        robot.pathComponent.requestedTarget
+      ) {
+        void this.calculator.calculate(
+          robot.position,
+          robot.pathComponent,
+          robot.id,
+        );
       }
     }
   }

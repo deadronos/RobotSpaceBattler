@@ -16,12 +16,18 @@ export function PerfMonitorOverlay() {
 
     let attached = true;
     let el: HTMLElement | null = null;
-    const dragState = { dragging: false, startX: 0, startY: 0, origX: 0, origY: 0 };
+    const dragState = {
+      dragging: false,
+      startX: 0,
+      startY: 0,
+      origX: 0,
+      origY: 0,
+    };
 
     const tryAttach = () => {
       if (!attached) return;
       // Perf renders a portal div; we give it a specific class to find it reliably
-      el = document.querySelector('.perf-monitor') as HTMLElement | null;
+      el = document.querySelector(".perf-monitor") as HTMLElement | null;
       if (!el) {
         // Retry briefly until it mounts
         setTimeout(tryAttach, 150);
@@ -29,18 +35,23 @@ export function PerfMonitorOverlay() {
       }
 
       // Ensure the element is positioned and interactive
-      el.style.position = 'fixed';
+      el.style.position = "fixed";
       el.style.left = `${posRef.current.x}px`;
       el.style.top = `${posRef.current.y}px`;
-      el.style.zIndex = '9999';
-      el.style.cursor = 'move';
-      el.style.pointerEvents = 'auto';
+      el.style.zIndex = "9999";
+      el.style.cursor = "move";
+      el.style.pointerEvents = "auto";
 
       const onPointerDown = (ev: PointerEvent) => {
         // Ignore non-left clicks or interactions with inputs/controls
         if ((ev as PointerEvent).button !== 0) return;
         const target = ev.target as HTMLElement | null;
-        if (target && target.closest && target.closest('input,button,select,textarea,a')) return;
+        if (
+          target &&
+          target.closest &&
+          target.closest("input,button,select,textarea,a")
+        )
+          return;
 
         dragState.dragging = true;
         dragState.startX = ev.clientX;
@@ -59,8 +70,14 @@ export function PerfMonitorOverlay() {
         if (!dragState.dragging || !el) return;
         const dx = ev.clientX - dragState.startX;
         const dy = ev.clientY - dragState.startY;
-        const nextX = Math.max(0, Math.min(window.innerWidth - el.offsetWidth, dragState.origX + dx));
-        const nextY = Math.max(0, Math.min(window.innerHeight - el.offsetHeight, dragState.origY + dy));
+        const nextX = Math.max(
+          0,
+          Math.min(window.innerWidth - el.offsetWidth, dragState.origX + dx),
+        );
+        const nextY = Math.max(
+          0,
+          Math.min(window.innerHeight - el.offsetHeight, dragState.origY + dy),
+        );
         posRef.current.x = nextX;
         posRef.current.y = nextY;
         el.style.left = `${nextX}px`;
@@ -76,15 +93,15 @@ export function PerfMonitorOverlay() {
         }
       };
 
-      el.addEventListener('pointerdown', onPointerDown);
-      window.addEventListener('pointermove', onPointerMove);
-      window.addEventListener('pointerup', onPointerUp);
+      el.addEventListener("pointerdown", onPointerDown);
+      window.addEventListener("pointermove", onPointerMove);
+      window.addEventListener("pointerup", onPointerUp);
 
       // cleanup
       const detach = () => {
-        el?.removeEventListener('pointerdown', onPointerDown);
-        window.removeEventListener('pointermove', onPointerMove);
-        window.removeEventListener('pointerup', onPointerUp);
+        el?.removeEventListener("pointerdown", onPointerDown);
+        window.removeEventListener("pointermove", onPointerMove);
+        window.removeEventListener("pointerup", onPointerUp);
       };
 
       // Save detach on the element so we can call it in cleanup
@@ -95,7 +112,7 @@ export function PerfMonitorOverlay() {
 
     return () => {
       attached = false;
-      const elNow = document.querySelector('.perf-monitor') as any;
+      const elNow = document.querySelector(".perf-monitor") as any;
       if (elNow && elNow.__perfDetach) elNow.__perfDetach();
     };
   }, [visible]);
@@ -111,7 +128,7 @@ export function PerfMonitorOverlay() {
         style={{
           // Keep the visual styling similar to the previous overlay
           minWidth: 160,
-          pointerEvents: 'auto',
+          pointerEvents: "auto",
         }}
       />
     </>

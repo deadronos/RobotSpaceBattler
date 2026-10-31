@@ -1,4 +1,4 @@
-import type { ObstacleEntity } from '../../../ecs/world';
+import type { ObstacleEntity } from "../../../ecs/world";
 
 type Props = {
   obstacles: ObstacleEntity[];
@@ -15,14 +15,16 @@ export function ObstacleList({
 }: Props) {
   return (
     <>
-      <div className="obs-spawner-list-title">Existing obstacles ({obstacles.length})</div>
+      <div className="obs-spawner-list-title">
+        Existing obstacles ({obstacles.length})
+      </div>
       <div className="obs-spawner-list">
         {obstacles.map((obs) => (
           <div key={obs.id} className="obs-spawner-row">
             <div>
               <div className="obs-spawner-row-title">{obs.id}</div>
               <div className="obs-spawner-row-meta">
-                {obs.obstacleType} · ({obs.position?.x.toFixed(1) ?? 0},{' '}
+                {obs.obstacleType} · ({obs.position?.x.toFixed(1) ?? 0},{" "}
                 {obs.position?.z.toFixed(1) ?? 0})
               </div>
             </div>
@@ -33,7 +35,7 @@ export function ObstacleList({
                 className="obs-spawner-input"
                 onClick={() => toggleActive(obs.id)}
               >
-                {obs.active === false ? 'Activate' : 'Pause'}
+                {obs.active === false ? "Activate" : "Pause"}
               </button>
               <button
                 type="button"

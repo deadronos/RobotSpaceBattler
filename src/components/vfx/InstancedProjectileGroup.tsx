@@ -1,6 +1,13 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
-import { AdditiveBlending, BufferGeometry, Color, InstancedMesh, Object3D, Vector3 } from "three";
+import {
+  AdditiveBlending,
+  BufferGeometry,
+  Color,
+  InstancedMesh,
+  Object3D,
+  Vector3,
+} from "three";
 
 import { ProjectileEntity } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
@@ -27,7 +34,7 @@ export interface InstancedProjectileGroupProps {
   updateInstance: (
     projectile: ProjectileEntity,
     dummy: Object3D,
-    speed: number
+    speed: number,
   ) => void;
   isMatch: (projectile: ProjectileEntity) => boolean;
 }

@@ -1,19 +1,18 @@
+import { test, expect } from "@playwright/test";
 
-import { test, expect } from '@playwright/test';
-
-test('verify neon visuals', async ({ page }) => {
-  page.on('console', (m) => console.log('PAGE LOG:', m.text()));
+test("verify neon visuals", async ({ page }) => {
+  page.on("console", (m) => console.log("PAGE LOG:", m.text()));
   // Go to the dev server (Playwright config starts the server at 5174)
-  await page.goto('http://localhost:5174/RobotSpaceBattler/');
+  await page.goto("http://localhost:5174/RobotSpaceBattler/");
 
   // Wait for the canvas to be present
-  await page.waitForSelector('canvas');
+  await page.waitForSelector("canvas");
 
   // Wait a bit for the scene to render and effects to settle
   await page.waitForTimeout(5000);
 
   // Take a screenshot
-  await page.screenshot({ path: 'verification/visuals.png' });
+  await page.screenshot({ path: "verification/visuals.png" });
 
   // Inspect instance colors for bullets, rockets, lasers, and effects via the
   // exposed scene object so we can detect whether instanceColor values are
@@ -24,13 +23,16 @@ test('verify neon visuals', async ({ page }) => {
     if (debug && debug.scene) {
       const scene = debug.scene as any;
       const names = [
-        'instanced-bullets',
-        'instanced-rockets',
-        'instanced-lasers',
-        'instanced-effects',
+        "instanced-bullets",
+        "instanced-rockets",
+        "instanced-lasers",
+        "instanced-effects",
       ];
 
-      const result: Record<string, { hasInstanceColor: boolean; sample: number[] | null }> = {};
+      const result: Record<
+        string,
+        { hasInstanceColor: boolean; sample: number[] | null }
+      > = {};
 
       for (const name of names) {
         const mesh = scene.getObjectByName(name);
@@ -53,11 +55,16 @@ test('verify neon visuals', async ({ page }) => {
 
     // Fallback: check direct ref plumbing from the components (useful when
     // WebGL context couldn't be created but R3F still mounted component refs)
-    const refs = (window as any).__instancedRefs as Record<string, any> | undefined;
+    const refs = (window as any).__instancedRefs as
+      | Record<string, any>
+      | undefined;
     if (!refs) return null;
 
-    const fallbackResult: Record<string, { hasInstanceColor: boolean; sample: number[] | null }> = {};
-    for (const key of ['bullets', 'rockets', 'lasers', 'effects']) {
+    const fallbackResult: Record<
+      string,
+      { hasInstanceColor: boolean; sample: number[] | null }
+    > = {};
+    for (const key of ["bullets", "rockets", "lasers", "effects"]) {
       const mesh = refs[key];
       if (!mesh) {
         fallbackResult[key] = { hasInstanceColor: false, sample: null };
@@ -77,11 +84,12 @@ test('verify neon visuals', async ({ page }) => {
   });
 
   // Print info for manual debugging and fail the test if all instance colors are missing
-  console.log('instanceData', instanceData);
+  console.log("instanceData", instanceData);
   expect(instanceData).not.toBeNull();
   if (instanceData) {
-    const missingAll = Object.values(instanceData).every((v) => v.hasInstanceColor === false);
+    const missingAll = Object.values(instanceData).every(
+      (v) => v.hasInstanceColor === false,
+    );
     expect(missingAll).toBe(false);
   }
-
 });

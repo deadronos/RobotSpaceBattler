@@ -1,6 +1,6 @@
-import type { ObstacleEntity } from '../../../ecs/world';
-import { vec3 } from '../../../lib/math/vec3';
-import { NumberInput } from './NumberInput';
+import type { ObstacleEntity } from "../../../ecs/world";
+import { vec3 } from "../../../lib/math/vec3";
+import { NumberInput } from "./NumberInput";
 
 type Props = {
   obstacle: ObstacleEntity;
@@ -9,14 +9,14 @@ type Props = {
 
 export function TransformSection({ obstacle, apply }: Props) {
   const box =
-    obstacle.shape?.kind === 'box'
+    obstacle.shape?.kind === "box"
       ? obstacle.shape
-      : { kind: 'box', halfWidth: 1, halfDepth: 1 };
+      : { kind: "box", halfWidth: 1, halfDepth: 1 };
 
   const circle =
-    obstacle.shape?.kind === 'circle'
+    obstacle.shape?.kind === "circle"
       ? obstacle.shape
-      : { kind: 'circle', radius: 1.5 };
+      : { kind: "circle", radius: 1.5 };
 
   return (
     <div className="obstacle-inspector-grid-2">
@@ -26,7 +26,11 @@ export function TransformSection({ obstacle, apply }: Props) {
         value={obstacle.position?.x ?? 0}
         onChange={(v) =>
           apply({
-            position: vec3(v, obstacle.position?.y ?? 0, obstacle.position?.z ?? 0),
+            position: vec3(
+              v,
+              obstacle.position?.y ?? 0,
+              obstacle.position?.z ?? 0,
+            ),
           })
         }
       />
@@ -36,12 +40,16 @@ export function TransformSection({ obstacle, apply }: Props) {
         value={obstacle.position?.z ?? 0}
         onChange={(v) =>
           apply({
-            position: vec3(obstacle.position?.x ?? 0, obstacle.position?.y ?? 0, v),
+            position: vec3(
+              obstacle.position?.x ?? 0,
+              obstacle.position?.y ?? 0,
+              v,
+            ),
           })
         }
       />
 
-      {obstacle.obstacleType !== 'hazard' ? (
+      {obstacle.obstacleType !== "hazard" ? (
         <>
           <NumberInput
             label="Half Width"
@@ -50,7 +58,7 @@ export function TransformSection({ obstacle, apply }: Props) {
             onChange={(v) =>
               apply({
                 shape: {
-                  kind: 'box',
+                  kind: "box",
                   halfWidth: v,
                   halfDepth: box.halfDepth,
                 },
@@ -64,7 +72,7 @@ export function TransformSection({ obstacle, apply }: Props) {
             onChange={(v) =>
               apply({
                 shape: {
-                  kind: 'box',
+                  kind: "box",
                   halfWidth: box.halfWidth,
                   halfDepth: v,
                 },
@@ -77,7 +85,7 @@ export function TransformSection({ obstacle, apply }: Props) {
           label="Radius"
           aria="Hazard radius"
           value={circle.radius}
-          onChange={(v) => apply({ shape: { kind: 'circle', radius: v } })}
+          onChange={(v) => apply({ shape: { kind: "circle", radius: v } })}
         />
       )}
     </div>

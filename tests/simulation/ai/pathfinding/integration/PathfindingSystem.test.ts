@@ -3,14 +3,14 @@
  * @module pathfinding/integration
  */
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from "vitest";
 
-import { PathfindingSystem } from '@/simulation/ai/pathfinding/integration/PathfindingSystem';
-import { NavMeshResource } from '@/simulation/ai/pathfinding/integration/NavMeshResource';
-import type { PathComponent } from '@/simulation/ai/pathfinding/integration/PathComponent';
-import type { NavigationMesh } from '@/simulation/ai/pathfinding/types';
+import { PathfindingSystem } from "@/simulation/ai/pathfinding/integration/PathfindingSystem";
+import { NavMeshResource } from "@/simulation/ai/pathfinding/integration/NavMeshResource";
+import type { PathComponent } from "@/simulation/ai/pathfinding/integration/PathComponent";
+import type { NavigationMesh } from "@/simulation/ai/pathfinding/types";
 
-describe('PathfindingSystem', () => {
+describe("PathfindingSystem", () => {
   let system: PathfindingSystem;
   let navMeshResource: NavMeshResource;
   let mockPathComponent: PathComponent;
@@ -18,7 +18,7 @@ describe('PathfindingSystem', () => {
   beforeEach(() => {
     // Setup mock NavigationMesh with single polygon
     const mockMesh: NavigationMesh = {
-      id: 'test-mesh',
+      id: "test-mesh",
       polygons: [
         {
           index: 0,
@@ -47,7 +47,7 @@ describe('PathfindingSystem', () => {
     // Setup mock PathComponent
     mockPathComponent = {
       path: null,
-      status: 'pending',
+      status: "pending",
       requestedTarget: { x: 50, y: 0, z: 50 },
       currentWaypointIndex: 0,
       lastCalculationTime: 0,
@@ -56,18 +56,18 @@ describe('PathfindingSystem', () => {
     system = new PathfindingSystem(navMeshResource);
   });
 
-  it('[T018] calculates path for robot with target', async () => {
+  it("[T018] calculates path for robot with target", async () => {
     const robotPosition = { x: 0, y: 0, z: 0 };
 
     await system.calculatePath(robotPosition, mockPathComponent);
 
     // Path should be calculated
     expect(mockPathComponent.path).not.toBeNull();
-    expect(mockPathComponent.status).toBe('valid');
+    expect(mockPathComponent.status).toBe("valid");
     expect(mockPathComponent.lastCalculationTime).toBeGreaterThan(0);
   });
 
-  it('[T020] path calculation completes within 5ms in 95% of cases', async () => {
+  it("[T020] path calculation completes within 5ms in 95% of cases", async () => {
     // Note: With async/worker offloading, this test measures dispatch time, not total calculation time.
     // Dispatch should be extremely fast.
     const robotPosition = { x: 0, y: 0, z: 0 };
@@ -81,7 +81,7 @@ describe('PathfindingSystem', () => {
       times.push(end - start);
 
       // Reset for next iteration
-      mockPathComponent.status = 'pending';
+      mockPathComponent.status = "pending";
       mockPathComponent.path = null;
     }
 
@@ -93,13 +93,13 @@ describe('PathfindingSystem', () => {
     expect(p95Time).toBeLessThan(5); // P95 should be < 5ms (dispatch overhead)
   });
 
-  it('[T021] system execution completes within 16ms with 20 robots', async () => {
+  it("[T021] system execution completes within 16ms with 20 robots", async () => {
     // Create 20 mock robot entities with path components
     const robots = Array.from({ length: 20 }, (_, i) => ({
       id: `robot-${i}`,
       pathComponent: {
         path: null,
-        status: 'pending' as const,
+        status: "pending" as const,
         requestedTarget: { x: i * 5, y: 0, z: i * 5 },
         currentWaypointIndex: 0,
         lastCalculationTime: 0,
@@ -109,9 +109,11 @@ describe('PathfindingSystem', () => {
 
     const start = performance.now();
     // Execute system for all robots (parallel dispatch)
-    await Promise.all(robots.map(robot =>
-      system.calculatePath(robot.position, robot.pathComponent, robot.id)
-    ));
+    await Promise.all(
+      robots.map((robot) =>
+        system.calculatePath(robot.position, robot.pathComponent, robot.id),
+      ),
+    );
     const end = performance.now();
     const executionTime = end - start;
 

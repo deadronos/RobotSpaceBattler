@@ -83,7 +83,7 @@ describe("instanceColorUtils", () => {
     expect(matArr[13]).toBeCloseTo(-512, 1);
   });
 
-  it('clamps HDR colors to a max channel', () => {
+  it("clamps HDR colors to a max channel", () => {
     const c = new Color(4, 2, 1);
     clampHDRColor(c, 2.0);
     const max = Math.max(c.r, c.g, c.b);

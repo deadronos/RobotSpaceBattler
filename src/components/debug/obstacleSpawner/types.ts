@@ -1,6 +1,6 @@
-export type ObstacleKind = 'barrier' | 'hazard' | 'destructible';
+export type ObstacleKind = "barrier" | "hazard" | "destructible";
 
-export type MovementKind = 'none' | 'linear' | 'oscillate' | 'rotation';
+export type MovementKind = "none" | "linear" | "oscillate" | "rotation";
 
 export interface FormState {
   id: string;
@@ -31,9 +31,9 @@ export interface FormState {
 }
 
 export const initialForm: FormState = {
-  id: 'debug-obstacle-1',
+  id: "debug-obstacle-1",
   counter: 1,
-  type: 'barrier',
+  type: "barrier",
   posX: 0,
   posZ: 0,
   halfWidth: 1,
@@ -43,7 +43,7 @@ export const initialForm: FormState = {
   blocksMovement: true,
   active: true,
   movementEnabled: false,
-  movementKind: 'none',
+  movementKind: "none",
   startX: -2,
   startZ: 0,
   endX: 2,

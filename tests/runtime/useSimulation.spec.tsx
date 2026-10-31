@@ -1,8 +1,8 @@
-import { act, render, screen } from '@testing-library/react';
-import { describe, beforeEach, expect, it, vi } from 'vitest';
+import { act, render, screen } from "@testing-library/react";
+import { describe, beforeEach, expect, it, vi } from "vitest";
 
-import { createBattleWorld } from '../../src/ecs/world';
-import { useSimulation } from '../../src/runtime/simulation/useSimulation';
+import { createBattleWorld } from "../../src/ecs/world";
+import { useSimulation } from "../../src/runtime/simulation/useSimulation";
 
 const simulationTestState = vi.hoisted(() => {
   let frameCallback:
@@ -12,32 +12,34 @@ const simulationTestState = vi.hoisted(() => {
   return {
     mockCreateBattleRunner: vi.fn(),
     mockRecordRendererFrame: vi.fn(),
-    mockRapierWorld: { id: 'rapier-world' },
+    mockRapierWorld: { id: "rapier-world" },
     clearFrameCallback: () => {
       frameCallback = undefined;
     },
-    setFrameCallback: (callback: (state: { gl: unknown }, delta: number) => void) => {
+    setFrameCallback: (
+      callback: (state: { gl: unknown }, delta: number) => void,
+    ) => {
       frameCallback = callback;
     },
     getFrameCallback: () => frameCallback,
   };
 });
 
-vi.mock('@react-three/fiber', () => ({
+vi.mock("@react-three/fiber", () => ({
   useFrame: (callback: (state: { gl: unknown }, delta: number) => void) => {
     simulationTestState.setFrameCallback(callback);
   },
 }));
 
-vi.mock('@react-three/rapier', () => ({
+vi.mock("@react-three/rapier", () => ({
   useRapier: () => ({ world: simulationTestState.mockRapierWorld }),
 }));
 
-vi.mock('../../src/runtime/simulation/battleRunner', () => ({
+vi.mock("../../src/runtime/simulation/battleRunner", () => ({
   createBattleRunner: simulationTestState.mockCreateBattleRunner,
 }));
 
-vi.mock('../../src/visuals/rendererStats', () => ({
+vi.mock("../../src/visuals/rendererStats", () => ({
   recordRendererFrame: simulationTestState.mockRecordRendererFrame,
 }));
 
@@ -50,7 +52,7 @@ function createMatchMachineStub() {
     declareVictory: vi.fn(),
     tick: vi.fn(),
     getSnapshot: vi.fn(() => ({
-      phase: 'running',
+      phase: "running",
       elapsedMs: 0,
       restartTimerMs: null,
       winner: null,
@@ -77,14 +79,14 @@ function HookHarness(props: {
   return <div data-testid="ready">ready</div>;
 }
 
-describe('useSimulation', () => {
+describe("useSimulation", () => {
   beforeEach(() => {
     simulationTestState.mockCreateBattleRunner.mockReset();
     simulationTestState.mockRecordRendererFrame.mockReset();
     simulationTestState.clearFrameCallback();
   });
 
-  it('wires the Rapier world to each created runner and clears it on cleanup', () => {
+  it("wires the Rapier world to each created runner and clears it on cleanup", () => {
     const firstRunner = {
       step: vi.fn(),
       reset: vi.fn(),
@@ -134,7 +136,7 @@ describe('useSimulation', () => {
     expect(secondRunner.setRapierWorld).toHaveBeenLastCalledWith(null);
   });
 
-  it('runs the simulation frame loop without forcing React version updates', () => {
+  it("runs the simulation frame loop without forcing React version updates", () => {
     const runner = {
       step: vi.fn(),
       reset: vi.fn(),
@@ -162,7 +164,9 @@ describe('useSimulation', () => {
     }
 
     expect(runner.step).toHaveBeenCalledTimes(5);
-    expect(simulationTestState.mockRecordRendererFrame).toHaveBeenCalledTimes(5);
-    expect(screen.getByTestId('ready')).toHaveTextContent('ready');
+    expect(simulationTestState.mockRecordRendererFrame).toHaveBeenCalledTimes(
+      5,
+    );
+    expect(screen.getByTestId("ready")).toHaveTextContent("ready");
   });
 });

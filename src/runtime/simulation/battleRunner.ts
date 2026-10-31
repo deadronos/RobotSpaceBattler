@@ -116,21 +116,23 @@ export function createBattleRunner(
   const arenaConfig = extractArenaConfiguration();
   const navMeshGenerator = new NavMeshGenerator();
   const navigationMesh = navMeshGenerator.generateFromArena(arenaConfig);
-  
+
   // Convert polygons to navmesh library format (Point2D[] where y is z)
   const libraryPolygons = navigationMesh.polygons.map((poly) =>
     poly.vertices.map((v) => ({ x: v.x, y: v.z })),
   );
   const meshInstance = new NavMesh(libraryPolygons);
-  
+
   const navMeshResource = createNavMeshResource(navigationMesh, meshInstance);
-  const pathfindingSystem = new PathfindingSystem(navMeshResource, { telemetry });
+  const pathfindingSystem = new PathfindingSystem(navMeshResource, {
+    telemetry,
+  });
 
   // Wire up pathfinding telemetry
   pathfindingSystem.onTelemetry((event) => {
     // Optional: forward to main telemetry if needed, or just let it log internally
     if (event.type === "path-calculation-failed") {
-        // console.warn("Pathfinding failed:", event);
+      // console.warn("Pathfinding failed:", event);
     }
   });
 

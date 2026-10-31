@@ -3,15 +3,15 @@
  * Tests that robots can queue through narrow spaces without clustering
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from "vitest";
 
-import { NavMeshGenerator } from '@/simulation/ai/pathfinding/navmesh/NavMeshGenerator';
-import { NavMeshResource } from '@/simulation/ai/pathfinding/integration/NavMeshResource';
-import { PathfindingSystem } from '@/simulation/ai/pathfinding/integration/PathfindingSystem';
-import type { PathComponent } from '@/simulation/ai/pathfinding/integration/PathComponent';
-import { ObstacleType } from '@/simulation/ai/pathfinding/types';
+import { NavMeshGenerator } from "@/simulation/ai/pathfinding/navmesh/NavMeshGenerator";
+import { NavMeshResource } from "@/simulation/ai/pathfinding/integration/NavMeshResource";
+import { PathfindingSystem } from "@/simulation/ai/pathfinding/integration/PathfindingSystem";
+import type { PathComponent } from "@/simulation/ai/pathfinding/integration/PathComponent";
+import { ObstacleType } from "@/simulation/ai/pathfinding/types";
 
-describe('T060: Narrow Passage Navigation', () => {
+describe("T060: Narrow Passage Navigation", () => {
   let system: PathfindingSystem;
   let navMeshResource: NavMeshResource;
 
@@ -23,35 +23,35 @@ describe('T060: Narrow Passage Navigation', () => {
       obstacles: [
         // Left wall of corridor
         {
-          type: 'wall',
+          type: "wall",
           polygon: [
             { x: 0, z: 40 },
             { x: 40, z: 40 },
             { x: 40, z: 45 },
-            { x: 0, z: 45 }
-          ]
+            { x: 0, z: 45 },
+          ],
         },
         // Right wall of corridor
         {
-          type: 'wall' as any,
+          type: "wall" as any,
           polygon: [
             { x: 0, z: 55 },
             { x: 40, z: 55 },
             { x: 40, z: 60 },
-            { x: 0, z: 60 }
-          ]
-        }
-      ] as any
+            { x: 0, z: 60 },
+          ],
+        },
+      ] as any,
     });
 
     navMeshResource = new NavMeshResource(narrowPassageMesh);
     system = new PathfindingSystem(navMeshResource);
   });
 
-  it('should generate paths through narrow passage', async () => {
+  it("should generate paths through narrow passage", async () => {
     // Arrange: Robot needs to navigate (simplified test for MVP)
     const pathComponent: PathComponent = {
-      status: 'pending',
+      status: "pending",
       requestedTarget: { x: 50, y: 0, z: 50 }, // Target destination
       path: null,
       currentWaypointIndex: 0,
@@ -65,43 +65,45 @@ describe('T060: Narrow Passage Navigation', () => {
 
     // Assert: Should have valid path (MVP creates simple mesh, so path is direct)
     expect(pathComponent.path).not.toBeNull();
-    expect(pathComponent.status).toBe('valid');
+    expect(pathComponent.status).toBe("valid");
 
     // Path should have at least start and end waypoints
     expect(pathComponent.path!.waypoints.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('should handle multiple robots without path clustering', async () => {
+  it("should handle multiple robots without path clustering", async () => {
     // Arrange: 5 robots all need to go through same passage
     const robots = Array.from({ length: 5 }, (_, i) => ({
       id: `robot-${i}`,
       position: { x: 20, y: 0, z: 20 + i * 2 },
       pathComponent: {
-        status: 'pending' as PathComponent['status'],
+        status: "pending" as PathComponent["status"],
         requestedTarget: { x: 50, y: 0, z: 50 },
         path: null,
         currentWaypointIndex: 0,
         lastCalculationTime: 0,
-      } as PathComponent
+      } as PathComponent,
     }));
 
     // Act: Calculate paths for all robots
-    await Promise.all(robots.map(robot =>
-      system.calculatePath(
-        robot.position,
-        robot.pathComponent,
-        robot.id
-      )
-    ));
+    await Promise.all(
+      robots.map((robot) =>
+        system.calculatePath(robot.position, robot.pathComponent, robot.id),
+      ),
+    );
 
     // Assert: All should have valid paths
-    const validPaths = robots.filter(r => r.pathComponent.status === 'valid').length;
+    const validPaths = robots.filter(
+      (r) => r.pathComponent.status === "valid",
+    ).length;
     expect(validPaths).toBe(5);
 
     // All robots should have paths
-    robots.forEach(robot => {
+    robots.forEach((robot) => {
       expect(robot.pathComponent.path).not.toBeNull();
-      expect(robot.pathComponent.path!.waypoints.length).toBeGreaterThanOrEqual(2);
+      expect(robot.pathComponent.path!.waypoints.length).toBeGreaterThanOrEqual(
+        2,
+      );
     });
   });
 });

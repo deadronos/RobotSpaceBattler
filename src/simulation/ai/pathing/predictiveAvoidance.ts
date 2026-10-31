@@ -77,7 +77,6 @@ export function computePredictiveAvoidance(
   }
   const cfg = { ...DEFAULT_AVOIDANCE_CONFIG, ...config };
 
-
   // Check if velocity is near zero
   const speed = lengthVec3(velocity);
   if (speed < VELOCITY_THRESHOLD) {

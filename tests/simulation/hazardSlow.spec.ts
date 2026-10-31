@@ -1,23 +1,23 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from "vitest";
 
-import { createBattleWorld } from '../../src/ecs/world';
-import { vec3 } from '../../src/lib/math/vec3';
-import { updateHazardSystem } from '../../src/simulation/obstacles/hazardSystem';
-import { updateMovementSystem } from '../../src/ecs/systems/movementSystem';
+import { createBattleWorld } from "../../src/ecs/world";
+import { vec3 } from "../../src/lib/math/vec3";
+import { updateHazardSystem } from "../../src/simulation/obstacles/hazardSystem";
+import { updateMovementSystem } from "../../src/ecs/systems/movementSystem";
 
-describe('hazard slow/status effects', () => {
-  it('applies slow effect to robot while inside active hazard and removes when inactive', () => {
+describe("hazard slow/status effects", () => {
+  it("applies slow effect to robot while inside active hazard and removes when inactive", () => {
     const world = createBattleWorld();
 
     const robot = {
-      id: 'r-slow',
-      kind: 'robot' as const,
-      team: 'red' as const,
+      id: "r-slow",
+      kind: "robot" as const,
+      team: "red" as const,
       position: vec3(0, 0, 0),
       velocity: vec3(1, 0, 0),
       orientation: 0,
       speed: 1,
-      weapon: 'gun' as const,
+      weapon: "gun" as const,
       fireCooldown: 0,
       fireRate: 1,
       health: 100,
@@ -32,13 +32,13 @@ describe('hazard slow/status effects', () => {
     world.world.add(robot);
 
     const hazard = {
-      id: 'hz-slow',
-      kind: 'obstacle' as const,
-      obstacleType: 'hazard' as const,
+      id: "hz-slow",
+      kind: "obstacle" as const,
+      obstacleType: "hazard" as const,
       position: { x: 0, y: 0, z: 0 },
-      shape: { kind: 'circle', radius: 3 },
+      shape: { kind: "circle", radius: 3 },
       hazardSchedule: { periodMs: 2000, activeMs: 1000, offsetMs: 0 },
-      hazardEffects: [{ kind: 'slow' as const, amount: 0.5 }],
+      hazardEffects: [{ kind: "slow" as const, amount: 0.5 }],
       active: false,
     } as any;
 
@@ -60,18 +60,18 @@ describe('hazard slow/status effects', () => {
     expect(world.robots.entities[0].slowMultiplier).toBe(1);
   });
 
-  it('applies status flag with duration and persists after deactivation until expiry', () => {
+  it("applies status flag with duration and persists after deactivation until expiry", () => {
     const world = createBattleWorld();
 
     const robot = {
-      id: 'r-status',
-      kind: 'robot' as const,
-      team: 'red' as const,
+      id: "r-status",
+      kind: "robot" as const,
+      team: "red" as const,
       position: vec3(0, 0, 0),
       velocity: vec3(0, 0, 0),
       orientation: 0,
       speed: 0,
-      weapon: 'gun' as const,
+      weapon: "gun" as const,
       fireCooldown: 0,
       fireRate: 1,
       health: 100,
@@ -86,13 +86,13 @@ describe('hazard slow/status effects', () => {
     world.world.add(robot);
 
     const hazard = {
-      id: 'hz-status',
-      kind: 'obstacle' as const,
-      obstacleType: 'hazard' as const,
+      id: "hz-status",
+      kind: "obstacle" as const,
+      obstacleType: "hazard" as const,
       position: { x: 0, y: 0, z: 0 },
-      shape: { kind: 'circle', radius: 3 },
+      shape: { kind: "circle", radius: 3 },
       hazardSchedule: { periodMs: 2000, activeMs: 500, offsetMs: 0 },
-      hazardEffects: [{ kind: 'status' as const, amount: 1, durationMs: 500 }],
+      hazardEffects: [{ kind: "status" as const, amount: 1, durationMs: 500 }],
       active: false,
     } as any;
 

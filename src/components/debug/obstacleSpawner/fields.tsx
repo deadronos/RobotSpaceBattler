@@ -1,5 +1,5 @@
-import { toNumber } from './formUtils';
-import type { FormState } from './types';
+import { toNumber } from "./formUtils";
+import type { FormState } from "./types";
 
 type NumberFieldProps = {
   label: string;
@@ -8,7 +8,12 @@ type NumberFieldProps = {
   aria: string;
 };
 
-export function NumberField({ label, value, onChange, aria }: NumberFieldProps) {
+export function NumberField({
+  label,
+  value,
+  onChange,
+  aria,
+}: NumberFieldProps) {
   return (
     <label className="obs-spawner-label">
       <span>{label}</span>

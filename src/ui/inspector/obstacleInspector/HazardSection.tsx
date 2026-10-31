@@ -1,5 +1,5 @@
-import type { ObstacleEntity } from '../../../ecs/world';
-import { NumberInput } from './NumberInput';
+import type { ObstacleEntity } from "../../../ecs/world";
+import { NumberInput } from "./NumberInput";
 
 type Props = {
   obstacle: ObstacleEntity;
@@ -7,7 +7,7 @@ type Props = {
 };
 
 export function HazardSection({ obstacle, apply }: Props) {
-  if (obstacle.obstacleType !== 'hazard') return null;
+  if (obstacle.obstacleType !== "hazard") return null;
 
   return (
     <div className="obstacle-inspector-section">
@@ -61,7 +61,7 @@ export function HazardSection({ obstacle, apply }: Props) {
           value={obstacle.hazardEffects?.[0]?.amount ?? 0}
           onChange={(v) =>
             apply({
-              hazardEffects: [{ kind: 'damage', amount: v, perSecond: true }],
+              hazardEffects: [{ kind: "damage", amount: v, perSecond: true }],
             })
           }
         />

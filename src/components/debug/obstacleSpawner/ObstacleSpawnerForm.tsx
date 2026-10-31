@@ -1,5 +1,5 @@
-import { CheckboxField, NumberField } from './fields';
-import type { FormState, MovementKind, ObstacleKind } from './types';
+import { CheckboxField, NumberField } from "./fields";
+import type { FormState, MovementKind, ObstacleKind } from "./types";
 
 type Props = {
   form: FormState;
@@ -33,8 +33,8 @@ export function ObstacleSpawnerForm({ form, updateForm, onSpawn }: Props) {
               const type = e.target.value as ObstacleKind;
               updateForm({
                 type,
-                blocksVision: type === 'hazard' ? false : form.blocksVision,
-                blocksMovement: type === 'hazard' ? false : form.blocksMovement,
+                blocksVision: type === "hazard" ? false : form.blocksVision,
+                blocksMovement: type === "hazard" ? false : form.blocksMovement,
               });
             }}
           >
@@ -45,8 +45,8 @@ export function ObstacleSpawnerForm({ form, updateForm, onSpawn }: Props) {
         </label>
 
         {[
-          { label: 'Pos X', aria: 'Position X', key: 'posX', value: form.posX },
-          { label: 'Pos Z', aria: 'Position Z', key: 'posZ', value: form.posZ },
+          { label: "Pos X", aria: "Position X", key: "posX", value: form.posX },
+          { label: "Pos Z", aria: "Position Z", key: "posZ", value: form.posZ },
         ].map((field) => (
           <NumberField
             key={field.key}
@@ -59,18 +59,18 @@ export function ObstacleSpawnerForm({ form, updateForm, onSpawn }: Props) {
           />
         ))}
 
-        {form.type !== 'hazard' ? (
+        {form.type !== "hazard" ? (
           [
             {
-              label: 'Half Width',
-              aria: 'Half width',
-              key: 'halfWidth',
+              label: "Half Width",
+              aria: "Half width",
+              key: "halfWidth",
               value: form.halfWidth,
             },
             {
-              label: 'Half Depth',
-              aria: 'Half depth',
-              key: 'halfDepth',
+              label: "Half Depth",
+              aria: "Half depth",
+              key: "halfDepth",
               value: form.halfDepth,
             },
           ].map((field) => (
@@ -96,18 +96,18 @@ export function ObstacleSpawnerForm({ form, updateForm, onSpawn }: Props) {
         <CheckboxField
           label="Blocks vision"
           checked={form.blocksVision}
-          disabled={form.type === 'hazard'}
+          disabled={form.type === "hazard"}
           onChange={(next) => updateForm({ blocksVision: next })}
         />
         <CheckboxField
           label="Blocks movement"
           checked={form.blocksMovement}
-          disabled={form.type === 'hazard'}
+          disabled={form.type === "hazard"}
           onChange={(next) => updateForm({ blocksMovement: next })}
         />
       </div>
 
-      {form.type !== 'hazard' ? (
+      {form.type !== "hazard" ? (
         <div className="obs-spawner-stack obs-spawner-mb-8">
           <CheckboxField
             label="Movement pattern"
@@ -133,7 +133,7 @@ export function ObstacleSpawnerForm({ form, updateForm, onSpawn }: Props) {
                 </select>
               </label>
 
-              {form.movementKind === 'rotation' ? (
+              {form.movementKind === "rotation" ? (
                 <div className="obs-spawner-grid-2">
                   <NumberField
                     label="Pivot X"
@@ -215,7 +215,7 @@ export function ObstacleSpawnerForm({ form, updateForm, onSpawn }: Props) {
         </div>
       )}
 
-      {form.type === 'destructible' ? (
+      {form.type === "destructible" ? (
         <div className="obs-spawner-mb-8">
           <NumberField
             label="Durability"

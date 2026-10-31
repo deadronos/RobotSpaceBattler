@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 
-import { createEffectPool } from '../../src/ecs/pools/EffectPool';
-import { createProjectilePool } from '../../src/ecs/pools/ProjectilePool';
+import { createEffectPool } from "../../src/ecs/pools/EffectPool";
+import { createProjectilePool } from "../../src/ecs/pools/ProjectilePool";
 
-describe('ECS pools', () => {
-  it('reuses projectiles after release', () => {
+describe("ECS pools", () => {
+  it("reuses projectiles after release", () => {
     const pool = createProjectilePool(2);
     const a = pool.acquire();
     const b = pool.acquire();
@@ -27,10 +27,10 @@ describe('ECS pools', () => {
     expect(pool.getFreeCount()).toBeGreaterThanOrEqual(2);
   });
 
-  it('resets effect pool allocations', () => {
+  it("resets effect pool allocations", () => {
     const pool = createEffectPool(1);
     const effect = pool.acquire();
-    effect.id = 'test';
+    effect.id = "test";
     pool.release(effect);
 
     const stats = pool.getStats();

@@ -1,4 +1,7 @@
-import { createRendererStatsSnapshot, type RendererStatsSnapshot } from "./rendererStats";
+import {
+  createRendererStatsSnapshot,
+  type RendererStatsSnapshot,
+} from "./rendererStats";
 import { getRendererStatsGlobal } from "./rendererStatsGlobal";
 import type {
   VisualInstanceTelemetryEmitter,

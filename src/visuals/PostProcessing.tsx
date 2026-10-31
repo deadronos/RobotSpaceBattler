@@ -49,10 +49,14 @@ export function PostProcessing({ enabled, quality }: PostProcessingProps) {
       // reinitialization happening at the exact same time the renderer
       // resizes the drawing buffer (this can cause a black flicker).
       // We schedule two RAF ticks to allow the renderer to settle.
-        console.debug(`[PostProcessing] DPR change detected: ${prevDpr.current} -> ${currentDpr} (deferring composer)`);
+      console.debug(
+        `[PostProcessing] DPR change detected: ${prevDpr.current} -> ${currentDpr} (deferring composer)`,
+      );
       prevDpr.current = currentDpr;
       setSuspended(true);
-      requestAnimationFrame(() => requestAnimationFrame(() => setSuspended(false)));
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => setSuspended(false)),
+      );
     }
   }, [currentDpr]);
 
@@ -80,7 +84,9 @@ export function PostProcessing({ enabled, quality }: PostProcessingProps) {
           blendFunction={BlendFunction.NORMAL}
           offset={preset.chromaticOffset}
         />
-      ) : <></>}
+      ) : (
+        <></>
+      )}
       <ToneMapping key="tonemap" />
     </EffectComposer>
   );

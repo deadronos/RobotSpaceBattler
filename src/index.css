@@ -5,7 +5,7 @@ body,
   padding: 0;
   width: 100%;
   height: 100%;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background-color: #050612;
   color: #f4f5ff;
 }
@@ -214,7 +214,11 @@ canvas {
 .battle-stats-winner {
   text-align: center;
   padding: 16px;
-  background: linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(96, 165, 250, 0.1) 0%,
+    rgba(167, 139, 250, 0.1) 100%
+  );
   border-radius: 12px;
   border: 1px solid rgba(96, 165, 250, 0.3);
 }
@@ -240,12 +244,20 @@ canvas {
 
 .battle-stats-team-red {
   border-color: #ef4444;
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.1) 0%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
 }
 
 .battle-stats-team-blue {
   border-color: #3b82f6;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.1) 0%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
 }
 
 .battle-stats-team-card h3 {
@@ -337,7 +349,11 @@ canvas {
   width: 420px;
   max-width: calc(100vw - 32px);
   max-height: calc(100vh - 120px);
-  background: linear-gradient(135deg, rgba(26, 29, 58, 0.95) 0%, rgba(13, 15, 31, 0.95) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(26, 29, 58, 0.95) 0%,
+    rgba(13, 15, 31, 0.95) 100%
+  );
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.1);

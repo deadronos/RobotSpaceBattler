@@ -1,15 +1,15 @@
-import type { World as RapierWorld } from '@dimforge/rapier3d-compat';
-import type { World as MiniplexWorld } from 'miniplex';
+import type { World as RapierWorld } from "@dimforge/rapier3d-compat";
+import type { World as MiniplexWorld } from "miniplex";
 
-import type { Vec3 } from '../lib/math/vec3';
-import type { TeamConfig, TeamId } from '../lib/teamConfig';
-import type { VisualInstanceManager } from '../visuals/VisualInstanceManager';
-import type { EffectPool } from './pools/EffectPool';
-import type { ProjectilePool } from './pools/ProjectilePool';
+import type { Vec3 } from "../lib/math/vec3";
+import type { TeamConfig, TeamId } from "../lib/teamConfig";
+import type { VisualInstanceManager } from "../visuals/VisualInstanceManager";
+import type { EffectPool } from "./pools/EffectPool";
+import type { ProjectilePool } from "./pools/ProjectilePool";
 
-export type WeaponType = 'laser' | 'gun' | 'rocket' | 'heal';
+export type WeaponType = "laser" | "gun" | "rocket" | "heal";
 
-export type UnitRole = 'assault' | 'tank' | 'sniper' | 'medic';
+export type UnitRole = "assault" | "tank" | "sniper" | "medic";
 
 export interface EnemyMemoryEntry {
   position: Vec3;
@@ -17,9 +17,9 @@ export interface EnemyMemoryEntry {
 }
 
 export interface RobotAIState {
-  mode: 'seek' | 'engage' | 'retreat';
+  mode: "seek" | "engage" | "retreat";
   targetId?: string;
-  directive?: 'offense' | 'defense' | 'balanced';
+  directive?: "offense" | "defense" | "balanced";
   anchorPosition?: Vec3 | null;
   anchorDistance?: number | null;
   strafeSign?: 1 | -1;
@@ -36,7 +36,7 @@ import type { PathComponent } from "../simulation/ai/pathfinding/integration/Pat
 
 export interface RobotEntity {
   id: string;
-  kind: 'robot';
+  kind: "robot";
   team: TeamId;
   role: UnitRole;
   position: Vec3;
@@ -62,7 +62,7 @@ export interface RobotEntity {
 
 export interface ProjectileEntity {
   id: string;
-  kind: 'projectile';
+  kind: "projectile";
   team: TeamId;
   shooterId: string;
   weapon: WeaponType;
@@ -87,25 +87,25 @@ export interface ProjectileEntity {
 
 export interface ObstacleEntity {
   id: string;
-  kind: 'obstacle';
-  obstacleType: 'barrier' | 'hazard' | 'destructible';
+  kind: "obstacle";
+  obstacleType: "barrier" | "hazard" | "destructible";
   position: Vec3;
   orientation?: number;
   shape?:
     | {
-        kind: 'box';
+        kind: "box";
         halfWidth: number;
         halfDepth: number;
         center?: { x: number; z: number };
       }
-    | { kind: 'circle'; radius: number; center?: { x: number; z: number } };
+    | { kind: "circle"; radius: number; center?: { x: number; z: number } };
   blocksVision?: boolean;
   blocksMovement?: boolean;
   active?: boolean;
   durability?: number;
   maxDurability?: number;
   movementPattern?: {
-    patternType: 'linear' | 'rotation' | 'oscillate';
+    patternType: "linear" | "rotation" | "oscillate";
     points?: Vec3[];
     pivot?: Vec3;
     speed?: number;
@@ -122,18 +122,18 @@ export interface ObstacleEntity {
     offsetMs?: number;
   } | null;
   hazardEffects?: Array<{
-    kind: 'damage' | 'slow' | 'status';
+    kind: "damage" | "slow" | "status";
     amount: number;
     perSecond?: boolean;
     durationMs?: number;
   }> | null;
 }
 
-export type EffectType = 'explosion' | 'impact' | 'laser-impact';
+export type EffectType = "explosion" | "impact" | "laser-impact";
 
 export interface EffectEntity {
   id: string;
-  kind: 'effect';
+  kind: "effect";
   effectType: EffectType;
   position: Vec3;
   radius: number;

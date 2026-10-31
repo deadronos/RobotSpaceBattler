@@ -22,7 +22,10 @@ export class PathWorkerManager {
    */
   async initializeWorker() {
     try {
-      await spawn(move(this.navMeshResource.getSerializedMesh()), initWorker).join();
+      await spawn(
+        move(this.navMeshResource.getSerializedMesh()),
+        initWorker,
+      ).join();
     } catch (err) {
       console.error("Failed to initialize pathfinding worker:", err);
     }
@@ -48,7 +51,11 @@ export class PathWorkerManager {
    * Execute a path request in the worker.
    * Worker runner kept as internal method so tests can stub this.
    */
-  async runWorker(req: WorkerPathRequest): Promise<{ ok: true; value: WorkerPathResult } | { ok: false; error: unknown }> {
+  async runWorker(
+    req: WorkerPathRequest,
+  ): Promise<
+    { ok: true; value: WorkerPathResult } | { ok: false; error: unknown }
+  > {
     try {
       const task = spawn(move(req), calculatePath);
       return await task.join();
@@ -80,7 +87,9 @@ export class PathWorkerManager {
   /**
    * Unwrap worker response which may be nested in a Promise.
    */
-  async unwrapWorkerResult(value: WorkerPathResult | Promise<WorkerPathResult>): Promise<WorkerPathResult> {
+  async unwrapWorkerResult(
+    value: WorkerPathResult | Promise<WorkerPathResult>,
+  ): Promise<WorkerPathResult> {
     return this.isPromiseLike<WorkerPathResult>(value)
       ? await (value as unknown as Promise<WorkerPathResult>)
       : (value as WorkerPathResult);

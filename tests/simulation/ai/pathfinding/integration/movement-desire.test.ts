@@ -6,15 +6,15 @@
  * @module pathfinding/integration
  */
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from "vitest";
 
-import { PathfindingSystem } from '@/simulation/ai/pathfinding/integration/PathfindingSystem';
-import { NavMeshResource } from '@/simulation/ai/pathfinding/integration/NavMeshResource';
-import type { PathComponent } from '@/simulation/ai/pathfinding/integration/PathComponent';
-import type { NavigationMesh } from '@/simulation/ai/pathfinding/types';
-import type { Point3D } from '@/simulation/ai/pathfinding/types';
+import { PathfindingSystem } from "@/simulation/ai/pathfinding/integration/PathfindingSystem";
+import { NavMeshResource } from "@/simulation/ai/pathfinding/integration/NavMeshResource";
+import type { PathComponent } from "@/simulation/ai/pathfinding/integration/PathComponent";
+import type { NavigationMesh } from "@/simulation/ai/pathfinding/types";
+import type { Point3D } from "@/simulation/ai/pathfinding/types";
 
-describe('PathfindingSystem Movement Desire Output', () => {
+describe("PathfindingSystem Movement Desire Output", () => {
   let system: PathfindingSystem;
   let navMeshResource: NavMeshResource;
   let mockPathComponent: PathComponent;
@@ -23,7 +23,7 @@ describe('PathfindingSystem Movement Desire Output', () => {
   beforeEach(() => {
     // Setup mock NavigationMesh
     const mockMesh: NavigationMesh = {
-      id: 'test-mesh',
+      id: "test-mesh",
       polygons: [
         {
           index: 0,
@@ -53,20 +53,20 @@ describe('PathfindingSystem Movement Desire Output', () => {
     mockRobotPosition = { x: 10, y: 0, z: 10 };
     mockPathComponent = {
       path: null,
-      status: 'pending',
+      status: "pending",
       requestedTarget: { x: 90, y: 0, z: 90 },
       currentWaypointIndex: 0,
       lastCalculationTime: 0,
     };
   });
 
-  it('T072: should output movement desire vector from path calculation', async () => {
+  it("T072: should output movement desire vector from path calculation", async () => {
     // Act: Calculate path
     await system.calculatePath(mockRobotPosition, mockPathComponent);
 
     // Assert: PathComponent should contain navigation path
     expect(mockPathComponent.path).not.toBeNull();
-    expect(mockPathComponent.status).toBe('valid');
+    expect(mockPathComponent.status).toBe("valid");
 
     // Path provides waypoints that represent desired movement direction
     const path = mockPathComponent.path!;
@@ -78,7 +78,7 @@ describe('PathfindingSystem Movement Desire Output', () => {
     expect(firstWaypoint.z).toBeCloseTo(mockRobotPosition.z, 1);
   });
 
-  it('T072: should NOT directly modify robot position in calculatePath', async () => {
+  it("T072: should NOT directly modify robot position in calculatePath", async () => {
     // Arrange: Store original position
     const originalPosition = { ...mockRobotPosition };
 
@@ -91,7 +91,7 @@ describe('PathfindingSystem Movement Desire Output', () => {
     expect(mockRobotPosition.z).toBe(originalPosition.z);
   });
 
-  it('T072: path waypoints should represent directional desires for movement', async () => {
+  it("T072: path waypoints should represent directional desires for movement", async () => {
     // Act
     await system.calculatePath(mockRobotPosition, mockPathComponent);
 
@@ -117,7 +117,7 @@ describe('PathfindingSystem Movement Desire Output', () => {
     }
   });
 
-  it('T072: movement desire should be extractable from current waypoint', async () => {
+  it("T072: movement desire should be extractable from current waypoint", async () => {
     // Act
     await system.calculatePath(mockRobotPosition, mockPathComponent);
 
@@ -146,12 +146,12 @@ describe('PathfindingSystem Movement Desire Output', () => {
     expect(Math.abs(directionZ)).toBeLessThanOrEqual(1);
   });
 
-  it('T072: pathfinding system provides waypoint-based desires for concurrent blending', async () => {
+  it("T072: pathfinding system provides waypoint-based desires for concurrent blending", async () => {
     // Arrange: Multiple robots with different paths
     const robot1Pos = { x: 10, y: 0, z: 10 };
     const robot1Path: PathComponent = {
       path: null,
-      status: 'pending',
+      status: "pending",
       requestedTarget: { x: 90, y: 0, z: 50 },
       currentWaypointIndex: 0,
       lastCalculationTime: 0,
@@ -160,7 +160,7 @@ describe('PathfindingSystem Movement Desire Output', () => {
     const robot2Pos = { x: 10, y: 0, z: 90 };
     const robot2Path: PathComponent = {
       path: null,
-      status: 'pending',
+      status: "pending",
       requestedTarget: { x: 90, y: 0, z: 10 },
       currentWaypointIndex: 0,
       lastCalculationTime: 0,
@@ -168,8 +168,8 @@ describe('PathfindingSystem Movement Desire Output', () => {
 
     // Act: Calculate both paths
     await Promise.all([
-      system.calculatePath(robot1Pos, robot1Path, 'robot-1'),
-      system.calculatePath(robot2Pos, robot2Path, 'robot-2')
+      system.calculatePath(robot1Pos, robot1Path, "robot-1"),
+      system.calculatePath(robot2Pos, robot2Path, "robot-2"),
     ]);
 
     // Assert: Both robots have independent movement desires

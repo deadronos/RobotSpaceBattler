@@ -5,12 +5,12 @@
 //  - If CHANGED_FILES_LIST is empty, the script scans the `src/`, `scripts/`,
 //    `tests/`, and `playwright/` directories.
 
-import { promises as fs } from 'fs';
-import path from 'node:path';
+import { promises as fs } from "fs";
+import path from "node:path";
 
 const THRESHOLD = 300;
 const EXT_RE = /\.(js|jsx|ts|tsx)$/i;
-const ALLOWED_DIRS = ['src', 'scripts', 'tests', 'playwright'];
+const ALLOWED_DIRS = ["src", "scripts", "tests", "playwright"];
 
 async function fileExists(p) {
   try {
@@ -54,9 +54,12 @@ function splitLines(s) {
 
 async function getFilesFromEnvList(envList) {
   if (!envList) return [];
-  const parts = envList.split(/\r\n|\r|\n/).map(s => s.trim()).filter(Boolean);
+  const parts = envList
+    .split(/\r\n|\r|\n/)
+    .map((s) => s.trim())
+    .filter(Boolean);
   // Convert relative paths to workspace files
-  return parts.map(p => path.normalize(p));
+  return parts.map((p) => path.normalize(p));
 }
 
 async function checkFiles(files) {
@@ -71,11 +74,11 @@ async function checkFiles(files) {
       continue;
     }
     if (!stat.isFile()) continue;
-    const content = await fs.readFile(f, 'utf8');
+    const content = await fs.readFile(f, "utf8");
     const lines = splitLines(content);
     if (lines.length > THRESHOLD) {
       // Allow exemption marker in head comments
-      const head = lines.slice(0, Math.min(30, lines.length)).join('\n');
+      const head = lines.slice(0, Math.min(30, lines.length)).join("\n");
       if (/CONSTITUTION-EXEMPT|CONSTITUTION-EXCEPTION/i.test(head)) {
         // explicit exemption present; skip
         continue;
@@ -88,7 +91,7 @@ async function checkFiles(files) {
 
 (async function main() {
   try {
-    const envList = process.env.CHANGED_FILES_LIST || '';
+    const envList = process.env.CHANGED_FILES_LIST || "";
     let filesToCheck = [];
     if (envList.trim()) {
       const candidates = await getFilesFromEnvList(envList);
@@ -96,8 +99,11 @@ async function checkFiles(files) {
       for (const f of candidates) {
         // normalize and handle paths without leading ./
         const normalized = path.normalize(f);
-        const rel = normalized.replace(/\\/g, '/');
-        if (ALLOWED_DIRS.some(d => rel.startsWith(d + '/')) || ALLOWED_DIRS.includes(rel)) {
+        const rel = normalized.replace(/\\/g, "/");
+        if (
+          ALLOWED_DIRS.some((d) => rel.startsWith(d + "/")) ||
+          ALLOWED_DIRS.includes(rel)
+        ) {
           filesToCheck.push(normalized);
         }
       }
@@ -111,9 +117,19 @@ async function checkFiles(files) {
     const violations = await checkFiles(filesToCheck);
 
     if (violations.length) {
-      console.error('\nCONSTITUTION VIOLATION: Source files exceed allowed size (\u003e ' + THRESHOLD + ' lines)');
-      console.error('Rule: Source files SHOULD be <= ' + THRESHOLD + ' lines. To exempt a file, add a');
-      console.error("comment containing 'CONSTITUTION-EXEMPT: reason' in the file's header and create a short PR justification.\n");
+      console.error(
+        "\nCONSTITUTION VIOLATION: Source files exceed allowed size (\u003e " +
+          THRESHOLD +
+          " lines)",
+      );
+      console.error(
+        "Rule: Source files SHOULD be <= " +
+          THRESHOLD +
+          " lines. To exempt a file, add a",
+      );
+      console.error(
+        "comment containing 'CONSTITUTION-EXEMPT: reason' in the file's header and create a short PR justification.\n",
+      );
       for (const v of violations) {
         console.error(` - ${v.path}: ${v.lines} lines`);
       }
@@ -121,10 +137,14 @@ async function checkFiles(files) {
       return;
     }
 
-    console.log('Source size check passed. No files exceed', THRESHOLD, 'lines (or exemptions found).');
+    console.log(
+      "Source size check passed. No files exceed",
+      THRESHOLD,
+      "lines (or exemptions found).",
+    );
     process.exitCode = 0;
   } catch (err) {
-    console.error('Error running source-size check:', err);
+    console.error("Error running source-size check:", err);
     process.exitCode = 2;
   }
 })();

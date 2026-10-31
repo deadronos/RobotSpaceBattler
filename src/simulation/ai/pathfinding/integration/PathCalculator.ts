@@ -32,7 +32,10 @@ export class PathCalculator {
   private workerManager: PathWorkerManager;
   private resultHandler: PathResultHandler;
 
-  constructor(private navMeshResource: NavMeshResource, options?: PathCalculatorOptions) {
+  constructor(
+    private navMeshResource: NavMeshResource,
+    options?: PathCalculatorOptions,
+  ) {
     this.enableSmoothing = options?.enableSmoothing ?? true;
     this.throttleInterval = options?.throttleInterval ?? 333;
     this.enableNearestFallback = options?.enableNearestFallback ?? true;
@@ -70,7 +73,11 @@ export class PathCalculator {
    * Worker execution method - kept as a separate method on PathCalculator
    * so tests can stub/monkeypatch this for testing purposes.
    */
-  protected async runWorker(req: WorkerPathRequest): Promise<{ ok: true; value: WorkerPathResult } | { ok: false; error: unknown }> {
+  protected async runWorker(
+    req: WorkerPathRequest,
+  ): Promise<
+    { ok: true; value: WorkerPathResult } | { ok: false; error: unknown }
+  > {
     return this.workerManager.runWorker(req);
   }
 
@@ -88,7 +95,11 @@ export class PathCalculator {
    * Calculate a path from start to the requested target on the pathComponent.
    * Uses caching and request throttling to optimize performance.
    */
-  async calculate(start: Point3D, pathComponent: PathComponent, robotId?: string) {
+  async calculate(
+    start: Point3D,
+    pathComponent: PathComponent,
+    robotId?: string,
+  ) {
     const target = pathComponent.requestedTarget;
     if (!target) return;
 
@@ -120,7 +131,10 @@ export class PathCalculator {
 
     // Validate mesh has polygons before dispatching to worker
     // (Skip this check if runWorker has been monkeypatched for testing)
-    if (this.runWorker === (PathCalculator.prototype as unknown as { runWorker: unknown }).runWorker) {
+    if (
+      this.runWorker ===
+      (PathCalculator.prototype as unknown as { runWorker: unknown }).runWorker
+    ) {
       if (!this.workerManager.isValidMesh()) {
         pathComponent.status = "failed" as const;
         pathComponent.path = null;
@@ -188,10 +202,12 @@ export class PathCalculator {
       };
 
       const res = await this.runWorker(req);
-      console.debug('PathCalculator.runWorker result:', res);
+      console.debug("PathCalculator.runWorker result:", res);
 
       if (res.ok) {
-        const workerResult = await this.workerManager.unwrapWorkerResult(res.value);
+        const workerResult = await this.workerManager.unwrapWorkerResult(
+          res.value,
+        );
         await this.resultHandler.handleWorkerResult(
           workerResult,
           this.pendingRequests,

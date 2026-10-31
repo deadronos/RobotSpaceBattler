@@ -83,4 +83,3 @@ export interface TelemetryPort {
     error?: string;
   }) => void;
 }
-

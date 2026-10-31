@@ -9,7 +9,6 @@ import { MatchStateMachine } from "../state/matchStateMachine";
 import { BattleRunner, createBattleRunner } from "./battleRunner";
 import { TelemetryPort } from "./ports";
 
-
 interface UseSimulationOptions {
   battleWorld: BattleWorld;
   matchMachine: MatchStateMachine;
@@ -35,7 +34,8 @@ export function useSimulation({
   const rapierWorldRef = useRef<RapierWorld | null>(null);
   const { world: rapierWorld } = useRapier();
 
-  rapierWorldRef.current = (rapierWorld as unknown as RapierWorld | null) ?? null;
+  rapierWorldRef.current =
+    (rapierWorld as unknown as RapierWorld | null) ?? null;
 
   // Initialize BattleRunner
   useEffect(() => {
@@ -58,17 +58,11 @@ export function useSimulation({
         runnerRef.current = null;
       }
     };
-  }, [
-    battleWorld,
-    matchMachine,
-    obstacleFixture,
-    onRunnerReady,
-    telemetry,
-  ]);
+  }, [battleWorld, matchMachine, obstacleFixture, onRunnerReady, telemetry]);
 
   // Expose for debugging
   useEffect(() => {
-    const win = (window as unknown) as { __battleWorld?: typeof battleWorld };
+    const win = window as unknown as { __battleWorld?: typeof battleWorld };
     win.__battleWorld = battleWorld;
     return () => {
       delete win.__battleWorld;

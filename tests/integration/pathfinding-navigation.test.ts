@@ -3,23 +3,23 @@
  * @module integration
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from "vitest";
 
-import { NavMeshGenerator } from '@/simulation/ai/pathfinding/navmesh/NavMeshGenerator';
-import { PathfindingSystem } from '@/simulation/ai/pathfinding/integration/PathfindingSystem';
-import { NavMeshResource } from '@/simulation/ai/pathfinding/integration/NavMeshResource';
-import type { PathComponent } from '@/simulation/ai/pathfinding/integration/PathComponent';
-import type { ArenaConfiguration } from '@/simulation/ai/pathfinding/types';
-import { ObstacleType } from '@/simulation/ai/pathfinding/types';
+import { NavMeshGenerator } from "@/simulation/ai/pathfinding/navmesh/NavMeshGenerator";
+import { PathfindingSystem } from "@/simulation/ai/pathfinding/integration/PathfindingSystem";
+import { NavMeshResource } from "@/simulation/ai/pathfinding/integration/NavMeshResource";
+import type { PathComponent } from "@/simulation/ai/pathfinding/integration/PathComponent";
+import type { ArenaConfiguration } from "@/simulation/ai/pathfinding/types";
+import { ObstacleType } from "@/simulation/ai/pathfinding/types";
 
-describe('PathfindingSystem - Robot Navigation', () => {
-  it('[T019] Robot navigates around wall cluster', async () => {
+describe("PathfindingSystem - Robot Navigation", () => {
+  it("[T019] Robot navigates around wall cluster", async () => {
     // Create arena with a wall cluster in the center
     const arenaConfig: ArenaConfiguration = {
       size: { width: 100, depth: 100 },
       obstacles: [
         {
-          id: 'wall-1',
+          id: "wall-1",
           type: ObstacleType.WALL,
           footprint: [
             { x: 40, z: 40 },
@@ -31,7 +31,7 @@ describe('PathfindingSystem - Robot Navigation', () => {
           passable: false,
         },
         {
-          id: 'wall-2',
+          id: "wall-2",
           type: ObstacleType.WALL,
           footprint: [
             { x: 40, z: 55 },
@@ -60,18 +60,18 @@ describe('PathfindingSystem - Robot Navigation', () => {
     // Create path component
     const pathComponent: PathComponent = {
       path: null,
-      status: 'pending',
+      status: "pending",
       requestedTarget: targetPosition,
       currentWaypointIndex: 0,
       lastCalculationTime: 0,
     };
 
     // Calculate path
-    await system.calculatePath(robotPosition, pathComponent, 'test-robot');
+    await system.calculatePath(robotPosition, pathComponent, "test-robot");
 
     // Verify path was found
     expect(pathComponent.path).not.toBeNull();
-    expect(pathComponent.status).toBe('valid');
+    expect(pathComponent.status).toBe("valid");
 
     if (pathComponent.path) {
       // Path should have at least 2 waypoints (start and end)
@@ -88,9 +88,9 @@ describe('PathfindingSystem - Robot Navigation', () => {
 
       // Verify path is valid (waypoints exist and are numbers)
       for (const waypoint of pathComponent.path.waypoints) {
-        expect(waypoint.x).toBeTypeOf('number');
-        expect(waypoint.y).toBeTypeOf('number');
-        expect(waypoint.z).toBeTypeOf('number');
+        expect(waypoint.x).toBeTypeOf("number");
+        expect(waypoint.y).toBeTypeOf("number");
+        expect(waypoint.z).toBeTypeOf("number");
       }
 
       // Path length should be reasonable (not infinite or negative)
