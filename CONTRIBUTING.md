@@ -17,6 +17,9 @@ npm run build
 ```
 
 `npm run format` rewrites files with oxfmt if `format:check` reports drift.
+Formatting-only commits are listed in `.git-blame-ignore-revs`; run
+`git config blame.ignoreRevsFile .git-blame-ignore-revs` once so `git blame`
+skips them.
 
 ## Cross-platform notes
 
