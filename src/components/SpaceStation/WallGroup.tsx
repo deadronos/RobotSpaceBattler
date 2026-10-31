@@ -78,11 +78,7 @@ export function WallGroup() {
               flickerSpeed={3}
             >
               <boxGeometry
-                args={[
-                  wall.dim[0] + 0.1,
-                  0.15,
-                  wall.dim[2] + 0.1,
-                ]}
+                args={[wall.dim[0] + 0.1, 0.15, wall.dim[2] + 0.1]}
               />
             </NeonGeometry>
             {/* Add Neon Strips along the bottom edges */}
@@ -93,11 +89,7 @@ export function WallGroup() {
               flickerSpeed={2}
             >
               <boxGeometry
-                args={[
-                  wall.dim[0] + 0.1,
-                  0.15,
-                  wall.dim[2] + 0.1,
-                ]}
+                args={[wall.dim[0] + 0.1, 0.15, wall.dim[2] + 0.1]}
               />
             </NeonGeometry>
           </RigidBody>

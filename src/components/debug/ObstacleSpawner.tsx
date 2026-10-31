@@ -10,7 +10,7 @@ import {
 import { buildObstacle } from "./obstacleSpawner/buildObstacle";
 import { ObstacleList } from "./obstacleSpawner/ObstacleList";
 import { ObstacleSpawnerForm } from "./obstacleSpawner/ObstacleSpawnerForm";
-import { type FormState,initialForm } from "./obstacleSpawner/types";
+import { type FormState, initialForm } from "./obstacleSpawner/types";
 interface ObstacleSpawnerProps {
   world: BattleWorld;
   onSpawn?: (obstacle: ObstacleEntity) => void;
@@ -65,7 +65,11 @@ export function ObstacleSpawner({ world, onSpawn }: ObstacleSpawnerProps) {
 
   return (
     <div className="obs-spawner-panel">
-      <ObstacleSpawnerForm form={form} updateForm={updateForm} onSpawn={handleSpawn} />
+      <ObstacleSpawnerForm
+        form={form}
+        updateForm={updateForm}
+        onSpawn={handleSpawn}
+      />
       <ObstacleList
         obstacles={obstacles}
         toggleActive={toggleActive}

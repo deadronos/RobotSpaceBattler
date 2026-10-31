@@ -1,15 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { PathCache } from '@/simulation/ai/pathfinding/search/PathCache';
-import type { NavigationPath } from '@/simulation/ai/pathfinding/types';
+import { describe, it, expect, beforeEach } from "vitest";
+import { PathCache } from "@/simulation/ai/pathfinding/search/PathCache";
+import type { NavigationPath } from "@/simulation/ai/pathfinding/types";
 
-describe('PathCache', () => {
+describe("PathCache", () => {
   let cache: PathCache;
 
   beforeEach(() => {
     cache = new PathCache({ maxSize: 100 });
   });
 
-  it('T050: PathCache achieves >80% hit rate for repeated queries', () => {
+  it("T050: PathCache achieves >80% hit rate for repeated queries", () => {
     // Arrange: Create a set of common start/target pairs
     const commonPairs = [
       { start: { x: 10, y: 0, z: 10 }, target: { x: 80, y: 0, z: 80 } },
@@ -20,7 +20,11 @@ describe('PathCache', () => {
     ];
 
     const mockPath: NavigationPath = {
-      waypoints: [{ x: 0, y: 0, z: 0 }, { x: 50, y: 0, z: 50 }, { x: 100, y: 0, z: 100 }],
+      waypoints: [
+        { x: 0, y: 0, z: 0 },
+        { x: 50, y: 0, z: 50 },
+        { x: 100, y: 0, z: 100 },
+      ],
       totalDistance: 100,
       smoothed: true,
     };
@@ -37,7 +41,7 @@ describe('PathCache', () => {
 
     for (let i = 0; i < totalQueries; i++) {
       let start, target;
-      
+
       if (i % 100 < 85) {
         // 85% of queries: use common paths (should hit after first query)
         const pairIndex = i % commonPairs.length;
@@ -64,14 +68,14 @@ describe('PathCache', () => {
 
     // Assert: Hit rate should be >80%
     expect(hitRate).toBeGreaterThan(0.8);
-    
+
     // Verify cache statistics
     const stats = cache.getStats();
     expect(stats.hitRate).toBeGreaterThan(0.8);
     expect(stats.size).toBeLessThanOrEqual(100); // Within max size
   });
 
-  it('should evict least recently used entries when cache is full', () => {
+  it("should evict least recently used entries when cache is full", () => {
     // Arrange: Create cache with small size
     const smallCache = new PathCache({ maxSize: 3 });
     const mockPath: NavigationPath = {
@@ -98,7 +102,7 @@ describe('PathCache', () => {
     expect(stats.size).toBe(3);
   });
 
-  it('should generate consistent cache keys for equivalent positions', () => {
+  it("should generate consistent cache keys for equivalent positions", () => {
     const mockPath: NavigationPath = {
       waypoints: [{ x: 0, y: 0, z: 0 }],
       totalDistance: 10,
@@ -109,12 +113,15 @@ describe('PathCache', () => {
     cache.set({ x: 10.5, y: 0, z: 20.5 }, { x: 80.5, y: 0, z: 90.5 }, mockPath);
 
     // Get with equivalent position (should hit)
-    const result = cache.get({ x: 10.5, y: 0, z: 20.5 }, { x: 80.5, y: 0, z: 90.5 });
+    const result = cache.get(
+      { x: 10.5, y: 0, z: 20.5 },
+      { x: 80.5, y: 0, z: 90.5 },
+    );
     expect(result).not.toBeNull();
     expect(result?.waypoints).toEqual(mockPath.waypoints);
   });
 
-  it('should clear cache on invalidation', () => {
+  it("should clear cache on invalidation", () => {
     const mockPath: NavigationPath = {
       waypoints: [{ x: 0, y: 0, z: 0 }],
       totalDistance: 10,

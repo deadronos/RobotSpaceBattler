@@ -31,7 +31,11 @@ export interface TeamConfig {
  * @param max - The maximum value.
  * @returns A random number between min and max.
  */
-function randRangeSeeded(rng: RandomGenerator, min: number, max: number): number {
+function randRangeSeeded(
+  rng: RandomGenerator,
+  min: number,
+  max: number,
+): number {
   return rng.next() * (max - min) + min;
 }
 
@@ -172,4 +176,3 @@ export function generateTeamConfigs(seed: number): Record<TeamId, TeamConfig> {
  * Uses a fixed seed (0) for deterministic results across reloads.
  */
 export const TEAM_CONFIGS = generateTeamConfigs(0);
-

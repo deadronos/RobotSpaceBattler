@@ -1,10 +1,10 @@
 /**
  * T074-T076: AI Behavior Blending Integration Tests
  * Phase 8 TDD RED - Integration & AI Behavior Coordination
- * 
+ *
  * Tests verify that pathfinding desires blend correctly with combat, retreat, and idle behaviors.
  * @module integration
- * 
+ *
  * CONSTITUTION-EXEMPT: 340 LOC (exceeds 300 limit)
  * Justification: Comprehensive integration test suite covering 13 test cases for behavior
  * blending (T074-T076). Tests are grouped logically by priority levels and integration
@@ -12,29 +12,32 @@
  * Test files have more lenient LOC requirements than production code.
  */
 
-import { beforeEach, describe, expect, it } from 'vitest';
-import { BehaviorBlender } from '@/simulation/ai/coordination/BehaviorBlender';
-import type { MovementDesire, BehaviorPriority } from '@/simulation/ai/coordination/types';
+import { beforeEach, describe, expect, it } from "vitest";
+import { BehaviorBlender } from "@/simulation/ai/coordination/BehaviorBlender";
+import type {
+  MovementDesire,
+  BehaviorPriority,
+} from "@/simulation/ai/coordination/types";
 
-describe('AI Behavior Blending', () => {
+describe("AI Behavior Blending", () => {
   let blender: BehaviorBlender;
 
   beforeEach(() => {
     blender = new BehaviorBlender();
   });
 
-  describe('T074: Behavior Blending System', () => {
-    it('should blend multiple movement desires into single output', () => {
+  describe("T074: Behavior Blending System", () => {
+    it("should blend multiple movement desires into single output", () => {
       // Arrange: Multiple behavior desires
       const pathfindingDesire: MovementDesire = {
         velocity: { x: 1, y: 0, z: 0 },
-        priority: 'pathfinding',
+        priority: "pathfinding",
         weight: 0.5,
       };
 
       const combatDesire: MovementDesire = {
         velocity: { x: 0, y: 0, z: 1 },
-        priority: 'combat',
+        priority: "combat",
         weight: 0.8,
       };
 
@@ -45,13 +48,13 @@ describe('AI Behavior Blending', () => {
       expect(blended).toBeDefined();
       expect(blended.x).toBeDefined();
       expect(blended.z).toBeDefined();
-      
+
       // Result should be influenced by both inputs
       expect(Math.abs(blended.x)).toBeGreaterThan(0);
       expect(Math.abs(blended.z)).toBeGreaterThan(0);
     });
 
-    it('should handle empty desires list gracefully', () => {
+    it("should handle empty desires list gracefully", () => {
       // Act
       const blended = blender.blend([]);
 
@@ -61,17 +64,17 @@ describe('AI Behavior Blending', () => {
       expect(blended.z).toBe(0);
     });
 
-    it('should normalize blended output velocity', () => {
+    it("should normalize blended output velocity", () => {
       // Arrange: High-magnitude desires
       const desire1: MovementDesire = {
         velocity: { x: 10, y: 0, z: 10 },
-        priority: 'pathfinding',
+        priority: "pathfinding",
         weight: 1.0,
       };
 
       const desire2: MovementDesire = {
         velocity: { x: 10, y: 0, z: -10 },
-        priority: 'combat',
+        priority: "combat",
         weight: 1.0,
       };
 
@@ -84,18 +87,18 @@ describe('AI Behavior Blending', () => {
     });
   });
 
-  describe('T075: Weighted Blending Priorities', () => {
-    it('should prioritize retreat over combat', () => {
+  describe("T075: Weighted Blending Priorities", () => {
+    it("should prioritize retreat over combat", () => {
       // Arrange
       const retreatDesire: MovementDesire = {
         velocity: { x: -1, y: 0, z: 0 }, // Move backward (retreat)
-        priority: 'retreat',
+        priority: "retreat",
         weight: 0.7,
       };
 
       const combatDesire: MovementDesire = {
         velocity: { x: 1, y: 0, z: 0 }, // Move forward (engage)
-        priority: 'combat',
+        priority: "combat",
         weight: 0.5,
       };
 
@@ -106,17 +109,17 @@ describe('AI Behavior Blending', () => {
       expect(blended.x).toBeLessThan(0); // Net movement is backward (retreat wins)
     });
 
-    it('should prioritize combat over pathfinding', () => {
+    it("should prioritize combat over pathfinding", () => {
       // Arrange
       const combatDesire: MovementDesire = {
         velocity: { x: 0, y: 0, z: 1 },
-        priority: 'combat',
+        priority: "combat",
         weight: 0.8,
       };
 
       const pathfindingDesire: MovementDesire = {
         velocity: { x: 0, y: 0, z: -1 },
-        priority: 'pathfinding',
+        priority: "pathfinding",
         weight: 0.4,
       };
 
@@ -127,17 +130,17 @@ describe('AI Behavior Blending', () => {
       expect(blended.z).toBeGreaterThan(0); // Net movement is forward (combat wins)
     });
 
-    it('should prioritize pathfinding over idle', () => {
+    it("should prioritize pathfinding over idle", () => {
       // Arrange
       const pathfindingDesire: MovementDesire = {
         velocity: { x: 1, y: 0, z: 1 },
-        priority: 'pathfinding',
+        priority: "pathfinding",
         weight: 0.5,
       };
 
       const idleDesire: MovementDesire = {
         velocity: { x: 0, y: 0, z: 0 },
-        priority: 'idle',
+        priority: "idle",
         weight: 0.3,
       };
 
@@ -149,27 +152,27 @@ describe('AI Behavior Blending', () => {
       expect(Math.abs(blended.z)).toBeGreaterThan(0);
     });
 
-    it('should follow priority order: retreat > combat > pathfinding > idle', () => {
+    it("should follow priority order: retreat > combat > pathfinding > idle", () => {
       // Arrange: All behaviors present with equal base weights
       const desires: MovementDesire[] = [
         {
           velocity: { x: 1, y: 0, z: 0 }, // idle
-          priority: 'idle',
+          priority: "idle",
           weight: 0.25,
         },
         {
           velocity: { x: 0, y: 0, z: 1 }, // pathfinding
-          priority: 'pathfinding',
+          priority: "pathfinding",
           weight: 0.25,
         },
         {
           velocity: { x: -1, y: 0, z: 0 }, // combat
-          priority: 'combat',
+          priority: "combat",
           weight: 0.25,
         },
         {
           velocity: { x: 0, y: 0, z: -1 }, // retreat
-          priority: 'retreat',
+          priority: "retreat",
           weight: 0.25,
         },
       ];
@@ -187,7 +190,7 @@ describe('AI Behavior Blending', () => {
       expect(magnitude).toBeGreaterThan(0);
     });
 
-    it('should apply priority multipliers to weight desires appropriately', () => {
+    it("should apply priority multipliers to weight desires appropriately", () => {
       // Arrange: Create blender with known priority weights
       const priorities: Record<BehaviorPriority, number> = {
         retreat: 2.0,
@@ -195,45 +198,48 @@ describe('AI Behavior Blending', () => {
         pathfinding: 1.0,
         idle: 0.5,
       };
-      
+
       const blenderWithPriorities = new BehaviorBlender(priorities);
 
       const combatDesire: MovementDesire = {
         velocity: { x: 1, y: 0, z: 0 },
-        priority: 'combat',
+        priority: "combat",
         weight: 0.5,
       };
 
       const pathfindingDesire: MovementDesire = {
         velocity: { x: 1, y: 0, z: 0 },
-        priority: 'pathfinding',
+        priority: "pathfinding",
         weight: 0.5,
       };
 
       // Act
-      const blended = blenderWithPriorities.blend([combatDesire, pathfindingDesire]);
+      const blended = blenderWithPriorities.blend([
+        combatDesire,
+        pathfindingDesire,
+      ]);
 
       // Assert: Combat (1.5x) should dominate over pathfinding (1.0x) even with same base weight
       expect(blended.x).toBeGreaterThan(0);
-      
+
       // The effective weight of combat is 0.5 * 1.5 = 0.75
       // The effective weight of pathfinding is 0.5 * 1.0 = 0.5
       // Total effective weight = 1.25, so combat contributes 0.75/1.25 = 60%
     });
   });
 
-  describe('T076: Pathfinding Blends with Combat Behavior', () => {
-    it('should blend pathfinding desire with combat strafe behavior', () => {
+  describe("T076: Pathfinding Blends with Combat Behavior", () => {
+    it("should blend pathfinding desire with combat strafe behavior", () => {
       // Arrange: Robot wants to pathfind forward while also strafing in combat
       const pathfindingDesire: MovementDesire = {
         velocity: { x: 0, y: 0, z: 1 }, // Move forward toward waypoint
-        priority: 'pathfinding',
+        priority: "pathfinding",
         weight: 0.6,
       };
 
       const combatDesire: MovementDesire = {
         velocity: { x: 1, y: 0, z: 0 }, // Strafe right
-        priority: 'combat',
+        priority: "combat",
         weight: 0.7,
       };
 
@@ -243,24 +249,24 @@ describe('AI Behavior Blending', () => {
       // Assert: Output should combine both movements (diagonal)
       expect(blended.x).toBeGreaterThan(0); // Strafe component
       expect(blended.z).toBeGreaterThan(0); // Forward pathfinding component
-      
+
       // Result should be diagonal movement
       const angle = Math.atan2(blended.z, blended.x);
       expect(angle).toBeGreaterThan(0);
       expect(angle).toBeLessThan(Math.PI / 2); // First quadrant
     });
 
-    it('should handle conflicting desires between pathfinding and combat', () => {
+    it("should handle conflicting desires between pathfinding and combat", () => {
       // Arrange: Pathfinding wants to go one direction, combat wants opposite
       const pathfindingDesire: MovementDesire = {
         velocity: { x: 1, y: 0, z: 0 }, // Pathfinding says go right
-        priority: 'pathfinding',
+        priority: "pathfinding",
         weight: 0.5,
       };
 
       const combatDesire: MovementDesire = {
         velocity: { x: -1, y: 0, z: 0 }, // Combat says go left (take cover)
-        priority: 'combat',
+        priority: "combat",
         weight: 0.9,
       };
 
@@ -271,17 +277,17 @@ describe('AI Behavior Blending', () => {
       expect(blended.x).toBeLessThan(0); // Net movement is left (combat direction)
     });
 
-    it('should maintain combat effectiveness while pathfinding', () => {
+    it("should maintain combat effectiveness while pathfinding", () => {
       // Arrange: Both pathfinding and combat desires present
       const pathfindingDesire: MovementDesire = {
         velocity: { x: 0, y: 0, z: 1 },
-        priority: 'pathfinding',
+        priority: "pathfinding",
         weight: 0.5,
       };
 
       const combatDesire: MovementDesire = {
         velocity: { x: 0.5, y: 0, z: 0.5 }, // Tactical positioning
-        priority: 'combat',
+        priority: "combat",
         weight: 0.8,
       };
 
@@ -295,22 +301,22 @@ describe('AI Behavior Blending', () => {
       // Combat should have more influence due to higher priority
       const combatInfluence = Math.abs(blended.x);
       const pathfindingInfluence = Math.abs(blended.z);
-      
+
       // With higher combat priority and weight, combat component should be significant
       expect(combatInfluence).toBeGreaterThan(0);
     });
 
-    it('should blend pathfinding with retreat behavior when health is low', () => {
+    it("should blend pathfinding with retreat behavior when health is low", () => {
       // Arrange: Robot is retreating but also needs to navigate around obstacles
       const retreatDesire: MovementDesire = {
         velocity: { x: -1, y: 0, z: 0 }, // Retreat backward
-        priority: 'retreat',
+        priority: "retreat",
         weight: 0.9, // High priority when health low
       };
 
       const pathfindingDesire: MovementDesire = {
         velocity: { x: 0, y: 0, z: 0.3 }, // Navigate around obstacle
-        priority: 'pathfinding',
+        priority: "pathfinding",
         weight: 0.4,
       };
 
@@ -325,11 +331,11 @@ describe('AI Behavior Blending', () => {
       expect(Math.abs(blended.x)).toBeGreaterThan(Math.abs(blended.z));
     });
 
-    it('should allow idle behavior when no other desires present', () => {
+    it("should allow idle behavior when no other desires present", () => {
       // Arrange: Only idle desire
       const idleDesire: MovementDesire = {
         velocity: { x: 0, y: 0, z: 0 },
-        priority: 'idle',
+        priority: "idle",
         weight: 1.0,
       };
 

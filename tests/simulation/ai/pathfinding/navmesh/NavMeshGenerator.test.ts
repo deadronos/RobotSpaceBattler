@@ -3,14 +3,14 @@
  * @module pathfinding/navmesh
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 
-import { NavMeshGenerator } from '@/simulation/ai/pathfinding/navmesh/NavMeshGenerator';
-import type { ArenaConfiguration } from '@/simulation/ai/pathfinding/types';
-import { ObstacleType } from '@/simulation/ai/pathfinding/types';
+import { NavMeshGenerator } from "@/simulation/ai/pathfinding/navmesh/NavMeshGenerator";
+import type { ArenaConfiguration } from "@/simulation/ai/pathfinding/types";
+import { ObstacleType } from "@/simulation/ai/pathfinding/types";
 
-describe('NavMeshGenerator', () => {
-  it('[T013] creates valid mesh from empty arena', () => {
+describe("NavMeshGenerator", () => {
+  it("[T013] creates valid mesh from empty arena", () => {
     const generator = new NavMeshGenerator();
     const arenaConfig: ArenaConfiguration = {
       size: { width: 100, depth: 100 },
@@ -28,13 +28,13 @@ describe('NavMeshGenerator', () => {
     expect(navMesh.metadata.memorySize).toBeLessThan(5 * 1024 * 1024); // < 5MB
   });
 
-  it('[T014] handles single wall obstacle correctly', () => {
+  it("[T014] handles single wall obstacle correctly", () => {
     const generator = new NavMeshGenerator();
     const arenaConfig: ArenaConfiguration = {
       size: { width: 100, depth: 100 },
       obstacles: [
         {
-          id: 'test-wall',
+          id: "test-wall",
           type: 0 as any, // ObstacleType.WALL
           footprint: [
             { x: 40, z: 40 },
@@ -56,7 +56,7 @@ describe('NavMeshGenerator', () => {
     expect(navMesh.clearanceRadius).toBe(0.95);
   });
 
-  it('[T015] handles multiple pillar obstacles', () => {
+  it("[T015] handles multiple pillar obstacles", () => {
     const generator = new NavMeshGenerator();
 
     function createOctagon(cx: number, cz: number, r: number) {
@@ -64,7 +64,10 @@ describe('NavMeshGenerator', () => {
       const footprint = [] as { x: number; z: number }[];
       for (let i = 0; i < sides; i++) {
         const angle = (i * 2 * Math.PI) / sides;
-        footprint.push({ x: cx + r * Math.cos(angle), z: cz + r * Math.sin(angle) });
+        footprint.push({
+          x: cx + r * Math.cos(angle),
+          z: cz + r * Math.sin(angle),
+        });
       }
       return footprint;
     }
@@ -73,7 +76,7 @@ describe('NavMeshGenerator', () => {
       size: { width: 100, depth: 100 },
       obstacles: [
         {
-          id: 'pillar-1',
+          id: "pillar-1",
           type: 1 as any, // ObstacleType.PILLAR
           // Place pillars at different positions
           footprint: createOctagon(30, 30, 2),
@@ -81,7 +84,7 @@ describe('NavMeshGenerator', () => {
           passable: false,
         },
         {
-          id: 'pillar-2',
+          id: "pillar-2",
           type: 1 as any, // ObstacleType.PILLAR
           footprint: createOctagon(70, 70, 2),
           height: 2.5,

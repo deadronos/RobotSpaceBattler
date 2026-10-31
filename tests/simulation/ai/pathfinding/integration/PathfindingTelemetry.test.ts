@@ -7,7 +7,12 @@ describe("PathfindingTelemetry", () => {
     const events: any[] = [];
     t.on((e) => events.push(e));
 
-    t.emit({ type: "path-calculation-start", timestamp: Date.now(), from: { x:0,y:0,z:0 }, to: { x:1,y:0,z:1 } });
+    t.emit({
+      type: "path-calculation-start",
+      timestamp: Date.now(),
+      from: { x: 0, y: 0, z: 0 },
+      to: { x: 1, y: 0, z: 1 },
+    });
 
     expect(events.length).toBe(1);
     expect(events[0].type).toBe("path-calculation-start");

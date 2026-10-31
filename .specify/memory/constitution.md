@@ -1,5 +1,6 @@
 <!--
 SYNC IMPACT REPORT
+- 2026-10-31 (v1.1.1): factual refresh of baseline versions and LOC tracking list (no rule changes)
 - Version change: 1.0.1 → 1.1.0
 - Modified principles:
   - Principle III (Size & Separation Limits): Added explicit path to issue tracking for violations
@@ -83,9 +84,10 @@ the author MUST open a short-term exemption issue that includes a migration plan
 target release for the refactor.
 
 **LOC Violation Tracking**: The following files currently exceed 300 LOC and require
-either refactor or exemption documentation (updated: 2025-12-22):
+either refactor or exemption documentation (updated: 2026-10-31):
 
-- `src/simulation/ai/pathfinding/integration/PathfindingSystem.ts` (333 LOC) - Pathfinding integration
+- `src/lib/math/geometry.ts` (311 LOC) - Geometry math library, has CONSTITUTION-EXEMPT header
+- `tests/integration/ai-behavior-blending.test.ts` (351 LOC) - AI behavior blending integration tests, has CONSTITUTION-EXEMPT header
 
 Each file above MUST either: (a) receive a formal exemption with `CONSTITUTION-EXEMPT`
 header and rationale within 1 release cycle, or (b) be refactored per guidance below.
@@ -177,15 +179,15 @@ render performance predictable, tests isolated, and the codebase maintainable.
 
 - Target Platforms & Baseline Configuration:
 
-**Target Platform Baselines** (updated: 2025-12-21):
+**Target Platform Baselines** (updated: 2026-10-31):
 
 | Component   | Baseline        | Version | Rationale                                           |
 | ----------- | --------------- | ------- | --------------------------------------------------- |
 | Browser     | Chrome/Edge     | 120+    | Modern WebGL 2.0, ES2022, Web Workers support       |
-| Node.js     | Active LTS      | 18+     | ESM support, native fetch, performance improvements |
-| TypeScript  | Latest stable   | 5.9+    | Incremental compilation, decorator support          |
-| React       | Latest stable   | 19.2+   | Concurrent features, Server Components ready        |
-| Three.js    | Latest stable   | 0.182+  | WebGL 2.0 optimizations, r3f compatibility          |
+| Node.js     | Active LTS      | 22+     | Matches package.json engines; CI runs 22 and 24     |
+| TypeScript  | Latest stable   | 7.0+    | Native compiler (tsc 7); strict mode                |
+| React       | Latest stable   | 19.3+   | Concurrent features, Server Components ready        |
+| Three.js    | Latest stable   | 0.186+  | WebGL 2.0 optimizations, r3f compatibility          |
 
   Front-end code MUST target modern Chromium-based browsers (Chrome and Edge) current
   stable releases as specified in the baseline table above. Update this baseline
@@ -302,4 +304,4 @@ approved and governed.
 - `scripts/check_pr_constitution_check.js` validates PR template compliance
 - Constitution checks run on every push and pull request
 
-**Version**: 1.1.0 | **Ratified**: 2025-10-06 | **Last Amended**: 2025-12-22
+**Version**: 1.1.1 | **Ratified**: 2025-10-06 | **Last Amended**: 2026-10-31

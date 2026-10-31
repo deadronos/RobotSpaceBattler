@@ -20,18 +20,21 @@ export function ObstacleInspector({
 }: ObstacleInspectorProps) {
   if (!obstacle) {
     return (
-      <div className="obstacle-inspector-empty">Select an obstacle to edit.</div>
+      <div className="obstacle-inspector-empty">
+        Select an obstacle to edit.
+      </div>
     );
   }
 
   const apply = (patch: Partial<ObstacleEntity>) =>
     onChange({ ...obstacle, ...patch });
-  
 
   return (
     <div className="obstacle-inspector">
       <div className="obstacle-inspector-header">
-        <div className="obstacle-inspector-title">Inspector — {obstacle.id}</div>
+        <div className="obstacle-inspector-title">
+          Inspector — {obstacle.id}
+        </div>
         {onRemove ? (
           <button
             type="button"

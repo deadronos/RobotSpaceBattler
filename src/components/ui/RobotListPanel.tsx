@@ -153,7 +153,11 @@ export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
   };
 
   return (
-    <Draggable handle=".robot-list-drag-handle" bounds="parent" nodeRef={nodeRef}>
+    <Draggable
+      handle=".robot-list-drag-handle"
+      bounds="parent"
+      nodeRef={nodeRef}
+    >
       <div className="robot-list-panel" ref={nodeRef}>
         <div className="robot-list-drag-handle">
           <span className="robot-list-title">Robot Status</span>
@@ -168,10 +172,7 @@ export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
   );
 }
 
-function getRobotSpawnIndex(
-  robotId: string,
-  battleWorld: BattleWorld,
-): number {
+function getRobotSpawnIndex(robotId: string, battleWorld: BattleWorld): number {
   const robot = battleWorld.robots.entities.find((r) => r.id === robotId);
   return robot ? robot.spawnIndex + 1 : 0;
 }

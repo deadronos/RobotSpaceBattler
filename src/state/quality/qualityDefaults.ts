@@ -141,8 +141,7 @@ export function buildQualitySettings({
   // Start conservatively at 0.5 DPR; DynamicResScaler will scale up if performance allows.
   const dpr = 0.5;
   const shadowMapSize = perfTier === "high" ? 1024 : 512;
-  const resolvedPostprocessing =
-    postprocessingEnabled ?? perfTier !== "low";
+  const resolvedPostprocessing = postprocessingEnabled ?? perfTier !== "low";
   const resolvedShadows = shadowsEnabled ?? perfTier !== "low";
 
   return {

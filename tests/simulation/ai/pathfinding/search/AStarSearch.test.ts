@@ -3,16 +3,19 @@
  * @module pathfinding/search
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 
-import type { NavigationMesh, Point2D } from '@/simulation/ai/pathfinding/types';
-import { AStarSearch } from '@/simulation/ai/pathfinding/search/AStarSearch';
+import type {
+  NavigationMesh,
+  Point2D,
+} from "@/simulation/ai/pathfinding/types";
+import { AStarSearch } from "@/simulation/ai/pathfinding/search/AStarSearch";
 
-describe('AStarSearch', () => {
+describe("AStarSearch", () => {
   // Helper to create a simple empty arena mesh
   function createEmptyArenaMesh(): NavigationMesh {
     return {
-      id: 'test-mesh',
+      id: "test-mesh",
       polygons: [
         {
           index: 0,
@@ -37,15 +40,15 @@ describe('AStarSearch', () => {
     };
   }
 
-  it('[T016] finds straight-line path in empty arena', () => {
+  it("[T016] finds straight-line path in empty arena", () => {
     const mesh = createEmptyArenaMesh();
     const search = new AStarSearch(mesh);
-    
+
     const start: Point2D = { x: 0, z: 0 };
     const target: Point2D = { x: 100, z: 100 };
-    
+
     const path = search.findPath(start, target);
-    
+
     expect(path).not.toBeNull();
     if (path) {
       expect(path.length).toBeGreaterThanOrEqual(2); // At least start and end
@@ -55,17 +58,17 @@ describe('AStarSearch', () => {
     }
   });
 
-  it('[T017] finds path around single wall obstacle', () => {
+  it("[T017] finds path around single wall obstacle", () => {
     // This test will need a mesh with multiple polygons around a wall
     // Simplified for now - will be expanded when implementation exists
     const mesh = createEmptyArenaMesh();
     const search = new AStarSearch(mesh);
-    
+
     const start: Point2D = { x: 10, z: 10 };
     const target: Point2D = { x: 90, z: 90 };
-    
+
     const path = search.findPath(start, target);
-    
+
     expect(path).not.toBeNull();
     if (path) {
       expect(path.length).toBeGreaterThan(0);

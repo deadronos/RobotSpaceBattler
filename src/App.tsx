@@ -1,6 +1,13 @@
 import "./App.css";
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import sampleObstacleFixture from "../specs/006-dynamic-arena-obstacles/dynamic-arena-sample.json";
 import { ObstacleEditor } from "./components/debug/ObstacleEditor";
@@ -250,7 +257,9 @@ export default function App() {
           onClick={handlePauseResume}
           title="Pause/Resume (Space)"
         >
-          <span>{pauseLabel === "Pause" ? "⏸" : "▶"} {pauseLabel}</span>
+          <span>
+            {pauseLabel === "Pause" ? "⏸" : "▶"} {pauseLabel}
+          </span>
         </button>
         <button type="button" onClick={handleReset} title="Reset (R)">
           <span>🔄 Reset</span>

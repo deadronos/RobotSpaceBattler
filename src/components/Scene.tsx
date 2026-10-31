@@ -36,7 +36,7 @@ export function Scene({ children, showPerfOverlay = false }: SceneProps) {
 
   return (
     <Canvas
-      shadows={shadowsEnabled}
+      shadows={shadowsEnabled ? "percentage" : false}
       dpr={render.dpr}
       camera={{ position: [-14, 28, 48], fov: 45 }}
       gl={{
@@ -47,7 +47,9 @@ export function Scene({ children, showPerfOverlay = false }: SceneProps) {
         initializeRendererStats(gl);
         // Expose the scene for debugging/visual verification in Playwright
         // This is temporary and safe to remove later.
-        const win = (window as unknown) as { __robotScene?: Record<string, unknown> };
+        const win = window as unknown as {
+          __robotScene?: Record<string, unknown>;
+        };
         win.__robotScene = { scene, camera, gl } as Record<string, unknown>;
       }}
     >

@@ -1,14 +1,16 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test('verify neon visuals (local port 5174)', async ({ page }) => {
-  page.on('console', (m) => console.log('PAGE LOG:', m.text()));
+test("verify neon visuals (local port 5174)", async ({ page }) => {
+  page.on("console", (m) => console.log("PAGE LOG:", m.text()));
   // Try to navigate to the dev server on 5174 where Vite started in this run.
   // Retry the navigation for up to 20s to handle startup races.
   const start = Date.now();
   let navigated = false;
   while (Date.now() - start < 20000) {
     try {
-      await page.goto('http://localhost:5174/RobotSpaceBattler/', { timeout: 3000 });
+      await page.goto("http://localhost:5174/RobotSpaceBattler/", {
+        timeout: 3000,
+      });
       navigated = true;
       break;
     } catch (e) {
@@ -16,16 +18,19 @@ test('verify neon visuals (local port 5174)', async ({ page }) => {
       await page.waitForTimeout(500);
     }
   }
-  if (!navigated) throw new Error('Could not reach http://localhost:5174/RobotSpaceBattler/ after 20s');
+  if (!navigated)
+    throw new Error(
+      "Could not reach http://localhost:5174/RobotSpaceBattler/ after 20s",
+    );
 
   // Wait for the canvas to be present
-  await page.waitForSelector('canvas', { timeout: 10000 });
+  await page.waitForSelector("canvas", { timeout: 10000 });
 
   // Wait a bit for the scene to render and effects to settle
   await page.waitForTimeout(5000);
 
   // Take a screenshot
-  await page.screenshot({ path: 'verification/visuals-5174.png' });
+  await page.screenshot({ path: "verification/visuals-5174.png" });
 
   // Inspect instance colors for bullets, rockets, lasers, and effects via the
   // exposed scene object so we can detect whether instanceColor values are
@@ -35,13 +40,16 @@ test('verify neon visuals (local port 5174)', async ({ page }) => {
     if (debug && debug.scene) {
       const scene = debug.scene as any;
       const names = [
-        'instanced-bullets',
-        'instanced-rockets',
-        'instanced-lasers',
-        'instanced-effects',
+        "instanced-bullets",
+        "instanced-rockets",
+        "instanced-lasers",
+        "instanced-effects",
       ];
 
-      const result: Record<string, { hasInstanceColor: boolean; sample: number[] | null }> = {};
+      const result: Record<
+        string,
+        { hasInstanceColor: boolean; sample: number[] | null }
+      > = {};
 
       for (const name of names) {
         const mesh = scene.getObjectByName(name);
@@ -62,11 +70,16 @@ test('verify neon visuals (local port 5174)', async ({ page }) => {
       return result;
     }
 
-    const refs = (window as any).__instancedRefs as Record<string, any> | undefined;
+    const refs = (window as any).__instancedRefs as
+      | Record<string, any>
+      | undefined;
     if (!refs) return null;
 
-    const fallbackResult: Record<string, { hasInstanceColor: boolean; sample: number[] | null }> = {};
-    for (const key of ['bullets', 'rockets', 'lasers', 'effects']) {
+    const fallbackResult: Record<
+      string,
+      { hasInstanceColor: boolean; sample: number[] | null }
+    > = {};
+    for (const key of ["bullets", "rockets", "lasers", "effects"]) {
       const mesh = refs[key];
       if (!mesh) {
         fallbackResult[key] = { hasInstanceColor: false, sample: null };
@@ -85,11 +98,12 @@ test('verify neon visuals (local port 5174)', async ({ page }) => {
     return fallbackResult;
   });
 
-  console.log('instanceData', instanceData);
+  console.log("instanceData", instanceData);
   expect(instanceData).not.toBeNull();
   if (instanceData) {
-    const missingAll = Object.values(instanceData).every((v) => v.hasInstanceColor === false);
+    const missingAll = Object.values(instanceData).every(
+      (v) => v.hasInstanceColor === false,
+    );
     expect(missingAll).toBe(false);
   }
-
 });

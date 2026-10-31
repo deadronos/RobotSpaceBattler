@@ -1,0 +1,7 @@
+# Formatting-only commits, skipped by `git blame` (GitHub applies this automatically).
+# Local setup: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# NOTE: SHAs must match the commits on main. If a PR listed here is squash-merged,
+# replace the SHA with the squash commit's SHA.
+
+# style: reformat with oxfmt (#152)
+ec970ff32168e6e6ed12d874c6a8f36cc7411ef3

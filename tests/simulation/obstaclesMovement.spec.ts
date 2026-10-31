@@ -1,22 +1,22 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 
-import { createBattleWorld } from '../../src/ecs/world';
-import { updateObstacleMovement } from '../../src/simulation/obstacles/movementSystem';
-import { vec3 } from '../../src/lib/math/vec3';
+import { createBattleWorld } from "../../src/ecs/world";
+import { updateObstacleMovement } from "../../src/simulation/obstacles/movementSystem";
+import { vec3 } from "../../src/lib/math/vec3";
 
-describe('updateObstacleMovement', () => {
-  it('moves a barrier linearly between two points at the given speed', () => {
+describe("updateObstacleMovement", () => {
+  it("moves a barrier linearly between two points at the given speed", () => {
     const world = createBattleWorld();
 
     const obstacle = {
-      id: 'lin-1',
-      kind: 'obstacle' as const,
-      obstacleType: 'barrier' as const,
+      id: "lin-1",
+      kind: "obstacle" as const,
+      obstacleType: "barrier" as const,
       position: vec3(-5, 0, 0),
       blocksMovement: true,
       blocksVision: true,
       movementPattern: {
-        patternType: 'linear' as const,
+        patternType: "linear" as const,
         points: [vec3(-5, 0, 0), vec3(5, 0, 0)],
         speed: 1, // units per second
         loop: false,

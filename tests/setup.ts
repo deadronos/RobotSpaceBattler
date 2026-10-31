@@ -1,8 +1,8 @@
 import "@testing-library/jest-dom/vitest";
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
 // Mock multithreading library globally
-vi.mock('multithreading', () => ({
+vi.mock("multithreading", () => ({
   initRuntime: vi.fn(),
   spawn: vi.fn((data: any, func: Function) => {
     // Return a mock JoinHandle
@@ -17,7 +17,7 @@ vi.mock('multithreading', () => ({
           // Return error result
           return { ok: false, error };
         }
-      }
+      },
     };
   }),
   move: vi.fn((data) => data),

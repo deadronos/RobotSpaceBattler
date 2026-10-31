@@ -1,15 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 
-import { createBattleWorld } from '../../src/ecs/world';
+import { createBattleWorld } from "../../src/ecs/world";
 
-describe('Obstacle entity integration', () => {
-  it('adds and indexes obstacle entities in the world store', () => {
+describe("Obstacle entity integration", () => {
+  it("adds and indexes obstacle entities in the world store", () => {
     const world = createBattleWorld();
 
     const obstacle = {
-      id: 'obstacle-1',
-      kind: 'obstacle' as const,
-      obstacleType: 'barrier' as const,
+      id: "obstacle-1",
+      kind: "obstacle" as const,
+      obstacleType: "barrier" as const,
       position: { x: 0, y: 0, z: 0 },
       blocksVision: true,
       blocksMovement: true,

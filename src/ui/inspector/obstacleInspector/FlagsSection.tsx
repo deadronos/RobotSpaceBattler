@@ -1,4 +1,4 @@
-import type { ObstacleEntity } from '../../../ecs/world';
+import type { ObstacleEntity } from "../../../ecs/world";
 
 type Props = {
   obstacle: ObstacleEntity;
@@ -17,7 +17,7 @@ export function FlagsSection({ obstacle, apply }: Props) {
         Active
       </label>
 
-      {obstacle.obstacleType !== 'hazard' ? (
+      {obstacle.obstacleType !== "hazard" ? (
         <>
           <label className="obstacle-inspector-flag">
             <input

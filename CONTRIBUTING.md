@@ -17,6 +17,9 @@ npm run build
 ```
 
 `npm run format` rewrites files with oxfmt if `format:check` reports drift.
+Formatting-only commits are listed in `.git-blame-ignore-revs`; run
+`git config blame.ignoreRevsFile .git-blame-ignore-revs` once so `git blame`
+skips them.
 
 ## Cross-platform notes
 
@@ -26,10 +29,10 @@ npm run build
 ## Continuous integration
 
 `.github/workflows/ci.yml` runs on push to `main`, on all pull requests, and on manual
-dispatch (Node 22 and 24). Lint, typecheck, tests and build are blocking gates;
-`npm run format:check` is informational only and surfaces drift as a warning
-annotation until the reformat in #152 lands. If your change affects gameplay,
-physics, or core systems, add or update unit tests under `tests/`.
+dispatch (Node 22 and 24). Lint, `npm run format:check`, typecheck, tests and build
+are all blocking gates. The `CI` job aggregates the Node 22/24 matrix and is the check
+to require in branch protection. If your change affects gameplay, physics, or core
+systems, add or update unit tests under `tests/`.
 
 Please choose the appropriate PR template (feature / bugfix / chore) and complete the
 required `CONSTITUTION-CHECK` section in your PR; CI will validate the presence of this

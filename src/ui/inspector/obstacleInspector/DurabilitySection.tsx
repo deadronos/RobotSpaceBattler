@@ -1,5 +1,5 @@
-import type { ObstacleEntity } from '../../../ecs/world';
-import { NumberInput } from './NumberInput';
+import type { ObstacleEntity } from "../../../ecs/world";
+import { NumberInput } from "./NumberInput";
 
 type Props = {
   obstacle: ObstacleEntity;
@@ -7,7 +7,7 @@ type Props = {
 };
 
 export function DurabilitySection({ obstacle, apply }: Props) {
-  if (obstacle.obstacleType !== 'destructible') return null;
+  if (obstacle.obstacleType !== "destructible") return null;
 
   return (
     <div className="obstacle-inspector-section">

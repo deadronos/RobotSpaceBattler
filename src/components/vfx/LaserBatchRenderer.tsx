@@ -69,7 +69,9 @@ export function LaserBatchRenderer({
   }, [laserGeometry]);
 
   useEffect(() => {
-    const win = (window as unknown) as { __instancedRefs?: Record<string, InstancedMesh | null> };
+    const win = window as unknown as {
+      __instancedRefs?: Record<string, InstancedMesh | null>;
+    };
     win.__instancedRefs = win.__instancedRefs || {};
     win.__instancedRefs.lasers = meshRef.current;
   }, [meshRef]);
@@ -183,7 +185,6 @@ export function LaserBatchRenderer({
       normalizeHDRForInstance(color, { exposure: 1.0, maxChannel: 3.0 });
       mesh.setColorAt(index, color);
       colorsDirty = true;
-
     }
 
     forEachInactiveInstance(activeIndices, previousIndices, (index) => {

@@ -50,14 +50,17 @@ export class PathResultHandler {
     enableSmoothing: boolean,
     enableNearestFallback: boolean,
   ) {
-    console.debug('handleWorkerResult received:', result);
+    console.debug("handleWorkerResult received:", result);
     const request = pendingRequests.get(result.id);
     if (!request) return;
 
     const { pathComponent, robotId, start, target } = request;
 
     // If worker not initialized, try to initialize it once and retry
-    if (result.status === "failed" && result.error === "Worker not initialized") {
+    if (
+      result.status === "failed" &&
+      result.error === "Worker not initialized"
+    ) {
       await this.handleWorkerNotInitialized(
         result,
         request,
@@ -69,7 +72,14 @@ export class PathResultHandler {
     }
 
     // Process result normally (success, failure, or no_path)
-    this.processResult(result, pathComponent, robotId, start, target, pendingRequests);
+    this.processResult(
+      result,
+      pathComponent,
+      robotId,
+      start,
+      target,
+      pendingRequests,
+    );
   }
 
   /**
@@ -87,7 +97,10 @@ export class PathResultHandler {
 
     try {
       // Attempt to initialize worker
-      await spawn(move(this.navMeshResource.getSerializedMesh()), initWorker).join();
+      await spawn(
+        move(this.navMeshResource.getSerializedMesh()),
+        initWorker,
+      ).join();
 
       // Retry the original request exactly once
       const retryReq: WorkerPathRequest = {
@@ -101,7 +114,9 @@ export class PathResultHandler {
 
       const retryRes = await this.workerManager.runWorker(retryReq);
       if (retryRes.ok) {
-        const retryResult = await this.workerManager.unwrapWorkerResult(retryRes.value);
+        const retryResult = await this.workerManager.unwrapWorkerResult(
+          retryRes.value,
+        );
         this.processResult(
           retryResult,
           pathComponent,
@@ -185,7 +200,11 @@ export class PathResultHandler {
     });
   }
 
-  private handleNoPath(result: WorkerPathResult, pathComponent: PathComponent, robotId: string | undefined) {
+  private handleNoPath(
+    result: WorkerPathResult,
+    pathComponent: PathComponent,
+    robotId: string | undefined,
+  ) {
     pathComponent.path = null;
     pathComponent.status = "failed" as const;
     pathComponent.lastCalculationTime = Date.now();
@@ -200,7 +219,11 @@ export class PathResultHandler {
     });
   }
 
-  private handleFailure(result: WorkerPathResult, pathComponent: PathComponent, robotId: string | undefined) {
+  private handleFailure(
+    result: WorkerPathResult,
+    pathComponent: PathComponent,
+    robotId: string | undefined,
+  ) {
     pathComponent.path = null;
     pathComponent.status = "failed" as const;
     pathComponent.lastCalculationTime = Date.now();

@@ -26,7 +26,9 @@ export function DynamicResScalerV2() {
   const STABLE_THRESHOLD = 2; // require two consecutive intervals before committing
 
   // Discrete DPR steps to avoid small oscillations
-  const DPR_LEVELS = [0.5, 0.75, 1, 1.5, 2].filter((d) => d <= MAX_DPR && d >= MIN_DPR);
+  const DPR_LEVELS = [0.5, 0.75, 1, 1.5, 2].filter(
+    (d) => d <= MAX_DPR && d >= MIN_DPR,
+  );
 
   function findNearestIndex(value: number) {
     let bestIdx = 0;

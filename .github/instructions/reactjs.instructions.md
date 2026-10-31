@@ -148,7 +148,7 @@ Instructions for building high-quality ReactJS applications with modern patterns
 - Use meaningful commit messages and maintain clean git history
 - Implement proper code splitting and lazy loading strategies
 - Document complex components and custom hooks with JSDoc
-- Use ESLint and Prettier for consistent code formatting
+- Use oxlint and oxfmt (this repo's linters/formatters) for consistent code quality and formatting
 - Keep dependencies up to date and audit for security vulnerabilities
 - Implement proper environment configuration for different deployment stages
 - Use React Developer Tools for debugging and performance analysis

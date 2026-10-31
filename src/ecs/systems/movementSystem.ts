@@ -113,8 +113,15 @@ function isBlockedByDynamicObstacle(
       const halfDepth = obstacle.shape.halfDepth + ROBOT_RADIUS;
 
       if (
-        segmentIntersectsAABB(start, end, obstacleCenter, halfWidth, halfDepth) ||
-        distanceSquaredPointToAABB(end, obstacleCenter, halfWidth, halfDepth) <= 0
+        segmentIntersectsAABB(
+          start,
+          end,
+          obstacleCenter,
+          halfWidth,
+          halfDepth,
+        ) ||
+        distanceSquaredPointToAABB(end, obstacleCenter, halfWidth, halfDepth) <=
+          0
       ) {
         return true;
       }

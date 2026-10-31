@@ -1,65 +1,57 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   createPhysicsQueryService,
   PhysicsQueryService,
   RaycastHit,
-} from '../../src/simulation/ai/pathing/physicsQueryService';
+} from "../../src/simulation/ai/pathing/physicsQueryService";
 
-describe('PhysicsQueryService', () => {
-  describe('with null/undefined world', () => {
-    it('castRay returns null when world is null', () => {
+describe("PhysicsQueryService", () => {
+  describe("with null/undefined world", () => {
+    it("castRay returns null when world is null", () => {
       const service = createPhysicsQueryService(null);
       const result = service.castRay(
         { x: 0, y: 0, z: 0 },
         { x: 0, y: 0, z: 1 },
-        10
+        10,
       );
       expect(result).toBeNull();
     });
 
-    it('castRay returns null when world is undefined', () => {
+    it("castRay returns null when world is undefined", () => {
       const service = createPhysicsQueryService(undefined);
       const result = service.castRay(
         { x: 0, y: 0, z: 0 },
         { x: 0, y: 0, z: 1 },
-        10
+        10,
       );
       expect(result).toBeNull();
     });
 
-    it('castRayFan returns array of nulls when world is null', () => {
+    it("castRayFan returns array of nulls when world is null", () => {
       const service = createPhysicsQueryService(null);
       const directions = [
         { x: 0, y: 0, z: 1 },
         { x: 1, y: 0, z: 0 },
         { x: -1, y: 0, z: 0 },
       ];
-      const results = service.castRayFan(
-        { x: 0, y: 0, z: 0 },
-        directions,
-        10
-      );
+      const results = service.castRayFan({ x: 0, y: 0, z: 0 }, directions, 10);
       expect(results).toHaveLength(3);
       expect(results.every((r) => r === null)).toBe(true);
     });
 
-    it('castRayFan returns array of nulls when world is undefined', () => {
+    it("castRayFan returns array of nulls when world is undefined", () => {
       const service = createPhysicsQueryService(undefined);
       const directions = [
         { x: 0, y: 0, z: 1 },
         { x: 1, y: 0, z: 0 },
       ];
-      const results = service.castRayFan(
-        { x: 0, y: 0, z: 0 },
-        directions,
-        5
-      );
+      const results = service.castRayFan({ x: 0, y: 0, z: 0 }, directions, 5);
       expect(results).toHaveLength(2);
       expect(results.every((r) => r === null)).toBe(true);
     });
   });
 
-  describe('with mocked Rapier world', () => {
+  describe("with mocked Rapier world", () => {
     let mockWorld: {
       castRayAndGetNormal: ReturnType<typeof vi.fn>;
     };
@@ -71,19 +63,18 @@ describe('PhysicsQueryService', () => {
       };
     });
 
-    it('castRay returns RaycastHit when world returns a hit', () => {
+    it("castRay returns RaycastHit when world returns a hit", () => {
       mockWorld.castRayAndGetNormal.mockReturnValue({
         timeOfImpact: 5.0,
         normal: { x: 0, y: 0, z: -1 },
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       service = createPhysicsQueryService(mockWorld as any);
 
       const result = service.castRay(
         { x: 0, y: 0, z: 0 },
         { x: 0, y: 0, z: 1 },
-        10
+        10,
       );
 
       expect(result).not.toBeNull();
@@ -93,32 +84,30 @@ describe('PhysicsQueryService', () => {
       expect(result!.point).toEqual({ x: 0, y: 0, z: 5 });
     });
 
-    it('castRay returns null when world returns no hit', () => {
+    it("castRay returns null when world returns no hit", () => {
       mockWorld.castRayAndGetNormal.mockReturnValue(null);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       service = createPhysicsQueryService(mockWorld as any);
 
       const result = service.castRay(
         { x: 0, y: 0, z: 0 },
         { x: 0, y: 0, z: 1 },
-        10
+        10,
       );
 
       expect(result).toBeNull();
     });
 
-    it('castRay passes correct parameters to Rapier world', () => {
+    it("castRay passes correct parameters to Rapier world", () => {
       mockWorld.castRayAndGetNormal.mockReturnValue(null);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       service = createPhysicsQueryService(mockWorld as any);
 
       service.castRay(
         { x: 1, y: 2, z: 3 },
         { x: 0, y: 0, z: 1 },
         15,
-        0x00040003 // filterMask
+        0x00040003, // filterMask
       );
 
       expect(mockWorld.castRayAndGetNormal).toHaveBeenCalledTimes(1);
@@ -136,7 +125,7 @@ describe('PhysicsQueryService', () => {
       expect(filterGroups).toBe(0x00040003);
     });
 
-    it('castRayFan returns array of hits for multiple directions', () => {
+    it("castRayFan returns array of hits for multiple directions", () => {
       mockWorld.castRayAndGetNormal
         .mockReturnValueOnce({
           timeOfImpact: 3.0,
@@ -148,7 +137,6 @@ describe('PhysicsQueryService', () => {
           normal: { x: -1, y: 0, z: 0 },
         });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       service = createPhysicsQueryService(mockWorld as any);
 
       const directions = [
@@ -157,11 +145,7 @@ describe('PhysicsQueryService', () => {
         { x: -1, y: 0, z: 0 },
       ];
 
-      const results = service.castRayFan(
-        { x: 0, y: 0, z: 0 },
-        directions,
-        10
-      );
+      const results = service.castRayFan({ x: 0, y: 0, z: 0 }, directions, 10);
 
       expect(results).toHaveLength(3);
 
@@ -179,10 +163,9 @@ describe('PhysicsQueryService', () => {
       expect(results[2]!.point).toEqual({ x: -7, y: 0, z: 0 });
     });
 
-    it('castRayFan passes filterMask to all rays', () => {
+    it("castRayFan passes filterMask to all rays", () => {
       mockWorld.castRayAndGetNormal.mockReturnValue(null);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       service = createPhysicsQueryService(mockWorld as any);
 
       const directions = [
@@ -190,40 +173,32 @@ describe('PhysicsQueryService', () => {
         { x: 1, y: 0, z: 0 },
       ];
 
-      service.castRayFan(
-        { x: 0, y: 0, z: 0 },
-        directions,
-        10,
-        0x00010001
-      );
+      service.castRayFan({ x: 0, y: 0, z: 0 }, directions, 10, 0x00010001);
 
       expect(mockWorld.castRayAndGetNormal).toHaveBeenCalledTimes(2);
 
       // Both calls should have same filterGroups (5th parameter)
-      const [, , , , filterGroups1] = mockWorld.castRayAndGetNormal.mock.calls[0];
-      const [, , , , filterGroups2] = mockWorld.castRayAndGetNormal.mock.calls[1];
+      const [, , , , filterGroups1] =
+        mockWorld.castRayAndGetNormal.mock.calls[0];
+      const [, , , , filterGroups2] =
+        mockWorld.castRayAndGetNormal.mock.calls[1];
 
       expect(filterGroups1).toBe(0x00010001);
       expect(filterGroups2).toBe(0x00010001);
     });
 
-    it('castRayFan returns empty array for empty directions', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    it("castRayFan returns empty array for empty directions", () => {
       service = createPhysicsQueryService(mockWorld as any);
 
-      const results = service.castRayFan(
-        { x: 0, y: 0, z: 0 },
-        [],
-        10
-      );
+      const results = service.castRayFan({ x: 0, y: 0, z: 0 }, [], 10);
 
       expect(results).toHaveLength(0);
       expect(mockWorld.castRayAndGetNormal).not.toHaveBeenCalled();
     });
   });
 
-  describe('interface types', () => {
-    it('RaycastHit has correct shape', () => {
+  describe("interface types", () => {
+    it("RaycastHit has correct shape", () => {
       const hit: RaycastHit = {
         point: { x: 1, y: 2, z: 3 },
         normal: { x: 0, y: 1, z: 0 },

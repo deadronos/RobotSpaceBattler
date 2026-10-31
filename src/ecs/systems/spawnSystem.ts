@@ -6,7 +6,13 @@ import {
   getWeaponProfile,
   WeaponProfile,
 } from "../../simulation/combat/weapons";
-import { BattleWorld, RobotEntity, toVec3, UnitRole, WeaponType } from "../world";
+import {
+  BattleWorld,
+  RobotEntity,
+  toVec3,
+  UnitRole,
+  WeaponType,
+} from "../world";
 
 /**
  * Options for spawning robots.
@@ -176,4 +182,3 @@ export function spawnTeams(
   spawnTeamRobots(battleWorld, "red", baseSeed ^ 0x9e3779b9, options);
   spawnTeamRobots(battleWorld, "blue", baseSeed ^ 0x4f1bbcdc, options);
 }
-

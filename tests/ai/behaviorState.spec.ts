@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 import {
   nextBehaviorState,
   RobotBehaviorContext,
   RobotBehaviorMode,
   RobotBehaviorSnapshot,
-} from '../../src/simulation/ai/behaviorState';
+} from "../../src/simulation/ai/behaviorState";
 
 function evaluate(
   snapshot: Partial<RobotBehaviorSnapshot>,
@@ -14,7 +14,7 @@ function evaluate(
     health: 100,
     maxHealth: 100,
     mode: RobotBehaviorMode.Seek,
-    role: 'assault',
+    role: "assault",
     ...snapshot,
   };
 
@@ -28,8 +28,8 @@ function evaluate(
   return nextBehaviorState(fullSnapshot, fullContext);
 }
 
-describe('nextBehaviorState', () => {
-  it('returns seek when no target is available', () => {
+describe("nextBehaviorState", () => {
+  it("returns seek when no target is available", () => {
     const result = evaluate(
       { mode: RobotBehaviorMode.Engage },
       { targetDistance: null },
@@ -37,7 +37,7 @@ describe('nextBehaviorState', () => {
     expect(result).toBe(RobotBehaviorMode.Seek);
   });
 
-  it('engages when within range', () => {
+  it("engages when within range", () => {
     const result = evaluate(
       { mode: RobotBehaviorMode.Seek },
       { targetDistance: 8, anchorDistance: 20 },
@@ -45,7 +45,7 @@ describe('nextBehaviorState', () => {
     expect(result).toBe(RobotBehaviorMode.Engage);
   });
 
-  it('retreats when low health and threatened', () => {
+  it("retreats when low health and threatened", () => {
     const result = evaluate(
       { health: 20, maxHealth: 100, mode: RobotBehaviorMode.Engage },
       { targetDistance: 6, anchorDistance: 20 },
@@ -53,7 +53,7 @@ describe('nextBehaviorState', () => {
     expect(result).toBe(RobotBehaviorMode.Retreat);
   });
 
-  it('switches back to engage once safely anchored', () => {
+  it("switches back to engage once safely anchored", () => {
     const result = evaluate(
       { health: 20, maxHealth: 100, mode: RobotBehaviorMode.Retreat },
       { targetDistance: 6, anchorDistance: 2 },
@@ -61,7 +61,7 @@ describe('nextBehaviorState', () => {
     expect(result).toBe(RobotBehaviorMode.Engage);
   });
 
-  it('uses rng when exactly on the engage boundary', () => {
+  it("uses rng when exactly on the engage boundary", () => {
     const engage = evaluate(
       {},
       {
@@ -82,23 +82,23 @@ describe('nextBehaviorState', () => {
   });
 
   // Role based tests
-  it('tank engages closer', () => {
-      // Default is 18. Tank is 14.
-      // At 16, assault engages, tank seeks.
-      const assault = evaluate({ role: 'assault' }, { targetDistance: 16 });
-      const tank = evaluate({ role: 'tank' }, { targetDistance: 16 });
+  it("tank engages closer", () => {
+    // Default is 18. Tank is 14.
+    // At 16, assault engages, tank seeks.
+    const assault = evaluate({ role: "assault" }, { targetDistance: 16 });
+    const tank = evaluate({ role: "tank" }, { targetDistance: 16 });
 
-      expect(assault).toBe(RobotBehaviorMode.Engage);
-      expect(tank).toBe(RobotBehaviorMode.Seek);
+    expect(assault).toBe(RobotBehaviorMode.Engage);
+    expect(tank).toBe(RobotBehaviorMode.Seek);
   });
 
-  it('sniper engages farther', () => {
-      // Default 18. Sniper 30.
-      // At 25, assault seeks, sniper engages.
-      const assault = evaluate({ role: 'assault' }, { targetDistance: 25 });
-      const sniper = evaluate({ role: 'sniper' }, { targetDistance: 25 });
+  it("sniper engages farther", () => {
+    // Default 18. Sniper 30.
+    // At 25, assault seeks, sniper engages.
+    const assault = evaluate({ role: "assault" }, { targetDistance: 25 });
+    const sniper = evaluate({ role: "sniper" }, { targetDistance: 25 });
 
-      expect(assault).toBe(RobotBehaviorMode.Seek);
-      expect(sniper).toBe(RobotBehaviorMode.Engage);
+    expect(assault).toBe(RobotBehaviorMode.Seek);
+    expect(sniper).toBe(RobotBehaviorMode.Engage);
   });
 });

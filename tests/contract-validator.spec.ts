@@ -1,42 +1,42 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
-import Ajv from 'ajv';
+import Ajv from "ajv";
 
 const root = process.cwd();
 const schemaDir = join(
   root,
-  'specs',
-  '003-extend-placeholder-create',
-  'schemas',
+  "specs",
+  "003-extend-placeholder-create",
+  "schemas",
 );
 const examplesDir = join(
   root,
-  'specs',
-  '003-extend-placeholder-create',
-  'examples',
+  "specs",
+  "003-extend-placeholder-create",
+  "examples",
 );
 
 function loadJson<T>(filePath: string): T {
-  const raw = readFileSync(filePath, 'utf-8');
+  const raw = readFileSync(filePath, "utf-8");
   return JSON.parse(raw) as T;
 }
 
-describe('contract validator', () => {
+describe("contract validator", () => {
   const ajv = new Ajv({ allErrors: true });
 
   const teamSchema = loadJson<Record<string, unknown>>(
-    join(schemaDir, 'team.schema.json'),
+    join(schemaDir, "team.schema.json"),
   );
   const matchTraceSchema = loadJson<Record<string, unknown>>(
-    join(schemaDir, 'matchtrace.schema.json'),
+    join(schemaDir, "matchtrace.schema.json"),
   );
 
   const validateTeam = ajv.compile(teamSchema);
   const validateMatchTrace = ajv.compile(matchTraceSchema);
 
-  it('validates team example payload', () => {
-    const example = loadJson(join(examplesDir, 'team.example.json'));
+  it("validates team example payload", () => {
+    const example = loadJson(join(examplesDir, "team.example.json"));
     const valid = validateTeam(example);
 
     if (!valid) {
@@ -46,8 +46,8 @@ describe('contract validator', () => {
     expect(valid).toBe(true);
   });
 
-  it('validates match trace example payload', () => {
-    const example = loadJson(join(examplesDir, 'matchtrace.example.json'));
+  it("validates match trace example payload", () => {
+    const example = loadJson(join(examplesDir, "matchtrace.example.json"));
     const valid = validateMatchTrace(example);
 
     if (!valid) {

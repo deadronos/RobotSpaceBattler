@@ -35,7 +35,7 @@ const viteEnv = (import.meta as unknown as { env?: Record<string, string> })
   .env;
 const DEBUG_AI = Boolean(
   viteEnv?.VITE_DEBUG_AI ??
-    (typeof process !== "undefined" && process.env?.DEBUG_AI),
+  (typeof process !== "undefined" && process.env?.DEBUG_AI),
 );
 
 const blender = new BehaviorBlender();
@@ -162,9 +162,14 @@ export function planRobotMovement(
     : 0;
 
   const pathBlocked = !!target && (visionBlocked || movementBlocked);
-  const needsPathfinding = pathBlocked || distanceToTarget > NAV_DISTANCE_THRESHOLD;
+  const needsPathfinding =
+    pathBlocked || distanceToTarget > NAV_DISTANCE_THRESHOLD;
 
-  if (robot.pathComponent && robot.pathComponent.status === "valid" && robot.pathComponent.path) {
+  if (
+    robot.pathComponent &&
+    robot.pathComponent.status === "valid" &&
+    robot.pathComponent.path
+  ) {
     const path = robot.pathComponent.path;
     const waypoints = path.waypoints;
     let idx = robot.pathComponent.currentWaypointIndex;
@@ -254,7 +259,6 @@ export function planRobotMovement(
     orientation,
   };
 }
-
 
 /**
  * Updates a position by integrating velocity over time.

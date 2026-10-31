@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build-test:
-    name: CI (Node ${{ matrix.node-version }})
+    name: Build & test (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -27,12 +27,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
@@ -43,10 +43,8 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      # Informational only: existing quote-style drift is tracked in #152, so the
-      # check reports a visible warning annotation instead of failing the job.
-      - name: 'Format check (non-blocking until #152)'
-        run: 'npm run format:check || echo "::warning title=Format drift::oxfmt check failing, non-blocking until #152"'
+      - name: Format check
+        run: npm run format:check
 
       - name: Typecheck
         run: npm run typecheck
@@ -56,3 +54,21 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  ci:
+    # Single stable check name for branch protection; fails if any matrix leg failed or was cancelled.
+    name: CI
+    needs: build-test
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check matrix result
+        env:
+          RESULT: ${{ needs.build-test.result }}
+        run: |
+          echo "build-test result: $RESULT"
+          if [ "$RESULT" != "success" ]; then
+            echo "::error title=CI failed::build-test matrix result was '$RESULT'"
+            exit 1
+          fi
