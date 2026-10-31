@@ -93,10 +93,7 @@ describe("PathfindingSystem - Robot Navigation", () => {
     }
 
     // Path length should be reasonable (not infinite or negative)
-    // (totalDistance is optional; only validate it when present and non-zero)
-    const totalDistance = path.totalDistance;
-    expect(
-      totalDistance ? totalDistance > 0 && totalDistance < 200 : true,
-    ).toBe(true); // Max diagonal
+    expect(path.totalDistance).toBeGreaterThan(0);
+    expect(path.totalDistance).toBeLessThan(200); // Max diagonal
   });
 });
