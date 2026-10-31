@@ -56,7 +56,8 @@ Open your browser to `http://localhost:5173`.
 ## Continuous Integration
 
 `ci.yml` runs on every push to `main` and on all pull requests, on Node 22 and 24: `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
-The `npm run format:check` step is currently **non-blocking** until the pending reformat lands.
+Lint, `npm run format:check`, typecheck, tests and build are all blocking.
+The `CI` job aggregates the Node 22/24 matrix and is the check to require in branch protection.
 
 ## Project Structure
 
