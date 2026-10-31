@@ -73,31 +73,30 @@ describe("PathfindingSystem - Robot Navigation", () => {
     expect(pathComponent.path).not.toBeNull();
     expect(pathComponent.status).toBe("valid");
 
-    if (pathComponent.path) {
-      // Path should have at least 2 waypoints (start and end)
-      expect(pathComponent.path.waypoints.length).toBeGreaterThanOrEqual(2);
+    const path = pathComponent.path!;
+    // Path should have at least 2 waypoints (start and end)
+    expect(path.waypoints.length).toBeGreaterThanOrEqual(2);
 
-      // Path should reach near the target
-      const lastWaypoint =
-        pathComponent.path.waypoints[pathComponent.path.waypoints.length - 1];
-      const distanceToTarget = Math.sqrt(
-        Math.pow(lastWaypoint.x - targetPosition.x, 2) +
-          Math.pow(lastWaypoint.z - targetPosition.z, 2),
-      );
-      expect(distanceToTarget).toBeLessThan(10); // Within 10 units of target
+    // Path should reach near the target
+    const lastWaypoint = path.waypoints[path.waypoints.length - 1];
+    const distanceToTarget = Math.sqrt(
+      Math.pow(lastWaypoint.x - targetPosition.x, 2) +
+        Math.pow(lastWaypoint.z - targetPosition.z, 2),
+    );
+    expect(distanceToTarget).toBeLessThan(10); // Within 10 units of target
 
-      // Verify path is valid (waypoints exist and are numbers)
-      for (const waypoint of pathComponent.path.waypoints) {
-        expect(waypoint.x).toBeTypeOf("number");
-        expect(waypoint.y).toBeTypeOf("number");
-        expect(waypoint.z).toBeTypeOf("number");
-      }
-
-      // Path length should be reasonable (not infinite or negative)
-      if (pathComponent.path.totalDistance) {
-        expect(pathComponent.path.totalDistance).toBeGreaterThan(0);
-        expect(pathComponent.path.totalDistance).toBeLessThan(200); // Max diagonal
-      }
+    // Verify path is valid (waypoints exist and are numbers)
+    for (const waypoint of path.waypoints) {
+      expect(waypoint.x).toBeTypeOf("number");
+      expect(waypoint.y).toBeTypeOf("number");
+      expect(waypoint.z).toBeTypeOf("number");
     }
+
+    // Path length should be reasonable (not infinite or negative)
+    // (totalDistance is optional; only validate it when present and non-zero)
+    const totalDistance = path.totalDistance;
+    expect(
+      totalDistance ? totalDistance > 0 && totalDistance < 200 : true,
+    ).toBe(true); // Max diagonal
   });
 });
