@@ -9,10 +9,14 @@ Run these commands locally before opening a pull request:
 
 ```powershell
 npm ci
-npm run format
 npm run lint
-npm run test
+npm run typecheck
+npm run format:check
+npm test
+npm run build
 ```
+
+`npm run format` rewrites files with oxfmt if `format:check` reports drift.
 
 ## Cross-platform notes
 
@@ -21,8 +25,11 @@ npm run test
 
 ## Continuous integration
 
-Pull requests run formatting, linting, and tests via GitHub Actions. If your change
-affects gameplay, physics, or core systems, add or update unit tests under `tests/`.
+`.github/workflows/ci.yml` runs on push to `main`, on all pull requests, and on manual
+dispatch (Node 22 and 24). Lint, typecheck, tests and build are blocking gates;
+`npm run format:check` is informational only and surfaces drift as a warning
+annotation until the reformat in #152 lands. If your change affects gameplay,
+physics, or core systems, add or update unit tests under `tests/`.
 
 Please choose the appropriate PR template (feature / bugfix / chore) and complete the
 required `CONSTITUTION-CHECK` section in your PR; CI will validate the presence of this

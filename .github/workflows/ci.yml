@@ -5,18 +5,21 @@ on:
     branches:
       - 'main'
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Only cancel superseded PR runs; let in-flight runs on main finish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build-test:
     name: CI (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -25,6 +28,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v7
@@ -38,11 +43,10 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      # Non-blocking: existing quote-style drift is tracked in a follow-up
-      # reformat issue, so this never fails the job yet.
-      - name: Format check (non-blocking, see follow-up reformat issue)
-        run: npm run format:check
-        continue-on-error: true
+      # Informational only: existing quote-style drift is tracked in #152, so the
+      # check reports a visible warning annotation instead of failing the job.
+      - name: 'Format check (non-blocking until #152)'
+        run: 'npm run format:check || echo "::warning title=Format drift::oxfmt check failing, non-blocking until #152"'
 
       - name: Typecheck
         run: npm run typecheck
