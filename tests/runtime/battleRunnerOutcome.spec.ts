@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as aiSystem from "../../src/ecs/systems/aiSystem";
 import { createBattleWorld } from "../../src/ecs/world";
+import { MATCH_TIME_LIMIT_MS } from "../../src/lib/constants";
 import { createBattleRunner } from "../../src/runtime/simulation/battleRunner";
 import { TelemetryPort } from "../../src/runtime/simulation/ports";
 import { createMatchStateMachine } from "../../src/runtime/state/matchStateMachine";
@@ -16,7 +17,7 @@ function createNoopTelemetry(): TelemetryPort {
   };
 }
 
-function setup(maxMatchDurationMs?: number) {
+function setup(maxMatchDurationMs?: number | null) {
   const world = createBattleWorld();
   const matchMachine = createMatchStateMachine({ autoRestartDelayMs: 1000 });
   const runner = createBattleRunner(world, {
@@ -92,8 +93,8 @@ describe("BattleRunner match outcomes", () => {
     });
   });
 
-  it("does not time out when no limit is configured", () => {
-    const { matchMachine, runner } = setup();
+  it("does not time out when the limit is disabled with null", () => {
+    const { matchMachine, runner } = setup(null);
     runner.step(600);
     expect(matchMachine.getSnapshot().phase).toBe("running");
   });
@@ -136,6 +137,20 @@ describe("BattleRunner match outcomes", () => {
     expect(matchMachine.getSnapshot()).toMatchObject({
       phase: "victory",
       winner: null,
+      isDraw: true,
+    });
+  });
+
+  it("applies the default time limit when none is configured", () => {
+    const { matchMachine, runner } = setup();
+    runner.step(MATCH_TIME_LIMIT_MS / 1000 - 1);
+    runner.step(1 / 60);
+    expect(matchMachine.getSnapshot().phase).toBe("running");
+
+    runner.step(2);
+    runner.step(1 / 60);
+    expect(matchMachine.getSnapshot()).toMatchObject({
+      phase: "victory",
       isDraw: true,
     });
   });

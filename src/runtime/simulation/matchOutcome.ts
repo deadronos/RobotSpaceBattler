@@ -41,7 +41,7 @@ function resolveByTally(tally: TeamTally): TeamId | null {
 export function evaluateMatchOutcome(
   world: BattleWorld,
   matchMachine: MatchStateMachine,
-  maxMatchDurationMs?: number,
+  maxMatchDurationMs?: number | null,
 ): void {
   const snapshot = matchMachine.getSnapshot();
   if (snapshot.phase !== "running") {
@@ -61,10 +61,7 @@ export function evaluateMatchOutcome(
     return;
   }
 
-  if (
-    maxMatchDurationMs !== undefined &&
-    snapshot.elapsedMs >= maxMatchDurationMs
-  ) {
+  if (maxMatchDurationMs != null && snapshot.elapsedMs >= maxMatchDurationMs) {
     const winner = resolveByTally(tally);
     if (winner) {
       matchMachine.declareVictory(winner, VICTORY_DELAY_MS);

@@ -7,6 +7,7 @@ import { updateEffectSystem } from "../../ecs/systems/effectSystem";
 import { updateMovementSystem } from "../../ecs/systems/movementSystem";
 import { updateProjectileSystem } from "../../ecs/systems/projectileSystem";
 import { BattleWorld } from "../../ecs/world";
+import { MATCH_TIME_LIMIT_MS } from "../../lib/constants";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
 import { createXorShift32 } from "../../lib/random/xorshift";
 import {
@@ -42,10 +43,11 @@ export interface BattleRunnerOptions {
   /** Optional obstacle fixture data to seed matches. */
   obstacleFixture?: MatchSpawnOptions["obstacleFixture"];
   /**
-   * Optional match time limit in ms. When reached the match resolves by
-   * remaining robots, then total HP, else a draw. Unlimited when omitted.
+   * Match time limit in ms (defaults to MATCH_TIME_LIMIT_MS). When reached
+   * the match resolves by remaining robots, then total HP, else a draw.
+   * Pass null to disable the limit.
    */
-  maxMatchDurationMs?: number;
+  maxMatchDurationMs?: number | null;
 }
 
 /**
@@ -84,6 +86,10 @@ export function createBattleRunner(
   const rng = createXorShift32(seed);
 
   const { telemetry, matchMachine } = options;
+  const matchTimeLimitMs =
+    options.maxMatchDurationMs === undefined
+      ? MATCH_TIME_LIMIT_MS
+      : options.maxMatchDurationMs;
 
   // Initialize pathfinding system
   const arenaConfig = extractArenaConfiguration();
@@ -160,7 +166,7 @@ export function createBattleRunner(
         updateEffectSystem(world);
         perfMarkEnd("updateEffectSystem");
 
-        evaluateMatchOutcome(world, matchMachine, options.maxMatchDurationMs);
+        evaluateMatchOutcome(world, matchMachine, matchTimeLimitMs);
       }
 
       const shouldRestart = matchMachine.tick(deltaMs);

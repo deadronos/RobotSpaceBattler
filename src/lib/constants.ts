@@ -17,6 +17,12 @@ export const ENGAGE_MEMORY_TIMEOUT_MS = 1500;
 export const AUTO_RESTART_DELAY_MS = 5000;
 
 /**
+ * Default match time limit (in milliseconds). When it expires the match is
+ * resolved by remaining robots, then total HP, else declared a draw.
+ */
+export const MATCH_TIME_LIMIT_MS = 3 * 60 * 1000;
+
+/**
  * Formation parameters for team positioning.
  */
 export const FORMATION_BASE_RADIUS = 5.5;
