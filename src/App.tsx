@@ -30,6 +30,10 @@ import {
 } from "./runtime/state/matchStateMachine";
 import { ObstacleFixture } from "./simulation/match/matchSpawner";
 
+// Bundled at build time (no network fetch, independent of Vite `base`). Kept at
+// module scope so its identity is stable and never recreates the battle runner.
+const OBSTACLE_FIXTURE = sampleObstacleFixture as unknown as ObstacleFixture;
+
 function formatStatus({
   phase,
   winner,
@@ -67,14 +71,6 @@ export default function App() {
   const [showPerfOverlay, setShowPerfOverlay] = useState(false);
   const [showRobotList, setShowRobotList] = useState(true);
 
-  const [obstacleFixture, setObstacleFixture] = useState<
-    ObstacleFixture | undefined
-  >(
-    // Use the compiled-in sample fixture as the initial state to ensure the
-    // world has obstacles even if the network fetch fails in some environments.
-    sampleObstacleFixture as unknown as ObstacleFixture,
-  );
-
   const matchMachine = useMemo(
     () =>
       createMatchStateMachine({
@@ -87,31 +83,6 @@ export default function App() {
   useEffect(() => {
     setMatchSnapshot(matchMachine.getSnapshot());
   }, [matchMachine]);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/specs/006-dynamic-arena-obstacles/dynamic-arena-sample.json")
-      .then(async (res) => {
-        if (!res.ok)
-          throw new Error(`Failed to load obstacle fixture: ${res.status}`);
-        return (await res.json()) as ObstacleFixture;
-      })
-      .then((fixture) => {
-        if (!cancelled) setObstacleFixture(fixture);
-      })
-      .catch(() => {
-        // Keep the compiled-in sample fixture if the network fetch fails in
-        // this environment (e.g., Playwright dev server path differences).
-        if (!cancelled) {
-          // Optional: preserve existing fixture state. Log for debug.
-          // console.warn('Obstacle fixture fetch failed, using default sample fixture', err);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const runnerRef = useRef<BattleRunner | null>(null);
 
@@ -215,13 +186,16 @@ export default function App() {
           matchMachine={matchMachine}
           telemetry={telemetryPort}
           onRunnerReady={handleRunnerReady}
-          obstacleFixture={obstacleFixture}
+          obstacleFixture={OBSTACLE_FIXTURE}
           showPerfOverlay={showPerfOverlay}
         />
       </Suspense>
       {showDebugUI && (
         <div className="app-debug-ui">
-          <ObstacleEditor world={battleWorld} sampleFixture={obstacleFixture} />
+          <ObstacleEditor
+            world={battleWorld}
+            sampleFixture={OBSTACLE_FIXTURE}
+          />
           <ObstacleSpawner world={battleWorld} />
           <PerfToggles />
         </div>
