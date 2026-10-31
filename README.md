@@ -53,6 +53,11 @@ Open your browser to `http://localhost:5173`.
 - **Test**: `npm run test` - Runs unit tests with Vitest.
 - **E2E Test**: `npm run playwright:test` - Runs end-to-end tests.
 
+## Continuous Integration
+
+`ci.yml` runs on every push to `main` and on all pull requests, on Node 22 and 24: `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
+The `npm run format:check` step is currently **non-blocking** until the pending reformat lands.
+
 ## Project Structure
 
 The codebase is organized in `src/` as follows:
