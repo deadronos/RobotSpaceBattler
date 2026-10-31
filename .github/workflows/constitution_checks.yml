@@ -5,7 +5,7 @@ on:
     types: [opened, edited, synchronize, reopened]
   push:
     branches:
-      - '**'
+      - 'main'
 
 jobs:
   source-size-check:
