@@ -24,6 +24,7 @@ describe("PathOptimizer", () => {
     const optimizedPath = optimizer.smoothPath(path);
 
     // Calculate heading changes between consecutive segments
+    const headingChanges: number[] = [];
     for (let i = 1; i < optimizedPath.length - 1; i++) {
       const prev = optimizedPath[i - 1];
       const curr = optimizedPath[i];
@@ -47,9 +48,13 @@ describe("PathOptimizer", () => {
         const angleRadians = Math.acos(Math.max(-1, Math.min(1, cosAngle)));
         const angleDegrees = (angleRadians * 180) / Math.PI;
 
-        // Heading change should be less than 5 degrees
-        expect(angleDegrees).toBeLessThan(5);
+        headingChanges.push(angleDegrees);
       }
+    }
+
+    // Heading change should be less than 5 degrees
+    for (const angleDegrees of headingChanges) {
+      expect(angleDegrees).toBeLessThan(5);
     }
   });
 

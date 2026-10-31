@@ -50,12 +50,11 @@ describe("AStarSearch", () => {
     const path = search.findPath(start, target);
 
     expect(path).not.toBeNull();
-    if (path) {
-      expect(path.length).toBeGreaterThanOrEqual(2); // At least start and end
-      // Path length should be approximately sqrt(100^2 + 100^2) = 141.4
-      const pathLength = calculatePathLength(path);
-      expect(pathLength).toBeCloseTo(141.4, 1);
-    }
+    const found = path!;
+    expect(found.length).toBeGreaterThanOrEqual(2); // At least start and end
+    // Path length should be approximately sqrt(100^2 + 100^2) = 141.4
+    const pathLength = calculatePathLength(found);
+    expect(pathLength).toBeCloseTo(141.4, 1);
   });
 
   it("[T017] finds path around single wall obstacle", () => {
@@ -70,9 +69,7 @@ describe("AStarSearch", () => {
     const path = search.findPath(start, target);
 
     expect(path).not.toBeNull();
-    if (path) {
-      expect(path.length).toBeGreaterThan(0);
-    }
+    expect(path!.length).toBeGreaterThan(0);
   });
 });
 

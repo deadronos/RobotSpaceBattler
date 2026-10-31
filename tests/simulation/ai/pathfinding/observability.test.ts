@@ -6,6 +6,7 @@ import type {
   Point3D,
 } from "@/simulation/ai/pathfinding/types";
 import type { PathComponent } from "@/simulation/ai/pathfinding/integration/PathComponent";
+import type { PathfindingTelemetryCallback } from "@/simulation/ai/pathfinding/integration/PathfindingTelemetry";
 
 /**
  * T067: Structured telemetry logging for path calculation events
@@ -59,7 +60,7 @@ describe("PathfindingSystem Observability", () => {
   });
 
   it("T067: should emit telemetry events for path calculation start", async () => {
-    const telemetrySpy = vi.fn();
+    const telemetrySpy = vi.fn<PathfindingTelemetryCallback>();
     system.onTelemetry(telemetrySpy);
 
     const robotPosition: Point3D = { x: 0, y: 0, z: 0 };
@@ -81,7 +82,7 @@ describe("PathfindingSystem Observability", () => {
   });
 
   it("T067: should emit telemetry events for path calculation complete", async () => {
-    const telemetrySpy = vi.fn();
+    const telemetrySpy = vi.fn<PathfindingTelemetryCallback>();
     system.onTelemetry(telemetrySpy);
 
     const robotPosition: Point3D = { x: 0, y: 0, z: 0 };
@@ -110,7 +111,7 @@ describe("PathfindingSystem Observability", () => {
       throttleInterval: 0,
     });
 
-    const telemetrySpy = vi.fn();
+    const telemetrySpy = vi.fn<PathfindingTelemetryCallback>();
     systemNoThrottle.onTelemetry(telemetrySpy);
 
     const robotPosition: Point3D = { x: 0, y: 0, z: 0 };

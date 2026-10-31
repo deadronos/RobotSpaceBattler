@@ -20,7 +20,7 @@ type Listener = (event: unknown) => void;
 
 class FakeWorker implements WorkerLike {
   posted: WorkerInbound[] = [];
-  terminate = vi.fn();
+  terminate = vi.fn<WorkerLike["terminate"]>();
   private listeners = new Map<string, Listener[]>();
   private state = createWorkerHandlerState();
 
@@ -85,7 +85,7 @@ function setup(
 async function expectSuccess(p: ReturnType<PathWorkerManager["runWorker"]>) {
   const res = await p;
   expect(res.ok).toBe(true);
-  if (res.ok) expect(res.value.status).toBe("success");
+  expect(res.ok ? res.value.status : undefined).toBe("success");
 }
 
 describe("PathWorkerManager", () => {

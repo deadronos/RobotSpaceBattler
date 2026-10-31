@@ -1,13 +1,27 @@
 import { render, fireEvent, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+  type Mock,
+} from "vitest";
 import App from "@/App";
 import * as worldModule from "@/ecs/world";
+import type { BattleWorld } from "@/ecs/world";
 import * as machineModule from "@/runtime/state/matchStateMachine";
 import * as telemetryModule from "@/runtime/simulation/telemetryAdapter";
+import type { BattleRunner } from "@/runtime/simulation/battleRunner";
+import type {
+  MatchStateMachine,
+  MatchStateSnapshot,
+} from "@/runtime/state/matchStateMachine";
 
 // Hoist the mock function so it can be used in the mock factory
 const { mockRunnerReset } = vi.hoisted(() => ({
-  mockRunnerReset: vi.fn(),
+  mockRunnerReset: vi.fn<BattleRunner["reset"]>(),
 }));
 
 // Mock Simulation component as it uses Canvas
@@ -33,10 +47,10 @@ vi.mock("@/components/ui/SettingsModal", () => ({
 }));
 
 describe("App Keyboard Shortcuts", () => {
-  let mockPause: ReturnType<typeof vi.fn>;
-  let mockResume: ReturnType<typeof vi.fn>;
-  let mockReset: ReturnType<typeof vi.fn>;
-  let mockGetSnapshot: ReturnType<typeof vi.fn>;
+  let mockPause: Mock<MatchStateMachine["pause"]>;
+  let mockResume: Mock<MatchStateMachine["resume"]>;
+  let mockReset: Mock<MatchStateMachine["reset"]>;
+  let mockGetSnapshot: Mock<() => Partial<MatchStateSnapshot>>;
 
   beforeEach(() => {
     // Reset the hoisted mock
@@ -45,7 +59,10 @@ describe("App Keyboard Shortcuts", () => {
     // Mock createBattleWorld
     vi.spyOn(worldModule, "createBattleWorld").mockReturnValue({
       robots: { entities: [] },
-      world: { add: vi.fn(), remove: vi.fn() },
+      world: {
+        add: vi.fn<BattleWorld["world"]["add"]>(),
+        remove: vi.fn<BattleWorld["world"]["remove"]>(),
+      },
       obstacles: { entities: [] },
     } as any);
 
@@ -53,24 +70,26 @@ describe("App Keyboard Shortcuts", () => {
     vi.spyOn(telemetryModule, "createTelemetryPort").mockReturnValue({} as any);
 
     // Mock createMatchStateMachine
-    mockPause = vi.fn();
-    mockResume = vi.fn();
-    mockReset = vi.fn(); // This is the machine reset, which might not be called directly
-    mockGetSnapshot = vi.fn().mockReturnValue({
-      phase: "running",
-      elapsedMs: 0,
-      restartTimerMs: null,
-      winner: null,
-    });
+    mockPause = vi.fn<MatchStateMachine["pause"]>();
+    mockResume = vi.fn<MatchStateMachine["resume"]>();
+    mockReset = vi.fn<MatchStateMachine["reset"]>(); // This is the machine reset, which might not be called directly
+    mockGetSnapshot = vi
+      .fn<() => Partial<MatchStateSnapshot>>()
+      .mockReturnValue({
+        phase: "running",
+        elapsedMs: 0,
+        restartTimerMs: null,
+        winner: null,
+      });
 
     vi.spyOn(machineModule, "createMatchStateMachine").mockReturnValue({
-      start: vi.fn(),
+      start: vi.fn<MatchStateMachine["start"]>(),
       pause: mockPause as any,
       resume: mockResume as any,
       reset: mockReset as any,
-      declareVictory: vi.fn(),
-      declareDraw: vi.fn(),
-      tick: vi.fn(),
+      declareVictory: vi.fn<MatchStateMachine["declareVictory"]>(),
+      declareDraw: vi.fn<MatchStateMachine["declareDraw"]>(),
+      tick: vi.fn<MatchStateMachine["tick"]>(),
       getSnapshot: mockGetSnapshot as any,
     });
   });

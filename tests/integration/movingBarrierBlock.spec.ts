@@ -5,15 +5,17 @@ import { updateProjectileSystem } from "../../src/ecs/systems/projectileSystem";
 import { distanceSquaredPointToAABB } from "../../src/lib/math/geometry";
 import { updateObstacleMovement } from "../../src/simulation/obstacles/movementSystem";
 import { isLineOfSightBlockedRuntime } from "../../src/simulation/environment/arenaGeometry";
+import type { TelemetryPort } from "../../src/runtime/simulation/ports";
 
 function createSpyTelemetry() {
   return {
-    reset: vi.fn(),
-    recordSpawn: vi.fn(),
-    recordFire: vi.fn(),
-    recordDamage: vi.fn(),
-    recordDeath: vi.fn(),
-    recordObstacleMove: vi.fn(),
+    reset: vi.fn<TelemetryPort["reset"]>(),
+    recordSpawn: vi.fn<TelemetryPort["recordSpawn"]>(),
+    recordFire: vi.fn<TelemetryPort["recordFire"]>(),
+    recordDamage: vi.fn<TelemetryPort["recordDamage"]>(),
+    recordDeath: vi.fn<TelemetryPort["recordDeath"]>(),
+    recordObstacleMove:
+      vi.fn<NonNullable<TelemetryPort["recordObstacleMove"]>>(),
   } as any;
 }
 

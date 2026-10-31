@@ -2,6 +2,7 @@ import { describe, test, expect, vi } from "vitest";
 import { createPathComponent } from "@/simulation/ai/pathfinding/integration/PathComponent";
 import { PathCalculator } from "@/simulation/ai/pathfinding/integration/PathCalculator";
 import type { Point3D } from "@/simulation/ai/pathfinding/types";
+import type { NavMeshResource } from "@/simulation/ai/pathfinding/integration/NavMeshResource";
 
 function makePoint(x = 0, z = 0): Point3D {
   return { x, y: 0, z };
@@ -11,8 +12,8 @@ describe("PathCalculator", () => {
   test("uses cache when available and emits fromCache telemetry", async () => {
     const navMeshResource: any = {
       getSerializedMesh: () => ({}),
-      recordCalculation: vi.fn(),
-      updateCacheHitRate: vi.fn(),
+      recordCalculation: vi.fn<NavMeshResource["recordCalculation"]>(),
+      updateCacheHitRate: vi.fn<NavMeshResource["updateCacheHitRate"]>(),
     };
 
     const calculator = new PathCalculator(navMeshResource, {
@@ -45,8 +46,8 @@ describe("PathCalculator", () => {
   test("handles worker success and emits telemetry", async () => {
     const navMeshResource: any = {
       getSerializedMesh: () => ({}),
-      recordCalculation: vi.fn(),
-      updateCacheHitRate: vi.fn(),
+      recordCalculation: vi.fn<NavMeshResource["recordCalculation"]>(),
+      updateCacheHitRate: vi.fn<NavMeshResource["updateCacheHitRate"]>(),
     };
 
     const calculator = new PathCalculator(navMeshResource, {
@@ -87,8 +88,8 @@ describe("PathCalculator", () => {
   test("handles worker no_path and emits failed telemetry", async () => {
     const navMeshResource: any = {
       getSerializedMesh: () => ({}),
-      recordCalculation: vi.fn(),
-      updateCacheHitRate: vi.fn(),
+      recordCalculation: vi.fn<NavMeshResource["recordCalculation"]>(),
+      updateCacheHitRate: vi.fn<NavMeshResource["updateCacheHitRate"]>(),
     };
 
     const calculator = new PathCalculator(navMeshResource, {

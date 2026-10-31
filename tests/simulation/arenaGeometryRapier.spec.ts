@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import { vec3 } from "../../src/lib/math/vec3";
 import { isLineOfSightBlockedRuntime } from "../../src/simulation/environment/arenaGeometry";
+import type { RuntimeCheckOptions } from "../../src/simulation/environment/arenaGeometry";
+
+type RapierRaycast = NonNullable<
+  NonNullable<RuntimeCheckOptions["rapierWorld"]>["castRayAndGetNormal"]
+>;
 
 describe("isLineOfSightBlockedRuntime with Rapier", () => {
   it("returns true when rapierWorld raycast reports a hit", () => {
@@ -8,7 +13,7 @@ describe("isLineOfSightBlockedRuntime with Rapier", () => {
     const end = vec3(15, 0, 5);
 
     const mockRapier = {
-      castRayAndGetNormal: vi.fn(() => ({
+      castRayAndGetNormal: vi.fn<RapierRaycast>(() => ({
         timeOfImpact: 5.0,
         normal: { x: 0, y: 0, z: -1 },
       })),
@@ -25,7 +30,9 @@ describe("isLineOfSightBlockedRuntime with Rapier", () => {
     const start = vec3(5, 0, 5);
     const end = vec3(15, 0, 5);
 
-    const mockRapier = { castRayAndGetNormal: vi.fn(() => null) } as any;
+    const mockRapier = {
+      castRayAndGetNormal: vi.fn<RapierRaycast>(() => null),
+    } as any;
 
     const obstacle = {
       id: "o",
@@ -47,7 +54,9 @@ describe("isLineOfSightBlockedRuntime with Rapier", () => {
     const start = vec3(5, 0, 5);
     const end = vec3(15, 0, 5);
 
-    const mockRapier = { castRayAndGetNormal: vi.fn(() => null) } as any;
+    const mockRapier = {
+      castRayAndGetNormal: vi.fn<RapierRaycast>(() => null),
+    } as any;
 
     const blocked = isLineOfSightBlockedRuntime(start, end, {
       rapierWorld: mockRapier,

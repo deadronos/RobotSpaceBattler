@@ -3,6 +3,16 @@ import { describe, beforeEach, expect, it, vi } from "vitest";
 
 import { createBattleWorld } from "../../src/ecs/world";
 import { useSimulation } from "../../src/runtime/simulation/useSimulation";
+import type {
+  BattleRunner,
+  createBattleRunner,
+} from "../../src/runtime/simulation/battleRunner";
+import type { TelemetryPort } from "../../src/runtime/simulation/ports";
+import type {
+  MatchStateMachine,
+  MatchStateSnapshot,
+} from "../../src/runtime/state/matchStateMachine";
+import type { recordRendererFrame } from "../../src/visuals/rendererStats";
 
 const simulationTestState = vi.hoisted(() => {
   let frameCallback:
@@ -10,8 +20,8 @@ const simulationTestState = vi.hoisted(() => {
     | undefined;
 
   return {
-    mockCreateBattleRunner: vi.fn(),
-    mockRecordRendererFrame: vi.fn(),
+    mockCreateBattleRunner: vi.fn<typeof createBattleRunner>(),
+    mockRecordRendererFrame: vi.fn<typeof recordRendererFrame>(),
     mockRapierWorld: { id: "rapier-world" },
     clearFrameCallback: () => {
       frameCallback = undefined;
@@ -45,28 +55,31 @@ vi.mock("../../src/visuals/rendererStats", () => ({
 
 function createMatchMachineStub() {
   return {
-    start: vi.fn(),
-    pause: vi.fn(),
-    resume: vi.fn(),
-    reset: vi.fn(),
-    declareVictory: vi.fn(),
-    tick: vi.fn(),
-    getSnapshot: vi.fn(() => ({
-      phase: "running",
-      elapsedMs: 0,
-      restartTimerMs: null,
-      winner: null,
-    })),
+    start: vi.fn<MatchStateMachine["start"]>(),
+    pause: vi.fn<MatchStateMachine["pause"]>(),
+    resume: vi.fn<MatchStateMachine["resume"]>(),
+    reset: vi.fn<MatchStateMachine["reset"]>(),
+    declareVictory: vi.fn<MatchStateMachine["declareVictory"]>(),
+    tick: vi.fn<MatchStateMachine["tick"]>(),
+    getSnapshot: vi.fn<MatchStateMachine["getSnapshot"]>(
+      () =>
+        ({
+          phase: "running",
+          elapsedMs: 0,
+          restartTimerMs: null,
+          winner: null,
+        }) as MatchStateSnapshot,
+    ),
   } as any;
 }
 
 function createTelemetryStub() {
   return {
-    reset: vi.fn(),
-    recordSpawn: vi.fn(),
-    recordFire: vi.fn(),
-    recordDamage: vi.fn(),
-    recordDeath: vi.fn(),
+    reset: vi.fn<TelemetryPort["reset"]>(),
+    recordSpawn: vi.fn<TelemetryPort["recordSpawn"]>(),
+    recordFire: vi.fn<TelemetryPort["recordFire"]>(),
+    recordDamage: vi.fn<TelemetryPort["recordDamage"]>(),
+    recordDeath: vi.fn<TelemetryPort["recordDeath"]>(),
   } as any;
 }
 
@@ -88,18 +101,18 @@ describe("useSimulation", () => {
 
   it("wires the Rapier world to each created runner and clears it on cleanup", () => {
     const firstRunner = {
-      step: vi.fn(),
-      reset: vi.fn(),
-      setRapierWorld: vi.fn(),
-      getRapierWorld: vi.fn(),
-      dispose: vi.fn(),
+      step: vi.fn<BattleRunner["step"]>(),
+      reset: vi.fn<BattleRunner["reset"]>(),
+      setRapierWorld: vi.fn<BattleRunner["setRapierWorld"]>(),
+      getRapierWorld: vi.fn<BattleRunner["getRapierWorld"]>(),
+      dispose: vi.fn<BattleRunner["dispose"]>(),
     };
     const secondRunner = {
-      step: vi.fn(),
-      reset: vi.fn(),
-      setRapierWorld: vi.fn(),
-      getRapierWorld: vi.fn(),
-      dispose: vi.fn(),
+      step: vi.fn<BattleRunner["step"]>(),
+      reset: vi.fn<BattleRunner["reset"]>(),
+      setRapierWorld: vi.fn<BattleRunner["setRapierWorld"]>(),
+      getRapierWorld: vi.fn<BattleRunner["getRapierWorld"]>(),
+      dispose: vi.fn<BattleRunner["dispose"]>(),
     };
 
     simulationTestState.mockCreateBattleRunner
@@ -140,11 +153,11 @@ describe("useSimulation", () => {
 
   it("disposes the runner on unmount", () => {
     const runner = {
-      step: vi.fn(),
-      reset: vi.fn(),
-      setRapierWorld: vi.fn(),
-      getRapierWorld: vi.fn(),
-      dispose: vi.fn(),
+      step: vi.fn<BattleRunner["step"]>(),
+      reset: vi.fn<BattleRunner["reset"]>(),
+      setRapierWorld: vi.fn<BattleRunner["setRapierWorld"]>(),
+      getRapierWorld: vi.fn<BattleRunner["getRapierWorld"]>(),
+      dispose: vi.fn<BattleRunner["dispose"]>(),
     };
     simulationTestState.mockCreateBattleRunner.mockReturnValueOnce(runner);
 
@@ -164,11 +177,11 @@ describe("useSimulation", () => {
 
   it("runs the simulation frame loop without forcing React version updates", () => {
     const runner = {
-      step: vi.fn(),
-      reset: vi.fn(),
-      setRapierWorld: vi.fn(),
-      getRapierWorld: vi.fn(),
-      dispose: vi.fn(),
+      step: vi.fn<BattleRunner["step"]>(),
+      reset: vi.fn<BattleRunner["reset"]>(),
+      setRapierWorld: vi.fn<BattleRunner["setRapierWorld"]>(),
+      getRapierWorld: vi.fn<BattleRunner["getRapierWorld"]>(),
+      dispose: vi.fn<BattleRunner["dispose"]>(),
     };
 
     simulationTestState.mockCreateBattleRunner.mockReturnValue(runner);

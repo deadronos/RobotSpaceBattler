@@ -1,9 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import {
   createPhysicsQueryService,
   PhysicsQueryService,
   RaycastHit,
 } from "../../src/simulation/ai/pathing/physicsQueryService";
+import type { RapierWorldLike } from "../../src/simulation/ai/pathing/types";
 
 describe("PhysicsQueryService", () => {
   describe("with null/undefined world", () => {
@@ -53,13 +54,13 @@ describe("PhysicsQueryService", () => {
 
   describe("with mocked Rapier world", () => {
     let mockWorld: {
-      castRayAndGetNormal: ReturnType<typeof vi.fn>;
+      castRayAndGetNormal: Mock<RapierWorldLike["castRayAndGetNormal"]>;
     };
     let service: PhysicsQueryService;
 
     beforeEach(() => {
       mockWorld = {
-        castRayAndGetNormal: vi.fn(),
+        castRayAndGetNormal: vi.fn<RapierWorldLike["castRayAndGetNormal"]>(),
       };
     });
 
