@@ -41,7 +41,6 @@
     "@react-three/fiber": "^9.8.2",
     "@react-three/postprocessing": "^3.2.0",
     "@react-three/rapier": "^2.2.0",
-    "@tanstack/react-query": "^5.104.3",
     "miniplex": "^2.0.0",
     "multithreading": "^0.3.52",
     "navmesh": "^2.3.1",
