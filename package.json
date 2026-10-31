@@ -11,8 +11,8 @@
     "build": "vite build",
     "build:analyze": "vite build --mode production",
     "preview": "vite preview",
-    "lint": "oxlint src",
-    "lint:fix": "oxlint src --fix",
+    "lint": "oxlint src tests playwright",
+    "lint:fix": "oxlint src tests playwright --fix",
     "format": "oxfmt src tests scripts playwright vite.config.ts vitest.config.ts playwright.config.ts",
     "format:check": "oxfmt --check src tests scripts playwright vite.config.ts vitest.config.ts playwright.config.ts",
     "test": "vitest run",
@@ -27,7 +27,7 @@
     "typecheck": "tsc --noEmit"
   },
   "lint-staged": {
-    "src/**/*.{ts,tsx,js,jsx}": [
+    "{src,tests,playwright}/**/*.{ts,tsx,js,jsx}": [
       "oxlint --fix",
       "oxfmt --no-error-on-unmatched-pattern"
     ],
