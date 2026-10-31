@@ -36,7 +36,7 @@ export function Scene({ children, showPerfOverlay = false }: SceneProps) {
 
   return (
     <Canvas
-      shadows={shadowsEnabled}
+      shadows={shadowsEnabled ? "percentage" : false}
       dpr={render.dpr}
       camera={{ position: [-14, 28, 48], fov: 45 }}
       gl={{
