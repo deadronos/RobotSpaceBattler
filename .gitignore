@@ -199,3 +199,7 @@ coverage/
 # Keep the gitignore itself tracked
 !.gitignore
 .github/instructions/todos.instructions.md
+
+# Playwright output
+test-results/
+playwright-report/
