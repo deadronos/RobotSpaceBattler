@@ -60,8 +60,16 @@ test("the battle loads and runs with no errors", async ({ page }, testInfo) => {
       .filter((n): n is string => n !== undefined)
       .map(Number);
   };
-  await expect.poll(async () => (await counts()).length).toBe(2);
-  for (const n of await counts()) expect(n).toBeGreaterThan(0);
+  // Poll: the first render can precede the runner spawning robots.
+  await expect
+    .poll(
+      async () => {
+        const c = await counts();
+        return c.length === 2 && c.every((n) => n > 0);
+      },
+      { timeout: 15_000, message: "HUD alive counts never rose above 0" },
+    )
+    .toBe(true);
 
   // Simulation liveness: the robot status panel (targets, health, shots,
   // damage) only changes when the battle runner steps. The canvas itself is
