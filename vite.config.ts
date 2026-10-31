@@ -32,12 +32,6 @@ export default defineConfig({
     // dynamic imports resolve to the same instance (avoids duplicate module
     // closures where `init` runs in one and `EventQueue` is created in another).
     include: ["@dimforge/rapier3d-compat", "@react-three/rapier"],
-    exclude: [
-      "multithreading",
-      "multithreading/src/browser/worker.js",
-      "multithreading/src/lib/worker.js",
-      "worker.js?worker_file&type=module",
-    ],
   },
   // Force all imports of the rapier compat package to resolve to the top-level
   // node_modules path. This avoids multiple different package copies being
@@ -53,6 +47,7 @@ export default defineConfig({
       ),
     },
   },
+  worker: { format: "es" },
   server: {
     port: 5173,
   },

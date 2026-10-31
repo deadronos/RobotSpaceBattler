@@ -22,6 +22,18 @@ function createNoopTelemetry(): TelemetryPort {
 }
 
 describe("BattleRunner rapierWorld integration", () => {
+  it("dispose can be called repeatedly without throwing", () => {
+    const runner = createBattleRunner(createBattleWorld(), {
+      seed: 1,
+      telemetry: createNoopTelemetry(),
+      matchMachine: createMatchStateMachine(),
+    });
+    expect(() => {
+      runner.dispose();
+      runner.dispose();
+    }).not.toThrow();
+  });
+
   it("setRapierWorld stores the world reference on BattleWorld", () => {
     const world = createBattleWorld();
     const telemetry = createNoopTelemetry();

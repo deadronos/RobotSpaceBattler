@@ -64,6 +64,8 @@ export interface BattleRunner {
   setRapierWorld: (rapierWorld: RapierWorld | null) => void;
   /** Gets the current Rapier world instance. */
   getRapierWorld: () => RapierWorld | undefined;
+  /** Releases resources owned by the runner (pathfinding worker). */
+  dispose: () => void;
 }
 
 function evaluateVictory(
@@ -209,6 +211,9 @@ export function createBattleRunner(
     },
     getRapierWorld: () => {
       return world.rapierWorld;
+    },
+    dispose: () => {
+      pathfindingSystem.dispose();
     },
   };
 }

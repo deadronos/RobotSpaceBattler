@@ -92,12 +92,14 @@ describe("useSimulation", () => {
       reset: vi.fn(),
       setRapierWorld: vi.fn(),
       getRapierWorld: vi.fn(),
+      dispose: vi.fn(),
     };
     const secondRunner = {
       step: vi.fn(),
       reset: vi.fn(),
       setRapierWorld: vi.fn(),
       getRapierWorld: vi.fn(),
+      dispose: vi.fn(),
     };
 
     simulationTestState.mockCreateBattleRunner
@@ -136,12 +138,37 @@ describe("useSimulation", () => {
     expect(secondRunner.setRapierWorld).toHaveBeenLastCalledWith(null);
   });
 
+  it("disposes the runner on unmount", () => {
+    const runner = {
+      step: vi.fn(),
+      reset: vi.fn(),
+      setRapierWorld: vi.fn(),
+      getRapierWorld: vi.fn(),
+      dispose: vi.fn(),
+    };
+    simulationTestState.mockCreateBattleRunner.mockReturnValueOnce(runner);
+
+    const { unmount } = render(
+      <HookHarness
+        battleWorld={createBattleWorld()}
+        matchMachine={createMatchMachineStub()}
+        telemetry={createTelemetryStub()}
+      />,
+    );
+    expect(runner.dispose).not.toHaveBeenCalled();
+
+    unmount();
+
+    expect(runner.dispose).toHaveBeenCalledTimes(1);
+  });
+
   it("runs the simulation frame loop without forcing React version updates", () => {
     const runner = {
       step: vi.fn(),
       reset: vi.fn(),
       setRapierWorld: vi.fn(),
       getRapierWorld: vi.fn(),
+      dispose: vi.fn(),
     };
 
     simulationTestState.mockCreateBattleRunner.mockReturnValue(runner);

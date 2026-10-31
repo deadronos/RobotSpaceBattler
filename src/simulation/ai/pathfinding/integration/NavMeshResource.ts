@@ -72,7 +72,7 @@ export class NavMeshResource {
   /**
    * Serialize the mesh for worker transport
    * Maps in NavigationMesh need to be converted to array of entries if the transport doesn't support them.
-   * However, multithreading and structuredClone usually support Maps.
+   * However, structuredClone supports Maps.
    * If problems arise, we can convert here.
    * For now, we assume structuredClone is sufficient or we can add a transform here.
    */

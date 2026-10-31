@@ -41,7 +41,6 @@
     "@react-three/postprocessing": "^3.2.2",
     "@react-three/rapier": "^2.2.0",
     "miniplex": "^2.0.0",
-    "multithreading": "^0.3.52",
     "navmesh": "^2.3.1",
     "postprocessing": "^6.39.5",
     "r3f-perf": "^7.2.3",

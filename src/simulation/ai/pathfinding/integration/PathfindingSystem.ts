@@ -67,6 +67,11 @@ export class PathfindingSystem {
     void this.calculator.ensureInitialized();
   }
 
+  /** Terminates the pathfinding worker. Safe to call more than once. */
+  dispose(): void {
+    this.calculator.dispose();
+  }
+
   onTelemetry(callback: PathfindingTelemetryCallback): void {
     this.telemetry.on(callback);
   }
