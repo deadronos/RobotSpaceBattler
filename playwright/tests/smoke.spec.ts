@@ -1,8 +1,24 @@
 import { expect, test } from "@playwright/test";
 
+const problems: string[] = [];
+
+test.beforeEach(() => {
+  problems.length = 0;
+});
+
+// Always report what the page logged, even when an earlier assertion failed.
+test.afterEach(async ({ page }, testInfo) => {
+  console.log(
+    `problems seen on ${page.url()} (${problems.length}):\n${problems.join("\n")}`,
+  );
+  await testInfo.attach("problems", {
+    body: problems.join("\n"),
+    contentType: "text/plain",
+  });
+});
+
 test("the battle loads and runs with no errors", async ({ page }, testInfo) => {
   test.setTimeout(120_000);
-  const problems: string[] = [];
 
   page.on("console", (msg) => {
     if (msg.type() === "error") problems.push(`[console] ${msg.text()}`);
