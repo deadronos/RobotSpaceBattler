@@ -20,7 +20,7 @@ import { SettingsIcon } from "./components/ui/SettingsIcon";
 import { SettingsModal } from "./components/ui/SettingsModal";
 import { createBattleWorld } from "./ecs/world";
 import { AUTO_RESTART_DELAY_MS } from "./lib/constants";
-import { isActiveRobot } from "./lib/robotHelpers";
+import { countAliveByTeam } from "./lib/robotHelpers";
 import { TEAM_CONFIGS } from "./lib/teamConfig";
 import { BattleRunner } from "./runtime/simulation/battleRunner";
 import { createTelemetryPort } from "./runtime/simulation/telemetryAdapter";
@@ -115,15 +115,9 @@ export default function App() {
 
   const runnerRef = useRef<BattleRunner | null>(null);
 
-  const aliveCounts = useMemo(() => {
-    const counts = { red: 0, blue: 0 };
-    battleWorld.robots.entities.forEach((robot) => {
-      if (isActiveRobot(robot)) {
-        counts[robot.team] += 1;
-      }
-    });
-    return counts;
-  }, [battleWorld]);
+  // Recomputed every render: the match machine emits a new snapshot on every
+  // tick, reset and restart, so the counts stay live and reset-correct.
+  const aliveCounts = countAliveByTeam(battleWorld.robots.entities);
 
   const handleRunnerReady = useCallback((runner: BattleRunner) => {
     runnerRef.current = runner;

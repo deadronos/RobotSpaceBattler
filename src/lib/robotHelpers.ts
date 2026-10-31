@@ -26,6 +26,25 @@ export function getActiveRobots(robots: RobotEntity[]): RobotEntity[] {
 }
 
 /**
+ * Counts active (alive) robots per team.
+ *
+ * @param robots - Array of robot entities
+ * @returns Alive robot count for each team
+ */
+export function countAliveByTeam(robots: RobotEntity[]): {
+  red: number;
+  blue: number;
+} {
+  const counts = { red: 0, blue: 0 };
+  for (const robot of robots) {
+    if (isActiveRobot(robot)) {
+      counts[robot.team] += 1;
+    }
+  }
+  return counts;
+}
+
+/**
  * Checks if a robot belongs to a specific team.
  *
  * @param robot - The robot entity to check
