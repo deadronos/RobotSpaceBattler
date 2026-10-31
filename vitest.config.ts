@@ -20,6 +20,32 @@ export default defineConfig({
   test: {
     globals: true,
     exclude: ["node_modules/**", "dist/**", "playwright/**"],
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      reporter: ["text-summary", "text"],
+      // Measured (all src): stmts 65.89, branches 58.44, funcs 57.38, lines
+      // 66.99. Global floors are floor(measured) - 1; per-file floors for the
+      // simulation core are floor(measured) - 2.
+      thresholds: {
+        statements: 64,
+        branches: 57,
+        functions: 56,
+        lines: 65,
+        "src/ecs/systems/combatSystem.ts": {
+          statements: 96,
+          branches: 94,
+          functions: 98,
+          lines: 96,
+        },
+        "src/runtime/simulation/battleRunner.ts": {
+          statements: 98,
+          branches: 86,
+          functions: 98,
+          lines: 98,
+        },
+      },
+    },
     projects: [
       {
         extends: true,
