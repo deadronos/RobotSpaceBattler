@@ -3,7 +3,7 @@
 <!-- Pull Request template with a required CONSTITUTION-CHECK section.
 
 Fill the CONSTITUTION-CHECK section fully. CI includes checks that will validate
-this section is present and that source files do not exceed the constitution
+this section is present in the PR body (not in any repo file) and that source files do not exceed the constitution
 limit (300 LOC) unless an exemption is included.
 -->
 

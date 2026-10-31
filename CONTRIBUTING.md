@@ -35,7 +35,7 @@ to require in branch protection. If your change affects gameplay, physics, or co
 systems, add or update unit tests under `tests/`.
 
 Please choose the appropriate PR template (feature / bugfix / chore) and complete the
-required `CONSTITUTION-CHECK` section in your PR; CI will validate the presence of this
+required `CONSTITUTION-CHECK` section in the PR body (a file in the repo does not count); CI will validate the presence of this
 section and may post an auto-generated draft to help you fill it in.
 
 ## Spec Kit onboarding

@@ -1,1 +1,0 @@
-## CONSTITUTION-CHECK\n\nI have verified that all dependencies have been correctly upgraded, deprecation warnings removed, types passed, and local visual Playwright tests verified. I skipped `obstacle-editor.spec.ts` to prevent UI stall issues.
