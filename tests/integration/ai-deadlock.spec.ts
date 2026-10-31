@@ -83,10 +83,8 @@ describe('AI deadlock detection with overlapping obstacles', () => {
       // Diagnostic: check whether the dynamic LOS check detects the barrier
       // ensure LOS detection is used but don't print during normal tests
         updateAISystem(world, () => 0.5);
-        // eslint-disable-next-line no-console
         // console.log('ai', i, robot.ai.blockedFrames, 'targetId', robot.ai.targetId);
       updateMovementSystem(world, 1);
-        // eslint-disable-next-line no-console
         // console.log('movement', i, 'pos', robot.position.z, 'speed', robot.speed);
         maxBlocked = Math.max(maxBlocked, robot.ai.blockedFrames ?? 0);
         minSpeed = Math.min(minSpeed, robot.speed);

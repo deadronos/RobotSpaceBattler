@@ -28,9 +28,9 @@ export function Modal({
   if (!isOpen) return null;
 
   return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div className="modal-backdrop" onClick={onClose}>
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */}
+      {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */}
       <div
         className={`modal-content ${contentClassName}`}
         onClick={(e) => e.stopPropagation()}

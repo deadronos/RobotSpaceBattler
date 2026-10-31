@@ -77,7 +77,6 @@ describe('PhysicsQueryService', () => {
         normal: { x: 0, y: 0, z: -1 },
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       service = createPhysicsQueryService(mockWorld as any);
 
       const result = service.castRay(
@@ -96,7 +95,6 @@ describe('PhysicsQueryService', () => {
     it('castRay returns null when world returns no hit', () => {
       mockWorld.castRayAndGetNormal.mockReturnValue(null);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       service = createPhysicsQueryService(mockWorld as any);
 
       const result = service.castRay(
@@ -111,7 +109,6 @@ describe('PhysicsQueryService', () => {
     it('castRay passes correct parameters to Rapier world', () => {
       mockWorld.castRayAndGetNormal.mockReturnValue(null);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       service = createPhysicsQueryService(mockWorld as any);
 
       service.castRay(
@@ -148,7 +145,6 @@ describe('PhysicsQueryService', () => {
           normal: { x: -1, y: 0, z: 0 },
         });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       service = createPhysicsQueryService(mockWorld as any);
 
       const directions = [
@@ -182,7 +178,6 @@ describe('PhysicsQueryService', () => {
     it('castRayFan passes filterMask to all rays', () => {
       mockWorld.castRayAndGetNormal.mockReturnValue(null);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       service = createPhysicsQueryService(mockWorld as any);
 
       const directions = [
@@ -208,7 +203,6 @@ describe('PhysicsQueryService', () => {
     });
 
     it('castRayFan returns empty array for empty directions', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       service = createPhysicsQueryService(mockWorld as any);
 
       const results = service.castRayFan(

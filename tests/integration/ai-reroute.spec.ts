@@ -64,12 +64,9 @@ describe('AI reroute with dynamic obstacles', () => {
 
     for (let i = 0; i < 6; i += 1) {
       updateAISystem(world, () => 0.5);
-      // eslint-disable-next-line no-console
       // console.log('ai', i, 'targetId', robot.ai.targetId, 'blockedFrames', robot.ai.blockedFrames);
-      // eslint-disable-next-line no-console
       // console.log('LOS blocked?', isLineOfSightBlockedRuntime(robot.position, target.position, { obstacles: world.obstacles.entities }));
       updateMovementSystem(world, 1);
-      // eslint-disable-next-line no-console
       // console.log('movement', i, 'pos', robot.position.z, 'speed', robot.speed);
       world.state.elapsedMs += 1000;
       world.state.frameIndex += 1;

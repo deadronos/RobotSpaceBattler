@@ -88,7 +88,6 @@ export function PerfMonitorOverlay() {
       };
 
       // Save detach on the element so we can call it in cleanup
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (el as any).__perfDetach = detach;
     };
 
@@ -96,7 +95,6 @@ export function PerfMonitorOverlay() {
 
     return () => {
       attached = false;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const elNow = document.querySelector('.perf-monitor') as any;
       if (elNow && elNow.__perfDetach) elNow.__perfDetach();
     };
