@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { lengthVec3, vec3, Vec3 } from "../../src/lib/math/vec3";
-import { TEAM_CONFIGS } from "../../src/lib/teamConfig";
 import {
   applySeparation,
   applySeparationInto,
@@ -11,22 +10,29 @@ import {
   computeForwardDirectionInto,
   resolveSpawnCenter,
 } from "../../src/simulation/ai/pathing/helpers";
+import { generateTeamConfigs } from "../../src/lib/teamConfig";
 import { createTestRobot } from "../helpers/robotFactory";
+import { movementContext, TEST_TEAMS } from "../helpers/teamFixtures";
 
 describe("pathing helpers", () => {
   it("uses the provided spawn center override", () => {
     const robot = createTestRobot();
     const override: Vec3 = { x: 10, y: 0, z: -20 };
-    const context = { spawnCenter: override };
+    const context = movementContext({ spawnCenter: override });
 
     expect(resolveSpawnCenter(robot, context)).toBe(override);
   });
 
-  it("falls back to the team config spawn center when no override is provided", () => {
+  it("falls back to the match's seeded team spawn centre", () => {
+    const teams = generateTeamConfigs(987654);
     const robot = createTestRobot({ team: "blue" });
-    const expectedCenter = TEAM_CONFIGS.blue.spawnCenter;
 
-    expect(resolveSpawnCenter(robot)).toBe(expectedCenter);
+    expect(resolveSpawnCenter(robot, movementContext({}, teams))).toBe(
+      teams.blue.spawnCenter,
+    );
+    expect(resolveSpawnCenter(robot, movementContext({}, teams))).not.toBe(
+      TEST_TEAMS.blue.spawnCenter,
+    );
   });
 
   it("normalizes planar direction between two points", () => {

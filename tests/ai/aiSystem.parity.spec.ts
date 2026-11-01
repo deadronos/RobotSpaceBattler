@@ -17,16 +17,22 @@ import { fnv1a, runScenarioDigest } from "../helpers/aiScenario";
  *
  * MATCH_GOLDEN was previously recaptured for #200: swept projectile-vs-obstacle
  * hits and exact rocket impact points also change full-match outcomes.
+ *
+ * All values were recaptured for #215: the AI now derives retreat, cover and
+ * formation anchors from the match's seeded `battleWorld.teams` instead of the
+ * fixed seed-0 `TEAM_CONFIGS`, and `buildScenarioWorld` seeds the match teams
+ * too. Digests were re-verified as run-to-run stable (same seed, identical
+ * digest in repeated and separate runs) before being committed.
  */
 const SCENARIO_GOLDEN: Record<string, string> = {
-  "20x400": "d61b5c5",
-  "100x300": "93723041",
-  "200x200": "7530f558",
+  "20x400": "7396671e",
+  "100x300": "fa36d2d8",
+  "200x200": "3fd497ef",
 };
 
 const MATCH_GOLDEN: Record<number, string> = {
-  1: "68f7a69",
-  42: "c505ac66",
+  1: "678c5935",
+  42: "d4e481f9",
 };
 
 function matchDigest(seed: number): string {

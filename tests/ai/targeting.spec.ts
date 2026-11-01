@@ -5,6 +5,7 @@ import {
   pickCaptainTarget,
 } from "../../src/simulation/ai/targeting";
 import { createTestRobot } from "../helpers/robotFactory";
+import { TEST_TEAMS } from "../helpers/teamFixtures";
 
 describe("findClosestEnemy", () => {
   it("prioritizes nearest enemy with deterministic tie-breakers", () => {
@@ -30,12 +31,11 @@ describe("findClosestEnemy", () => {
       kills: 10,
     });
 
-    const result = findClosestEnemy(seeker, [
+    const result = findClosestEnemy(
       seeker,
-      closerHealth,
-      tieDistanceHigherKills,
-      farEnemy,
-    ]);
+      [seeker, closerHealth, tieDistanceHigherKills, farEnemy],
+      TEST_TEAMS,
+    );
     expect(result?.id).toBe("blue-2");
   });
 
@@ -62,12 +62,11 @@ describe("findClosestEnemy", () => {
       health: 60,
     });
 
-    const result = findClosestEnemy(seeker, [
+    const result = findClosestEnemy(
       seeker,
-      defeated,
-      tieKillsDifferentSpawn,
-      fartherFromSpawn,
-    ]);
+      [seeker, defeated, tieKillsDifferentSpawn, fartherFromSpawn],
+      TEST_TEAMS,
+    );
     expect(result?.id).toBe("blue-near-spawn");
   });
 });
@@ -93,11 +92,11 @@ describe("pickCaptainTarget", () => {
       health: 100,
     });
 
-    const result = pickCaptainTarget(seeker, [
+    const result = pickCaptainTarget(
       seeker,
-      captain,
-      strongNonCaptain,
-    ]);
+      [seeker, captain, strongNonCaptain],
+      TEST_TEAMS,
+    );
     expect(result?.id).toBe("blue-captain");
   });
 
@@ -127,12 +126,11 @@ describe("pickCaptainTarget", () => {
       position: { x: 40, y: 0, z: 0 },
     });
 
-    const result = pickCaptainTarget(seeker, [
+    const result = pickCaptainTarget(
       seeker,
-      highHealth,
-      equalHealthMoreKills,
-      tieBreakBySpawn,
-    ]);
+      [seeker, highHealth, equalHealthMoreKills, tieBreakBySpawn],
+      TEST_TEAMS,
+    );
     expect(result?.id).toBe("blue-ace");
   });
 });

@@ -4,7 +4,7 @@ import Draggable from "react-draggable";
 import type { BattleWorld } from "../../ecs/worldTypes";
 import { isActiveRobot } from "../../lib/robotHelpers";
 import { readStoredBoolean, writeStoredBoolean } from "../../lib/storedBoolean";
-import { TEAM_CONFIGS, TeamId } from "../../lib/teamConfig";
+import { TEAM_IDENTITIES, TeamId } from "../../lib/teamConfig";
 import { useTelemetryStore } from "../../state/telemetryStore";
 import { useHudTick } from "./useHudTick";
 
@@ -101,7 +101,7 @@ export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
   const renderTeamList = (teamId: TeamId) => {
     const robots = robotsByTeam[teamId];
     const isCollapsed = collapsed[teamId];
-    const teamConfig = TEAM_CONFIGS[teamId];
+    const teamConfig = TEAM_IDENTITIES[teamId];
 
     return (
       <div key={teamId} className="robot-list-team">

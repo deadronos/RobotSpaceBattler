@@ -31,26 +31,25 @@ const desiredVelocityScratch = vec3();
  * @param robot - The robot entity.
  * @param mode - The current behavior mode (Seek, Engage, Retreat).
  * @param target - The current target robot (if any).
- * @param spawnCenterOverride - Optional override for the team's spawn center.
- * @param context - Additional movement context (neighbors, anchors, physics).
+ * @param context - Movement context (per-match team configs, spawn override,
+ *   neighbors, anchors, physics).
  * @param out - Optional reusable plan to overwrite.
  * @returns A MovementPlan containing the desired velocity and orientation.
  */
 export function planRobotMovement(
   robot: RobotEntity,
   mode: RobotBehaviorMode,
-  target?: RobotEntity,
-  spawnCenterOverride?: Vec3,
-  context?: MovementContext,
+  target: RobotEntity | undefined,
+  context: MovementContext,
   out?: MovementPlan,
 ): MovementPlan {
-  const spawnCenter = spawnCenterOverride ?? resolveSpawnCenter(robot, context);
-  const strafeSign = context?.strafeSign ?? robot.ai.strafeSign ?? 1;
+  const spawnCenter = resolveSpawnCenter(robot, context);
+  const strafeSign = context.strafeSign ?? robot.ai.strafeSign ?? 1;
   const formationAnchor =
-    context?.formationAnchor ?? robot.ai.anchorPosition ?? null;
+    context.formationAnchor ?? robot.ai.anchorPosition ?? null;
 
   // 1. NAVMESH DESIRE CHECKS (line of sight, movement blocking, waypoint)
-  const nav = computeNavDesire(robot, target, context?.obstacles);
+  const nav = computeNavDesire(robot, target, context.obstacles);
 
   // 2. BASE MOVEMENT DESIRE (Combat/Seeking)
   computeBaseDesire(
@@ -58,7 +57,7 @@ export function planRobotMovement(
     mode,
     target,
     spawnCenter,
-    context?.formationAnchor,
+    context.formationAnchor,
     formationAnchor,
     strafeSign,
   );
@@ -73,7 +72,7 @@ export function planRobotMovement(
   );
 
   // 4. APPLY PREDICTIVE AVOIDANCE (DEPRECATED)
-  if (context?.rapierWorld) {
+  if (context.rapierWorld) {
     const entityId = context.entityId ?? 0;
     const frameCount = context.frameCount ?? 0;
 
@@ -113,7 +112,7 @@ export function planRobotMovement(
     desiredVelocity.z = 0;
   }
 
-  return finalizePlan(robot, mode, context?.neighbors, desiredVelocity, out);
+  return finalizePlan(robot, mode, context.neighbors, desiredVelocity, out);
 }
 
 /**

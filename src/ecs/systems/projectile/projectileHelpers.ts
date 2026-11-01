@@ -150,7 +150,11 @@ function applyDamageToRobot(
     });
 
     world.world.remove(target);
-    applyCaptaincy(target.team, world.getRobotsByTeam(target.team));
+    applyCaptaincy(
+      target.team,
+      world.getRobotsByTeam(target.team),
+      world.teams,
+    );
   }
 }
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createBattleWorld } from "../src/ecs/world";
 import { spawnTeams } from "../src/ecs/systems/spawnSystem";
-import { generateTeamConfigs, TEAM_CONFIGS } from "../src/lib/teamConfig";
+import { generateTeamConfigs, TEAM_IDENTITIES } from "../src/lib/teamConfig";
 
 describe("Simulation Determinism", () => {
   it("generates the same team configs for the same seed", () => {
@@ -22,10 +22,15 @@ describe("Simulation Determinism", () => {
     expect(configs1.blue.spawnCenter).not.toEqual(configs2.blue.spawnCenter);
   });
 
-  it("ensures TEAM_CONFIGS is constant and deterministic (seed 0)", () => {
-    const expected = generateTeamConfigs(0);
-    expect(TEAM_CONFIGS.red.spawnCenter).toEqual(expected.red.spawnCenter);
-    expect(TEAM_CONFIGS.blue.spawnCenter).toEqual(expected.blue.spawnCenter);
+  it("keeps the presentation identities seed independent", () => {
+    // Only labels and colours live in a module-level constant; spawn centres and
+    // spawn points are per match and must come from `battleWorld.teams`.
+    const configs = generateTeamConfigs(4711);
+    for (const team of ["red", "blue"] as const) {
+      expect(configs[team].label).toBe(TEAM_IDENTITIES[team].label);
+      expect(configs[team].color).toBe(TEAM_IDENTITIES[team].color);
+      expect(configs[team].id).toBe(TEAM_IDENTITIES[team].id);
+    }
   });
 
   it("ensures spawnTeams correctly updates world.teams with the match seed", () => {

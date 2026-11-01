@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { toVec3 } from "../src/ecs/world";
 import { applyCaptaincy, electCaptain } from "../src/lib/captainElection";
 import { createTestRobot } from "./helpers/robotFactory";
+import { TEST_TEAMS } from "./helpers/teamFixtures";
 
 describe("captain election", () => {
   it("selects the highest health robot", () => {
@@ -12,7 +13,7 @@ describe("captain election", () => {
       createTestRobot({ id: "c", health: 45 }),
     ];
 
-    expect(electCaptain("red", robots)).toBe("b");
+    expect(electCaptain("red", robots, TEST_TEAMS)).toBe("b");
   });
 
   it("breaks ties using kills then spawn distance then id", () => {
@@ -43,14 +44,14 @@ describe("captain election", () => {
       }),
     ];
 
-    expect(electCaptain("red", robots)).toBe("beta");
+    expect(electCaptain("red", robots, TEST_TEAMS)).toBe("beta");
 
     robots[1].kills = 1;
-    expect(electCaptain("red", robots)).toBe("delta");
+    expect(electCaptain("red", robots, TEST_TEAMS)).toBe("delta");
 
     robots[2].position = toVec3(-11, 0, 0);
     robots[3].position = toVec3(-8, 0, 0);
-    expect(electCaptain("red", robots)).toBe("gamma");
+    expect(electCaptain("red", robots, TEST_TEAMS)).toBe("gamma");
   });
 
   it("updates captain flags in place", () => {
@@ -59,12 +60,12 @@ describe("captain election", () => {
       createTestRobot({ id: "r2", health: 50 }),
     ];
 
-    applyCaptaincy("red", robots);
+    applyCaptaincy("red", robots, TEST_TEAMS);
     expect(robots[0].isCaptain).toBe(true);
     expect(robots[1].isCaptain).toBe(false);
 
     robots[0].health = 0;
-    applyCaptaincy("red", robots);
+    applyCaptaincy("red", robots, TEST_TEAMS);
     expect(robots[0].isCaptain).toBe(false);
     expect(robots[1].isCaptain).toBe(true);
   });

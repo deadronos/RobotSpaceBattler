@@ -1,4 +1,4 @@
-import { addVec3, Vec3, vec3 } from "./math/vec3";
+import { addVec3, distanceSquaredVec3, Vec3, vec3 } from "./math/vec3";
 import { createXorShift32, RandomGenerator } from "./random/xorshift";
 
 /**
@@ -7,21 +7,97 @@ import { createXorShift32, RandomGenerator } from "./random/xorshift";
 export type TeamId = "red" | "blue";
 
 /**
- * Configuration data for a team.
+ * Seed-independent presentation data for a team.
+ *
+ * Nothing here depends on the match seed, so UI code may read it directly.
+ * Seed-dependent spawn geometry lives on {@link TeamConfig} and must come from
+ * the match's `battleWorld.teams` instead.
  */
-export interface TeamConfig {
+export interface TeamIdentity {
   /** The unique identifier for the team. */
   id: TeamId;
   /** The display name of the team. */
   label: string;
   /** The color associated with the team (hex string). */
   color: string;
+}
+
+/**
+ * Presentation data for both teams (labels and colours, no spawn geometry).
+ */
+export const TEAM_IDENTITIES: Record<TeamId, TeamIdentity> = {
+  red: { id: "red", label: "Crimson Fleet", color: "#ff4d5a" },
+  blue: { id: "blue", label: "Azure Vanguard", color: "#4da6ff" },
+};
+
+/**
+ * Per-match configuration data for one team.
+ *
+ * The spawn centre and spawn points are derived from the match seed, so read
+ * them from `battleWorld.teams` (or pass that record to helpers explicitly)
+ * rather than from a module-level constant.
+ */
+export interface TeamConfig extends TeamIdentity {
   /** The center point of the team's spawn area. */
   spawnCenter: Vec3;
   /** The list of spawn points for individual robots. */
   spawnPoints: Vec3[];
   /** The initial orientation (in radians) for robots on this team. */
   orientation: number;
+}
+
+/**
+ * The seeded team configurations for a single match, keyed by team.
+ */
+export type TeamConfigs = Record<TeamId, TeamConfig>;
+
+/**
+ * Returns the team that opposes `team`.
+ * @param team - The team ID.
+ * @returns The other team ID.
+ */
+export function oppositeTeam(team: TeamId): TeamId {
+  return team === "red" ? "blue" : "red";
+}
+
+/**
+ * Retrieves the seeded configuration for a team.
+ * @param team - The team ID.
+ * @param teams - The match's team configs (`battleWorld.teams`).
+ * @returns The TeamConfig object.
+ */
+export function getTeamConfig(team: TeamId, teams: TeamConfigs): TeamConfig {
+  return teams[team];
+}
+
+/**
+ * Distance from a position to a team's seeded spawn centre.
+ * @param team - The team ID.
+ * @param position - The position to measure from.
+ * @param teams - The match's team configs (`battleWorld.teams`).
+ * @returns The distance to the spawn centre.
+ */
+export function distanceToSpawnCenter(
+  team: TeamId,
+  position: Vec3,
+  teams: TeamConfigs,
+): number {
+  return Math.sqrt(distanceSquaredVec3(position, teams[team].spawnCenter));
+}
+
+/**
+ * Calculates a position relative to a team's seeded spawn centre.
+ * @param team - The team ID.
+ * @param offset - The offset vector from the spawn centre.
+ * @param teams - The match's team configs (`battleWorld.teams`).
+ * @returns The absolute world position.
+ */
+export function translateFromSpawn(
+  team: TeamId,
+  offset: Vec3,
+  teams: TeamConfigs,
+): Vec3 {
+  return addVec3(teams[team].spawnCenter, offset);
 }
 
 /**
@@ -135,9 +211,7 @@ export function generateTeamConfigs(seed: number): Record<TeamId, TeamConfig> {
 
   return {
     red: {
-      id: "red",
-      label: "Crimson Fleet",
-      color: "#ff4d5a",
+      ...TEAM_IDENTITIES.red,
       spawnCenter: redCenter,
       spawnPoints: createSpawnGridSeeded(
         redGridRng,
@@ -152,9 +226,7 @@ export function generateTeamConfigs(seed: number): Record<TeamId, TeamConfig> {
       orientation: 0,
     },
     blue: {
-      id: "blue",
-      label: "Azure Vanguard",
-      color: "#4da6ff",
+      ...TEAM_IDENTITIES.blue,
       spawnCenter: blueCenter,
       spawnPoints: createSpawnGridSeeded(
         blueGridRng,
@@ -170,9 +242,3 @@ export function generateTeamConfigs(seed: number): Record<TeamId, TeamConfig> {
     },
   };
 }
-
-/**
- * Default configuration for both teams (red and blue).
- * Uses a fixed seed (0) for deterministic results across reloads.
- */
-export const TEAM_CONFIGS = generateTeamConfigs(0);

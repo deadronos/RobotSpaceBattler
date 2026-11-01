@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { TEAM_CONFIGS } from "../../lib/teamConfig";
+import { TEAM_IDENTITIES } from "../../lib/teamConfig";
 import { useTelemetryStore } from "../../state/telemetryStore";
 import { Modal } from "./Modal";
 import { useHudTick } from "./useHudTick";
@@ -52,13 +52,13 @@ function OpenBattleStatsModal({
     >
       {winner && (
         <div className="battle-stats-winner">
-          <h3>🏆 {TEAM_CONFIGS[winner].label} Wins!</h3>
+          <h3>🏆 {TEAM_IDENTITIES[winner].label} Wins!</h3>
         </div>
       )}
 
       <div className="battle-stats-teams">
         <div className="battle-stats-team-card battle-stats-team-red">
-          <h3>{TEAM_CONFIGS.red.label}</h3>
+          <h3>{TEAM_IDENTITIES.red.label}</h3>
           <div className="battle-stats-stat-grid">
             <div className="battle-stats-stat">
               <span className="battle-stats-stat-label">Shots Fired</span>
@@ -86,7 +86,7 @@ function OpenBattleStatsModal({
         </div>
 
         <div className="battle-stats-team-card battle-stats-team-blue">
-          <h3>{TEAM_CONFIGS.blue.label}</h3>
+          <h3>{TEAM_IDENTITIES.blue.label}</h3>
           <div className="battle-stats-stat-grid">
             <div className="battle-stats-stat">
               <span className="battle-stats-stat-label">Shots Fired</span>
@@ -128,10 +128,10 @@ function OpenBattleStatsModal({
                 <span
                   className="battle-stats-performer-team"
                   style={{
-                    color: TEAM_CONFIGS[robot.teamId].color,
+                    color: TEAM_IDENTITIES[robot.teamId].color,
                   }}
                 >
-                  {TEAM_CONFIGS[robot.teamId].label}
+                  {TEAM_IDENTITIES[robot.teamId].label}
                 </span>
                 <span className="battle-stats-performer-stats">
                   {robot.kills} kills • {robot.damageDealt.toFixed(0)} dmg

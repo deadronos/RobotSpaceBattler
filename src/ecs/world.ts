@@ -1,18 +1,7 @@
 import { World } from "miniplex";
 
-import {
-  addVec3,
-  cloneVec3,
-  distanceSquaredVec3,
-  Vec3,
-  vec3,
-} from "../lib/math/vec3";
-import {
-  generateTeamConfigs,
-  TEAM_CONFIGS,
-  TeamConfig,
-  TeamId,
-} from "../lib/teamConfig";
+import { cloneVec3, Vec3, vec3 } from "../lib/math/vec3";
+import { generateTeamConfigs, TeamId } from "../lib/teamConfig";
 import { qualityManager } from "../state/quality/QualityManager";
 import {
   createVisualInstanceManager,
@@ -259,35 +248,4 @@ export function resetBattleWorld(world: BattleWorld): void {
  */
 export function clonePosition(entity: RobotEntity): Vec3 {
   return cloneVec3(entity.position);
-}
-
-/**
- * Calculates the distance from a position to a team's spawn center.
- * @param team - The team ID.
- * @param position - The position to measure from.
- * @returns The distance to the spawn center.
- */
-export function distanceToSpawnCenter(team: TeamId, position: Vec3): number {
-  const center = TEAM_CONFIGS[team].spawnCenter;
-  return Math.sqrt(distanceSquaredVec3(position, center));
-}
-
-/**
- * Retrieves the configuration for a specific team.
- * @param team - The team ID.
- * @returns The TeamConfig object.
- */
-export function getTeamConfig(team: TeamId): TeamConfig {
-  return TEAM_CONFIGS[team];
-}
-
-/**
- * Calculates a position relative to a team's spawn center.
- * @param team - The team ID.
- * @param offset - The offset vector from the spawn center.
- * @returns The absolute world position.
- */
-export function translateFromSpawn(team: TeamId, offset: Vec3): Vec3 {
-  const config = TEAM_CONFIGS[team];
-  return addVec3(config.spawnCenter, offset);
 }

@@ -110,12 +110,19 @@ export function updateTargeting(
 
     if (!target) {
       if (robot.isCaptain) {
-        target = pickCaptainTarget(robot, robots, visibleEnemies);
+        target = pickCaptainTarget(
+          robot,
+          robots,
+          battleWorld.teams,
+          visibleEnemies,
+        );
       }
     }
 
     if (!target) {
-      target = findClosestEnemy(robot, robots, visibleEnemies) ?? undefined;
+      target =
+        findClosestEnemy(robot, robots, battleWorld.teams, visibleEnemies) ??
+        undefined;
     }
   }
 

@@ -3,6 +3,7 @@ import { vec3 } from "../../src/lib/math/vec3";
 import { planRobotMovement } from "../../src/simulation/ai/pathing";
 import { RobotBehaviorMode } from "../../src/simulation/ai/behaviorState";
 import { createTestRobot } from "../helpers/robotFactory";
+import { movementContext } from "../helpers/teamFixtures";
 
 describe("Behavior Blending Integration", () => {
   it("blends combat desire and pathfinding desire when path is available", () => {
@@ -26,8 +27,7 @@ describe("Behavior Blending Integration", () => {
       robot,
       RobotBehaviorMode.Seek,
       target,
-      undefined,
-      {},
+      movementContext(),
     );
 
     // Combat desire points East (1, 0, 0)
@@ -58,8 +58,7 @@ describe("Behavior Blending Integration", () => {
       robot,
       RobotBehaviorMode.Retreat,
       undefined,
-      spawnCenter,
-      {},
+      movementContext({ spawnCenter }),
     );
 
     // Retreat priority (2.0) is higher than pathfinding (1.0)

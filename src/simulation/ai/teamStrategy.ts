@@ -12,7 +12,11 @@ import {
   vec3,
 } from "../../lib/math/vec3";
 import { isActiveRobot } from "../../lib/robotHelpers";
-import { TEAM_CONFIGS, TeamId } from "../../lib/teamConfig";
+import {
+  oppositeTeam,
+  type TeamConfigs,
+  type TeamId,
+} from "../../lib/teamConfig";
 
 /**
  * Types of strategic directives a team can adopt.
@@ -150,13 +154,15 @@ function resolveTargetPosition(target: AnchorTarget | undefined): Vec3 {
  *
  * @param robot - The robot entity.
  * @param target - The target entity or position.
+ * @param teams - The seeded team configs from the match (`battleWorld.teams`).
  * @returns The calculated anchor position.
  */
 export function buildFormationAnchor(
   robot: RobotEntity,
   target: AnchorTarget | undefined,
+  teams: TeamConfigs,
 ): Vec3 {
-  return buildFormationAnchorInto(vec3(), robot, target);
+  return buildFormationAnchorInto(vec3(), robot, target, teams);
 }
 
 /** Allocation-free `buildFormationAnchor` writing into `out`. */
@@ -164,9 +170,10 @@ export function buildFormationAnchorInto(
   out: Vec3,
   robot: RobotEntity,
   target: AnchorTarget | undefined,
+  teams: TeamConfigs,
 ): Vec3 {
   const targetPosition = resolveTargetPosition(
-    target ?? TEAM_CONFIGS[robot.team === "red" ? "blue" : "red"].spawnCenter,
+    target ?? teams[oppositeTeam(robot.team)].spawnCenter,
   );
   const dx = targetPosition.x - robot.position.x;
   const dy = targetPosition.y - robot.position.y;
@@ -202,13 +209,15 @@ export function buildFormationAnchorInto(
  *
  * @param robot - The robot entity.
  * @param enemyCentroid - The average position of enemies.
+ * @param teams - The seeded team configs from the match (`battleWorld.teams`).
  * @returns A position providing cover (relative to spawn center).
  */
 export function findCoverPoint(
   robot: RobotEntity,
   enemyCentroid: Vec3 | null,
+  teams: TeamConfigs,
 ): Vec3 {
-  const spawnCenter = TEAM_CONFIGS[robot.team].spawnCenter;
+  const spawnCenter = teams[robot.team].spawnCenter;
 
   if (!enemyCentroid) {
     const strafe = robot.ai.strafeSign ?? 1;

@@ -1,6 +1,6 @@
 import type { BattleWorld } from "../../ecs/world";
 import { tallyTeams } from "../../runtime/simulation/matchOutcome";
-import { TEAM_CONFIGS } from "../../lib/teamConfig";
+import { TEAM_IDENTITIES } from "../../lib/teamConfig";
 import { useHudTick } from "./useHudTick";
 
 interface TeamHudProps {
@@ -22,19 +22,19 @@ export function TeamHud({ battleWorld }: TeamHudProps) {
           className="app-team-strength-segment app-team-strength-red"
           style={{ flex: Math.max(1, teamHealth.red) }}
         >
-          <span>{`${TEAM_CONFIGS.red.label} · ${aliveCounts.red} · ${Math.round(teamHealth.red)} HP`}</span>
+          <span>{`${TEAM_IDENTITIES.red.label} · ${aliveCounts.red} · ${Math.round(teamHealth.red)} HP`}</span>
         </div>
         <div
           className="app-team-strength-segment app-team-strength-blue"
           style={{ flex: Math.max(1, teamHealth.blue) }}
         >
-          <span>{`${TEAM_CONFIGS.blue.label} · ${aliveCounts.blue} · ${Math.round(teamHealth.blue)} HP`}</span>
+          <span>{`${TEAM_IDENTITIES.blue.label} · ${aliveCounts.blue} · ${Math.round(teamHealth.blue)} HP`}</span>
         </div>
       </div>
       <div className="app-alive-panel">
         <div className="app-alive-title">Alive</div>
-        <div>{`${TEAM_CONFIGS.red.label}: ${aliveCounts.red}`}</div>
-        <div>{`${TEAM_CONFIGS.blue.label}: ${aliveCounts.blue}`}</div>
+        <div>{`${TEAM_IDENTITIES.red.label}: ${aliveCounts.red}`}</div>
+        <div>{`${TEAM_IDENTITIES.blue.label}: ${aliveCounts.blue}`}</div>
       </div>
     </>
   );

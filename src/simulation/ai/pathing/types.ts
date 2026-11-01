@@ -1,6 +1,7 @@
 import { Ray } from "@dimforge/rapier3d-compat";
 
 import { Vec3 } from "../../../lib/math/vec3";
+import type { TeamConfigs } from "../../../lib/teamConfig";
 
 /** Minimal Rapier World interface for movement planning */
 export interface RapierWorldLike {
@@ -22,8 +23,14 @@ export interface MovementPlan {
 }
 
 export interface MovementContext {
+  /**
+   * The seeded team configs for the current match (`battleWorld.teams`).
+   * Spawn centres are seed-dependent, so they must come from the match.
+   */
+  teams: TeamConfigs;
   formationAnchor?: Vec3;
   neighbors?: Vec3[];
+  /** Optional override for the owning team's spawn centre. */
   spawnCenter?: Vec3;
   strafeSign?: 1 | -1;
   /** Optional Rapier physics world for predictive avoidance raycasting */

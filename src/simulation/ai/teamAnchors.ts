@@ -1,7 +1,7 @@
 import { RobotEntity } from "../../ecs/world";
 import { vec3 } from "../../lib/math/vec3";
 import { isActiveRobot } from "../../lib/robotHelpers";
-import { TEAM_CONFIGS, TeamId } from "../../lib/teamConfig";
+import type { TeamConfigs, TeamId } from "../../lib/teamConfig";
 import {
   AnchorAssignment,
   AnchorTarget,
@@ -88,10 +88,12 @@ function resolveTeamAnchorTarget(
  * system reads them immediately), so callers must not retain them.
  *
  * @param robots - The list of all robots.
+ * @param teams - The seeded team configs from the match (`battleWorld.teams`).
  * @returns A map of assignments for each robot.
  */
 export function computeTeamAnchors(
   robots: RobotEntity[],
+  teams: TeamConfigs,
 ): TeamAnchorAssignments {
   const assignments = assignmentsScratch;
   const directives = fillTeamDirectives(robots, directivesScratch);
@@ -123,6 +125,7 @@ export function computeTeamAnchors(
     robots,
     directives,
     assignments,
+    teams,
     epoch,
   );
   fillTeamAssignments(
@@ -131,6 +134,7 @@ export function computeTeamAnchors(
     robots,
     directives,
     assignments,
+    teams,
     epoch,
   );
 
@@ -151,6 +155,7 @@ function fillTeamAssignments(
   robots: RobotEntity[],
   directives: TeamDirectiveMap,
   assignments: Record<string, AnchorAssignmentScratch>,
+  teams: TeamConfigs,
   epoch: number,
 ): void {
   let captain: RobotEntity | undefined;
@@ -162,7 +167,7 @@ function fillTeamAssignments(
   }
 
   const anchorTarget = resolveTeamAnchorTarget(team, robots, captain);
-  const spawnCenter = TEAM_CONFIGS[team].spawnCenter;
+  const spawnCenter = teams[team].spawnCenter;
   const directive = directives[team];
 
   for (let index = 0; index < teamRobots.length; index += 1) {
@@ -185,7 +190,7 @@ function fillTeamAssignments(
     assignment.anchorPosition = anchorPosition;
 
     if (anchorTarget) {
-      buildFormationAnchorInto(anchorPosition, robot, anchorTarget);
+      buildFormationAnchorInto(anchorPosition, robot, anchorTarget, teams);
     } else {
       anchorPosition.x = spawnCenter.x + strafeSign * (4 + index);
       anchorPosition.y = spawnCenter.y;

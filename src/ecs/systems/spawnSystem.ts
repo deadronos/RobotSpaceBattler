@@ -162,7 +162,7 @@ function spawnTeamRobots(
   });
 
   const robots = battleWorld.getRobotsByTeam(team);
-  applyCaptaincy(team, robots);
+  applyCaptaincy(team, robots, battleWorld.teams);
 }
 
 /**

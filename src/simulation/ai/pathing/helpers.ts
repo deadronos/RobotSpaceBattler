@@ -11,24 +11,24 @@ import {
   subtractVec3,
   Vec3,
 } from "../../../lib/math/vec3";
-import { TEAM_CONFIGS } from "../../../lib/teamConfig";
 import { MovementContext } from "./types";
 
 /**
- * Determines the target spawn center for a robot, optionally overridden by context.
+ * Determines the target spawn center for a robot: the context override when set,
+ * otherwise the team's seeded spawn center from the match's team configs.
  * @param robot - The robot entity.
- * @param context - The movement context.
+ * @param context - The movement context (carries the per-match team configs).
  * @returns The spawn center position.
  */
 export function resolveSpawnCenter(
   robot: RobotEntity,
-  context?: MovementContext,
+  context: MovementContext,
 ): Vec3 {
-  if (context?.spawnCenter) {
+  if (context.spawnCenter) {
     return context.spawnCenter;
   }
 
-  return TEAM_CONFIGS[robot.team].spawnCenter;
+  return context.teams[robot.team].spawnCenter;
 }
 
 /**
