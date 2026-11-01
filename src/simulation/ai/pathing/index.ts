@@ -1,11 +1,8 @@
 import type { RobotEntity } from "../../../ecs/world";
-import { lengthVec3, Vec3, vec3 } from "../../../lib/math/vec3";
+import { Vec3, vec3 } from "../../../lib/math/vec3";
 import { RobotBehaviorMode } from "../behaviorState";
 import { resolveSpawnCenter } from "./helpers";
 import { computeNavDesire } from "./navDesire";
-import { createPhysicsQueryService } from "./physicsQueryService";
-import { computePredictiveAvoidance } from "./predictiveAvoidance";
-import { shouldRaycastThisFrame } from "./raycastScheduler";
 import { blendDesires, computeBaseDesire, finalizePlan } from "./steering";
 import type { MovementContext, MovementPlan } from "./types";
 
@@ -70,27 +67,6 @@ export function planRobotMovement(
     nav.weight,
     desiredVelocity,
   );
-
-  // 4. APPLY PREDICTIVE AVOIDANCE (DEPRECATED)
-  if (context.rapierWorld) {
-    const entityId = context.entityId ?? 0;
-    const frameCount = context.frameCount ?? 0;
-
-    if (shouldRaycastThisFrame(entityId, frameCount)) {
-      const queryService = createPhysicsQueryService(context.rapierWorld);
-      const predictiveAvoidance = computePredictiveAvoidance(
-        robot.position,
-        desiredVelocity,
-        queryService,
-      );
-
-      if (lengthVec3(predictiveAvoidance) > 0) {
-        desiredVelocity.x += predictiveAvoidance.x;
-        desiredVelocity.y += predictiveAvoidance.y;
-        desiredVelocity.z += predictiveAvoidance.z;
-      }
-    }
-  }
 
   if (DEBUG_AI) {
     console.log("planRobotMovement", {

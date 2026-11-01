@@ -1,6 +1,5 @@
 import { OrbitControls, Stars } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { Physics } from "@react-three/rapier";
 import { lazy, ReactNode, Suspense } from "react";
 
 import { canExposeDebugGlobals } from "../lib/debugFlags";
@@ -76,11 +75,7 @@ export function Scene({ children, showPerfOverlay = false }: SceneProps) {
           <PerfMonitorOverlay />
         </Suspense>
       ) : null}
-      <Suspense fallback={null}>
-        <Physics gravity={[0, 0, 0]} interpolate={false}>
-          {children}
-        </Physics>
-      </Suspense>
+      <Suspense fallback={null}>{children}</Suspense>
       <OrbitControls enablePan enableZoom enableRotate />
 
       <PostProcessing

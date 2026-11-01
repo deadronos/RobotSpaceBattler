@@ -1,7 +1,7 @@
 # RobotSpaceBattler – agent guide
 
 3D team-vs-team auto-battler: React 19, TypeScript (strict), react-three-fiber,
-Miniplex ECS, Zustand, Rapier (static-geometry raycasts only), Vite, Vitest, Playwright.
+Miniplex ECS, Zustand, Vite, Vitest, Playwright.
 
 ## Commands
 

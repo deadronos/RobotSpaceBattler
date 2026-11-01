@@ -1,0 +1,8 @@
+{
+  "_comment": "Gzip size budget for #159, enforced by scripts/check_bundle_budget.js in CI after the build. Measured at the time of writing: initial load 445.59 kB gzip, whole bundle 483.87 kB gzip, largest chunk 189.32 kB (three). Budgets sit roughly 8% above those numbers so routine dependency bumps pass and structural regressions fail. Raising a number needs a reason in the PR.",
+  "_measuredOn": "perf/159-184-bundle-diet (#159, #184)",
+  "_baselineBefore": "initial load 1310.97 kB gzip (vendor + rapier + app)",
+  "initialGzipKb": 480,
+  "totalGzipKb": 525,
+  "maxChunkGzipKb": 205
+}

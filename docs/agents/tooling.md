@@ -14,9 +14,14 @@
 
 - Vite with SWC React, glsl, svgr, auto-import and type-checker plugins. `npm run build` writes `dist/` and a
   bundle treemap at `dist/stats.html`.
-- `vite.config.ts` aliases `@dimforge/rapier3d-compat` to one copy via
-  `scripts/rapierAlias.ts`, so there is only one WASM runtime.
-  Rapier stays on 0.19.x because `@react-three/rapier` pins it.
+- `vite.config.ts` splits `node_modules` into `react`, `three`, `r3f` and `vendor` chunks with
+  rolldown's `advancedChunks`, so no single chunk dominates (#159). Debug tooling
+  (`ObstacleEditor`, `ObstacleSpawner`, `PerfToggles`) and the `r3f-perf` overlay are lazy
+  imports and stay out of the initial load. `r3f-perf`/`stats-gl` are excluded from the
+  startup groups on purpose: adding them to `vendor` pulls ~25 kB gzip into first paint.
+- `npm run check:bundle` enforces `scripts/bundle-budget.json` (initial-load and total gzip,
+  plus a per-chunk ceiling). CI runs it right after the build. The treemap is for diagnosis;
+  the budget is the gate.
 
 ## Worktrees and agents
 

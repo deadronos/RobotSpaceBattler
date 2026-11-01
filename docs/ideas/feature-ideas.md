@@ -1,6 +1,6 @@
 # Feature Ideas for Space Station Auto-Battler
 
-Based on the analysis of the current codebase (prototype status, ECS architecture, Rapier physics), here are three feature ideas to enhance the depth and replayability of the simulation.
+Based on the analysis of the current codebase (prototype status, ECS architecture), here are three feature ideas to enhance the depth and replayability of the simulation.
 
 ## 1. Special Abilities System
 

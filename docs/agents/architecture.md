@@ -17,8 +17,10 @@
 ## Simulation owns state; rendering projects it
 
 - `BattleRunner` steps the ECS at a fixed 60 Hz (at most 5 substeps per frame) using sim time.
-- The ECS is the single owner of robot positions. Robots have no Rapier body.
-  Rapier holds static geometry only and is used for avoidance raycasts.
+- The ECS is the single owner of robot positions. There is no physics engine (#184).
+  Line-of-sight and movement blocking use 2D segment tests in
+  `src/simulation/environment/`: `staticOcclusionIndex.ts` indexes the arena walls and
+  pillars by cell, and `arenaGeometry.ts` adds the live obstacle list.
 - React does not re-render per frame. `matchStateMachine` notifies only on phase changes,
   resets and countdown seconds. `Simulation` is `React.memo`.
 - `RobotPlaceholder` and `ObstacleVisual` copy ECS positions onto refs in `useFrame`.
