@@ -1,11 +1,4 @@
-import {
-  addVec3,
-  distanceVec3,
-  normalizeVec3,
-  scaleVec3,
-  subtractVec3,
-  vec3,
-} from "../../lib/math/vec3";
+import { distanceVec3 } from "../../lib/math/vec3";
 import { TelemetryPort } from "../../runtime/simulation/ports";
 import { getWeaponProfile } from "../../simulation/combat/weapons";
 import { BattleWorld, ProjectileEntity, RobotEntity } from "../world";
@@ -35,15 +28,20 @@ function createProjectile(
   }
 
   const profile = getWeaponProfile(shooter.weapon);
-  const direction = normalizeVec3(
-    subtractVec3(target.position, shooter.position),
-  );
-
-  if (direction.x === 0 && direction.y === 0 && direction.z === 0) {
+  // Direction is computed with scalars (same arithmetic as normalizeVec3 +
+  // scaleVec3) so a shot does not allocate intermediate vectors.
+  const dx = target.position.x - shooter.position.x;
+  const dy = target.position.y - shooter.position.y;
+  const dz = target.position.z - shooter.position.z;
+  const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  if (length === 0) {
     return null;
   }
+  const inverseLength = 1 / length;
+  const dirX = dx * inverseLength;
+  const dirY = dy * inverseLength;
+  const dirZ = dz * inverseLength;
 
-  const velocity = scaleVec3(direction, profile.projectileSpeed);
   const maxLifetime =
     Math.max(1, profile.range / profile.projectileSpeed) * 1000;
 
@@ -54,8 +52,13 @@ function createProjectile(
   projectile.team = shooter.team;
   projectile.shooterId = shooter.id;
   projectile.weapon = shooter.weapon;
-  projectile.position = addVec3(shooter.position, vec3(0, 0.8, 0));
-  projectile.velocity = velocity;
+  // Pooled projectiles own their vectors; fill them in place.
+  projectile.position.x = shooter.position.x + 0;
+  projectile.position.y = shooter.position.y + 0.8;
+  projectile.position.z = shooter.position.z + 0;
+  projectile.velocity.x = dirX * profile.projectileSpeed;
+  projectile.velocity.y = dirY * profile.projectileSpeed;
+  projectile.velocity.z = dirZ * profile.projectileSpeed;
   projectile.damage = profile.damage;
   projectile.maxLifetime = maxLifetime;
   projectile.spawnTime = world.state.elapsedMs;

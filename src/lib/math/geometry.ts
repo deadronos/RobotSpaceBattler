@@ -215,7 +215,9 @@ export function segmentIntersectsAABB(
     let tx1 = (minX - start.x) * invDirX;
     let tx2 = (maxX - start.x) * invDirX;
     if (tx1 > tx2) {
-      [tx1, tx2] = [tx2, tx1];
+      const swap = tx1;
+      tx1 = tx2;
+      tx2 = swap;
     }
     tMin = Math.max(tMin, tx1);
     tMax = Math.min(tMax, tx2);
@@ -233,7 +235,9 @@ export function segmentIntersectsAABB(
     let tz1 = (minZ - start.z) * invDirZ;
     let tz2 = (maxZ - start.z) * invDirZ;
     if (tz1 > tz2) {
-      [tz1, tz2] = [tz2, tz1];
+      const swap = tz1;
+      tz1 = tz2;
+      tz2 = swap;
     }
     tMin = Math.max(tMin, tz1);
     tMax = Math.min(tMax, tz2);

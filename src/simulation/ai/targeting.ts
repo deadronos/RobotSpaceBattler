@@ -2,25 +2,35 @@ import { RobotEntity } from "../../ecs/world";
 import { distanceSquaredVec3 } from "../../lib/math/vec3";
 import { isAlly, isEnemy } from "../../lib/robotHelpers";
 import { TEAM_CONFIGS } from "../../lib/teamConfig";
-import { findBestEntity } from "./targetingUtils";
+
+// The selectors below run once per robot per tick, so they are written as
+// plain loops over the candidate list without allocating score objects.
+// The comparison order matches the original findBestEntity scan exactly:
+// the first candidate wins unless a later one is strictly better.
 
 /**
- * Common tie-breaker logic for enemies and captains.
+ * Tie-break shared by enemy and captain selection: distance, then kills
+ * (more is better), then distance to the spawn centre, then id. Returns true
+ * when candidate A is strictly better than B.
  */
-function tieBreaker(
-  a: { distanceSq: number; spawnDistanceSq: number; entity: RobotEntity },
-  b: { distanceSq: number; spawnDistanceSq: number; entity: RobotEntity },
-): number {
-  if (a.distanceSq !== b.distanceSq) {
-    return a.distanceSq - b.distanceSq;
+function isCloserEnemy(
+  aDistSq: number,
+  a: RobotEntity,
+  aSpawnSq: number,
+  bDistSq: number,
+  b: RobotEntity,
+  bSpawnSq: number,
+): boolean {
+  if (aDistSq !== bDistSq) {
+    return aDistSq - bDistSq < 0;
   }
-  if (b.entity.kills !== a.entity.kills) {
-    return b.entity.kills - a.entity.kills;
+  if (b.kills !== a.kills) {
+    return b.kills - a.kills < 0;
   }
-  if (a.spawnDistanceSq !== b.spawnDistanceSq) {
-    return a.spawnDistanceSq - b.spawnDistanceSq;
+  if (aSpawnSq !== bSpawnSq) {
+    return aSpawnSq - bSpawnSq < 0;
   }
-  return a.entity.id.localeCompare(b.entity.id);
+  return a.id.localeCompare(b.id) < 0;
 }
 
 /**
@@ -38,23 +48,31 @@ export function findClosestEnemy(
   candidates?: RobotEntity[],
 ): RobotEntity | undefined {
   const pool = candidates ?? robots;
-  const enemies = pool.filter((robot) => isEnemy(seeker, robot));
+  let best: RobotEntity | undefined;
+  let bestDistSq = 0;
+  let bestSpawnSq = 0;
+  let spawnCenter = TEAM_CONFIGS.red.spawnCenter;
 
-  if (enemies.length === 0) {
-    return undefined;
+  for (let i = 0; i < pool.length; i += 1) {
+    const entity = pool[i];
+    if (!isEnemy(seeker, entity)) continue;
+    if (!best) {
+      // Spawn centre comes from the first enemy, as in the original scan.
+      spawnCenter = TEAM_CONFIGS[entity.team].spawnCenter;
+    }
+    const distSq = distanceSquaredVec3(seeker.position, entity.position);
+    const spawnSq = distanceSquaredVec3(entity.position, spawnCenter);
+    if (
+      !best ||
+      isCloserEnemy(distSq, entity, spawnSq, bestDistSq, best, bestSpawnSq)
+    ) {
+      best = entity;
+      bestDistSq = distSq;
+      bestSpawnSq = spawnSq;
+    }
   }
 
-  const spawnCenter = TEAM_CONFIGS[enemies[0].team].spawnCenter;
-
-  return findBestEntity(
-    enemies,
-    (entity) => ({
-      entity,
-      distanceSq: distanceSquaredVec3(seeker.position, entity.position),
-      spawnDistanceSq: distanceSquaredVec3(entity.position, spawnCenter),
-    }),
-    tieBreaker,
-  );
+  return best;
 }
 
 /**
@@ -72,31 +90,30 @@ export function findClosestAlly(
   candidates?: RobotEntity[],
 ): RobotEntity | undefined {
   const pool = candidates ?? robots;
-  // Only target injured allies
-  const allies = pool.filter(
-    (robot) => isAlly(seeker, robot) && robot.health < robot.maxHealth,
-  );
+  let best: RobotEntity | undefined;
+  let bestRatio = 0;
+  let bestDistSq = 0;
 
-  if (allies.length === 0) {
-    return undefined;
+  for (let i = 0; i < pool.length; i += 1) {
+    const entity = pool[i];
+    // Only target injured allies
+    if (!isAlly(seeker, entity) || entity.health >= entity.maxHealth) continue;
+    const ratio = entity.health / entity.maxHealth;
+    const distSq = distanceSquaredVec3(seeker.position, entity.position);
+    // Prioritize lowest health percentage first, then distance.
+    if (
+      !best ||
+      (Math.abs(ratio - bestRatio) > 0.1
+        ? ratio - bestRatio < 0
+        : distSq - bestDistSq < 0)
+    ) {
+      best = entity;
+      bestRatio = ratio;
+      bestDistSq = distSq;
+    }
   }
 
-  // Prioritize lowest health percentage first, then distance.
-  return findBestEntity(
-    allies,
-    (entity) => ({
-      entity,
-      healthRatio: entity.health / entity.maxHealth,
-      distanceSq: distanceSquaredVec3(seeker.position, entity.position),
-    }),
-    (a, b) => {
-      // Lower health ratio is better
-      if (Math.abs(a.healthRatio - b.healthRatio) > 0.1) {
-        return a.healthRatio - b.healthRatio;
-      }
-      return a.distanceSq - b.distanceSq;
-    },
-  );
+  return best;
 }
 
 /**
@@ -114,48 +131,69 @@ export function pickCaptainTarget(
   candidates?: RobotEntity[],
 ): RobotEntity | undefined {
   const pool = candidates ?? robots;
-  const enemies = pool.filter((robot) => isEnemy(captain, robot));
 
-  // 1. Prefer closest enemy captain
-  const enemyCaptains = enemies.filter((robot) => robot.isCaptain);
-  if (enemyCaptains.length > 0) {
-    const spawnCenter = TEAM_CONFIGS[enemies[0].team].spawnCenter;
-    return findBestEntity(
-      enemyCaptains,
-      (entity) => ({
-        entity,
-        distanceSq: distanceSquaredVec3(captain.position, entity.position),
-        spawnDistanceSq: distanceSquaredVec3(entity.position, spawnCenter),
-      }),
-      tieBreaker,
-    );
+  // 1. Prefer closest enemy captain; the first enemy fixes the spawn centre.
+  let firstEnemy: RobotEntity | undefined;
+  let bestCaptain: RobotEntity | undefined;
+  let capDistSq = 0;
+  let capSpawnSq = 0;
+  let spawnCenter = TEAM_CONFIGS.red.spawnCenter;
+
+  for (let i = 0; i < pool.length; i += 1) {
+    const entity = pool[i];
+    if (!isEnemy(captain, entity)) continue;
+    if (!firstEnemy) {
+      firstEnemy = entity;
+      spawnCenter = TEAM_CONFIGS[entity.team].spawnCenter;
+    }
+    if (!entity.isCaptain) continue;
+    const distSq = distanceSquaredVec3(captain.position, entity.position);
+    const spawnSq = distanceSquaredVec3(entity.position, spawnCenter);
+    if (
+      !bestCaptain ||
+      isCloserEnemy(distSq, entity, spawnSq, capDistSq, bestCaptain, capSpawnSq)
+    ) {
+      bestCaptain = entity;
+      capDistSq = distSq;
+      capSpawnSq = spawnSq;
+    }
+  }
+
+  if (bestCaptain) {
+    return bestCaptain;
   }
 
   // 2. Rank enemies by strategic value (Health > Kills > SpawnDist > ID)
-  if (enemies.length === 0) {
+  if (!firstEnemy) {
     return undefined;
   }
 
-  // Determine enemy spawn center for scoring
-  const spawnCenter = TEAM_CONFIGS[enemies[0].team].spawnCenter;
+  let best: RobotEntity | undefined;
+  let bestSpawnSq = 0;
+  for (let i = 0; i < pool.length; i += 1) {
+    const entity = pool[i];
+    if (!isEnemy(captain, entity)) continue;
+    const spawnSq = distanceSquaredVec3(entity.position, spawnCenter);
+    if (!best) {
+      best = entity;
+      bestSpawnSq = spawnSq;
+      continue;
+    }
+    let better: boolean;
+    if (best.health !== entity.health) {
+      better = best.health - entity.health < 0;
+    } else if (best.kills !== entity.kills) {
+      better = best.kills - entity.kills < 0;
+    } else if (spawnSq !== bestSpawnSq) {
+      better = bestSpawnSq - spawnSq < 0; // Descending (furthest first)
+    } else {
+      better = entity.id.localeCompare(best.id) < 0;
+    }
+    if (better) {
+      best = entity;
+      bestSpawnSq = spawnSq;
+    }
+  }
 
-  return findBestEntity(
-    enemies,
-    (entity) => ({
-      entity,
-      spawnDistanceSq: distanceSquaredVec3(entity.position, spawnCenter),
-    }),
-    (a, b) => {
-      if (b.entity.health !== a.entity.health) {
-        return b.entity.health - a.entity.health;
-      }
-      if (b.entity.kills !== a.entity.kills) {
-        return b.entity.kills - a.entity.kills;
-      }
-      if (a.spawnDistanceSq !== b.spawnDistanceSq) {
-        return b.spawnDistanceSq - a.spawnDistanceSq; // Descending (furthest first)
-      }
-      return a.entity.id.localeCompare(b.entity.id);
-    },
-  );
+  return best;
 }

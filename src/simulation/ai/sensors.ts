@@ -6,7 +6,8 @@ import {
   isLineOfSightBlockedRuntime,
 } from "../environment/arenaGeometry";
 
-const SENSOR_RANGE = 38;
+/** Maximum distance at which a robot can see or sense an enemy. */
+export const SENSOR_RANGE = 38;
 const SENSOR_RANGE_SQ = SENSOR_RANGE * SENSOR_RANGE;
 const PROXIMITY_RANGE = 8;
 const PROXIMITY_RANGE_SQ = PROXIMITY_RANGE * PROXIMITY_RANGE;
@@ -24,17 +25,33 @@ function rememberEnemy(
   enemy: RobotEntity,
   timestamp: number,
 ): void {
-  memory[enemy.id] = {
-    position: cloneVec3(enemy.position),
-    timestamp,
-  };
+  const entry = memory[enemy.id];
+  if (entry) {
+    // Reuse the existing entry; this runs every tick for every visible enemy.
+    entry.position.x = enemy.position.x;
+    entry.position.y = enemy.position.y;
+    entry.position.z = enemy.position.z;
+    entry.timestamp = timestamp;
+    return;
+  }
+  memory[enemy.id] = { position: cloneVec3(enemy.position), timestamp };
 }
+
+// Scratch state reused across calls (the simulation is single threaded).
+const visibleScratch: RobotEntity[] = [];
+const proximityScratch: RobotEntity[] = [];
+const losOptionsScratch: {
+  obstacles: BattleWorld["obstacles"]["entities"] | undefined;
+} = { obstacles: undefined };
 
 /**
  * Snapshot of sensor data for a robot.
  */
 export interface SensorSnapshot {
-  /** List of enemies currently visible to the robot. */
+  /**
+   * List of enemies currently visible to the robot. The array is a shared
+   * scratch buffer, only valid until the next `updateRobotSensors` call.
+   */
   visibleEnemies: RobotEntity[];
   /** List of enemies detected by proximity sensors (even if not visible). */
   proximityDetections: RobotEntity[];
@@ -44,11 +61,11 @@ function pruneMemory(
   memory: Record<string, EnemyMemoryEntry>,
   cutoff: number,
 ): void {
-  Object.keys(memory).forEach((key) => {
+  for (const key in memory) {
     if (memory[key].timestamp < cutoff) {
       delete memory[key];
     }
-  });
+  }
 }
 
 /**
@@ -68,28 +85,40 @@ export function updateRobotSensors(
   potentialEnemies?: RobotEntity[],
 ): SensorSnapshot {
   const enemies = potentialEnemies ?? collectEnemies(robot, robots);
-  const visible: RobotEntity[] = [];
-  const proximity: RobotEntity[] = [];
+  const visible = visibleScratch;
+  const proximity = proximityScratch;
+  let visibleCount = 0;
+  let proximityCount = 0;
+  losOptionsScratch.obstacles = battleWorld?.obstacles?.entities;
 
-  for (const enemy of enemies) {
+  for (let i = 0; i < enemies.length; i += 1) {
+    const enemy = enemies[i];
     const distanceSq = distanceSquaredVec3(robot.position, enemy.position);
     if (distanceSq > SENSOR_RANGE_SQ) {
       continue;
     }
 
     if (
-      !isLineOfSightBlockedRuntime(robot.position, enemy.position, {
-        obstacles: battleWorld?.obstacles?.entities,
-      })
+      !isLineOfSightBlockedRuntime(
+        robot.position,
+        enemy.position,
+        losOptionsScratch,
+      )
     ) {
-      visible.push(enemy);
+      visible[visibleCount] = enemy;
+      visibleCount += 1;
       continue;
     }
 
     if (distanceSq <= PROXIMITY_RANGE_SQ) {
-      proximity.push(enemy);
+      proximity[proximityCount] = enemy;
+      proximityCount += 1;
     }
   }
+
+  // Trim once; `length = 0` + push would reallocate the backing stores.
+  if (visible.length !== visibleCount) visible.length = visibleCount;
+  if (proximity.length !== proximityCount) proximity.length = proximityCount;
 
   if (!robot.ai.enemyMemory) {
     robot.ai.enemyMemory = {};
@@ -97,15 +126,21 @@ export function updateRobotSensors(
   const memory = robot.ai.enemyMemory;
   pruneMemory(memory, timestampMs - MEMORY_DURATION_MS);
 
-  for (const enemy of visible) {
-    rememberEnemy(memory, enemy, timestampMs);
+  for (let i = 0; i < visible.length; i += 1) {
+    rememberEnemy(memory, visible[i], timestampMs);
   }
 
-  for (const enemy of proximity) {
-    rememberEnemy(memory, enemy, timestampMs);
+  for (let i = 0; i < proximity.length; i += 1) {
+    rememberEnemy(memory, proximity[i], timestampMs);
   }
 
-  robot.ai.visibleEnemyIds = visible.map((enemy) => enemy.id);
+  // Reuse the id array in place instead of allocating a new one per tick.
+  const visibleIds =
+    robot.ai.visibleEnemyIds ?? (robot.ai.visibleEnemyIds = []);
+  visibleIds.length = visible.length;
+  for (let i = 0; i < visible.length; i += 1) {
+    visibleIds[i] = visible[i].id;
+  }
 
   return {
     visibleEnemies: visible,
@@ -113,10 +148,16 @@ export function updateRobotSensors(
   };
 }
 
+const latestMemoryScratch: [string, EnemyMemoryEntry] = [
+  "",
+  { position: { x: 0, y: 0, z: 0 }, timestamp: 0 },
+];
+
 /**
  * Retrieves the most recent memory of an enemy position.
  * @param robot - The robot entity.
- * @returns A tuple of [enemyId, memoryEntry] or null if no memory exists.
+ * @returns A tuple of [enemyId, memoryEntry] or null if no memory exists. The
+ * tuple is a shared scratch value: read it before the next call.
  */
 export function getLatestEnemyMemory(
   robot: RobotEntity,
@@ -124,14 +165,22 @@ export function getLatestEnemyMemory(
   const memory = robot.ai.enemyMemory;
   if (!memory) return null;
 
-  let latest: [string, EnemyMemoryEntry] | null = null;
-  for (const [id, entry] of Object.entries(memory)) {
-    if (!latest || entry.timestamp > latest[1].timestamp) {
-      latest = [id, entry];
+  let latestId: string | null = null;
+  let latestEntry: EnemyMemoryEntry | null = null;
+  for (const id in memory) {
+    const entry = memory[id];
+    if (!latestEntry || entry.timestamp > latestEntry.timestamp) {
+      latestId = id;
+      latestEntry = entry;
     }
   }
 
-  return latest;
+  if (latestId === null || !latestEntry) {
+    return null;
+  }
+  latestMemoryScratch[0] = latestId;
+  latestMemoryScratch[1] = latestEntry;
+  return latestMemoryScratch;
 }
 
 /**

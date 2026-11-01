@@ -1,4 +1,4 @@
-import { lengthVec3 } from "../../lib/math/vec3";
+import { lengthVec3, Vec3 } from "../../lib/math/vec3";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
 import {
   nextBehaviorState,
@@ -11,16 +11,41 @@ import {
   resolveSpawnCenter,
 } from "../../simulation/ai/pathing";
 import type { MovementContext } from "../../simulation/ai/pathing/types";
-import {
-  groupRobotsByTeam,
-  mapEnemiesByTeam,
-} from "../../simulation/ai/teamUtils";
-import { BattleWorld } from "../world";
+import { SENSOR_RANGE } from "../../simulation/ai/sensors";
+import { SpatialGrid } from "../../simulation/ai/spatialGrid";
+import { BattleWorld, RobotEntity } from "../world";
 import { buildNeighbors } from "./aiNeighbors";
+
+// Per-tick scratch state, reused so the steady-state AI tick does not allocate
+// for targeting or neighbour queries. The simulation is single threaded and
+// updateAISystem is not re-entrant.
+const grid = new SpatialGrid(SENSOR_RANGE / 2);
+const enemiesScratch: RobotEntity[] = [];
+const neighborsScratch: Vec3[] = [];
+const movementContextScratch: MovementContext = {
+  formationAnchor: undefined,
+  strafeSign: 1,
+  neighbors: undefined,
+  obstacles: undefined,
+};
+const behaviorSnapshotScratch = {
+  health: 0,
+  maxHealth: 0,
+  mode: RobotBehaviorMode.Seek,
+  role: "assault" as RobotEntity["role"],
+};
+const behaviorContextScratch: {
+  targetDistance: number | null;
+  anchorDistance: number | null;
+  rng: () => number;
+} = { targetDistance: null, anchorDistance: null, rng: Math.random };
 
 /**
  * Updates the AI for all robots in the battle world.
  * Manages sensor updates, target selection, behavior state transitions, and movement planning.
+ *
+ * Enemy and neighbour lookups go through a uniform grid rebuilt once per tick,
+ * so per-robot cost depends on local density rather than on the roster size.
  *
  * @param battleWorld - The current state of the battle world.
  * @param rng - A random number generator function.
@@ -38,12 +63,25 @@ export function updateAISystem(
   }
 
   const anchors = computeTeamAnchors(robots);
-  const robotsByTeam = groupRobotsByTeam(robots);
-  const enemiesByTeam = mapEnemiesByTeam(robotsByTeam);
 
-  robots.forEach((robot) => {
-    const allies = robotsByTeam.get(robot.team) ?? [];
-    const potentialEnemies = enemiesByTeam.get(robot.team) ?? [];
+  // One O(n) rebuild per tick; every per-robot query below is local to the
+  // robot's neighbourhood instead of scanning the full roster.
+  grid.rebuild(robots);
+
+  for (let index = 0; index < robots.length; index += 1) {
+    const robot = robots[index];
+    const allies = grid.teamMembers(robot.team);
+    // Sensors reject anything beyond SENSOR_RANGE, so querying exactly that
+    // radius yields the same candidates (in the same order) as a full scan.
+    const potentialEnemies = grid.query(
+      robot.position.x,
+      robot.position.z,
+      SENSOR_RANGE,
+      robot.team,
+      false,
+      robot,
+      enemiesScratch,
+    );
 
     const { target } = updateTargeting(
       robot,
@@ -62,42 +100,41 @@ export function updateAISystem(
     robot.ai.directive =
       assignment?.directive ?? robot.ai.directive ?? "balanced";
     robot.ai.strafeSign = assignment?.strafeSign ?? robot.ai.strafeSign ?? 1;
-    robot.ai.anchorDistance = anchorCandidate
-      ? lengthVec3({
-          x: robot.position.x - anchorCandidate.x,
-          y: robot.position.y - anchorCandidate.y,
-          z: robot.position.z - anchorCandidate.z,
-        })
-      : (robot.ai.anchorDistance ?? null);
+    if (anchorCandidate) {
+      const dx = robot.position.x - anchorCandidate.x;
+      const dy = robot.position.y - anchorCandidate.y;
+      const dz = robot.position.z - anchorCandidate.z;
+      robot.ai.anchorDistance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    } else {
+      robot.ai.anchorDistance = robot.ai.anchorDistance ?? null;
+    }
 
+    behaviorSnapshotScratch.health = robot.health;
+    behaviorSnapshotScratch.maxHealth = robot.maxHealth;
+    behaviorSnapshotScratch.mode =
+      robot.ai.mode === "retreat"
+        ? RobotBehaviorMode.Retreat
+        : robot.ai.mode === "engage"
+          ? RobotBehaviorMode.Engage
+          : RobotBehaviorMode.Seek;
+    behaviorSnapshotScratch.role = robot.role;
+    behaviorContextScratch.targetDistance = robot.ai.targetDistance ?? null;
+    behaviorContextScratch.anchorDistance = robot.ai.anchorDistance ?? null;
+    behaviorContextScratch.rng = rng;
     const behavior = nextBehaviorState(
-      {
-        health: robot.health,
-        maxHealth: robot.maxHealth,
-        mode:
-          robot.ai.mode === "retreat"
-            ? RobotBehaviorMode.Retreat
-            : robot.ai.mode === "engage"
-              ? RobotBehaviorMode.Engage
-              : RobotBehaviorMode.Seek,
-        role: robot.role,
-      },
-      {
-        targetDistance: robot.ai.targetDistance ?? null,
-        anchorDistance: robot.ai.anchorDistance ?? null,
-        rng,
-      },
+      behaviorSnapshotScratch,
+      behaviorContextScratch,
     );
 
     robot.ai.mode = behavior;
 
-    const neighborPositions = buildNeighbors(robot, allies);
-    const neighborsContext: MovementContext = {
-      formationAnchor: anchorCandidate ?? undefined,
-      strafeSign: robot.ai.strafeSign ?? 1,
-      neighbors: neighborPositions.length > 0 ? neighborPositions : undefined,
-      obstacles: battleWorld.obstacles.entities,
-    };
+    const neighborPositions = buildNeighbors(robot, grid, neighborsScratch);
+    const neighborsContext = movementContextScratch;
+    neighborsContext.formationAnchor = anchorCandidate ?? undefined;
+    neighborsContext.strafeSign = robot.ai.strafeSign ?? 1;
+    neighborsContext.neighbors =
+      neighborPositions.length > 0 ? neighborPositions : undefined;
+    neighborsContext.obstacles = battleWorld.obstacles.entities;
 
     // calculate nav target
     let navTarget = target ? target.position : undefined;
@@ -112,11 +149,21 @@ export function updateAISystem(
     }
 
     if (navTarget) {
-      robot.pathComponent.requestedTarget = {
-        x: navTarget.x,
-        y: navTarget.y,
-        z: navTarget.z,
-      };
+      const requested = robot.pathComponent.requestedTarget;
+      // Point3D is read-only (the path system treats it as a value), so only
+      // replace it when the destination actually changed.
+      if (
+        !requested ||
+        requested.x !== navTarget.x ||
+        requested.y !== navTarget.y ||
+        requested.z !== navTarget.z
+      ) {
+        robot.pathComponent.requestedTarget = {
+          x: navTarget.x,
+          y: navTarget.y,
+          z: navTarget.z,
+        };
+      }
     } else {
       robot.pathComponent.requestedTarget = null;
     }
@@ -132,7 +179,7 @@ export function updateAISystem(
     robot.velocity = movementPlan.velocity;
     robot.orientation = movementPlan.orientation;
     robot.speed = lengthVec3(movementPlan.velocity);
-  });
+  }
 
   perfMarkEnd("updateAISystem");
 }

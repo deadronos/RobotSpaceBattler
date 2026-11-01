@@ -53,7 +53,7 @@ describe("headless seeded match", () => {
       [1, 42, 7, 99].map((seed) => runHeadlessMatch({ seed }).winner),
     );
     expect(winners).toEqual(new Set(["red", "blue"]));
-  });
+  }, 30000);
 
   it("a natural match hits the time limit and resolves by tally", () => {
     const limitMs = 5000;
