@@ -25,7 +25,7 @@ This project simulates a battle between two teams of 10 humanoid robots (Red vs 
 
 ### Prerequisites
 
-- Node.js `^22.22.2` or `^24.15.0` (see `package.json#engines`)
+- Node.js `^22.22.2`, `^24.15.0` or `^26.0.0` (see `package.json#engines`)
 - npm
 
 ### Installation
@@ -66,7 +66,7 @@ Open your browser to `http://localhost:5173`.
 
 `ci.yml` runs on every push to `main` and on all pull requests.
 
-- Build/test matrix runs on Node 22 and 24 and executes:
+- Build/test matrix runs on Node 22, 24 and 26 and executes:
   - `npm run lint`
   - `npm run format:check`
   - `npm run typecheck`
