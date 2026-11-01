@@ -129,14 +129,6 @@ export function createBattleRunner(
     executionMode: options.pathfindingMode ?? "worker",
   });
 
-  // Wire up pathfinding telemetry
-  pathfindingSystem.onTelemetry((event) => {
-    // Optional: forward to main telemetry if needed, or just let it log internally
-    if (event.type === "path-calculation-failed") {
-      // console.warn("Pathfinding failed:", event);
-    }
-  });
-
   function spawnMatch(nextSeed?: number) {
     const matchSeed = nextSeed ?? Math.floor(rng.next() * 0xffffffff);
     telemetry.reset(`match-${matchSeed}`);

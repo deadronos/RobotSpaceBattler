@@ -181,7 +181,12 @@ export class PathCalculator {
     if (this.cache) {
       const cached = this.cache.get(start, target);
       if (cached) {
-        this.resultHandler.handleCacheHit(cached, pathComponent, robotId);
+        this.resultHandler.handleCacheHit(
+          cached,
+          pathComponent,
+          robotId,
+          target,
+        );
         return;
       }
     }

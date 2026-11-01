@@ -119,7 +119,9 @@ describe("PathCalculator", () => {
 
     expect(pc.path).toBeNull();
     expect(pc.status).toBe("failed");
-    const failed = events.find((e) => e.type === "path-calculation-failed");
+    // A reachability failure is reported separately from a calculation error so
+    // headless runs can report `no_path` counts (#217).
+    const failed = events.find((e) => e.type === "path-calculation-no-path");
     expect(failed).toBeTruthy();
   });
 });

@@ -24,6 +24,12 @@ interface PathfindingSystemOptions {
   executionMode?: "worker" | "inline";
   /** Sim ticks between dispatching a path request and applying its result. */
   resultLatencyTicks?: number;
+  /**
+   * Distance in metres a followed path's goal may drift before the path is
+   * invalidated and re-requested. Defaults to
+   * {@link DEFAULT_TARGET_MOVE_THRESHOLD}.
+   */
+  targetMoveThreshold?: number;
   telemetry?: TelemetryPort;
 }
 
@@ -31,6 +37,7 @@ export interface PathfindingTelemetryEvent {
   type:
     | "path-calculation-start"
     | "path-calculation-complete"
+    | "path-calculation-no-path"
     | "path-calculation-failed";
   entityId?: string;
   timestamp: number;
@@ -49,12 +56,21 @@ export type PathfindingTelemetryCallback = (
 ) => void;
 
 /**
+ * How far (in metres, XZ) a path's goal may drift from the robot's current
+ * requested target before the path is considered stale. Targets are moving
+ * robots, so the goal is constantly stale unless a threshold is allowed; 2 m
+ * keeps the followed corridor accurate without re-requesting every tick.
+ */
+export const DEFAULT_TARGET_MOVE_THRESHOLD = 2;
+
+/**
  * ECS system that calculates and manages navigation paths for robots
  * Includes caching, throttling, and frame budget enforcement
  */
 export class PathfindingSystem {
   private calculator: PathCalculator;
   private maxRequestsPerTick: number;
+  private targetMoveThresholdSq: number;
   private telemetry: PathfindingTelemetry;
 
   constructor(
@@ -62,6 +78,9 @@ export class PathfindingSystem {
     options?: PathfindingSystemOptions,
   ) {
     this.maxRequestsPerTick = options?.maxRequestsPerTick ?? 8;
+    const threshold =
+      options?.targetMoveThreshold ?? DEFAULT_TARGET_MOVE_THRESHOLD;
+    this.targetMoveThresholdSq = threshold * threshold;
     this.telemetry = new PathfindingTelemetry(options?.telemetry);
     this.calculator = new PathCalculator(navMeshResource, options);
     // Forward telemetry: keep the system observable
@@ -118,7 +137,13 @@ export class PathfindingSystem {
   /**
    * Advances pathfinding by one fixed simulation step: applies due worker
    * results at the start of the step (deterministic request order), then
-   * dispatches requests for robots that need a path.
+   * invalidates paths whose goal has drifted from the robot's requested
+   * target, then dispatches requests for robots that need a path.
+   *
+   * Invalidation compares the target position the path was calculated for with
+   * the robot's current `requestedTarget` (which the AI rewrites whenever the
+   * destination changes, including when it switches targets). Only sim state
+   * is consulted, so the decision is deterministic.
    *
    * @param robotsWithPaths - Robots to inspect.
    * @param simTimeMs - Current simulation time in ms (drives request
@@ -140,20 +165,56 @@ export class PathfindingSystem {
     let dispatched = 0;
 
     for (const robot of robotsWithPaths) {
-      if (dispatched >= this.maxRequestsPerTick) break;
+      const pathComponent = robot.pathComponent;
+      this.invalidateStalePath(pathComponent);
+
+      // `continue` rather than `break`: robots past the per-tick request budget
+      // must still have stale paths invalidated so they stop following them.
+      if (dispatched >= this.maxRequestsPerTick) continue;
 
       if (
-        (robot.pathComponent.status === "pending" ||
-          robot.pathComponent.status === "failed") &&
-        robot.pathComponent.requestedTarget
+        (pathComponent.status === "pending" ||
+          pathComponent.status === "failed" ||
+          pathComponent.status === "invalid") &&
+        pathComponent.requestedTarget
       ) {
         dispatched += 1;
-        void this.calculator.calculate(
-          robot.position,
-          robot.pathComponent,
-          robot.id,
-        );
+        void this.calculator.calculate(robot.position, pathComponent, robot.id);
       }
     }
+  }
+
+  /**
+   * Clears a path that no longer leads to the robot's requested target.
+   *
+   * @returns true when the path was invalidated.
+   */
+  private invalidateStalePath(pathComponent: PathComponent): boolean {
+    if (pathComponent.status !== "valid") return false;
+
+    const target = pathComponent.requestedTarget;
+    const goal =
+      pathComponent.pathGoal ??
+      pathComponent.path?.waypoints[pathComponent.path.waypoints.length - 1];
+
+    // No target (the AI dropped it) or no recorded goal means the path cannot
+    // be shown to still be useful.
+    if (!target || !goal) {
+      pathComponent.status = "invalid";
+      pathComponent.path = null;
+      pathComponent.pathGoal = null;
+      pathComponent.currentWaypointIndex = 0;
+      return true;
+    }
+
+    const dx = target.x - goal.x;
+    const dz = target.z - goal.z;
+    if (dx * dx + dz * dz <= this.targetMoveThresholdSq) return false;
+
+    pathComponent.status = "invalid";
+    pathComponent.path = null;
+    pathComponent.pathGoal = null;
+    pathComponent.currentWaypointIndex = 0;
+    return true;
   }
 }

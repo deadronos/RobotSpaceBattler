@@ -44,10 +44,15 @@ export class PathResultHandler {
     path: NavigationPath,
     pathComponent: PathComponent,
     robotId?: string,
+    target?: Point3D,
   ) {
     pathComponent.path = path;
     pathComponent.status = "valid" as const;
     pathComponent.lastCalculationTime = this.now();
+    // A new path starts at its first waypoint; the previous path's progress is
+    // meaningless for it.
+    pathComponent.currentWaypointIndex = 0;
+    pathComponent.pathGoal = target ?? pathComponent.requestedTarget ?? null;
 
     this.navMeshResource.recordCalculation(0);
     const stats = this.cache?.getStats();
@@ -140,13 +145,17 @@ export class PathResultHandler {
     robotId: string | undefined,
     error: string,
     durationMs: number,
+    type:
+      | "path-calculation-no-path"
+      | "path-calculation-failed" = "path-calculation-failed",
   ) {
     pathComponent.path = null;
     pathComponent.status = "failed" as const;
     pathComponent.lastCalculationTime = this.now();
+    pathComponent.pathGoal = null;
 
     this.emitTelemetry({
-      type: "path-calculation-failed",
+      type,
       entityId: robotId,
       timestamp: this.now(),
       success: false,
@@ -188,6 +197,9 @@ export class PathResultHandler {
     pathComponent.path = path;
     pathComponent.status = "valid" as const;
     pathComponent.lastCalculationTime = this.now();
+    // New path, new progress: re-requested paths replace in-flight following.
+    pathComponent.currentWaypointIndex = 0;
+    pathComponent.pathGoal = target;
 
     if (this.cache) {
       this.cache.set(start, target, path);
@@ -219,6 +231,7 @@ export class PathResultHandler {
       robotId,
       "No path found",
       result.durationMs,
+      "path-calculation-no-path",
     );
   }
 

@@ -16,6 +16,7 @@ describe("PathfindingSystem - Robot Navigation", () => {
   it("[T019] Robot navigates around wall cluster", async () => {
     // Create arena with a wall cluster in the center
     const arenaConfig: ArenaConfiguration = {
+      origin: { x: 0, z: 0 },
       size: { width: 100, depth: 100 },
       obstacles: [
         {

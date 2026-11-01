@@ -176,6 +176,7 @@ describe("path result scheduling", () => {
 describe("PathfindingSystem inline execution", () => {
   function makeMesh(): NavigationMesh {
     const config: ArenaConfiguration = {
+      origin: { x: 0, z: 0 },
       size: { width: 100, depth: 100 },
       obstacles: [
         {

@@ -24,14 +24,21 @@ export class PathfindingTelemetry {
       }
     }
 
-    // Forward to TelemetryPort
-    if (this.telemetryPort?.recordPathfinding) {
+    // Forward to TelemetryPort. Requests that are only starting are not
+    // outcomes, so they are not recorded (counting them as failures made every
+    // success rate look like a 50% failure rate).
+    if (
+      this.telemetryPort?.recordPathfinding &&
+      event.type !== "path-calculation-start"
+    ) {
       const type =
         event.type === "path-calculation-complete"
           ? event.fromCache
             ? "cache_hit"
             : "calculation"
-          : "failure";
+          : event.type === "path-calculation-no-path"
+            ? "no_path"
+            : "failure";
 
       this.telemetryPort.recordPathfinding({
         type,

@@ -85,6 +85,9 @@ export function extractArenaConfiguration(): ArenaConfiguration {
   }
 
   return {
+    // The arena is centred on the origin, so the navmesh must be generated in
+    // arena coordinates instead of starting at (0, 0).
+    origin: { x: ARENA_BOUNDS.min.x, z: ARENA_BOUNDS.min.z },
     size: {
       width: ARENA_BOUNDS.max.x - ARENA_BOUNDS.min.x,
       depth: ARENA_BOUNDS.max.z - ARENA_BOUNDS.min.z,

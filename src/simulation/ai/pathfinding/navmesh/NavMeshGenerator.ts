@@ -26,19 +26,24 @@ export class NavMeshGenerator {
     arenaConfig: ArenaConfiguration,
     clearanceRadius = 0.95,
   ): NavigationMesh {
-    const { size, obstacles } = arenaConfig;
+    const { origin, size, obstacles } = arenaConfig;
 
     // For empty arena, create single polygon covering entire walkable area
     if (obstacles.length === 0) {
+      const maxX = origin.x + size.width;
+      const maxZ = origin.z + size.depth;
       const polygon: ConvexPolygon = {
         index: 0,
         vertices: [
-          { x: 0, z: 0 },
-          { x: size.width, z: 0 },
-          { x: size.width, z: size.depth },
-          { x: 0, z: size.depth },
+          { x: origin.x, z: origin.z },
+          { x: maxX, z: origin.z },
+          { x: maxX, z: maxZ },
+          { x: origin.x, z: maxZ },
         ],
-        centroid: { x: size.width / 2, z: size.depth / 2 },
+        centroid: {
+          x: origin.x + size.width / 2,
+          z: origin.z + size.depth / 2,
+        },
         area: size.width * size.depth,
       };
 
@@ -58,6 +63,7 @@ export class NavMeshGenerator {
 
     // With obstacles, we need to subtract them from walkable area
     const polygons = this.generatePolygonsWithObstacles(
+      origin,
       size,
       obstacles,
       clearanceRadius,
@@ -79,9 +85,10 @@ export class NavMeshGenerator {
 
   /**
    * Generate polygons with obstacles subtracted
-   * Uses a grid-based approach to identify walkable areas and merges them into convex polygons (rectangles).
+   * Uses a grid anchored at `origin`, so polygon vertices are in arena coordinates.
    */
   private generatePolygonsWithObstacles(
+    origin: Point2D,
     size: { width: number; depth: number },
     obstacles: readonly (
       | ObstacleGeometry
@@ -105,8 +112,8 @@ export class NavMeshGenerator {
     for (let x = 0; x < gridWidth; x++) {
       for (let z = 0; z < gridDepth; z++) {
         const cellCenter: Point2D = {
-          x: x * GRID_RESOLUTION + GRID_RESOLUTION / 2,
-          z: z * GRID_RESOLUTION + GRID_RESOLUTION / 2,
+          x: origin.x + x * GRID_RESOLUTION + GRID_RESOLUTION / 2,
+          z: origin.z + z * GRID_RESOLUTION + GRID_RESOLUTION / 2,
         };
 
         // Check against all obstacles
@@ -119,8 +126,7 @@ export class NavMeshGenerator {
           const vertices = o.footprint ?? o.polygon;
           if (!vertices || vertices.length === 0) continue;
           const distance = distanceSquaredPointToPolygon(cellCenter, vertices);
-          // Block if distance is less than clearance radius squared
-          // Note: getSquaredDistanceToPolygon returns 0 if inside
+          // Squared distance is 0 inside the footprint.
           if (distance < clearanceRadius * clearanceRadius) {
             grid[x][z] = false;
             break;
@@ -175,11 +181,17 @@ export class NavMeshGenerator {
         }
 
         // Create polygon
-        const minX = x * GRID_RESOLUTION;
-        const minZ = z * GRID_RESOLUTION;
+        const minX = origin.x + x * GRID_RESOLUTION;
+        const minZ = origin.z + z * GRID_RESOLUTION;
         // Clamp to arena size to ensure we don't exceed bounds
-        const maxX = Math.min((x + width) * GRID_RESOLUTION, size.width);
-        const maxZ = Math.min((z + height) * GRID_RESOLUTION, size.depth);
+        const maxX = Math.min(
+          origin.x + (x + width) * GRID_RESOLUTION,
+          origin.x + size.width,
+        );
+        const maxZ = Math.min(
+          origin.z + (z + height) * GRID_RESOLUTION,
+          origin.z + size.depth,
+        );
 
         const vertices: Point2D[] = [
           { x: minX, z: minZ },
