@@ -30,3 +30,47 @@ describe("RobotListPanel", () => {
     expect(screen.queryByText("ROAM")).not.toBeInTheDocument();
   });
 });
+
+describe("RobotListPanel render rate", () => {
+  it("does not re-render when telemetry events are recorded", async () => {
+    const { Profiler } = await import("react");
+    const { act } = await import("@testing-library/react");
+    const { useTelemetryStore } = await import("@/state/telemetryStore");
+    const battleWorld = {
+      robots: {
+        entities: [
+          {
+            id: "red-1",
+            spawnIndex: 0,
+            health: 100,
+            maxHealth: 100,
+            team: "red",
+            ai: { mode: "roam", targetId: null },
+          },
+        ],
+      },
+    } as any;
+
+    let commits = 0;
+    render(
+      <Profiler id="panel" onRender={() => (commits += 1)}>
+        <RobotListPanel battleWorld={battleWorld} />
+      </Profiler>,
+    );
+    const afterMount = commits;
+
+    act(() => {
+      for (let i = 0; i < 50; i += 1) {
+        useTelemetryStore.getState().recordEvent({
+          type: "fire",
+          timestampMs: i,
+          sequenceId: i,
+          entityId: "red-1",
+          teamId: "red",
+        });
+      }
+    });
+
+    expect(commits).toBe(afterMount);
+  });
+});
