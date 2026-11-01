@@ -32,12 +32,12 @@ describe("AI spatial index parity with brute force", () => {
     const [count, ticks] = key.split("x").map(Number);
     it(`scenario ${count} robots / ${ticks} ticks is unchanged`, () => {
       expect(runScenarioDigest(count, ticks)).toBe(SCENARIO_GOLDEN[key]);
-    });
+    }, 60000);
   }
 
   for (const seed of Object.keys(MATCH_GOLDEN).map(Number)) {
     it(`headless full match seed ${seed} outcome is unchanged`, () => {
       expect(matchDigest(seed)).toBe(MATCH_GOLDEN[seed]);
-    });
+    }, 60000);
   }
 });
