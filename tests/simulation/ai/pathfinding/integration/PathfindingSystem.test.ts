@@ -59,12 +59,14 @@ describe("PathfindingSystem", () => {
   it("[T018] calculates path for robot with target", async () => {
     const robotPosition = { x: 0, y: 0, z: 0 };
 
+    system.setSimTime(1234);
     await system.calculatePath(robotPosition, mockPathComponent);
 
     // Path should be calculated
     expect(mockPathComponent.path).not.toBeNull();
     expect(mockPathComponent.status).toBe("valid");
-    expect(mockPathComponent.lastCalculationTime).toBeGreaterThan(0);
+    // Stamped with sim time, not wall-clock time.
+    expect(mockPathComponent.lastCalculationTime).toBe(1234);
   });
 
   it("[T020] path calculation completes within 5ms in 95% of cases", async () => {

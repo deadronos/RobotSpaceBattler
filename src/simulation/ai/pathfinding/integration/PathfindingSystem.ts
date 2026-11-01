@@ -15,7 +15,7 @@ interface PathfindingSystemOptions {
   enableCaching?: boolean;
   maxCacheSize?: number;
   throttleInterval?: number; // ms between recalculations per robot
-  frameBudget?: number; // ms budget per frame
+  maxRequestsPerTick?: number; // deterministic cap on path requests dispatched per tick
   enableTimeout?: boolean; // Enable timeout fallback
   timeoutMs?: number; // Timeout threshold (default: 100ms)
   enableNearestFallback?: boolean; // Enable nearest accessible point fallback
@@ -50,14 +50,14 @@ export type PathfindingTelemetryCallback = (
  */
 export class PathfindingSystem {
   private calculator: PathCalculator;
-  private frameBudget: number;
+  private maxRequestsPerTick: number;
   private telemetry: PathfindingTelemetry;
 
   constructor(
     private navMeshResource: NavMeshResource,
     options?: PathfindingSystemOptions,
   ) {
-    this.frameBudget = options?.frameBudget ?? 2.4;
+    this.maxRequestsPerTick = options?.maxRequestsPerTick ?? 8;
     this.telemetry = new PathfindingTelemetry(options?.telemetry);
     this.calculator = new PathCalculator(navMeshResource, options);
     // Forward telemetry: keep the system observable
@@ -70,6 +70,11 @@ export class PathfindingSystem {
   /** Terminates the pathfinding worker. Safe to call more than once. */
   dispose(): void {
     this.calculator.dispose();
+  }
+
+  /** Sets the simulation clock used for throttling and timestamps. */
+  setSimTime(simTimeMs: number): void {
+    this.calculator.setSimTime(simTimeMs);
   }
 
   onTelemetry(callback: PathfindingTelemetryCallback): void {
@@ -87,24 +92,33 @@ export class PathfindingSystem {
     return this.calculator.calculate(start, pathComponent, robotId);
   }
 
+  /**
+   * Dispatches path requests for robots that need one.
+   *
+   * @param robotsWithPaths - Robots to inspect.
+   * @param simTimeMs - Current simulation time in ms (drives request
+   *   throttling and result timestamps; no wall-clock is read).
+   */
   execute(
     robotsWithPaths: Array<{
       pathComponent: PathComponent;
       position: Point3D;
       id?: string;
     }>,
+    simTimeMs = 0,
   ): void {
-    const startTime = performance.now();
+    this.setSimTime(simTimeMs);
+    let dispatched = 0;
 
     for (const robot of robotsWithPaths) {
-      const elapsed = performance.now() - startTime;
-      if (elapsed > this.frameBudget) break;
+      if (dispatched >= this.maxRequestsPerTick) break;
 
       if (
         (robot.pathComponent.status === "pending" ||
           robot.pathComponent.status === "failed") &&
         robot.pathComponent.requestedTarget
       ) {
+        dispatched += 1;
         void this.calculator.calculate(
           robot.position,
           robot.pathComponent,

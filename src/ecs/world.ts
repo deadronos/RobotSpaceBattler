@@ -18,6 +18,7 @@ import {
   createVisualInstanceManager,
   VisualInstanceCategory,
 } from "../visuals/VisualInstanceManager";
+import { generateSeed } from "../lib/random/seed";
 import { createEffectPool } from "./pools/EffectPool";
 import { createProjectilePool } from "./pools/ProjectilePool";
 import type {
@@ -165,7 +166,7 @@ export function createBattleWorld(): BattleWorld {
     elapsedMs: 0,
     nextProjectileId: 0,
     nextEffectId: 0,
-    seed: Date.now(),
+    seed: generateSeed(),
     frameIndex: 0,
   };
 

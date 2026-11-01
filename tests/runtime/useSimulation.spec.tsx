@@ -102,6 +102,7 @@ describe("useSimulation", () => {
   it("wires the Rapier world to each created runner and clears it on cleanup", () => {
     const firstRunner = {
       step: vi.fn<BattleRunner["step"]>(),
+      advance: vi.fn<BattleRunner["advance"]>(),
       reset: vi.fn<BattleRunner["reset"]>(),
       setRapierWorld: vi.fn<BattleRunner["setRapierWorld"]>(),
       getRapierWorld: vi.fn<BattleRunner["getRapierWorld"]>(),
@@ -109,6 +110,7 @@ describe("useSimulation", () => {
     };
     const secondRunner = {
       step: vi.fn<BattleRunner["step"]>(),
+      advance: vi.fn<BattleRunner["advance"]>(),
       reset: vi.fn<BattleRunner["reset"]>(),
       setRapierWorld: vi.fn<BattleRunner["setRapierWorld"]>(),
       getRapierWorld: vi.fn<BattleRunner["getRapierWorld"]>(),
@@ -154,6 +156,7 @@ describe("useSimulation", () => {
   it("disposes the runner on unmount", () => {
     const runner = {
       step: vi.fn<BattleRunner["step"]>(),
+      advance: vi.fn<BattleRunner["advance"]>(),
       reset: vi.fn<BattleRunner["reset"]>(),
       setRapierWorld: vi.fn<BattleRunner["setRapierWorld"]>(),
       getRapierWorld: vi.fn<BattleRunner["getRapierWorld"]>(),
@@ -178,6 +181,7 @@ describe("useSimulation", () => {
   it("runs the simulation frame loop without forcing React version updates", () => {
     const runner = {
       step: vi.fn<BattleRunner["step"]>(),
+      advance: vi.fn<BattleRunner["advance"]>(),
       reset: vi.fn<BattleRunner["reset"]>(),
       setRapierWorld: vi.fn<BattleRunner["setRapierWorld"]>(),
       getRapierWorld: vi.fn<BattleRunner["getRapierWorld"]>(),
@@ -203,7 +207,8 @@ describe("useSimulation", () => {
       });
     }
 
-    expect(runner.step).toHaveBeenCalledTimes(5);
+    expect(runner.advance).toHaveBeenCalledWith(0.02);
+    expect(runner.advance).toHaveBeenCalledTimes(5);
     expect(simulationTestState.mockRecordRendererFrame).toHaveBeenCalledTimes(
       5,
     );

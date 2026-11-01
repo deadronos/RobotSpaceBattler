@@ -41,7 +41,7 @@ export interface PathComponent {
   currentWaypointIndex: number;
 
   /**
-   * Last path calculation timestamp (Date.now())
+   * Last path calculation timestamp (sim time, ms)
    */
   lastCalculationTime: number;
 

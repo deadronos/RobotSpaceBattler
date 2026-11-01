@@ -9,7 +9,9 @@ import { updateProjectileSystem } from "../../ecs/systems/projectileSystem";
 import { BattleWorld } from "../../ecs/world";
 import { MATCH_TIME_LIMIT_MS } from "../../lib/constants";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
+import { createFixedStepper } from "../../lib/fixedStepper";
 import { createXorShift32 } from "../../lib/random/xorshift";
+import { generateSeed } from "../../lib/random/seed";
 import {
   createNavMeshResource,
   extractArenaConfiguration,
@@ -29,6 +31,11 @@ import {
 import { MatchStateMachine } from "../state/matchStateMachine";
 import { evaluateMatchOutcome } from "./matchOutcome";
 import { TelemetryPort } from "./ports";
+
+/** Fixed simulation rate: 60 Hz. */
+export const FIXED_STEP_SECONDS = 1 / 60;
+/** Max fixed steps per rendered frame; excess frame time is dropped. */
+export const MAX_SUBSTEPS = 5;
 
 /**
  * Options to configure a BattleRunner.
@@ -60,6 +67,12 @@ export interface BattleRunner {
    * @param deltaSeconds - Time elapsed since last frame.
    */
   step: (deltaSeconds: number) => void;
+  /**
+   * Advances the simulation by a variable frame delta using a fixed-step
+   * accumulator (60 Hz, at most MAX_SUBSTEPS steps per call).
+   * @param frameDeltaSeconds - Wall-clock time elapsed since the last frame.
+   */
+  advance: (frameDeltaSeconds: number) => void;
   /** Resets the battle to a new match state. */
   reset: () => void;
   /**
@@ -84,7 +97,7 @@ export function createBattleRunner(
   world: BattleWorld,
   options: BattleRunnerOptions,
 ): BattleRunner {
-  const seed = options.seed ?? world.state.seed ?? Date.now();
+  const seed = options.seed ?? world.state.seed ?? generateSeed();
   const rng = createXorShift32(seed);
 
   const { telemetry, matchMachine } = options;
@@ -133,7 +146,12 @@ export function createBattleRunner(
 
   spawnMatch(seed);
 
-  return {
+  const stepper = createFixedStepper({
+    stepSeconds: FIXED_STEP_SECONDS,
+    maxSubSteps: MAX_SUBSTEPS,
+  });
+
+  const runner: BattleRunner = {
     step: (deltaSeconds: number) => {
       perfMarkStart("battleRunner.step");
       const deltaMs = deltaSeconds * 1000;
@@ -151,7 +169,7 @@ export function createBattleRunner(
 
         perfMarkStart("pathfindingSystem");
         // Update pathfinding for all robots
-        pathfindingSystem.execute(world.robots.entities);
+        pathfindingSystem.execute(world.robots.entities, world.state.elapsedMs);
         perfMarkEnd("pathfindingSystem");
 
         perfMarkStart("updateCombatSystem");
@@ -179,7 +197,11 @@ export function createBattleRunner(
       world.state.frameIndex += 1;
       perfMarkEnd("battleRunner.step");
     },
+    advance: (frameDeltaSeconds: number) => {
+      stepper.advance(frameDeltaSeconds, runner.step);
+    },
     reset: () => {
+      stepper.reset();
       spawnMatch();
     },
     setRapierWorld: (rapierWorld: RapierWorld | null) => {
@@ -194,4 +216,5 @@ export function createBattleRunner(
       pathfindingSystem.dispose();
     },
   };
+  return runner;
 }

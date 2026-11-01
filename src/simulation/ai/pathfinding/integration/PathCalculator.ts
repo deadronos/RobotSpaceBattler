@@ -28,6 +28,8 @@ export class PathCalculator {
   private lastCalculationTimes: Map<string, number> = new Map();
   private pendingRequests: Map<string, PendingRequest> = new Map();
   private telemetryCallbacks: PathfindingTelemetryCallback[] = [];
+  /** Latest simulation time (ms); the only clock used for throttling/timestamps. */
+  private simTimeMs = 0;
 
   private workerManager: PathWorkerManager;
   private resultHandler: PathResultHandler;
@@ -41,7 +43,10 @@ export class PathCalculator {
     this.enableNearestFallback = options?.enableNearestFallback ?? true;
 
     if (options?.enableCaching ?? true) {
-      this.cache = new PathCache({ maxSize: options?.maxCacheSize ?? 100 });
+      this.cache = new PathCache({
+        maxSize: options?.maxCacheSize ?? 100,
+        now: () => this.simTimeMs,
+      });
     }
 
     // Initialize worker and result handler
@@ -50,6 +55,7 @@ export class PathCalculator {
       navMeshResource,
       this.telemetryCallbacks,
       this.cache,
+      () => this.simTimeMs,
     );
 
     // Worker initialization is lazy: workers will be initialized on demand if a worker
@@ -62,6 +68,15 @@ export class PathCalculator {
    */
   async ensureInitialized() {
     await this.workerManager.ensureInitialized();
+  }
+
+  /**
+   * Sets the current simulation time. Path requests, throttling, cache LRU
+   * ordering and result timestamps all use this clock instead of wall-clock
+   * time so the simulation stays deterministic.
+   */
+  setSimTime(nowMs: number): void {
+    this.simTimeMs = nowMs;
   }
 
   dispose(): void {
@@ -112,7 +127,7 @@ export class PathCalculator {
       if (cached) {
         pathComponent.path = cached;
         pathComponent.status = "valid" as const;
-        pathComponent.lastCalculationTime = Date.now();
+        pathComponent.lastCalculationTime = this.simTimeMs;
 
         this.navMeshResource.recordCalculation(0);
         const stats = this.cache.getStats();
@@ -121,7 +136,7 @@ export class PathCalculator {
         this.emitTelemetry({
           type: "path-calculation-complete",
           entityId: robotId,
-          timestamp: Date.now(),
+          timestamp: this.simTimeMs,
           success: true,
           durationMs: 0,
           pathLength: cached.totalDistance,
@@ -145,7 +160,7 @@ export class PathCalculator {
         this.emitTelemetry({
           type: "path-calculation-failed",
           entityId: robotId,
-          timestamp: Date.now(),
+          timestamp: this.simTimeMs,
           success: false,
           durationMs: 0,
           error: "NavMesh has no polygons",
@@ -157,9 +172,9 @@ export class PathCalculator {
 
     // Apply throttling for repeated requests from same robot
     if (robotId) {
-      const last = this.lastCalculationTimes.get(robotId) || 0;
-      const now = Date.now();
-      if (now - last < this.throttleInterval) return;
+      const last = this.lastCalculationTimes.get(robotId);
+      const now = this.simTimeMs;
+      if (last !== undefined && now - last < this.throttleInterval) return;
       this.lastCalculationTimes.set(robotId, now);
     }
 
@@ -176,7 +191,7 @@ export class PathCalculator {
     pathComponent.status = "calculating" as const;
 
     const requestId = robotId || Math.random().toString(36).substr(2, 9);
-    const startTime = performance.now();
+    const startTime = this.simTimeMs;
 
     this.pendingRequests.set(requestId, {
       pathComponent,
@@ -189,7 +204,7 @@ export class PathCalculator {
     this.emitTelemetry({
       type: "path-calculation-start",
       entityId: robotId,
-      timestamp: Date.now(),
+      timestamp: this.simTimeMs,
       from: start,
       to: target,
     });
@@ -221,9 +236,9 @@ export class PathCalculator {
       this.emitTelemetry({
         type: "path-calculation-failed",
         entityId: robotId,
-        timestamp: Date.now(),
+        timestamp: this.simTimeMs,
         success: false,
-        durationMs: performance.now() - startTime,
+        durationMs: this.simTimeMs - startTime,
         error: String(err),
       });
     }

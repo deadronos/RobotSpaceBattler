@@ -31,6 +31,35 @@ export interface HeadlessMatchResult {
     z: number;
   }>;
   counts: { spawns: number; fires: number; damage: number; deaths: number };
+  /** FNV-1a hash folded over the world state after every step. */
+  stateHash: string;
+  /** Sampled (every 60 steps) per-step hashes, for diffing diverging runs. */
+  trace: Array<{ step: number; hash: string }>;
+}
+
+function foldNumber(hash: number, value: number): number {
+  const scaled = Math.round(value * 1e4) | 0;
+  let h = hash;
+  for (let shift = 0; shift < 32; shift += 8) {
+    h ^= (scaled >>> shift) & 0xff;
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h;
+}
+
+function hashWorld(world: ReturnType<typeof createBattleWorld>, seed: number) {
+  let h = seed >>> 0 || 0x811c9dc5;
+  h = foldNumber(h, world.state.elapsedMs);
+  for (const r of world.robots.entities) {
+    h = foldNumber(h, r.position.x);
+    h = foldNumber(h, r.position.z);
+    h = foldNumber(h, r.health);
+  }
+  for (const p of world.projectiles.entities) {
+    h = foldNumber(h, p.position.x);
+    h = foldNumber(h, p.position.z);
+  }
+  return h;
 }
 
 /**
@@ -69,10 +98,17 @@ export function runHeadlessMatch(
   });
 
   let steps = 0;
+  let running = 0x811c9dc5;
+  const trace: HeadlessMatchResult["trace"] = [];
   try {
     while (matchMachine.getSnapshot().phase === "running" && steps < maxSteps) {
       runner.step(dt);
       steps += 1;
+      const h = hashWorld(world, running);
+      running = h;
+      if (steps % 60 === 0) {
+        trace.push({ step: steps, hash: h.toString(16) });
+      }
     }
   } finally {
     runner.dispose();
@@ -100,5 +136,7 @@ export function runHeadlessMatch(
     survivors,
     robots,
     counts,
+    stateHash: running.toString(16),
+    trace,
   };
 }

@@ -48,7 +48,7 @@ export class NavMeshGenerator {
         adjacency: new Map(),
         clearanceRadius,
         metadata: {
-          generatedAt: Date.now(),
+          generatedAt: 0, // deterministic: mesh generation is a pure function of the arena
           arenaSize: { width: size.width, depth: size.depth },
           polygonCount: 1,
           memorySize: this.estimateMemorySize(1),
@@ -69,7 +69,7 @@ export class NavMeshGenerator {
       adjacency: this.buildAdjacencyGraph(polygons),
       clearanceRadius,
       metadata: {
-        generatedAt: Date.now(),
+        generatedAt: 0, // deterministic: mesh generation is a pure function of the arena
         arenaSize: { width: size.width, depth: size.depth },
         polygonCount: polygons.length,
         memorySize: this.estimateMemorySize(polygons.length),
