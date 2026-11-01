@@ -25,12 +25,10 @@ import { buildNeighbors } from "./aiNeighbors";
 const grid = new SpatialGrid(SENSOR_RANGE / 2);
 const enemiesScratch: RobotEntity[] = [];
 const neighborsScratch: Vec3[] = [];
-const movementContextScratch: MovementContext = {
-  formationAnchor: undefined,
-  strafeSign: 1,
-  neighbors: undefined,
-  obstacles: undefined,
-};
+// Reused movement context. `teams` (the match's seeded team configs) is
+// refreshed on every tick so the planner retreats towards the centre the team
+// actually spawned around (#215).
+let movementContextScratch: MovementContext | null = null;
 const behaviorSnapshotScratch = {
   health: 0,
   maxHealth: 0,
@@ -71,7 +69,16 @@ export function updateAISystem(
     return;
   }
 
-  const anchors = computeTeamAnchors(robots);
+  const anchors = computeTeamAnchors(robots, battleWorld.teams);
+
+  const movementContext = (movementContextScratch ??= {
+    teams: battleWorld.teams,
+    formationAnchor: undefined,
+    strafeSign: 1,
+    neighbors: undefined,
+    obstacles: undefined,
+  });
+  movementContext.teams = battleWorld.teams;
 
   // One O(n) rebuild per tick; every per-robot query below is local to the
   // robot's neighbourhood instead of scanning the full roster.
@@ -139,7 +146,7 @@ export function updateAISystem(
     robot.ai.mode = behavior;
 
     const neighborPositions = buildNeighbors(robot, grid, neighborsScratch);
-    const neighborsContext = movementContextScratch;
+    const neighborsContext = movementContext;
     neighborsContext.formationAnchor = anchorCandidate ?? undefined;
     neighborsContext.strafeSign = robot.ai.strafeSign ?? 1;
     neighborsContext.neighbors =
@@ -183,7 +190,6 @@ export function updateAISystem(
       robot,
       behavior,
       target,
-      undefined,
       neighborsContext,
       movementPlanScratch,
     );

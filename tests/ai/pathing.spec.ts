@@ -6,6 +6,7 @@ import {
   planRobotMovement,
 } from "../../src/simulation/ai/pathing";
 import { createTestRobot } from "../helpers/robotFactory";
+import { movementContext } from "../helpers/teamFixtures";
 import type { RapierWorldLike } from "../../src/simulation/ai/pathing/types";
 
 /** Interface for our mock Rapier world with spyable castRayAndGetNormal */
@@ -35,7 +36,12 @@ describe("planRobotMovement", () => {
       position: { x: 0, y: 0, z: 10 },
     });
 
-    const plan = planRobotMovement(robot, RobotBehaviorMode.Seek, target);
+    const plan = planRobotMovement(
+      robot,
+      RobotBehaviorMode.Seek,
+      target,
+      movementContext(),
+    );
     expect(plan.velocity.z).toBeCloseTo(6, 5);
     expect(plan.velocity.x).toBeCloseTo(0, 5);
     expect(plan.orientation).toBeCloseTo(0, 5);
@@ -52,7 +58,12 @@ describe("planRobotMovement", () => {
       position: { x: -4, y: 0, z: 0 },
     });
 
-    const plan = planRobotMovement(robot, RobotBehaviorMode.Retreat, target);
+    const plan = planRobotMovement(
+      robot,
+      RobotBehaviorMode.Retreat,
+      target,
+      movementContext(),
+    );
     expect(plan.velocity.x).toBeLessThan(0);
     expect(plan.orientation).toBeLessThan(0);
 
@@ -70,11 +81,10 @@ describe("planRobotMovement", () => {
       robot,
       RobotBehaviorMode.Seek,
       undefined,
-      undefined,
-      {
+      movementContext({
         formationAnchor: { x: 0, y: 0, z: 0 },
         neighbors: [{ x: 0.5, y: 0, z: 0 }],
-      },
+      }),
     );
 
     expect(plan.velocity.x).toBeLessThan(0);
@@ -95,11 +105,10 @@ describe("planRobotMovement", () => {
       robot,
       RobotBehaviorMode.Seek,
       target,
-      undefined,
-      {
+      movementContext({
         formationAnchor: { x: 0, y: 0, z: 0 },
         strafeSign: 1,
-      },
+      }),
     );
 
     expect(plan.velocity.x).toBeGreaterThan(0);
@@ -120,11 +129,10 @@ describe("planRobotMovement", () => {
       robot,
       RobotBehaviorMode.Engage,
       target,
-      undefined,
-      {
+      movementContext({
         neighbors: [{ x: 0.25, y: 0, z: 3 }],
         strafeSign: 1,
-      },
+      }),
     );
 
     expect(Math.abs(plan.velocity.x)).toBeGreaterThan(0);
@@ -152,15 +160,14 @@ describe("planRobotMovement with predictive avoidance", () => {
       robot,
       RobotBehaviorMode.Seek,
       target,
-      undefined,
-      {
+      movementContext({
         // Cast to unknown to satisfy TypeScript - mock implements the required interface
         rapierWorld: mockWorld as unknown as NonNullable<
-          Parameters<typeof planRobotMovement>[4]
+          Parameters<typeof planRobotMovement>[3]
         >["rapierWorld"],
         frameCount: 0, // entity 0 should raycast on frame 0
         entityId: 0,
-      },
+      }),
     );
 
     // castRayAndGetNormal should have been called (3 times for the fan pattern)
@@ -185,12 +192,11 @@ describe("planRobotMovement with predictive avoidance", () => {
       robot,
       RobotBehaviorMode.Seek,
       target,
-      undefined,
-      {
+      movementContext({
         rapierWorld: null,
         frameCount: 0,
         entityId: 0,
-      },
+      }),
     );
 
     // Should still produce a valid movement plan (reactive avoidance only)
@@ -215,15 +221,14 @@ describe("planRobotMovement with predictive avoidance", () => {
       robot,
       RobotBehaviorMode.Seek,
       target,
-      undefined,
-      {
+      movementContext({
         // Cast to unknown to satisfy TypeScript - mock implements the required interface
         rapierWorld: mockWorld as unknown as NonNullable<
-          Parameters<typeof planRobotMovement>[4]
+          Parameters<typeof planRobotMovement>[3]
         >["rapierWorld"],
         frameCount: 1,
         entityId: 0,
-      },
+      }),
     );
 
     // castRayAndGetNormal should NOT have been called (not this entity's frame)
@@ -245,15 +250,14 @@ describe("planRobotMovement with predictive avoidance", () => {
       robot,
       RobotBehaviorMode.Seek,
       undefined,
-      undefined,
-      {
+      movementContext({
         // Cast to unknown to satisfy TypeScript - mock implements the required interface
         rapierWorld: mockWorld as unknown as NonNullable<
-          Parameters<typeof planRobotMovement>[4]
+          Parameters<typeof planRobotMovement>[3]
         >["rapierWorld"],
         frameCount: 0,
         entityId: 0,
-      },
+      }),
     );
 
     // Both reactive (wall proximity) and predictive (raycast hit) should contribute

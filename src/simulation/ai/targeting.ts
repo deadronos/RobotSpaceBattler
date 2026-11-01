@@ -1,7 +1,7 @@
 import { RobotEntity } from "../../ecs/world";
 import { distanceSquaredVec3 } from "../../lib/math/vec3";
 import { isAlly, isEnemy } from "../../lib/robotHelpers";
-import { TEAM_CONFIGS } from "../../lib/teamConfig";
+import { oppositeTeam, type TeamConfigs } from "../../lib/teamConfig";
 
 // The selectors below run once per robot per tick, so they are written as
 // plain loops over the candidate list without allocating score objects.
@@ -39,26 +39,28 @@ function isCloserEnemy(
  *
  * @param seeker - The robot looking for a target.
  * @param robots - The list of all robots.
+ * @param teams - The seeded team configs from the match (`battleWorld.teams`).
  * @param candidates - Optional subset of robots to consider (e.g., visible ones).
  * @returns The best target robot or undefined.
  */
 export function findClosestEnemy(
   seeker: RobotEntity,
   robots: RobotEntity[],
+  teams: TeamConfigs,
   candidates?: RobotEntity[],
 ): RobotEntity | undefined {
   const pool = candidates ?? robots;
   let best: RobotEntity | undefined;
   let bestDistSq = 0;
   let bestSpawnSq = 0;
-  let spawnCenter = TEAM_CONFIGS.red.spawnCenter;
+  let spawnCenter = teams[oppositeTeam(seeker.team)].spawnCenter;
 
   for (let i = 0; i < pool.length; i += 1) {
     const entity = pool[i];
     if (!isEnemy(seeker, entity)) continue;
     if (!best) {
       // Spawn centre comes from the first enemy, as in the original scan.
-      spawnCenter = TEAM_CONFIGS[entity.team].spawnCenter;
+      spawnCenter = teams[entity.team].spawnCenter;
     }
     const distSq = distanceSquaredVec3(seeker.position, entity.position);
     const spawnSq = distanceSquaredVec3(entity.position, spawnCenter);
@@ -122,12 +124,14 @@ export function findClosestAlly(
  *
  * @param captain - The captain robot.
  * @param robots - The list of all robots.
+ * @param teams - The seeded team configs from the match (`battleWorld.teams`).
  * @param candidates - Optional subset of robots to consider.
  * @returns The selected target robot or undefined.
  */
 export function pickCaptainTarget(
   captain: RobotEntity,
   robots: RobotEntity[],
+  teams: TeamConfigs,
   candidates?: RobotEntity[],
 ): RobotEntity | undefined {
   const pool = candidates ?? robots;
@@ -137,14 +141,14 @@ export function pickCaptainTarget(
   let bestCaptain: RobotEntity | undefined;
   let capDistSq = 0;
   let capSpawnSq = 0;
-  let spawnCenter = TEAM_CONFIGS.red.spawnCenter;
+  let spawnCenter = teams[oppositeTeam(captain.team)].spawnCenter;
 
   for (let i = 0; i < pool.length; i += 1) {
     const entity = pool[i];
     if (!isEnemy(captain, entity)) continue;
     if (!firstEnemy) {
       firstEnemy = entity;
-      spawnCenter = TEAM_CONFIGS[entity.team].spawnCenter;
+      spawnCenter = teams[entity.team].spawnCenter;
     }
     if (!entity.isCaptain) continue;
     const distSq = distanceSquaredVec3(captain.position, entity.position);

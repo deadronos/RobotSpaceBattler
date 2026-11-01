@@ -8,8 +8,8 @@ import {
   findCoverPoint,
 } from "../../src/simulation/ai/teamStrategy";
 import { toVec3 } from "../../src/ecs/world";
-import { TEAM_CONFIGS } from "../../src/lib/teamConfig";
 import { createTestRobot } from "../helpers/robotFactory";
+import { TEST_TEAMS } from "../helpers/teamFixtures";
 
 describe("teamStrategy", () => {
   it("marks advantaged team as offense and disadvantaged as defense", () => {
@@ -46,7 +46,7 @@ describe("teamStrategy", () => {
       position: toVec3(10, 0, 0),
     });
 
-    const anchor = buildFormationAnchor(robot, target);
+    const anchor = buildFormationAnchor(robot, target, TEST_TEAMS);
     const radius = Math.hypot(
       anchor.x - target.position.x,
       anchor.z - target.position.z,
@@ -60,7 +60,7 @@ describe("teamStrategy", () => {
       position: toVec3(-5, 0, 0),
     });
     const enemyCentroid = toVec3(10, 0, 0);
-    const cover = findCoverPoint(robot, enemyCentroid);
+    const cover = findCoverPoint(robot, enemyCentroid, TEST_TEAMS);
     expect(cover.x).toBeLessThan(robot.position.x);
   });
 
@@ -78,12 +78,12 @@ describe("teamStrategy", () => {
       position: toVec3(20, 0, 0),
     });
 
-    const anchors = computeTeamAnchors([captain, ally, target]);
+    const anchors = computeTeamAnchors([captain, ally, target], TEST_TEAMS);
     expect(anchors.ally.anchorPosition).toBeTruthy();
   });
 
   it("assigns spaced anchors for balanced directives", () => {
-    const spawnCenter = TEAM_CONFIGS.red.spawnCenter;
+    const spawnCenter = TEST_TEAMS.red.spawnCenter;
     const robots = [
       createTestRobot({
         id: "r0",
@@ -105,7 +105,7 @@ describe("teamStrategy", () => {
       }),
     ];
 
-    const anchors = computeTeamAnchors(robots);
+    const anchors = computeTeamAnchors(robots, TEST_TEAMS);
     const r0 = anchors.r0.anchorPosition;
     const r1 = anchors.r1.anchorPosition;
     expect(r0).toBeTruthy();
@@ -145,13 +145,13 @@ describe("computeTeamAnchors scratch reuse (#201)", () => {
       }),
     ];
 
-    const first = computeTeamAnchors(robots);
+    const first = computeTeamAnchors(robots, TEST_TEAMS);
     const assignment = first.r0;
     const anchor = assignment.anchorPosition;
     expect(anchor).toBeTruthy();
 
     robots[0].position.x = -10;
-    const second = computeTeamAnchors(robots);
+    const second = computeTeamAnchors(robots, TEST_TEAMS);
 
     expect(second).toBe(first);
     expect(second.r0).toBe(assignment);
@@ -163,11 +163,11 @@ describe("computeTeamAnchors scratch reuse (#201)", () => {
     const ally = createTestRobot({ id: "r1", team: "red", spawnIndex: 1 });
     const enemy = createTestRobot({ id: "b0", team: "blue", spawnIndex: 0 });
 
-    const first = computeTeamAnchors([captain, ally, enemy]);
+    const first = computeTeamAnchors([captain, ally, enemy], TEST_TEAMS);
     expect(first.r1).toBeTruthy();
 
     ally.health = 0;
-    const second = computeTeamAnchors([captain, ally, enemy]);
+    const second = computeTeamAnchors([captain, ally, enemy], TEST_TEAMS);
     expect(second.r1).toBeUndefined();
     expect(second.r0).toBeTruthy();
   });
@@ -191,9 +191,9 @@ describe("computeTeamAnchors scratch reuse (#201)", () => {
       }),
     ];
 
-    const anchors = computeTeamAnchors(robots);
+    const anchors = computeTeamAnchors(robots, TEST_TEAMS);
     const captain = robots[0];
-    const expected = buildFormationAnchor(robots[1], robots[3]);
+    const expected = buildFormationAnchor(robots[1], robots[3], TEST_TEAMS);
     const actual = anchors.r1.anchorPosition;
 
     expect(actual).toBeTruthy();

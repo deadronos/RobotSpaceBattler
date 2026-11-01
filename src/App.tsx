@@ -20,7 +20,7 @@ import { TeamHud } from "./components/ui/TeamHud";
 import { createBattleWorld } from "./ecs/world";
 import { MATCH_END_RESTART_DELAY_MS } from "./lib/constants";
 import { readStoredBoolean, writeStoredBoolean } from "./lib/storedBoolean";
-import { TEAM_CONFIGS } from "./lib/teamConfig";
+import { TEAM_IDENTITIES } from "./lib/teamConfig";
 import { BattleRunner } from "./runtime/simulation/battleRunner";
 import { createTelemetryPort } from "./runtime/simulation/telemetryAdapter";
 import {
@@ -152,7 +152,7 @@ export default function App() {
 
   const winnerLabel =
     matchSnapshot.phase === "victory" && matchSnapshot.winner
-      ? TEAM_CONFIGS[matchSnapshot.winner].label
+      ? TEAM_IDENTITIES[matchSnapshot.winner].label
       : null;
   const isDraw = matchSnapshot.phase === "victory" && !!matchSnapshot.isDraw;
 

@@ -10,6 +10,7 @@ import type {
   MovementPlan,
 } from "../../src/simulation/ai/pathing/types";
 import { createTestRobot } from "../helpers/robotFactory";
+import { movementContext, TEST_TEAMS } from "../helpers/teamFixtures";
 
 /**
  * #201: the movement planner writes into reused scratch vectors, and callers
@@ -17,17 +18,17 @@ import { createTestRobot } from "../helpers/robotFactory";
  * produces exactly the same plan as the allocating one.
  */
 describe("allocation-free movement planning (#201)", () => {
-  function contexts(): Array<MovementContext | undefined> {
+  function contexts(): MovementContext[] {
     return [
-      undefined,
-      { strafeSign: -1 },
-      {
+      movementContext(),
+      movementContext({ strafeSign: -1 }),
+      movementContext({
         formationAnchor: vec3(4, 0, -3),
         neighbors: [
           { x: 0.5, y: 0, z: 0.25 },
           { x: -0.5, y: 0, z: 0 },
         ],
-      },
+      }),
     ];
   }
 
@@ -44,7 +45,6 @@ describe("allocation-free movement planning (#201)", () => {
         robot,
         RobotBehaviorMode.Engage,
         target,
-        undefined,
         context,
       );
 
@@ -56,7 +56,6 @@ describe("allocation-free movement planning (#201)", () => {
         robot,
         RobotBehaviorMode.Engage,
         target,
-        undefined,
         context,
         reusable,
       );
@@ -72,8 +71,19 @@ describe("allocation-free movement planning (#201)", () => {
 
   it("returns a fresh plan when no reusable plan is passed", () => {
     const robot = createTestRobot();
-    const first = planRobotMovement(robot, RobotBehaviorMode.Seek);
-    const second = planRobotMovement(robot, RobotBehaviorMode.Seek);
+    const context: MovementContext = { teams: TEST_TEAMS };
+    const first = planRobotMovement(
+      robot,
+      RobotBehaviorMode.Seek,
+      undefined,
+      context,
+    );
+    const second = planRobotMovement(
+      robot,
+      RobotBehaviorMode.Seek,
+      undefined,
+      context,
+    );
 
     expect(first).not.toBe(second);
     expect(first.velocity).not.toBe(second.velocity);

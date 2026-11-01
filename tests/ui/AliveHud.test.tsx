@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "@/App";
 import { HUD_REFRESH_MS } from "@/components/ui/useHudTick";
-import { TEAM_CONFIGS } from "@/lib/teamConfig";
+import { TEAM_IDENTITIES } from "@/lib/teamConfig";
 import type { MatchStateMachine } from "@/runtime/state/matchStateMachine";
 
 const captured = vi.hoisted(() => ({
@@ -69,8 +69,8 @@ describe("Alive HUD", () => {
     expect(alivePanel()).toMatch(/10.*10/);
 
     const strengthBar = screen.getByTestId("team-strength-bar");
-    expect(strengthBar.textContent).toContain(TEAM_CONFIGS.red.label);
-    expect(strengthBar.textContent).toContain(TEAM_CONFIGS.blue.label);
+    expect(strengthBar.textContent).toContain(TEAM_IDENTITIES.red.label);
+    expect(strengthBar.textContent).toContain(TEAM_IDENTITIES.blue.label);
     expect(strengthBar.textContent).toContain("1000 HP");
 
     act(() => {

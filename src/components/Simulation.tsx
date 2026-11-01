@@ -1,7 +1,7 @@
 import { memo, useCallback } from "react";
 
 import { BattleWorld } from "../ecs/world";
-import { TEAM_CONFIGS } from "../lib/teamConfig";
+import { TEAM_IDENTITIES } from "../lib/teamConfig";
 import {
   BattleRunner,
   createBattleRunner,
@@ -95,7 +95,7 @@ function SimulationContent(props: SimulationProps) {
         <RobotPlaceholder
           key={robot.id}
           robot={robot}
-          color={TEAM_CONFIGS[robot.team].color}
+          color={TEAM_IDENTITIES[robot.team].color}
         />
       ))}
       {instancingEnabled ? (

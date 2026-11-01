@@ -1,6 +1,7 @@
-import { getTeamConfig, RobotEntity, TeamId } from "../ecs/world";
+import { RobotEntity, TeamId } from "../ecs/world";
 import { distanceSquaredVec3 } from "./math/vec3";
 import { isActiveRobot } from "./robotHelpers";
+import { getTeamConfig, type TeamConfigs } from "./teamConfig";
 
 /**
  * Calculates a score for a robot to determine captaincy eligibility.
@@ -28,13 +29,15 @@ function captainScore(robot: RobotEntity, spawnCenterDistance: number) {
  *
  * @param team - The team ID for which to elect a captain.
  * @param robots - The list of all robot entities.
+ * @param teams - The seeded team configs from the match (`battleWorld.teams`).
  * @returns The ID of the elected captain robot, or null if no eligible robots exist.
  */
 export function electCaptain(
   team: TeamId,
   robots: RobotEntity[],
+  teams: TeamConfigs,
 ): string | null {
-  const teamConfig = getTeamConfig(team);
+  const teamConfig = getTeamConfig(team, teams);
   const eligible = robots.filter(
     (robot) => robot.team === team && isActiveRobot(robot),
   );
@@ -75,9 +78,14 @@ export function electCaptain(
  *
  * @param team - The team ID.
  * @param robots - The list of all robot entities.
+ * @param teams - The seeded team configs from the match (`battleWorld.teams`).
  */
-export function applyCaptaincy(team: TeamId, robots: RobotEntity[]): void {
-  const captainId = electCaptain(team, robots);
+export function applyCaptaincy(
+  team: TeamId,
+  robots: RobotEntity[],
+  teams: TeamConfigs,
+): void {
+  const captainId = electCaptain(team, robots, teams);
 
   robots.forEach((robot) => {
     if (robot.team !== team) {

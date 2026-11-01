@@ -9,6 +9,7 @@ import {
   toVec3,
 } from "../../src/ecs/world";
 import type { TelemetryPort } from "../../src/runtime/simulation/ports";
+import { generateTeamConfigs } from "../../src/lib/teamConfig";
 import { createTestRobot } from "./robotFactory";
 
 /** Deterministic LCG in [0, 1). */
@@ -34,6 +35,12 @@ const NOOP_TELEMETRY: TelemetryPort = {
  */
 export function buildScenarioWorld(count: number, seed = 7): BattleWorld {
   const world = createBattleWorld();
+  // The AI reads spawn centres and spawn points from the match's team configs
+  // (#215), so the scenario seed has to drive them as well. Without this the
+  // world keeps the wall-clock seed `createBattleWorld` generated and digests
+  // are not reproducible.
+  world.state.seed = seed;
+  world.teams = generateTeamConfigs(seed);
   const rand = createLcg(seed);
   const roles: RobotEntity["role"][] = ["assault", "medic", "tank"];
   for (let i = 0; i < count; i += 1) {
