@@ -54,11 +54,21 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        // Fallback: put all `node_modules` into a single `vendor` chunk.
-        // This avoids cross-chunk circular initialization ordering issues at
-        // the cost of a larger vendor bundle. Use this when finer-grained
-        // manualChunks lead to runtime races (React runtime undefined).
+        // Put all `node_modules` into a single `vendor` chunk. Finer-grained
+        // splits (react/three/debug stacks) caused cross-chunk initialization
+        // races (React runtime undefined) and let rolldown hoist shared deps
+        // into the lazy debug chunk, which then got preloaded at startup.
+        // Only the self-contained Rapier wasm package is split out, so its size
+        // is visible for #159; lazy-loaded debug tooling splits on its own.
         manualChunks(id) {
+          if (id.includes("/node_modules/@dimforge/rapier3d-compat/")) {
+            return "rapier";
+          }
+          // r3f-perf is only used by the lazy perf overlay; leave it out of
+          // vendor so it ships with that chunk instead of at startup.
+          if (id.includes("/node_modules/r3f-perf/")) {
+            return undefined;
+          }
           if (id.includes("node_modules")) {
             return "vendor";
           }

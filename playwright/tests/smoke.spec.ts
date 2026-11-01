@@ -19,6 +19,10 @@ test.afterEach(async ({ page }, testInfo) => {
 
 test("the battle loads and runs with no errors", async ({ page }, testInfo) => {
   test.setTimeout(120_000);
+  await page.addInitScript(() => {
+    window.localStorage.setItem("hud.robotListCollapse.red", "0");
+    window.localStorage.setItem("hud.robotListCollapse.blue", "0");
+  });
 
   page.on("console", (msg) => {
     if (msg.type() === "error") problems.push(`[console] ${msg.text()}`);

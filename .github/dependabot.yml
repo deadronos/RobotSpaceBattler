@@ -20,6 +20,8 @@ updates:
       # Held: postprocessing 6.39.5 peers three <0.187 (see #152 PR notes).
       - dependency-name: three
         versions: [">=0.187.0"]
-      # Held: 0.21 adds ~827 kB gzip of embedded wasm; revisit with #159.
+      # Held: current build emits rapier chunk at ~842 kB gzip (0.19.x); 0.21
+      # increased this further in prior validation. Revisit when rapier can be
+      # loaded outside initial render path or upstream ships slimmer wasm.
       - dependency-name: "@dimforge/rapier3d-compat"
         versions: [">=0.20.0"]

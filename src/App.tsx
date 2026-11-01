@@ -1,6 +1,7 @@
 import "./App.css";
 
 import {
+  lazy,
   Suspense,
   useCallback,
   useEffect,
@@ -10,29 +11,40 @@ import {
 } from "react";
 
 import sampleObstacleFixture from "../specs/006-dynamic-arena-obstacles/dynamic-arena-sample.json";
-import { ObstacleEditor } from "./components/debug/ObstacleEditor";
-import { ObstacleSpawner } from "./components/debug/ObstacleSpawner";
-import { PerfToggles } from "./components/debug/PerfToggles";
 import { Simulation } from "./components/Simulation";
 import { BattleStatsModal } from "./components/ui/BattleStatsModal";
 import { RobotListPanel } from "./components/ui/RobotListPanel";
 import { SettingsIcon } from "./components/ui/SettingsIcon";
 import { SettingsModal } from "./components/ui/SettingsModal";
 import { createBattleWorld } from "./ecs/world";
-import { AUTO_RESTART_DELAY_MS } from "./lib/constants";
-import { countAliveByTeam } from "./lib/robotHelpers";
+import { MATCH_END_RESTART_DELAY_MS } from "./lib/constants";
+import { readStoredBoolean, writeStoredBoolean } from "./lib/storedBoolean";
 import { TEAM_CONFIGS } from "./lib/teamConfig";
 import { BattleRunner } from "./runtime/simulation/battleRunner";
+import { tallyTeams } from "./runtime/simulation/matchOutcome";
 import { createTelemetryPort } from "./runtime/simulation/telemetryAdapter";
 import {
   createMatchStateMachine,
   MatchStateSnapshot,
 } from "./runtime/state/matchStateMachine";
 import { ObstacleFixture } from "./simulation/match/matchSpawner";
-
-// Bundled at build time (no network fetch, independent of Vite `base`). Kept at
-// module scope so its identity is stable and never recreates the battle runner.
 const OBSTACLE_FIXTURE = sampleObstacleFixture as unknown as ObstacleFixture;
+const ROBOT_LIST_STORAGE_KEY = "hud.showRobotList";
+
+const ObstacleEditor = lazy(async () => {
+  const module = await import("./components/debug/ObstacleEditor");
+  return { default: module.ObstacleEditor };
+});
+
+const ObstacleSpawner = lazy(async () => {
+  const module = await import("./components/debug/ObstacleSpawner");
+  return { default: module.ObstacleSpawner };
+});
+
+const PerfToggles = lazy(async () => {
+  const module = await import("./components/debug/PerfToggles");
+  return { default: module.PerfToggles };
+});
 
 function formatStatus({
   phase,
@@ -69,12 +81,14 @@ export default function App() {
   const [isBattleStatsOpen, setIsBattleStatsOpen] = useState(false);
   const [showDebugUI, setShowDebugUI] = useState(false);
   const [showPerfOverlay, setShowPerfOverlay] = useState(false);
-  const [showRobotList, setShowRobotList] = useState(true);
+  const [showRobotList, setShowRobotList] = useState(() =>
+    readStoredBoolean(ROBOT_LIST_STORAGE_KEY, true),
+  );
 
   const matchMachine = useMemo(
     () =>
       createMatchStateMachine({
-        autoRestartDelayMs: AUTO_RESTART_DELAY_MS,
+        autoRestartDelayMs: MATCH_END_RESTART_DELAY_MS,
         onChange: (snapshot) => setMatchSnapshot(snapshot),
       }),
     [],
@@ -84,11 +98,12 @@ export default function App() {
     setMatchSnapshot(matchMachine.getSnapshot());
   }, [matchMachine]);
 
-  const runnerRef = useRef<BattleRunner | null>(null);
+  useEffect(() => {
+    writeStoredBoolean(ROBOT_LIST_STORAGE_KEY, showRobotList);
+  }, [showRobotList]);
 
-  // Recomputed every render: the match machine emits a new snapshot on every
-  // tick, reset and restart, so the counts stay live and reset-correct.
-  const aliveCounts = countAliveByTeam(battleWorld.robots.entities);
+  const runnerRef = useRef<BattleRunner | null>(null);
+  const { robots: aliveCounts, health: teamHealth } = tallyTeams(battleWorld);
 
   const handleRunnerReady = useCallback((runner: BattleRunner) => {
     runnerRef.current = runner;
@@ -191,15 +206,35 @@ export default function App() {
         />
       </Suspense>
       {showDebugUI && (
-        <div className="app-debug-ui">
-          <ObstacleEditor
-            world={battleWorld}
-            sampleFixture={OBSTACLE_FIXTURE}
-          />
-          <ObstacleSpawner world={battleWorld} />
-          <PerfToggles />
-        </div>
+        <Suspense fallback={null}>
+          <div className="app-debug-ui">
+            <ObstacleEditor
+              world={battleWorld}
+              sampleFixture={OBSTACLE_FIXTURE}
+            />
+            <ObstacleSpawner world={battleWorld} />
+            <PerfToggles />
+          </div>
+        </Suspense>
       )}
+      <div className="app-team-strength" data-testid="team-strength-bar">
+        <div
+          className="app-team-strength-segment app-team-strength-red"
+          style={{
+            flex: Math.max(1, teamHealth.red),
+          }}
+        >
+          <span>{`${TEAM_CONFIGS.red.label} · ${aliveCounts.red} · ${Math.round(teamHealth.red)} HP`}</span>
+        </div>
+        <div
+          className="app-team-strength-segment app-team-strength-blue"
+          style={{
+            flex: Math.max(1, teamHealth.blue),
+          }}
+        >
+          <span>{`${TEAM_CONFIGS.blue.label} · ${aliveCounts.blue} · ${Math.round(teamHealth.blue)} HP`}</span>
+        </div>
+      </div>
       <div className="app-alive-panel">
         <div className="app-alive-title">Alive</div>
         <div>{`${TEAM_CONFIGS.red.label}: ${aliveCounts.red}`}</div>

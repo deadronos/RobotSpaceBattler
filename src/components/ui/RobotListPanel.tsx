@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Draggable from "react-draggable";
 
 import type { BattleWorld } from "../../ecs/worldTypes";
 import { isActiveRobot } from "../../lib/robotHelpers";
+import { readStoredBoolean, writeStoredBoolean } from "../../lib/storedBoolean";
 import { TEAM_CONFIGS, TeamId } from "../../lib/teamConfig";
 import { useTelemetryStore } from "../../state/telemetryStore";
 
@@ -24,12 +25,26 @@ interface RobotDisplayData {
   isAlive: boolean;
 }
 
+const ROBOT_LIST_COLLAPSE_RED_STORAGE_KEY = "hud.robotListCollapse.red";
+const ROBOT_LIST_COLLAPSE_BLUE_STORAGE_KEY = "hud.robotListCollapse.blue";
+
+function getStoredCollapseState(): Record<TeamId, boolean> {
+  return {
+    red: readStoredBoolean(ROBOT_LIST_COLLAPSE_RED_STORAGE_KEY, true),
+    blue: readStoredBoolean(ROBOT_LIST_COLLAPSE_BLUE_STORAGE_KEY, true),
+  };
+}
+
 export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
-  const [collapsed, setCollapsed] = useState<Record<TeamId, boolean>>({
-    red: false,
-    blue: false,
-  });
+  const [collapsed, setCollapsed] = useState<Record<TeamId, boolean>>(
+    getStoredCollapseState,
+  );
+
+  useEffect(() => {
+    writeStoredBoolean(ROBOT_LIST_COLLAPSE_RED_STORAGE_KEY, collapsed.red);
+    writeStoredBoolean(ROBOT_LIST_COLLAPSE_BLUE_STORAGE_KEY, collapsed.blue);
+  }, [collapsed]);
 
   const telemetryEvents = useTelemetryStore((state) => state.events);
   const robotStats = useTelemetryStore((state) => state.robots);
@@ -76,10 +91,7 @@ export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
   }, [battleWorld, telemetryEvents, robotStats]);
 
   const toggleCollapsed = (teamId: TeamId) => {
-    setCollapsed((prev) => ({
-      ...prev,
-      [teamId]: !prev[teamId],
-    }));
+    setCollapsed((prev) => ({ ...prev, [teamId]: !prev[teamId] }));
   };
 
   const renderTeamList = (teamId: TeamId) => {

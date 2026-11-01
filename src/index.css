@@ -344,7 +344,7 @@ canvas {
 /* Robot List Panel */
 .robot-list-panel {
   position: absolute;
-  top: 80px;
+  top: 150px; /* below the Alive panel (top 64px) */
   right: 16px;
   width: 420px;
   max-width: calc(100vw - 32px);
@@ -509,7 +509,7 @@ canvas {
 @media (max-width: 768px) {
   .robot-list-panel {
     width: 320px;
-    top: 60px;
+    top: 108px; /* below the team-strength bar */
     right: 8px;
   }
 

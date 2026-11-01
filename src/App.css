@@ -17,7 +17,7 @@
 
 .app-alive-panel {
   position: absolute;
-  top: 16px;
+  top: 64px;
   right: 16px;
   display: flex;
   flex-direction: column;
@@ -28,6 +28,47 @@
 .app-alive-title {
   font-weight: 600;
   font-size: 14px;
+}
+
+.app-team-strength {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(680px, calc(100vw - 64px));
+  display: flex;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(12, 14, 32, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  z-index: 3;
+}
+
+.app-team-strength-segment {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.app-team-strength-segment span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-team-strength-red {
+  color: #ffd5dc;
+  background: linear-gradient(135deg, rgba(182, 36, 66, 0.85), #4f1624);
+}
+
+.app-team-strength-blue {
+  color: #d8e9ff;
+  background: linear-gradient(135deg, rgba(44, 92, 182, 0.85), #132f57);
 }
 
 .app-victory-overlay {
@@ -140,4 +181,22 @@
 .app-controls button span {
   position: relative;
   z-index: 1;
+}
+
+@media (max-width: 768px) {
+  /* Below the settings button row; the bar already shows alive counts, so
+     the separate Alive panel is hidden to keep the top-right clear. */
+  .app-team-strength {
+    width: calc(100vw - 24px);
+    top: 64px;
+  }
+
+  .app-alive-panel {
+    display: none;
+  }
+
+  .app-team-strength-segment {
+    font-size: 10px;
+    padding: 7px 8px;
+  }
 }
