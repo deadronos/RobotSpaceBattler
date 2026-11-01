@@ -41,9 +41,6 @@ function createProjectile(
   const dirX = dx * inverseLength;
   const dirY = dy * inverseLength;
   const dirZ = dz * inverseLength;
-  if (dirX === 0 && dirY === 0 && dirZ === 0) {
-    return null;
-  }
 
   const maxLifetime =
     Math.max(1, profile.range / profile.projectileSpeed) * 1000;
