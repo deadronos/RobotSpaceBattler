@@ -79,7 +79,7 @@ async function checkFiles(files) {
     if (lines.length > THRESHOLD) {
       // Allow exemption marker in head comments
       const head = lines.slice(0, Math.min(30, lines.length)).join("\n");
-      if (/CONSTITUTION-EXEMPT|CONSTITUTION-EXCEPTION/i.test(head)) {
+      if (/SIZE-EXEMPT/.test(head)) {
         // explicit exemption present; skip
         continue;
       }
@@ -118,7 +118,7 @@ async function checkFiles(files) {
 
     if (violations.length) {
       console.error(
-        "\nCONSTITUTION VIOLATION: Source files exceed allowed size (\u003e " +
+        "\nSource size check failed: files exceed the line limit (\u003e " +
           THRESHOLD +
           " lines)",
       );
@@ -128,7 +128,7 @@ async function checkFiles(files) {
           " lines. To exempt a file, add a",
       );
       console.error(
-        "comment containing 'CONSTITUTION-EXEMPT: reason' in the file's header and create a short PR justification.\n",
+        "comment containing 'SIZE-EXEMPT: reason (#issue)' in the first 30 lines. See docs/agents/rules.md.\n",
       );
       for (const v of violations) {
         console.error(` - ${v.path}: ${v.lines} lines`);

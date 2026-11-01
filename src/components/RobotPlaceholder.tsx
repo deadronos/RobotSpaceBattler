@@ -70,7 +70,7 @@ interface RobotPlaceholderProps {
  * Physics ownership: robots deliberately have no Rapier RigidBody/collider.
  * The only Rapier queries in the game are static-geometry raycasts filtered
  * to walls and pillars, so robot colliders were never hit and only cost
- * broadphase work. See docs/contributing/architecture.md.
+ * broadphase work. See docs/agents/architecture.md.
  */
 export const RobotPlaceholder = memo(function RobotPlaceholder({
   robot,

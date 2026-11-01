@@ -1,26 +1,33 @@
-# Repository Guidelines
+# RobotSpaceBattler – agent guide
 
-> A high-performance 3D team versus game built with React and Three.js.
+3D team-vs-team auto-battler: React 19, TypeScript (strict), react-three-fiber,
+Miniplex ECS, Zustand, Rapier (static-geometry raycasts only), Vite, Vitest, Playwright.
 
-**Essential Reading**: This project follows the constitution defined in [constitution.md](file:///.specify/memory/constitution.md).
+## Commands
 
-## Core Commands
+- `npm run dev` – Vite dev server (`http://localhost:5173/RobotSpaceBattler/`)
+- `npm run lint` – oxlint (warnings fail) plus the 300-line source-size check
+- `npm run format` / `npm run format:check` – oxfmt
+- `npm run typecheck` · `npm test` · `npm run build`
+- `npm run playwright:preview` – e2e smoke against a production build
+- Before a PR: `npm run lint && npm run format:check && npm run typecheck && npm test && npm run build`
 
-- `npm run dev` – Start Vite dev server.
-- `npm run build` – Build to `dist/`.
-- `npm run test` – Run Vitest unit tests.
-- `npm run lint` – Run oxlint and check constitution compliance.
-- `npm run format` – Format `src/` with oxfmt.
+## Hard rules
 
-## Contributor Documentation
+- Source and test files stay at or below 300 lines (CI-enforced). Split by responsibility.
+- The ECS owns simulation state. Rendering only projects it.
+- The simulation is deterministic per seed: no `Math.random()` or `Date.now()` in sim code.
+- ESM only, no `any`, and tests with every behaviour change.
 
-Follow these guides for detailed project standards and workflows:
+## Read when relevant
 
-- [**Architecture & Structure**](file:///docs/contributing/architecture.md): Module organization and system deep-dives.
-- [**Coding Standards**](file:///docs/contributing/standards.md): TypeScript, React, and ESM patterns.
-- [**Development Workflows**](file:///docs/contributing/workflows.md): SpecKit, Git process, and Agent instructions.
-- [**Testing & Verification**](file:///docs/contributing/testing.md): Test frameworks and performance benchmarks.
+- [Rules and conventions](docs/agents/rules.md)
+- [Architecture and code map](docs/agents/architecture.md)
+- [Tooling](docs/agents/tooling.md)
+- [Testing and benchmarks](docs/agents/testing.md)
+- [Workflow: issue → plan → implement](docs/agents/workflow.md)
+- [Git, commits and PRs](docs/agents/git-and-prs.md)
+- [Gotchas](docs/agents/gotchas.md)
 
----
-
-_For AI Agents: Always consult the `specs/` folder for active feature requirements._
+Current priorities: [scratch.md](scratch.md). Other docs: [docs/README.md](docs/README.md).
+`docs/archive/` is history (old specs, plans, reviews), not instructions.

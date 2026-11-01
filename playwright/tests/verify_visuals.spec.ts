@@ -12,7 +12,7 @@ test("verify neon visuals", async ({ page }) => {
   await page.waitForTimeout(5000);
 
   // Take a screenshot
-  await page.screenshot({ path: "verification/visuals.png" });
+  await page.screenshot({ path: "test-results/visuals.png" });
 
   // Inspect instance colors for bullets, rockets, lasers, and effects via the
   // exposed scene object so we can detect whether instanceColor values are

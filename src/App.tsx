@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 
-import sampleObstacleFixture from "../specs/006-dynamic-arena-obstacles/dynamic-arena-sample.json";
+import sampleObstacleFixture from "./simulation/match/fixtures/dynamic-arena-sample.json";
 import { Simulation } from "./components/Simulation";
 import { BattleStatsModal } from "./components/ui/BattleStatsModal";
 import { RobotListPanel } from "./components/ui/RobotListPanel";

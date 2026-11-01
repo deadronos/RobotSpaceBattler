@@ -203,3 +203,7 @@ coverage/
 # Playwright output
 test-results/
 playwright-report/
+
+# Agent tooling (local state, worktrees)
+.claude/
+.worktrees/
