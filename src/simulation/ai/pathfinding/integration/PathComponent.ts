@@ -36,6 +36,14 @@ export interface PathComponent {
   requestedTarget: Point3D | null;
 
   /**
+   * Goal the applied path was calculated for. Compared against
+   * `requestedTarget` to detect a target that moved (or changed) while the
+   * path was being followed. Null (or absent) when no path has been applied
+   * yet; legacy components then fall back to the path's last waypoint.
+   */
+  pathGoal?: Point3D | null;
+
+  /**
    * Current waypoint index for path following
    */
   currentWaypointIndex: number;
@@ -60,6 +68,7 @@ export function createPathComponent(): PathComponent {
     path: null,
     status: "pending",
     requestedTarget: null,
+    pathGoal: null,
     currentWaypointIndex: 0,
     lastCalculationTime: 0,
     needsRecalculation: false,

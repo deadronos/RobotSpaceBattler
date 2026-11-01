@@ -118,6 +118,13 @@ export interface ObstacleGeometry {
  * Arena configuration for NavMesh generation
  */
 export interface ArenaConfiguration {
+  /**
+   * Minimum XZ corner of the walkable area in arena (world) coordinates.
+   * The generated polygons are expressed in the same coordinates as the
+   * obstacles and the robots, so no origin is (0, 0) unless the arena says so.
+   */
+  readonly origin: Point2D;
+  /** Extent of the walkable area, measured from `origin`. */
   readonly size: { readonly width: number; readonly depth: number };
   readonly obstacles: ReadonlyArray<ObstacleGeometry>;
 }

@@ -53,6 +53,7 @@ class FakeWorker implements WorkerLike {
 
 function makeMesh(width = 100) {
   return new NavMeshGenerator().generateFromArena({
+    origin: { x: 0, z: 0 },
     size: { width, depth: 100 },
     obstacles: [],
   });

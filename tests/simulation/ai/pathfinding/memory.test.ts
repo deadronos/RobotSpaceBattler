@@ -10,6 +10,7 @@ describe("PathfindingSystem Memory", () => {
   beforeEach(() => {
     const generator = new NavMeshGenerator();
     const navMesh = generator.generateFromArena({
+      origin: { x: 0, z: 0 },
       size: { width: 100, depth: 100 },
       obstacles: [],
     });

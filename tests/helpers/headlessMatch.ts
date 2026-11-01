@@ -39,7 +39,12 @@ export interface HeadlessMatchResult {
   }>;
   counts: { spawns: number; fires: number; damage: number; deaths: number };
   /** Navmesh path results applied during the run. */
-  paths: { calculations: number; cacheHits: number };
+  paths: {
+    calculations: number;
+    cacheHits: number;
+    noPath: number;
+    failures: number;
+  };
   /** FNV-1a hash folded over the world state after every step. */
   stateHash: string;
   /** Sampled (every 60 steps) per-step hashes, for diffing diverging runs. */
@@ -82,7 +87,7 @@ export function runHeadlessMatch(
   const maxSteps = options.maxSteps ?? 60 * 200;
 
   const counts = { spawns: 0, fires: 0, damage: 0, deaths: 0 };
-  const paths = { calculations: 0, cacheHits: 0 };
+  const paths = { calculations: 0, cacheHits: 0, noPath: 0, failures: 0 };
   const telemetry: TelemetryPort = {
     reset: vi.fn<TelemetryPort["reset"]>(),
     recordSpawn: vi.fn<TelemetryPort["recordSpawn"]>(() => {
@@ -101,6 +106,8 @@ export function runHeadlessMatch(
       (event) => {
         if (event.type === "cache_hit") paths.cacheHits += 1;
         else if (event.type === "calculation") paths.calculations += 1;
+        else if (event.type === "no_path") paths.noPath += 1;
+        else paths.failures += 1;
       },
     ),
   };

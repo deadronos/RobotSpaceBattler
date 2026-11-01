@@ -75,7 +75,7 @@ export interface TelemetryPort {
   }) => void;
   /** Records a pathfinding event (calculation, hit, fail). */
   recordPathfinding?: (event: {
-    type: "calculation" | "cache_hit" | "failure";
+    type: "calculation" | "cache_hit" | "no_path" | "failure";
     entityId?: string;
     durationMs: number;
     pathLength?: number;

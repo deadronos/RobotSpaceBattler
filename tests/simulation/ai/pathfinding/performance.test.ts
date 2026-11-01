@@ -16,6 +16,7 @@ describe("PathfindingSystem Performance", () => {
   beforeEach(() => {
     const generator = new NavMeshGenerator();
     navMesh = generator.generateFromArena({
+      origin: { x: 0, z: 0 },
       size: { width: 100, depth: 100 },
       obstacles: [],
     });
@@ -126,6 +127,7 @@ describe("PathfindingSystem Performance", () => {
     // Act: Simulate dynamic obstacle (new wall) and recalculate all paths
     const generator = new NavMeshGenerator();
     const newNavMesh = generator.generateFromArena({
+      origin: { x: 0, z: 0 },
       size: { width: 100, depth: 100 },
       obstacles: [
         {

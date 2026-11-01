@@ -18,6 +18,7 @@ describe("T060: Narrow Passage Navigation", () => {
     // Create arena with narrow passage (2-unit wide corridor)
     const generator = new NavMeshGenerator();
     const narrowPassageMesh = generator.generateFromArena({
+      origin: { x: 0, z: 0 },
       size: { width: 100, depth: 100 },
       obstacles: [
         // Left wall of corridor

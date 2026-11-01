@@ -8,6 +8,7 @@ import { createPathfindingEngine } from "@/simulation/ai/pathfinding/worker/path
 import type { WorkerPathRequest } from "@/simulation/ai/pathfinding/worker/types";
 
 const arena: ArenaConfiguration = {
+  origin: { x: 0, z: 0 },
   size: { width: 100, depth: 100 },
   obstacles: [
     {
