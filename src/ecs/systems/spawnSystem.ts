@@ -1,6 +1,7 @@
 import { applyCaptaincy } from "../../lib/captainElection";
 import { createXorShift32 } from "../../lib/random/xorshift";
 import { generateTeamConfigs, TeamId } from "../../lib/teamConfig";
+import { generateSeed } from "../../lib/random/seed";
 import { createPathComponent } from "../../simulation/ai/pathfinding/integration/PathComponent";
 import {
   getWeaponProfile,
@@ -173,7 +174,7 @@ export function spawnTeams(
   battleWorld: BattleWorld,
   options: SpawnOptions = {},
 ): void {
-  const baseSeed = options.seed ?? Date.now();
+  const baseSeed = options.seed ?? generateSeed();
   battleWorld.state.seed = baseSeed;
 
   // Generate and store seeded team configurations for this match

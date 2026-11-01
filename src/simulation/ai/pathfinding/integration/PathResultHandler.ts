@@ -22,6 +22,7 @@ export class PathResultHandler {
     private navMeshResource: NavMeshResource,
     private telemetryCallbacks: PathfindingTelemetryCallback[],
     private cache?: PathCache,
+    private now: () => number = () => 0,
   ) {}
 
   emitTelemetry(event: Parameters<PathfindingTelemetryCallback>[0]) {
@@ -87,7 +88,7 @@ export class PathResultHandler {
     const path = result.path!;
     pathComponent.path = path;
     pathComponent.status = "valid" as const;
-    pathComponent.lastCalculationTime = Date.now();
+    pathComponent.lastCalculationTime = this.now();
 
     if (this.cache) {
       this.cache.set(start, target, path);
@@ -100,7 +101,7 @@ export class PathResultHandler {
     this.emitTelemetry({
       type: "path-calculation-complete",
       entityId: robotId,
-      timestamp: Date.now(),
+      timestamp: this.now(),
       success: true,
       durationMs: result.durationMs,
       pathLength: path.totalDistance,
@@ -116,12 +117,12 @@ export class PathResultHandler {
   ) {
     pathComponent.path = null;
     pathComponent.status = "failed" as const;
-    pathComponent.lastCalculationTime = Date.now();
+    pathComponent.lastCalculationTime = this.now();
 
     this.emitTelemetry({
       type: "path-calculation-failed",
       entityId: robotId,
-      timestamp: Date.now(),
+      timestamp: this.now(),
       success: false,
       durationMs: result.durationMs,
       error: "No path found",
@@ -135,12 +136,12 @@ export class PathResultHandler {
   ) {
     pathComponent.path = null;
     pathComponent.status = "failed" as const;
-    pathComponent.lastCalculationTime = Date.now();
+    pathComponent.lastCalculationTime = this.now();
 
     this.emitTelemetry({
       type: "path-calculation-failed",
       entityId: robotId,
-      timestamp: Date.now(),
+      timestamp: this.now(),
       success: false,
       durationMs: result.durationMs,
       error: result.error || "Unknown worker error",

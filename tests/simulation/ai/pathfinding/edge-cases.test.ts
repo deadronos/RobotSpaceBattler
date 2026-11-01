@@ -181,7 +181,7 @@ describe("PathfindingSystem Edge Cases", () => {
     it("respects frame budget when executing batch", () => {
       // Create a system with very low budget
       const budgetSystem = new PathfindingSystem(navMeshResource, {
-        frameBudget: 0.1, // 0.1ms budget
+        maxRequestsPerTick: 3,
       });
 
       // Create many requests

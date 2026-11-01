@@ -7,7 +7,7 @@ const DT = 1 / 60;
 describe("createFixedStepper", () => {
   it("runs no steps until a full step has accumulated", () => {
     const stepper = createFixedStepper({ stepSeconds: DT, maxSubSteps: 5 });
-    const fn = vi.fn();
+    const fn = vi.fn<(dt: number) => void>();
     expect(stepper.advance(DT / 2, fn)).toBe(0);
     expect(fn).not.toHaveBeenCalled();
     expect(stepper.advance(DT / 2 + 1e-9, fn)).toBe(1);
@@ -16,7 +16,7 @@ describe("createFixedStepper", () => {
 
   it("always steps with the fixed dt, carrying the remainder", () => {
     const stepper = createFixedStepper({ stepSeconds: DT, maxSubSteps: 10 });
-    const fn = vi.fn();
+    const fn = vi.fn<(dt: number) => void>();
     expect(stepper.advance(DT * 2.5, fn)).toBe(2);
     expect(fn.mock.calls.every(([dt]) => dt === DT)).toBe(true);
     expect(stepper.advance(DT * 0.5, fn)).toBe(1);
@@ -24,7 +24,7 @@ describe("createFixedStepper", () => {
 
   it("clamps a huge frame delta to maxSubSteps and drops the backlog", () => {
     const stepper = createFixedStepper({ stepSeconds: DT, maxSubSteps: 5 });
-    const fn = vi.fn();
+    const fn = vi.fn<(dt: number) => void>();
     expect(stepper.advance(60, fn)).toBe(5);
     expect(fn).toHaveBeenCalledTimes(5);
     // Backlog is discarded: next small frame does not trigger a catch-up burst.
@@ -33,7 +33,7 @@ describe("createFixedStepper", () => {
 
   it("ignores non-finite and negative deltas", () => {
     const stepper = createFixedStepper({ stepSeconds: DT, maxSubSteps: 5 });
-    const fn = vi.fn();
+    const fn = vi.fn<(dt: number) => void>();
     expect(stepper.advance(Number.NaN, fn)).toBe(0);
     expect(stepper.advance(-1, fn)).toBe(0);
     expect(fn).not.toHaveBeenCalled();

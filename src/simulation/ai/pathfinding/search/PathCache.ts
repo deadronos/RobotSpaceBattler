@@ -18,6 +18,8 @@ interface CacheStats {
 }
 
 interface PathCacheOptions {
+  /** Clock for LRU ordering; defaults to a deterministic access counter. */
+  now?: () => number;
   maxSize: number;
 }
 
@@ -39,10 +41,14 @@ export class PathCache {
   private maxSize: number;
   private hits = 0;
   private misses = 0;
+  private tick = 0;
+  private now: () => number;
 
   constructor(options: PathCacheOptions) {
     this.cache = new Map();
     this.maxSize = options.maxSize;
+    // Default clock is a monotonic counter: LRU only needs ordering.
+    this.now = options.now ?? (() => this.tick++);
   }
 
   /**
@@ -56,7 +62,7 @@ export class PathCache {
     if (entry) {
       this.hits++;
       // Update timestamp for LRU tracking
-      entry.timestamp = Date.now();
+      entry.timestamp = this.now();
       return entry.path;
     }
 
@@ -77,7 +83,7 @@ export class PathCache {
 
     this.cache.set(key, {
       path,
-      timestamp: Date.now(),
+      timestamp: this.now(),
     });
   }
 

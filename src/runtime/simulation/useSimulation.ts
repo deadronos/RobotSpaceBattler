@@ -91,7 +91,8 @@ export function useSimulation({
   // Game Loop
   useFrame((state, delta) => {
     recordRendererFrame(state.gl, delta);
-    runnerRef.current?.step(delta);
+    // Fixed 60 Hz sim with an accumulator + substep cap lives in the runner.
+    runnerRef.current?.advance(delta);
   });
 
   return { runner: runnerRef.current };

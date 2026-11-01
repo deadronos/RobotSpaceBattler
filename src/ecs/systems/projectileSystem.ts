@@ -2,9 +2,11 @@ import {
   distanceSquaredPointToAABB,
   distanceSquaredPointToCircle,
 } from "../../lib/math/geometry";
+import { segmentIntersectsSphere } from "../../lib/math/segment";
 import {
   addInPlaceVec3,
   cloneVec3,
+  copyVec3,
   distanceVec3,
   scaleVec3To,
   vec3,
@@ -22,6 +24,7 @@ import {
 
 const activeRobotsScratch: RobotEntity[] = [];
 const robotsByIdScratch = new Map<string, RobotEntity>();
+const previousPositionScratch = vec3();
 
 /**
  * Updates the projectile simulation.
@@ -55,6 +58,7 @@ export function updateProjectileSystem(
 
   projectileLoop: for (let i = 0; i < projectiles.length; i += 1) {
     const projectile = projectiles[i];
+    copyVec3(previousPositionScratch, projectile.position);
     scaleVec3To(displacement, projectile.velocity, deltaSeconds);
     addInPlaceVec3(projectile.position, displacement);
     projectile.distanceTraveled += projectile.speed * deltaSeconds;
@@ -125,9 +129,16 @@ export function updateProjectileSystem(
     }
 
     const hitRadius = 1.2;
-    const distance = distanceVec3(projectile.position, target.position);
-
-    if (distance <= hitRadius) {
+    // Swept test: the segment travelled this step vs. the target sphere, so a
+    // large delta cannot carry the projectile through the target.
+    if (
+      segmentIntersectsSphere(
+        previousPositionScratch,
+        projectile.position,
+        target.position,
+        hitRadius,
+      )
+    ) {
       const shooter = robotsByIdScratch.get(projectile.shooterId);
 
       if (projectile.weapon === "rocket") {
