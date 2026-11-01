@@ -61,13 +61,6 @@ export default defineConfig({
               name: "r3f",
               test: /node_modules[\\/](@react-three|postprocessing|its-fine)[\\/]/,
             },
-            {
-              // Everything else, except the perf overlay stack: `r3f-perf`
-              // (and its `stats-gl` dependency) must stay in the lazy
-              // `PerfMonitorOverlay` chunk instead of loading at startup.
-              name: "vendor",
-              test: /node_modules[\\/](?!r3f-perf[\\/]|stats-gl[\\/])/,
-            },
           ],
         },
         plugins: [visualizer({ filename: "dist/stats.html", open: false })],
