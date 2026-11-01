@@ -50,7 +50,8 @@ test("the battle loads and runs with no errors", async ({ page }, testInfo) => {
     });
   });
 
-  await page.goto("./", { waitUntil: "load" });
+  // `?debug` exposes `window.__battleWorld` for the liveness check below.
+  await page.goto("./?debug", { waitUntil: "load" });
   const canvas = page.locator("canvas").first();
   await expect(canvas).toBeVisible({ timeout: 20_000 });
 
@@ -75,18 +76,35 @@ test("the battle loads and runs with no errors", async ({ page }, testInfo) => {
     )
     .toBe(true);
 
-  // Simulation liveness: the robot status panel (targets, health, shots,
-  // damage) only changes when the battle runner steps. The canvas itself is
-  // not a usable signal because the neon materials pulse even when frozen.
-  const robotPanel = page.locator(".robot-list-content");
-  await expect(robotPanel).toBeVisible();
-  const initial = await robotPanel.innerText();
+  // Simulation liveness: the runner advances `state.frameIndex` once per
+  // fixed 60 Hz step. Visible HUD changes are not a usable signal: on slow CI
+  // runners (software GL, substep cap) robots can take longer than the poll
+  // window to first engage, and the neon materials pulse even when frozen.
+  const frameIndex = () =>
+    page.evaluate(
+      () =>
+        (
+          window as unknown as {
+            __battleWorld?: { state: { frameIndex: number } };
+          }
+        ).__battleWorld?.state.frameIndex ?? -1,
+    );
   await expect
-    .poll(() => robotPanel.innerText(), {
-      timeout: 40_000,
-      message: "robot status never changed: the simulation looks frozen",
+    .poll(frameIndex, {
+      timeout: 15_000,
+      message: "window.__battleWorld was never exposed (?debug)",
     })
-    .not.toBe(initial);
+    .toBeGreaterThanOrEqual(0);
+  const startFrame = await frameIndex();
+  await expect
+    .poll(frameIndex, {
+      timeout: 20_000,
+      message: "simulation never advanced: frameIndex is stuck",
+    })
+    .toBeGreaterThan(startFrame + 60);
+
+  // The robot status panel still has to render.
+  await expect(page.locator(".robot-list-content")).toBeVisible();
 
   const shot = await page.screenshot({
     path: testInfo.outputPath("smoke.png"),
