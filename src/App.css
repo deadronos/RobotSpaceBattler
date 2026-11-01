@@ -184,9 +184,15 @@
 }
 
 @media (max-width: 768px) {
+  /* Below the settings button row; the bar already shows alive counts, so
+     the separate Alive panel is hidden to keep the top-right clear. */
   .app-team-strength {
     width: calc(100vw - 24px);
-    top: 10px;
+    top: 64px;
+  }
+
+  .app-alive-panel {
+    display: none;
   }
 
   .app-team-strength-segment {
