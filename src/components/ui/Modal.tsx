@@ -1,5 +1,12 @@
 import { ReactNode, useEffect, useId, useRef } from "react";
 
+const FOCUSABLE_SELECTOR =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function getFocusable(root: HTMLElement): HTMLElement[] {
+  return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+}
+
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -17,6 +24,13 @@ export function Modal({
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const titleId = useId();
+  // Callers pass inline callbacks and the app re-renders every simulation
+  // tick, so read onClose through a ref to keep the focus effect keyed on
+  // isOpen only (otherwise focus is reset every frame).
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -29,31 +43,32 @@ export function Modal({
     }
 
     const previousActiveElement = document.activeElement as HTMLElement | null;
-    const focusable = dialog.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    const firstFocusable = focusable[0];
-    const lastFocusable = focusable[focusable.length - 1];
-    firstFocusable?.focus();
+    getFocusable(dialog)[0]?.focus();
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== "Tab") {
         return;
       }
-      if (!firstFocusable || !lastFocusable) {
+      // Re-query each time: content can change while the modal is open.
+      const focusable = getFocusable(dialog);
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) {
         e.preventDefault();
         return;
       }
-      if (e.shiftKey && document.activeElement === firstFocusable) {
+      const active = document.activeElement;
+      const outside = !active || !dialog.contains(active);
+      if (e.shiftKey && (outside || active === first)) {
         e.preventDefault();
-        lastFocusable.focus();
-      } else if (!e.shiftKey && document.activeElement === lastFocusable) {
+        last.focus();
+      } else if (!e.shiftKey && (outside || active === last)) {
         e.preventDefault();
-        firstFocusable.focus();
+        first.focus();
       }
     };
 
@@ -62,7 +77,7 @@ export function Modal({
       window.removeEventListener("keydown", handleKeyDown);
       previousActiveElement?.focus();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
