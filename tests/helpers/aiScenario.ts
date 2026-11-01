@@ -61,30 +61,86 @@ export type ScenarioProbe = (phase: "ai" | "combat", run: () => void) => void;
 const runDirect: ScenarioProbe = (_phase, run) => run();
 
 /**
- * Approximate bytes allocated per tick by the AI and combat systems: the sum
- * of positive `heapUsed` deltas around each call, after a warm-up.
+ * Bytes allocated per call of `runTick`, estimated from `heapUsed` growth over
+ * batches of ticks (sampling per batch rather than per call avoids allocation
+ * granularity noise). Batches in which a GC shrank the heap are ignored.
+ */
+export function bytesPerTick(
+  runTick: (tick: number) => void,
+  warmup: number,
+  batches: number,
+  batchTicks: number,
+): number {
+  let tick = 0;
+  for (; tick < warmup; tick += 1) runTick(tick);
+  let bytes = 0;
+  let counted = 0;
+  for (let batch = 0; batch < batches; batch += 1) {
+    const before = process.memoryUsage().heapUsed;
+    for (let i = 0; i < batchTicks; i += 1, tick += 1) runTick(tick);
+    const delta = process.memoryUsage().heapUsed - before;
+    if (delta > 0) {
+      bytes += delta;
+      counted += batchTicks;
+    }
+  }
+  return counted > 0 ? bytes / counted : 0;
+}
+
+/**
+ * Approximate steady-state bytes allocated per tick by the AI system (with
+ * allocation-free movement integration) and per tick of the combat system
+ * with every robot firing.
  */
 export function measureAllocationsPerTick(
   count: number,
-  ticks: number,
+  batches = 30,
   warmup = 120,
 ): { aiBytes: number; combatBytes: number } {
-  const world = buildScenarioWorld(count);
+  const aiWorld = buildScenarioWorld(count);
   const rng = createLcg(3);
-  const totals = { ai: 0, combat: 0 };
-  let metering = false;
-  const probe: ScenarioProbe = (phase, run) => {
-    if (!metering) return run();
-    const before = process.memoryUsage().heapUsed;
-    run();
-    const delta = process.memoryUsage().heapUsed - before;
-    if (delta > 0) totals[phase] += delta;
-  };
-  for (let tick = 0; tick < warmup + ticks; tick += 1) {
-    metering = tick >= warmup;
-    stepScenario(world, rng, tick, 1 / 60, probe);
+  const aiBytes = bytesPerTick(
+    (tick) => {
+      aiWorld.state.elapsedMs += (1 / 60) * 1000;
+      updateAISystem(aiWorld, rng);
+      const robots = aiWorld.robots.entities;
+      for (let i = 0; i < robots.length; i += 1) {
+        const robot = robots[i];
+        robot.position.x += robot.velocity.x / 60;
+        robot.position.z += robot.velocity.z / 60;
+      }
+      void tick;
+    },
+    warmup,
+    batches,
+    20,
+  );
+
+  // Combat: compress the roster so every robot is in range of its target and
+  // reset cooldowns so each robot fires every tick.
+  const combatWorld = buildScenarioWorld(count);
+  const fighters = combatWorld.robots.entities;
+  for (let i = 0; i < fighters.length; i += 1) {
+    fighters[i].position.x *= 0.1;
+    fighters[i].position.z *= 0.1;
+    fighters[i].ai.targetId = fighters[(i + 1) % fighters.length].id;
   }
-  return { aiBytes: totals.ai / ticks, combatBytes: totals.combat / ticks };
+  const combatBytes = bytesPerTick(
+    () => {
+      for (let i = 0; i < fighters.length; i += 1) {
+        fighters[i].fireCooldown = 0;
+      }
+      updateCombatSystem(combatWorld, NOOP_TELEMETRY, 1 / 60);
+      const projectiles = combatWorld.projectiles.entities;
+      for (let i = projectiles.length - 1; i >= 0; i -= 1) {
+        combatWorld.removeProjectile(projectiles[i]);
+      }
+    },
+    warmup,
+    batches,
+    20,
+  );
+  return { aiBytes, combatBytes: combatBytes / count };
 }
 
 /** Advances one tick: AI, movement integration, combat and scripted damage. */

@@ -38,8 +38,13 @@ function resetProjectile(projectile: ProjectileEntity): void {
   projectile.explosionDurationMs = undefined;
   projectile.beamWidth = undefined;
   projectile.impactDurationMs = undefined;
-  projectile.position = vec3();
-  projectile.velocity = vec3();
+  // Zero the pooled vectors in place instead of allocating fresh ones.
+  projectile.position.x = 0;
+  projectile.position.y = 0;
+  projectile.position.z = 0;
+  projectile.velocity.x = 0;
+  projectile.velocity.y = 0;
+  projectile.velocity.z = 0;
   projectile.distanceTraveled = 0;
   projectile.spawnTime = 0;
   projectile.maxLifetime = 0;

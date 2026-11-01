@@ -83,7 +83,10 @@ export function isLineOfSightBlocked(start: Vec3, end: Vec3): boolean {
     return false;
   }
 
-  for (const wall of ARENA_WALLS) {
+  // Indexed loops: this runs for every robot pair each tick and for-of would
+  // allocate an iterator per call.
+  for (let i = 0; i < ARENA_WALLS.length; i += 1) {
+    const wall = ARENA_WALLS[i];
     if (
       segmentIntersectsAABB(start, end, wall, wall.halfWidth, wall.halfDepth)
     ) {
@@ -91,7 +94,8 @@ export function isLineOfSightBlocked(start: Vec3, end: Vec3): boolean {
     }
   }
 
-  for (const pillar of ARENA_PILLARS) {
+  for (let i = 0; i < ARENA_PILLARS.length; i += 1) {
+    const pillar = ARENA_PILLARS[i];
     if (segmentIntersectsCircle(start, end, pillar, pillar.radius)) {
       return true;
     }
@@ -135,6 +139,9 @@ export interface RuntimeCheckOptions {
   };
 }
 
+// Reused obstacle-centre point; LOS checks run per robot pair every tick.
+const centerScratch = { x: 0, z: 0 };
+
 /**
  * Helper function to check intersections with dynamic obstacles and rapier world.
  */
@@ -159,7 +166,9 @@ function checkIntersectionRuntime(
   }
 
   if (options && Array.isArray(options.obstacles)) {
-    for (const obs of options.obstacles) {
+    const obstacles = options.obstacles;
+    for (let i = 0; i < obstacles.length; i += 1) {
+      const obs = obstacles[i];
       if (!obs) continue;
 
       // Check if the obstacle blocks the specific type (vision or movement)
@@ -174,11 +183,13 @@ function checkIntersectionRuntime(
       if (shape.kind === "box") {
         const cx = shape.center?.x ?? obs.position?.x ?? 0;
         const cz = shape.center?.z ?? obs.position?.z ?? 0;
+        centerScratch.x = cx;
+        centerScratch.z = cz;
         if (
           segmentIntersectsAABB(
             start,
             end,
-            { x: cx, z: cz },
+            centerScratch,
             shape.halfWidth,
             shape.halfDepth,
           )
@@ -187,7 +198,9 @@ function checkIntersectionRuntime(
       } else if (shape.kind === "circle") {
         const cx = shape.center?.x ?? obs.position?.x ?? 0;
         const cz = shape.center?.z ?? obs.position?.z ?? 0;
-        if (segmentIntersectsCircle(start, end, { x: cx, z: cz }, shape.radius))
+        centerScratch.x = cx;
+        centerScratch.z = cz;
+        if (segmentIntersectsCircle(start, end, centerScratch, shape.radius))
           return true;
       }
     }

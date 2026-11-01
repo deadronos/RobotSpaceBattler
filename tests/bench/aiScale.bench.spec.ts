@@ -47,15 +47,15 @@ function timeTicks(count: number): { median: number; p95: number } {
 describe("AI + combat scaling benchmark", () => {
   it("runs 20 / 100 / 200 robots headlessly", () => {
     const rows: string[] = [
-      "| robots | median ms/tick | p95 ms/tick | AI KB/tick | combat KB/tick |",
+      "| robots | median ms/tick | p95 ms/tick | AI KB/tick | combat B/shot |",
       "| ---: | ---: | ---: | ---: | ---: |",
     ];
     for (const count of COUNTS) {
       const time = timeTicks(count);
-      const alloc = measureAllocationsPerTick(count, FULL ? 300 : 10, WARMUP);
+      const alloc = measureAllocationsPerTick(count, FULL ? 30 : 2, WARMUP);
       expect(time.median).toBeGreaterThan(0);
       rows.push(
-        `| ${count} | ${time.median.toFixed(3)} | ${time.p95.toFixed(3)} | ${(alloc.aiBytes / 1024).toFixed(1)} | ${(alloc.combatBytes / 1024).toFixed(1)} |`,
+        `| ${count} | ${time.median.toFixed(3)} | ${time.p95.toFixed(3)} | ${(alloc.aiBytes / 1024).toFixed(1)} | ${alloc.combatBytes.toFixed(0)} |`,
       );
     }
     if (FULL) process.stdout.write(`\n${rows.join("\n")}\n`);

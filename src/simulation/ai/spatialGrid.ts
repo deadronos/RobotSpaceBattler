@@ -1,6 +1,22 @@
 import type { RobotEntity } from "../../ecs/world";
 
 const MAX_CELLS = 16384;
+/** Ciura gap sequence (descending) for the in-place shell sort. */
+const GAPS = [701, 301, 132, 57, 23, 10, 4, 1];
+
+interface TeamBucket {
+  list: RobotEntity[];
+  count: number;
+}
+
+function resetBucket(bucket: TeamBucket): void {
+  bucket.count = 0;
+}
+
+function trimBucket(bucket: TeamBucket): void {
+  // Trim once after filling: `length = 0` + push reallocates every rebuild.
+  if (bucket.list.length !== bucket.count) bucket.list.length = bucket.count;
+}
 
 /**
  * Uniform XZ-plane grid over the active robots, rebuilt once per AI tick.
@@ -23,7 +39,7 @@ export class SpatialGrid {
   private next = new Int32Array(0);
   private slotCell = new Int32Array(0);
   private members: RobotEntity[] = [];
-  private readonly byTeam = new Map<string, RobotEntity[]>();
+  private readonly byTeam = new Map<string, TeamBucket>();
   private picked = new Int32Array(0);
   private readonly emptyTeam: RobotEntity[] = [];
 
@@ -34,13 +50,13 @@ export class SpatialGrid {
 
   /** Active robots on `team`, in source order. Valid until the next rebuild. */
   teamMembers(team: string): RobotEntity[] {
-    return this.byTeam.get(team) ?? this.emptyTeam;
+    return this.byTeam.get(team)?.list ?? this.emptyTeam;
   }
 
   /** Rebuilds the index from `robots`, skipping robots with health <= 0. */
   rebuild(robots: readonly RobotEntity[]): void {
-    for (const list of this.byTeam.values()) list.length = 0;
-    this.members.length = 0;
+    this.byTeam.forEach(resetBucket);
+    let count = 0;
 
     let minX = Infinity;
     let minZ = Infinity;
@@ -49,13 +65,15 @@ export class SpatialGrid {
     for (let i = 0; i < robots.length; i += 1) {
       const robot = robots[i];
       if (robot.health <= 0) continue;
-      this.members.push(robot);
-      let list = this.byTeam.get(robot.team);
-      if (!list) {
-        list = [];
-        this.byTeam.set(robot.team, list);
+      this.members[count] = robot;
+      count += 1;
+      let bucket = this.byTeam.get(robot.team);
+      if (!bucket) {
+        bucket = { list: [], count: 0 };
+        this.byTeam.set(robot.team, bucket);
       }
-      list.push(robot);
+      bucket.list[bucket.count] = robot;
+      bucket.count += 1;
       const { x, z } = robot.position;
       if (x < minX) minX = x;
       if (x > maxX) maxX = x;
@@ -63,7 +81,8 @@ export class SpatialGrid {
       if (z > maxZ) maxZ = z;
     }
 
-    const count = this.members.length;
+    if (this.members.length !== count) this.members.length = count;
+    this.byTeam.forEach(trimBucket);
     if (count === 0) {
       this.cols = 1;
       this.rows = 1;
@@ -117,8 +136,10 @@ export class SpatialGrid {
     exclude: RobotEntity | undefined,
     out: RobotEntity[],
   ): RobotEntity[] {
-    out.length = 0;
-    if (this.members.length === 0) return out;
+    if (this.members.length === 0) {
+      if (out.length !== 0) out.length = 0;
+      return out;
+    }
 
     const x0 = this.cellX(x - radius);
     const x1 = this.cellX(x + radius);
@@ -146,25 +167,29 @@ export class SpatialGrid {
       }
     }
 
-    // Restore source (world) order: cheap insertion sort for the common small
-    // result, native typed-array sort otherwise.
-    if (found <= 24) {
-      for (let i = 1; i < found; i += 1) {
-        const value = this.picked[i];
-        let j = i - 1;
-        while (j >= 0 && this.picked[j] > value) {
-          this.picked[j + 1] = this.picked[j];
-          j -= 1;
+    // Restore source (world) order with an in-place shell sort (insertion sort
+    // for the common small result); no temporary arrays or typed-array views.
+    const picked = this.picked;
+    for (let g = 0; g < GAPS.length; g += 1) {
+      const gap = GAPS[g];
+      if (gap >= found) continue;
+      for (let i = gap; i < found; i += 1) {
+        const value = picked[i];
+        let j = i;
+        while (j >= gap && picked[j - gap] > value) {
+          picked[j] = picked[j - gap];
+          j -= gap;
         }
-        this.picked[j + 1] = value;
+        picked[j] = value;
       }
-    } else {
-      this.picked.subarray(0, found).sort();
     }
 
     for (let i = 0; i < found; i += 1) {
-      out.push(this.members[this.picked[i]]);
+      out[i] = this.members[this.picked[i]];
     }
+    // Write by index and trim once: `length = 0` + push would free and then
+    // reallocate the backing store on every query.
+    if (out.length !== found) out.length = found;
     return out;
   }
 

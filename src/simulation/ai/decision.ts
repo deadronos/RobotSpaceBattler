@@ -14,6 +14,22 @@ import {
   pickCaptainTarget,
 } from "./targeting";
 
+// Scratch buffers reused across calls (the simulation is single threaded).
+const visibleAlliesScratch: RobotEntity[] = [];
+const losOptionsScratch: {
+  obstacles: BattleWorld["obstacles"]["entities"] | undefined;
+} = { obstacles: undefined };
+
+/** Result of `updateTargeting`. The object is reused between calls. */
+export interface TargetingResult {
+  target: RobotEntity | undefined;
+  visibleEnemies: RobotEntity[];
+}
+const targetingResultScratch: TargetingResult = {
+  target: undefined,
+  visibleEnemies: [],
+};
+
 /**
  * Updates the targeting and sensor logic for a single robot.
  * Decides on a target based on visibility, memory, and role (captain).
@@ -24,7 +40,8 @@ import {
  * @param battleWorld - The world state.
  * @param rng - Random number generator.
  * @param potentialAllies - Optional list of potential allies (optimization for medics).
- * @returns An object containing the chosen target (if any) and the list of currently visible enemies.
+ * @returns The chosen target (if any) and the currently visible enemies. The
+ * returned object and array are scratch buffers: read them before the next call.
  */
 export function updateTargeting(
   robot: RobotEntity,
@@ -33,7 +50,7 @@ export function updateTargeting(
   battleWorld: BattleWorld,
   rng: () => number,
   potentialAllies?: RobotEntity[],
-): { target: RobotEntity | undefined; visibleEnemies: RobotEntity[] } {
+): TargetingResult {
   // Sensors mainly update enemy visibility
   const { visibleEnemies } = updateRobotSensors(
     robot,
@@ -49,14 +66,27 @@ export function updateTargeting(
   if (robot.role === "medic") {
     const allies = potentialAllies ?? robots;
 
-    const visibleAllies = allies.filter(
-      (ally) =>
+    const visibleAllies = visibleAlliesScratch;
+    let visibleCount = 0;
+    losOptionsScratch.obstacles = battleWorld.obstacles.entities;
+    for (let i = 0; i < allies.length; i += 1) {
+      const ally = allies[i];
+      if (
         ally.id !== robot.id &&
         ally.team === robot.team &&
-        !isLineOfSightBlockedRuntime(robot.position, ally.position, {
-          obstacles: battleWorld.obstacles.entities,
-        }),
-    );
+        !isLineOfSightBlockedRuntime(
+          robot.position,
+          ally.position,
+          losOptionsScratch,
+        )
+      ) {
+        visibleAllies[visibleCount] = ally;
+        visibleCount += 1;
+      }
+    }
+    if (visibleAllies.length !== visibleCount) {
+      visibleAllies.length = visibleCount;
+    }
 
     target = findClosestAlly(
       robot,
@@ -65,7 +95,13 @@ export function updateTargeting(
   } else {
     // Offensive Logic
     if (robot.ai.targetId) {
-      target = visibleEnemies.find((enemy) => enemy.id === robot.ai.targetId);
+      const targetId = robot.ai.targetId;
+      for (let i = 0; i < visibleEnemies.length; i += 1) {
+        if (visibleEnemies[i].id === targetId) {
+          target = visibleEnemies[i];
+          break;
+        }
+      }
     }
 
     if (!target) {
@@ -95,7 +131,19 @@ export function updateTargeting(
         latestMemory[1].timestamp >=
           battleWorld.state.elapsedMs - ENGAGE_MEMORY_TIMEOUT_MS
       ) {
-        robot.ai.searchPosition = predictSearchAnchor(memoryEntry);
+        // Remembered positions do not change while the enemy is out of
+        // sight, so keep the existing anchor instead of cloning every tick.
+        const current = robot.ai.searchPosition;
+        const remembered = memoryEntry?.position;
+        if (
+          !current ||
+          !remembered ||
+          current.x !== remembered.x ||
+          current.y !== remembered.y ||
+          current.z !== remembered.z
+        ) {
+          robot.ai.searchPosition = predictSearchAnchor(memoryEntry);
+        }
         robot.ai.targetId = latestMemory?.[0];
       } else {
         // Memory stale - clear pursuit and consider roaming
@@ -116,5 +164,7 @@ export function updateTargeting(
     : null;
   robot.ai.targetDistance = targetDistance;
 
-  return { target, visibleEnemies };
+  targetingResultScratch.target = target;
+  targetingResultScratch.visibleEnemies = visibleEnemies;
+  return targetingResultScratch;
 }
