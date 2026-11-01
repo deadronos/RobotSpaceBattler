@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { PathfindingSystem } from "@/simulation/ai/pathfinding/integration/PathfindingSystem";
 import { NavMeshGenerator } from "@/simulation/ai/pathfinding/navmesh/NavMeshGenerator";
 import { NavMeshResource } from "@/simulation/ai/pathfinding/integration/NavMeshResource";
-import type { PathComponent } from "@/simulation/ai/pathfinding/integration/PathComponent";
 
 describe("PathfindingSystem Memory", () => {
   let system: PathfindingSystem;

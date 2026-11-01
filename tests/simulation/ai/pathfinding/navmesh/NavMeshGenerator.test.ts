@@ -7,7 +7,6 @@ import { describe, expect, it } from "vitest";
 
 import { NavMeshGenerator } from "@/simulation/ai/pathfinding/navmesh/NavMeshGenerator";
 import type { ArenaConfiguration } from "@/simulation/ai/pathfinding/types";
-import { ObstacleType } from "@/simulation/ai/pathfinding/types";
 
 describe("NavMeshGenerator", () => {
   it("[T013] creates valid mesh from empty arena", () => {

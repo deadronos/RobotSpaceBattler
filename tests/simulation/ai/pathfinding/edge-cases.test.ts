@@ -179,7 +179,7 @@ describe("PathfindingSystem Edge Cases", () => {
     });
 
     it("respects frame budget when executing batch", () => {
-      // Create a system with very low budget
+      // Create a system with a small dispatch budget
       const budgetSystem = new PathfindingSystem(navMeshResource, {
         maxRequestsPerTick: 3,
       });
@@ -197,60 +197,20 @@ describe("PathfindingSystem Edge Cases", () => {
         } as PathComponent,
       }));
 
-      // Execute batch
+      // Act: dispatching is synchronous up to the first await, so statuses are
+      // observable as soon as execute() returns.
       budgetSystem.execute(robots);
 
-      // Check that not all robots were processed
-      // (Given 0.1ms, it's likely only a few will complete)
-      // With async dispatch, "processed" in execute() means "dispatched".
-      // The throttling is on DISPATCH loop.
-      // So checking pathComponent.status will still be 'pending' for dispatched tasks because worker is async (mocked sync here though).
-      // Wait, the mock runs sync and returns promise. But `execute` calls `calculatePath` and does NOT await it.
-      // So `calculatePath` runs, but `execute` continues immediately.
+      const dispatched = robots.filter(
+        (robot) => robot.pathComponent.status === "calculating",
+      );
+      const untouched = robots.filter(
+        (robot) => robot.pathComponent.status === "pending",
+      );
 
-      // HOWEVER, in my mock:
-      // spawn: vi.fn(async (data, func) => return func(data))
-      // So `spawn` returns a promise that resolves immediately with result.
-      // `calculatePath` awaits `spawn`. So `calculatePath` returns a Promise that resolves almost immediately.
-      // But `execute` does NOT await `calculatePath`.
-      // So `execute` fires requests.
-      // Since `execute` is synchronous, and `calculatePath` has `await`, the `await` pushes the rest of `calculatePath` to microtask.
-      // So `pathComponent.status` will NOT be updated immediately within `execute`.
-
-      // So `processedCount` check based on `valid` status will likely be 0 if checked synchronously after `execute`.
-
-      // The original test assumed sync execution.
-      // Now that it's async, `execute` respects budget for *dispatching*.
-      // The test checks if `execute` breaks early.
-      // Dispatching is fast. 0.1ms might process a few.
-
-      // But we can't easily check "processed" status synchronously anymore.
-      // We can check how many times `spawn` was called if we spy on it?
-      // Or check if `calculatePath` was called?
-
-      // This test is tricky with async offloading.
-      // I will update it to verify that *some* requests were dispatched but not all?
-      // Or if dispatching is so fast that 50 requests take <0.1ms?
-      // 50 iterations of loop + function call might be fast.
-
-      // Let's modify the test to just skip assertion or update logic if needed.
-      // For now, I'll comment out the assertion or relax it.
-      // Actually, the test fails because `expect(processedCount).toBeGreaterThan(0)` fails (it's 0).
-
-      // I should assert that we broke out of loop.
-      // We can spy on `calculatePath`?
-
-      // Let's leave this test as is for now and see if I can fix it by adding a small delay in mock or just accepting it's async.
-      // The `execute` method logs warnings.
-
-      // Wait, the test expects `valid` status.
-      // Since it's async, status will be `pending` (or `calculating` if updated before await).
-      // We should check that some are `calculating` or that `calculatePath` was called.
-
-      // I'll update the test to check for `calculating` status, OR just remove this test if it's no longer relevant (dispatch is cheap).
-      // But frame budget still applies to dispatch loop.
-
-      // I'll change expectations to check for `calculating` status (which is set synchronously before await).
+      // Assert: the batch breaks out of the loop once the budget is reached
+      expect(dispatched).toHaveLength(3);
+      expect(untouched).toHaveLength(47);
     });
   });
 });

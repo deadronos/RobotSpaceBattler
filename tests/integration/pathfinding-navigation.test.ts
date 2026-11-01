@@ -3,7 +3,7 @@
  * @module integration
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 
 import { NavMeshGenerator } from "@/simulation/ai/pathfinding/navmesh/NavMeshGenerator";
 import { PathfindingSystem } from "@/simulation/ai/pathfinding/integration/PathfindingSystem";

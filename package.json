@@ -11,7 +11,7 @@
     "build": "vite build",
     "build:analyze": "vite build --mode production",
     "preview": "vite preview",
-    "lint": "oxlint src tests playwright",
+    "lint": "oxlint src tests playwright --deny-warnings",
     "lint:fix": "oxlint src tests playwright --fix",
     "format": "oxfmt src tests scripts playwright vite.config.ts vitest.config.ts playwright.config.ts",
     "format:check": "oxfmt --check src tests scripts playwright vite.config.ts vitest.config.ts playwright.config.ts",

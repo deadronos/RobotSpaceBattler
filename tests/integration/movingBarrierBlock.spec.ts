@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 import { createBattleWorld } from "../../src/ecs/world";
 import { vec3 } from "../../src/lib/math/vec3";
 import { updateProjectileSystem } from "../../src/ecs/systems/projectileSystem";
-import { distanceSquaredPointToAABB } from "../../src/lib/math/geometry";
 import { updateObstacleMovement } from "../../src/simulation/obstacles/movementSystem";
 import { isLineOfSightBlockedRuntime } from "../../src/simulation/environment/arenaGeometry";
 import type { TelemetryPort } from "../../src/runtime/simulation/ports";

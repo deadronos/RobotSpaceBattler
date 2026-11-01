@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { PathDebugger } from "@/visuals/debug/PathDebugger";
-import type { NavigationPath } from "@/simulation/ai/pathfinding/types";
 
 /**
  * T069: Debug visualization component for active paths
@@ -11,21 +10,6 @@ import type { NavigationPath } from "@/simulation/ai/pathfinding/types";
  */
 
 describe("PathDebugger", () => {
-  let mockPath: NavigationPath;
-
-  beforeEach(() => {
-    mockPath = {
-      waypoints: [
-        { x: 0, y: 0, z: 0 },
-        { x: 5, y: 0, z: 5 },
-        { x: 10, y: 0, z: 5 },
-        { x: 15, y: 0, z: 10 },
-      ],
-      totalDistance: 20.71,
-      smoothed: true,
-    };
-  });
-
   it("T069: should export PathDebugger component", () => {
     expect(PathDebugger).toBeDefined();
     expect(typeof PathDebugger).toBe("function");

@@ -9,7 +9,6 @@ import { NavMeshGenerator } from "@/simulation/ai/pathfinding/navmesh/NavMeshGen
 import { NavMeshResource } from "@/simulation/ai/pathfinding/integration/NavMeshResource";
 import { PathfindingSystem } from "@/simulation/ai/pathfinding/integration/PathfindingSystem";
 import type { PathComponent } from "@/simulation/ai/pathfinding/integration/PathComponent";
-import { ObstacleType } from "@/simulation/ai/pathfinding/types";
 
 describe("T060: Narrow Passage Navigation", () => {
   let system: PathfindingSystem;

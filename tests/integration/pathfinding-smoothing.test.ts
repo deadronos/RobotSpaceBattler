@@ -9,7 +9,6 @@ import { NavMeshGenerator } from "@/simulation/ai/pathfinding/navmesh/NavMeshGen
 import { AStarSearch } from "@/simulation/ai/pathfinding/search/AStarSearch";
 import { PathOptimizer } from "@/simulation/ai/pathfinding/smoothing/PathOptimizer";
 import type { ArenaConfiguration } from "@/simulation/ai/pathfinding/types";
-import { ObstacleType } from "@/simulation/ai/pathfinding/types";
 
 describe("Path Smoothing Integration", () => {
   it("[T039] paths around pillar form smooth arcs not rectangles", () => {

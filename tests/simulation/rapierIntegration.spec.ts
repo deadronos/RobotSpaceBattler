@@ -1,10 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 
 import { createBattleWorld } from "../../src/ecs/world";
-import {
-  syncObstaclesToRapier,
-  updateRapierObstacleTransforms,
-} from "../../src/simulation/obstacles/rapierIntegration";
+import { syncObstaclesToRapier } from "../../src/simulation/obstacles/rapierIntegration";
 import { updateObstacleMovement } from "../../src/simulation/obstacles/movementSystem";
 import { vec3 } from "../../src/lib/math/vec3";
 import type { ObstacleEntity } from "../../src/ecs/world";

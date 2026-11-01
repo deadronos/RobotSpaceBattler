@@ -79,7 +79,7 @@ describe("targetingUtils", () => {
       const result = findBestEntity(
         [],
         (e) => e,
-        (a, b) => 0,
+        (_a, _b) => 0,
       );
       expect(result).toBeUndefined();
     });
