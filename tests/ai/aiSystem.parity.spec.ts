@@ -8,6 +8,11 @@ import { fnv1a, runScenarioDigest } from "../helpers/aiScenario";
  * Golden digests captured from the brute-force (all-pairs) implementation
  * before the spatial index landed (#171). The indexed implementation must
  * reproduce them bit for bit.
+ *
+ * MATCH_GOLDEN was recaptured for #200: swept projectile-vs-obstacle hits and
+ * exact rocket impact points intentionally change full-match outcomes. Each
+ * value was re-verified as run-to-run stable (same seed, identical digest)
+ * before being committed.
  */
 const SCENARIO_GOLDEN: Record<string, string> = {
   "20x400": "8b4c0197",
@@ -16,8 +21,8 @@ const SCENARIO_GOLDEN: Record<string, string> = {
 };
 
 const MATCH_GOLDEN: Record<number, string> = {
-  1: "b56044cf",
-  42: "9399020c",
+  1: "1788e098",
+  42: "674b2247",
 };
 
 function matchDigest(seed: number): string {
