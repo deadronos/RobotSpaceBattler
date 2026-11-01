@@ -56,15 +56,47 @@ export function buildScenarioWorld(count: number, seed = 7): BattleWorld {
   return world;
 }
 
+/** Wraps the AI / combat calls of a tick so callers can time or meter them. */
+export type ScenarioProbe = (phase: "ai" | "combat", run: () => void) => void;
+const runDirect: ScenarioProbe = (_phase, run) => run();
+
+/**
+ * Approximate bytes allocated per tick by the AI and combat systems: the sum
+ * of positive `heapUsed` deltas around each call, after a warm-up.
+ */
+export function measureAllocationsPerTick(
+  count: number,
+  ticks: number,
+  warmup = 120,
+): { aiBytes: number; combatBytes: number } {
+  const world = buildScenarioWorld(count);
+  const rng = createLcg(3);
+  const totals = { ai: 0, combat: 0 };
+  let metering = false;
+  const probe: ScenarioProbe = (phase, run) => {
+    if (!metering) return run();
+    const before = process.memoryUsage().heapUsed;
+    run();
+    const delta = process.memoryUsage().heapUsed - before;
+    if (delta > 0) totals[phase] += delta;
+  };
+  for (let tick = 0; tick < warmup + ticks; tick += 1) {
+    metering = tick >= warmup;
+    stepScenario(world, rng, tick, 1 / 60, probe);
+  }
+  return { aiBytes: totals.ai / ticks, combatBytes: totals.combat / ticks };
+}
+
 /** Advances one tick: AI, movement integration, combat and scripted damage. */
 export function stepScenario(
   world: BattleWorld,
   rng: () => number,
   tick: number,
   dt = 1 / 60,
+  probe: ScenarioProbe = runDirect,
 ): void {
   world.state.elapsedMs += dt * 1000;
-  updateAISystem(world, rng);
+  probe("ai", () => updateAISystem(world, rng));
   const robots = world.robots.entities;
   for (let i = 0; i < robots.length; i += 1) {
     const robot = robots[i];
@@ -72,7 +104,7 @@ export function stepScenario(
     robot.position.x += robot.velocity.x * dt;
     robot.position.z += robot.velocity.z * dt;
   }
-  updateCombatSystem(world, NOOP_TELEMETRY, dt);
+  probe("combat", () => updateCombatSystem(world, NOOP_TELEMETRY, dt));
   // Drain projectiles so the world does not grow without bound.
   for (const projectile of [...world.projectiles.entities]) {
     world.removeProjectile(projectile);
