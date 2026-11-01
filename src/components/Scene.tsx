@@ -1,14 +1,19 @@
 import { OrbitControls, Stars } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Physics } from "@react-three/rapier";
-import { ReactNode, Suspense } from "react";
+import { lazy, ReactNode, Suspense } from "react";
 
+import { canExposeDebugGlobals } from "../lib/debugFlags";
 import { useQualitySettings } from "../state/quality/QualityManager";
 import { DynamicResScaler } from "../visuals/DynamicResScaler";
 import { Lighting } from "../visuals/Lighting";
 import { PostProcessing } from "../visuals/PostProcessing";
 import { initializeRendererStats } from "../visuals/rendererStats";
-import { PerfMonitorOverlay } from "./debug/PerfMonitorOverlay";
+
+const PerfMonitorOverlay = lazy(async () => {
+  const module = await import("./debug/PerfMonitorOverlay");
+  return { default: module.PerfMonitorOverlay };
+});
 
 /**
  * Props for the Scene component.
@@ -45,8 +50,9 @@ export function Scene({ children, showPerfOverlay = false }: SceneProps) {
       }}
       onCreated={({ gl, scene, camera }) => {
         initializeRendererStats(gl);
-        // Expose the scene for debugging/visual verification in Playwright
-        // This is temporary and safe to remove later.
+        if (!canExposeDebugGlobals()) {
+          return;
+        }
         const win = window as unknown as {
           __robotScene?: Record<string, unknown>;
         };
@@ -65,7 +71,11 @@ export function Scene({ children, showPerfOverlay = false }: SceneProps) {
         saturation={0.5}
       />
       <DynamicResScaler />
-      {showPerfOverlay ? <PerfMonitorOverlay /> : null}
+      {showPerfOverlay ? (
+        <Suspense fallback={null}>
+          <PerfMonitorOverlay />
+        </Suspense>
+      ) : null}
       <Suspense fallback={null}>
         <Physics gravity={[0, 0, 0]} interpolate={false}>
           {children}

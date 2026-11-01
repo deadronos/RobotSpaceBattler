@@ -14,7 +14,8 @@ export const ENGAGE_MEMORY_TIMEOUT_MS = 1500;
  * Delay (in milliseconds) before automatically restarting the match
  * after a victory condition is reached.
  */
-export const AUTO_RESTART_DELAY_MS = 5000;
+export const MATCH_END_RESTART_DELAY_MS = 5000;
+export const AUTO_RESTART_DELAY_MS = MATCH_END_RESTART_DELAY_MS;
 
 /**
  * Default match time limit (in milliseconds). When it expires the match is

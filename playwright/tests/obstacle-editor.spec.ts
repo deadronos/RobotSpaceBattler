@@ -4,7 +4,7 @@ test.describe("Obstacle editor", () => {
   test.skip("changing movement speed affects runtime position", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/?debug=1");
 
     // Ensure the app has loaded and network activity has finished
     await page.waitForLoadState("networkidle");

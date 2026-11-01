@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test("verify neon visuals", async ({ page }) => {
   page.on("console", (m) => console.log("PAGE LOG:", m.text()));
   // Go to the dev server (Playwright config starts the server at 5174)
-  await page.goto("http://localhost:5174/RobotSpaceBattler/");
+  await page.goto("http://localhost:5174/RobotSpaceBattler/?debug=1");
 
   // Wait for the canvas to be present
   await page.waitForSelector("canvas");

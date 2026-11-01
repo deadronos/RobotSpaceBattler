@@ -24,12 +24,30 @@ interface RobotDisplayData {
   isAlive: boolean;
 }
 
+const ROBOT_LIST_COLLAPSE_RED_STORAGE_KEY = "hud.robotListCollapse.red";
+const ROBOT_LIST_COLLAPSE_BLUE_STORAGE_KEY = "hud.robotListCollapse.blue";
+
+function getStoredCollapseState(): Record<TeamId, boolean> {
+  if (typeof window === "undefined") {
+    return { red: true, blue: true };
+  }
+
+  const red = window.localStorage.getItem(ROBOT_LIST_COLLAPSE_RED_STORAGE_KEY);
+  const blue = window.localStorage.getItem(
+    ROBOT_LIST_COLLAPSE_BLUE_STORAGE_KEY,
+  );
+
+  return {
+    red: red == null ? true : red === "1",
+    blue: blue == null ? true : blue === "1",
+  };
+}
+
 export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
-  const [collapsed, setCollapsed] = useState<Record<TeamId, boolean>>({
-    red: false,
-    blue: false,
-  });
+  const [collapsed, setCollapsed] = useState<Record<TeamId, boolean>>(
+    getStoredCollapseState,
+  );
 
   const telemetryEvents = useTelemetryStore((state) => state.events);
   const robotStats = useTelemetryStore((state) => state.robots);
@@ -76,10 +94,21 @@ export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
   }, [battleWorld, telemetryEvents, robotStats]);
 
   const toggleCollapsed = (teamId: TeamId) => {
-    setCollapsed((prev) => ({
-      ...prev,
-      [teamId]: !prev[teamId],
-    }));
+    setCollapsed((prev) => {
+      const next = {
+        ...prev,
+        [teamId]: !prev[teamId],
+      };
+      window.localStorage.setItem(
+        ROBOT_LIST_COLLAPSE_RED_STORAGE_KEY,
+        next.red ? "1" : "0",
+      );
+      window.localStorage.setItem(
+        ROBOT_LIST_COLLAPSE_BLUE_STORAGE_KEY,
+        next.blue ? "1" : "0",
+      );
+      return next;
+    });
   };
 
   const renderTeamList = (teamId: TeamId) => {

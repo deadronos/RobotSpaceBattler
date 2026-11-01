@@ -8,19 +8,19 @@ test("verify neon visuals (local port 5174)", async ({ page }) => {
   let navigated = false;
   while (Date.now() - start < 20000) {
     try {
-      await page.goto("http://localhost:5174/RobotSpaceBattler/", {
+      await page.goto("http://localhost:5174/RobotSpaceBattler/?debug=1", {
         timeout: 3000,
       });
       navigated = true;
       break;
-    } catch (e) {
+    } catch {
       // wait a bit and retry
       await page.waitForTimeout(500);
     }
   }
   if (!navigated)
     throw new Error(
-      "Could not reach http://localhost:5174/RobotSpaceBattler/ after 20s",
+      "Could not reach http://localhost:5174/RobotSpaceBattler/?debug=1 after 20s",
     );
 
   // Wait for the canvas to be present

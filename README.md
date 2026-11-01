@@ -4,6 +4,8 @@ A 3D team-vs-team auto-battler simulation built with React, TypeScript, and Thre
 
 ![Space Station Auto-Battler](public/image.png)
 
+Live demo: https://deadronos.github.io/RobotSpaceBattler/
+
 ## Overview
 
 This project simulates a battle between two teams of 10 humanoid robots (Red vs Blue) on a space station arena. It features:
@@ -23,7 +25,7 @@ This project simulates a battle between two teams of 10 humanoid robots (Red vs 
 
 ### Prerequisites
 
-- Node.js (v18+ recommended)
+- Node.js `^22.22.2` or `^24.15.0` (see `package.json#engines`)
 - npm
 
 ### Installation
@@ -47,17 +49,38 @@ Open your browser to `http://localhost:5173`.
 ### Other Commands
 
 - **Build**: `npm run build` - Builds the project for production.
+- **Build (analyze chunks)**: `npm run build:analyze`
 - **Preview**: `npm run preview` - Serves the production build locally.
 - **Lint**: `npm run lint` - Runs oxlint.
+- **Lint (auto-fix)**: `npm run lint:fix`
 - **Format**: `npm run format` - formats code with oxfmt.
+- **Format check**: `npm run format:check`
+- **Typecheck**: `npm run typecheck`
 - **Test**: `npm run test` - Runs unit tests with Vitest.
+- **Test (watch)**: `npm run test:watch`
+- **Test (coverage)**: `npm run test:coverage`
 - **E2E Test**: `npm run playwright:test` - Runs end-to-end tests.
+- **E2E smoke via preview**: `npm run playwright:preview`
+- **E2E smoke against live deployment**: `npm run playwright:smoke:live`
 
 ## Continuous Integration
 
-`ci.yml` runs on every push to `main` and on all pull requests, on Node 22 and 24: `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
-Lint, `npm run format:check`, typecheck, tests and build are all blocking.
-The `CI` job aggregates the Node 22/24 matrix and is the check to require in branch protection.
+`ci.yml` runs on every push to `main` and on all pull requests.
+
+- Build/test matrix runs on Node 22 and 24 and executes:
+  - `npm run lint`
+  - `npm run format:check`
+  - `npm run typecheck`
+  - `npm run test:coverage`
+  - `npm run build`
+- E2E smoke job runs Playwright against a production preview (`npm run playwright:preview`) on Node 24.
+- The `CI` aggregate job fails if either matrix/e2e job fails.
+
+### Release & deploy flow
+
+- Merges to `main` run CI only.
+- GitHub Pages deploy is tag-driven: creating a `v*` tag triggers `.github/workflows/publish-pages.yml`.
+- Deploy smoke validation can be run with `npm run playwright:smoke:live`.
 
 ## Project Structure
 
@@ -116,6 +139,13 @@ See `src/visuals/debug/` for implementation details.
 
 This codebase is fully documented with JSDoc comments. You can inspect any function, class, or
 interface in your IDE to see detailed descriptions of its purpose, parameters, and return values.
+
+Architecture and contributor guides:
+
+- `docs/contributing/architecture.md`
+- `docs/contributing/standards.md`
+- `docs/contributing/testing.md`
+- `docs/contributing/workflows.md`
 
 ## Spec Kit (AI-assisted spec & implementation)
 

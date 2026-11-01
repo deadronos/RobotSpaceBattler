@@ -1,9 +1,7 @@
 import { BattleWorld, TeamId } from "../../ecs/world";
+import { MATCH_END_RESTART_DELAY_MS } from "../../lib/constants";
 import { isActiveRobot } from "../../lib/robotHelpers";
 import { MatchStateMachine } from "../state/matchStateMachine";
-
-/** Delay before auto-restart once a match has been resolved. */
-export const VICTORY_DELAY_MS = 5000;
 
 export interface TeamTally {
   robots: Record<TeamId, number>;
@@ -53,20 +51,23 @@ export function evaluateMatchOutcome(
   const blueOut = tally.robots.blue === 0;
 
   if (redOut && blueOut) {
-    matchMachine.declareDraw(VICTORY_DELAY_MS);
+    matchMachine.declareDraw(MATCH_END_RESTART_DELAY_MS);
     return;
   }
   if (redOut || blueOut) {
-    matchMachine.declareVictory(redOut ? "blue" : "red", VICTORY_DELAY_MS);
+    matchMachine.declareVictory(
+      redOut ? "blue" : "red",
+      MATCH_END_RESTART_DELAY_MS,
+    );
     return;
   }
 
   if (maxMatchDurationMs != null && snapshot.elapsedMs >= maxMatchDurationMs) {
     const winner = resolveByTally(tally);
     if (winner) {
-      matchMachine.declareVictory(winner, VICTORY_DELAY_MS);
+      matchMachine.declareVictory(winner, MATCH_END_RESTART_DELAY_MS);
     } else {
-      matchMachine.declareDraw(VICTORY_DELAY_MS);
+      matchMachine.declareDraw(MATCH_END_RESTART_DELAY_MS);
     }
   }
 }

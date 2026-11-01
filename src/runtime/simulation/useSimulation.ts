@@ -4,6 +4,7 @@ import { useRapier } from "@react-three/rapier";
 import { useEffect, useRef } from "react";
 
 import { BattleWorld } from "../../ecs/world";
+import { canExposeDebugGlobals } from "../../lib/debugFlags";
 import { recordRendererFrame } from "../../visuals/rendererStats";
 import { MatchStateMachine } from "../state/matchStateMachine";
 import { BattleRunner, createBattleRunner } from "./battleRunner";
@@ -63,6 +64,10 @@ export function useSimulation({
 
   // Expose for debugging
   useEffect(() => {
+    if (!canExposeDebugGlobals()) {
+      return;
+    }
+
     const win = window as unknown as { __battleWorld?: typeof battleWorld };
     win.__battleWorld = battleWorld;
     return () => {
