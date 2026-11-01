@@ -17,10 +17,11 @@ import { RobotListPanel } from "./components/ui/RobotListPanel";
 import { SettingsIcon } from "./components/ui/SettingsIcon";
 import { SettingsModal } from "./components/ui/SettingsModal";
 import { createBattleWorld } from "./ecs/world";
-import { AUTO_RESTART_DELAY_MS } from "./lib/constants";
-import { countAliveByTeam } from "./lib/robotHelpers";
+import { MATCH_END_RESTART_DELAY_MS } from "./lib/constants";
+import { readStoredBoolean, writeStoredBoolean } from "./lib/storedBoolean";
 import { TEAM_CONFIGS } from "./lib/teamConfig";
 import { BattleRunner } from "./runtime/simulation/battleRunner";
+import { tallyTeams } from "./runtime/simulation/matchOutcome";
 import { createTelemetryPort } from "./runtime/simulation/telemetryAdapter";
 import {
   createMatchStateMachine,
@@ -44,18 +45,6 @@ const PerfToggles = lazy(async () => {
   const module = await import("./components/debug/PerfToggles");
   return { default: module.PerfToggles };
 });
-
-function getStoredRobotListVisibility(defaultValue: boolean): boolean {
-  if (typeof window === "undefined") {
-    return defaultValue;
-  }
-
-  const stored = window.localStorage.getItem(ROBOT_LIST_STORAGE_KEY);
-  if (stored == null) {
-    return defaultValue;
-  }
-  return stored === "1";
-}
 
 function formatStatus({
   phase,
@@ -93,13 +82,13 @@ export default function App() {
   const [showDebugUI, setShowDebugUI] = useState(false);
   const [showPerfOverlay, setShowPerfOverlay] = useState(false);
   const [showRobotList, setShowRobotList] = useState(() =>
-    getStoredRobotListVisibility(true),
+    readStoredBoolean(ROBOT_LIST_STORAGE_KEY, true),
   );
 
   const matchMachine = useMemo(
     () =>
       createMatchStateMachine({
-        autoRestartDelayMs: AUTO_RESTART_DELAY_MS,
+        autoRestartDelayMs: MATCH_END_RESTART_DELAY_MS,
         onChange: (snapshot) => setMatchSnapshot(snapshot),
       }),
     [],
@@ -110,21 +99,11 @@ export default function App() {
   }, [matchMachine]);
 
   useEffect(() => {
-    window.localStorage.setItem(
-      ROBOT_LIST_STORAGE_KEY,
-      showRobotList ? "1" : "0",
-    );
+    writeStoredBoolean(ROBOT_LIST_STORAGE_KEY, showRobotList);
   }, [showRobotList]);
 
   const runnerRef = useRef<BattleRunner | null>(null);
-  const aliveCounts = countAliveByTeam(battleWorld.robots.entities);
-  const teamHealth = { red: 0, blue: 0 };
-  for (const robot of battleWorld.robots.entities) {
-    if (robot.health <= 0) {
-      continue;
-    }
-    teamHealth[robot.team] += robot.health;
-  }
+  const { robots: aliveCounts, health: teamHealth } = tallyTeams(battleWorld);
 
   const handleRunnerReady = useCallback((runner: BattleRunner) => {
     runnerRef.current = runner;

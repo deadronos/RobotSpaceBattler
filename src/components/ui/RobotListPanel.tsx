@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Draggable from "react-draggable";
 
 import type { BattleWorld } from "../../ecs/worldTypes";
 import { isActiveRobot } from "../../lib/robotHelpers";
+import { readStoredBoolean, writeStoredBoolean } from "../../lib/storedBoolean";
 import { TEAM_CONFIGS, TeamId } from "../../lib/teamConfig";
 import { useTelemetryStore } from "../../state/telemetryStore";
 
@@ -28,18 +29,9 @@ const ROBOT_LIST_COLLAPSE_RED_STORAGE_KEY = "hud.robotListCollapse.red";
 const ROBOT_LIST_COLLAPSE_BLUE_STORAGE_KEY = "hud.robotListCollapse.blue";
 
 function getStoredCollapseState(): Record<TeamId, boolean> {
-  if (typeof window === "undefined") {
-    return { red: true, blue: true };
-  }
-
-  const red = window.localStorage.getItem(ROBOT_LIST_COLLAPSE_RED_STORAGE_KEY);
-  const blue = window.localStorage.getItem(
-    ROBOT_LIST_COLLAPSE_BLUE_STORAGE_KEY,
-  );
-
   return {
-    red: red == null ? true : red === "1",
-    blue: blue == null ? true : blue === "1",
+    red: readStoredBoolean(ROBOT_LIST_COLLAPSE_RED_STORAGE_KEY, true),
+    blue: readStoredBoolean(ROBOT_LIST_COLLAPSE_BLUE_STORAGE_KEY, true),
   };
 }
 
@@ -48,6 +40,11 @@ export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
   const [collapsed, setCollapsed] = useState<Record<TeamId, boolean>>(
     getStoredCollapseState,
   );
+
+  useEffect(() => {
+    writeStoredBoolean(ROBOT_LIST_COLLAPSE_RED_STORAGE_KEY, collapsed.red);
+    writeStoredBoolean(ROBOT_LIST_COLLAPSE_BLUE_STORAGE_KEY, collapsed.blue);
+  }, [collapsed]);
 
   const telemetryEvents = useTelemetryStore((state) => state.events);
   const robotStats = useTelemetryStore((state) => state.robots);
@@ -94,21 +91,7 @@ export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
   }, [battleWorld, telemetryEvents, robotStats]);
 
   const toggleCollapsed = (teamId: TeamId) => {
-    setCollapsed((prev) => {
-      const next = {
-        ...prev,
-        [teamId]: !prev[teamId],
-      };
-      window.localStorage.setItem(
-        ROBOT_LIST_COLLAPSE_RED_STORAGE_KEY,
-        next.red ? "1" : "0",
-      );
-      window.localStorage.setItem(
-        ROBOT_LIST_COLLAPSE_BLUE_STORAGE_KEY,
-        next.blue ? "1" : "0",
-      );
-      return next;
-    });
+    setCollapsed((prev) => ({ ...prev, [teamId]: !prev[teamId] }));
   };
 
   const renderTeamList = (teamId: TeamId) => {
