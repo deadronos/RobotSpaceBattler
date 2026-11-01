@@ -1,7 +1,8 @@
 import { act, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "@/App";
+import { HUD_REFRESH_MS } from "@/components/ui/useHudTick";
 import { TEAM_CONFIGS } from "@/lib/teamConfig";
 import type { MatchStateMachine } from "@/runtime/state/matchStateMachine";
 
@@ -46,7 +47,12 @@ function alivePanel() {
 }
 
 describe("Alive HUD", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
+    vi.useFakeTimers();
     captured.machine = null;
     captured.world = null;
   });
@@ -70,7 +76,10 @@ describe("Alive HUD", () => {
     act(() => {
       captured.world!.robots.entities[0].health = 0;
       captured.world!.robots.entities[1].health = 0;
-      captured.machine!.tick(16);
+    });
+    // The HUD polls the ECS at ~4 Hz instead of re-rendering per tick.
+    act(() => {
+      vi.advanceTimersByTime(HUD_REFRESH_MS);
     });
     expect(alivePanel()).toMatch(/8.*10/);
     expect(strengthBar.textContent).toContain("800 HP");

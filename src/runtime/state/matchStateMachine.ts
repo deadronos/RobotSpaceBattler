@@ -31,7 +31,11 @@ export interface MatchStateSnapshot {
 export interface MatchStateOptions {
   /** Delay in ms before restarting after victory (default 2000). */
   autoRestartDelayMs?: number;
-  /** Callback triggered whenever the state changes. */
+  /**
+   * Callback triggered on observable state changes: phase transitions, resets,
+   * and the whole-second tick of the victory restart countdown. It is NOT
+   * called for per-step elapsed-time updates; read getSnapshot() for those.
+   */
   onChange?: (snapshot: MatchStateSnapshot) => void;
 }
 
@@ -140,18 +144,24 @@ export function createMatchStateMachine(
           ...current,
           elapsedMs: current.elapsedMs + deltaMs,
         };
-        emit();
+        // Deliberately silent: elapsedMs advances every simulation step and
+        // nothing in the UI renders it. Notifying here would re-render React
+        // at frame rate. Consumers that need it call getSnapshot().
         return false;
       }
 
       if (current.phase === "victory" && current.restartTimerMs != null) {
         const nextTimer = current.restartTimerMs - deltaMs;
         if (nextTimer > 0) {
+          const secondsChanged =
+            Math.ceil(nextTimer / 1000) !==
+            Math.ceil(current.restartTimerMs / 1000);
           current = {
             ...current,
             restartTimerMs: nextTimer,
           };
-          emit();
+          // The HUD shows whole seconds, so only notify when they change.
+          if (secondsChanged) emit();
           return false;
         }
 

@@ -16,12 +16,12 @@ import { BattleStatsModal } from "./components/ui/BattleStatsModal";
 import { RobotListPanel } from "./components/ui/RobotListPanel";
 import { SettingsIcon } from "./components/ui/SettingsIcon";
 import { SettingsModal } from "./components/ui/SettingsModal";
+import { TeamHud } from "./components/ui/TeamHud";
 import { createBattleWorld } from "./ecs/world";
 import { MATCH_END_RESTART_DELAY_MS } from "./lib/constants";
 import { readStoredBoolean, writeStoredBoolean } from "./lib/storedBoolean";
 import { TEAM_CONFIGS } from "./lib/teamConfig";
 import { BattleRunner } from "./runtime/simulation/battleRunner";
-import { tallyTeams } from "./runtime/simulation/matchOutcome";
 import { createTelemetryPort } from "./runtime/simulation/telemetryAdapter";
 import {
   createMatchStateMachine,
@@ -103,7 +103,6 @@ export default function App() {
   }, [showRobotList]);
 
   const runnerRef = useRef<BattleRunner | null>(null);
-  const { robots: aliveCounts, health: teamHealth } = tallyTeams(battleWorld);
 
   const handleRunnerReady = useCallback((runner: BattleRunner) => {
     runnerRef.current = runner;
@@ -217,29 +216,7 @@ export default function App() {
           </div>
         </Suspense>
       )}
-      <div className="app-team-strength" data-testid="team-strength-bar">
-        <div
-          className="app-team-strength-segment app-team-strength-red"
-          style={{
-            flex: Math.max(1, teamHealth.red),
-          }}
-        >
-          <span>{`${TEAM_CONFIGS.red.label} · ${aliveCounts.red} · ${Math.round(teamHealth.red)} HP`}</span>
-        </div>
-        <div
-          className="app-team-strength-segment app-team-strength-blue"
-          style={{
-            flex: Math.max(1, teamHealth.blue),
-          }}
-        >
-          <span>{`${TEAM_CONFIGS.blue.label} · ${aliveCounts.blue} · ${Math.round(teamHealth.blue)} HP`}</span>
-        </div>
-      </div>
-      <div className="app-alive-panel">
-        <div className="app-alive-title">Alive</div>
-        <div>{`${TEAM_CONFIGS.red.label}: ${aliveCounts.red}`}</div>
-        <div>{`${TEAM_CONFIGS.blue.label}: ${aliveCounts.blue}`}</div>
-      </div>
+      <TeamHud battleWorld={battleWorld} />
       {matchSnapshot.phase === "victory" && (winnerLabel || isDraw) ? (
         <div className="app-victory-overlay">
           <h2 className="app-victory-title">
