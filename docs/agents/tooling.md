@@ -19,9 +19,14 @@
   (`ObstacleEditor`, `ObstacleSpawner`, `PerfToggles`) and the `r3f-perf` overlay are lazy
   imports and stay out of the initial load. `r3f-perf`/`stats-gl` are excluded from the
   startup groups on purpose: adding them to `vendor` pulls ~25 kB gzip into first paint.
+- `npm run bundle:size` prints every emitted asset with raw and gzip size, and separates the
+  initial load (what `dist/index.html` fetches: entry, `modulepreload`s, stylesheets, the
+  document) from the lazy chunks. It gzips at `zlib` level 9, which is a few percent smaller
+  than Vite's own reporter, so only compare numbers produced by the script.
+  `node scripts/bundle-size.js <dist>` measures another build (e.g. a baseline worktree).
 - `npm run check:bundle` enforces `scripts/bundle-budget.json` (initial-load and total gzip,
-  plus a per-chunk ceiling). CI runs it right after the build. The treemap is for diagnosis;
-  the budget is the gate.
+  plus a per-chunk ceiling) using the same measurement code. CI runs it right after the build.
+  The treemap is for diagnosis; the budget is the gate.
 
 ## Worktrees and agents
 
