@@ -9,20 +9,24 @@ import { fnv1a, runScenarioDigest } from "../helpers/aiScenario";
  * before the spatial index landed (#171). The indexed implementation must
  * reproduce them bit for bit.
  *
- * MATCH_GOLDEN was recaptured for #200: swept projectile-vs-obstacle hits and
- * exact rocket impact points intentionally change full-match outcomes. Each
+ * SCENARIO_GOLDEN and MATCH_GOLDEN were recaptured for #192: the seeded RNG
+ * returned signed values, so fixing it changed spawn jitter and the
+ * TEAM_CONFIGS-derived AI anchors, which intentionally changes outcomes. Each
  * value was re-verified as run-to-run stable (same seed, identical digest)
  * before being committed.
+ *
+ * MATCH_GOLDEN was previously recaptured for #200: swept projectile-vs-obstacle
+ * hits and exact rocket impact points also change full-match outcomes.
  */
 const SCENARIO_GOLDEN: Record<string, string> = {
-  "20x400": "8b4c0197",
-  "100x300": "fba22784",
-  "200x200": "dd794f82",
+  "20x400": "d61b5c5",
+  "100x300": "93723041",
+  "200x200": "7530f558",
 };
 
 const MATCH_GOLDEN: Record<number, string> = {
-  1: "1788e098",
-  42: "674b2247",
+  1: "68f7a69",
+  42: "c505ac66",
 };
 
 function matchDigest(seed: number): string {

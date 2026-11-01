@@ -8,7 +8,8 @@ export interface RandomGenerator {
   next: () => number;
 }
 
-const UINT32_MAX = 0xffffffff;
+// 2^32: the number of distinct uint32 outputs, used to map a state to [0, 1).
+const UINT32_RANGE = 0x100000000;
 
 /**
  * Creates a XorShift32 pseudo-random number generator.
@@ -30,8 +31,11 @@ export function createXorShift32(seed: number): RandomGenerator {
       x ^= x << 13;
       x ^= x >>> 17;
       x ^= x << 5;
+      // `>>> 0` keeps the value unsigned: the previous `& 0xffffffff`
+      // coerced to int32, so half of the outputs were negative and every
+      // consumer of next() (spawn jitter, strafe signs, AI rolls) was skewed.
       state = x >>> 0;
-      return (state & UINT32_MAX) / (UINT32_MAX + 1);
+      return state / UINT32_RANGE;
     },
   };
 }
