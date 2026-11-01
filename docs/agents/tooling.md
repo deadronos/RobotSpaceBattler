@@ -1,0 +1,34 @@
+# Tooling
+
+## Lint and format
+
+- **oxlint** (`.oxlintrc.json`). `npm run lint` uses `--deny-warnings`, so fix warnings
+  rather than ignoring them. It also runs `scripts/check_source_size.js`.
+- **oxfmt** (`.oxfmtrc.json`): double quotes, semicolons, trailing commas, 80 columns.
+  `npm run format` writes and `npm run format:check` verifies. oxfmt ignores
+  `.oxfmtrc.json` if it contains a `$schema` key; ignores go in `ignorePatterns`.
+- Formatting-only commits are listed in `.git-blame-ignore-revs`. Run this once:
+  `git config blame.ignoreRevsFile .git-blame-ignore-revs`
+
+## Build
+
+- Vite with SWC React, glsl, svgr, auto-import and type-checker plugins. `npm run build` writes `dist/` and a
+  bundle treemap at `dist/stats.html`.
+- `vite.config.ts` aliases `@dimforge/rapier3d-compat` to one copy via
+  `scripts/rapierAlias.ts`, so there is only one WASM runtime.
+  Rapier stays on 0.19.x because `@react-three/rapier` pins it.
+
+## Worktrees and agents
+
+- Do agent work in a git worktree on its own branch (for example `.claude/worktrees/<name>`),
+  never directly on `main`. `.claude/` and `.worktrees/` are gitignored.
+- Worktrees have no `node_modules` of their own. Node resolution walks up to the main
+  checkout (#204). If a tool still cannot find packages, symlink the main checkout's
+  `node_modules` into the worktree, and don't commit the symlink.
+
+## CI (`.github/workflows/`)
+
+- `ci.yml`: lint (with size check), format check, typecheck, coverage tests and build on
+  Node 22/24/26, plus a Playwright smoke run on a production preview. `CI` is the required check.
+- `publish-pages.yml`: a `v*` tag deploys to GitHub Pages, then runs a live smoke test.
+- Dependabot: `.github/dependabot.yml`.

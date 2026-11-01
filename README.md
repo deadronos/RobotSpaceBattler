@@ -2,7 +2,7 @@
 
 A 3D team-vs-team auto-battler simulation built with React, TypeScript, and Three.js.
 
-![Space Station Auto-Battler](public/image.png)
+![Space Station Auto-Battler](docs/images/screenshot.png)
 
 Live demo: https://deadronos.github.io/RobotSpaceBattler/
 
@@ -136,47 +136,10 @@ See `src/visuals/debug/` for implementation details.
 
 ## Documentation
 
-This codebase is fully documented with JSDoc comments. You can inspect any function, class, or
-interface in your IDE to see detailed descriptions of its purpose, parameters, and return values.
+This codebase is documented with JSDoc comments, so you can inspect any function, class or
+interface in your IDE.
 
-Architecture and contributor guides:
-
-- `docs/contributing/architecture.md`
-- `docs/contributing/standards.md`
-- `docs/contributing/testing.md`
-- `docs/contributing/workflows.md`
-
-## Spec Kit (AI-assisted spec & implementation)
-
-This repository is compatible with the GitHub Spec Kit workflow. For a quick introduction and
-to get started see the Spec Kit get-started guide:
-
-[Spec Kit: Get started](https://github.com/github/spec-kit?tab=readme-ov-file#-get-started)
-
-Available Slash Commands
-
-| Command | Description |
-|---|---|
-| /constitution | Create or update project governing principles and development guidelines |
-| /specify | Define what you want to build (requirements and user stories) |
-| /clarify | Clarify underspecified areas (run before /plan unless explicitly skipped) |
-| /plan | Create technical implementation plans with your chosen tech stack |
-| /tasks | Generate actionable task lists for implementation |
-| /analyze | Cross-artifact consistency & coverage analysis (run after /tasks) |
-| /implement | Execute tasks to build the feature according to the plan |
-
-## Pull Request Templates & Contributing guidance
-
-To keep changes aligned with the project's constitution and review expectations, we maintain
-multiple PR templates under `.github/PULL_REQUEST_TEMPLATE/`. When opening a PR, pick the
-template that best matches the change:
-
-- `feature.md` — new features, user-visible changes, and behavior additions.
-- `bugfix.md` — fixes for defects and regressions.
-- `chore.md` — maintenance, dependency updates, infrastructure, and cleanup work.
-
-Each template contains a required `CONSTITUTION-CHECK` section. Complete this section with
-concrete evidence of compliance (file paths, LOC decomposition plan if any file exceeds
-300 LOC, TDD/test evidence, r3f/rendering notes, and any agentic-AI approvals). The CI
-workflow will validate that a `CONSTITUTION-CHECK` section is present and will post an
-auto-generated draft comment listing changed files and suggested decomposition steps.
+- [AGENTS.md](AGENTS.md): conventions and commands for contributors and coding agents
+- [docs/agents/](docs/agents/): rules, architecture, tooling, testing, workflow, PRs
+- [docs/README.md](docs/README.md): index of the other docs
+- [scratch.md](scratch.md): current priorities

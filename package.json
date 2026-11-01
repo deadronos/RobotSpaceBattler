@@ -11,7 +11,7 @@
     "build": "vite build",
     "build:analyze": "vite build --mode production",
     "preview": "vite preview",
-    "lint": "oxlint src tests playwright --deny-warnings",
+    "lint": "oxlint src tests playwright --deny-warnings && node ./scripts/check_source_size.js",
     "lint:fix": "oxlint src tests playwright --fix",
     "format": "oxfmt src tests scripts playwright vite.config.ts vitest.config.ts playwright.config.ts",
     "format:check": "oxfmt --check src tests scripts playwright vite.config.ts vitest.config.ts playwright.config.ts",
@@ -25,7 +25,6 @@
     "bench": "node ./scripts/perf/ai-bench.js",
     "perf:vfx-instancing": "node ./scripts/perf/measure_drawcalls.js",
     "check:source-size": "node ./scripts/check_source_size.js",
-    "check:pr-constitution": "node ./scripts/check_pr_constitution_check.js",
     "typecheck": "tsc --noEmit"
   },
   "lint-staged": {
@@ -69,7 +68,6 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react-swc": "^4.3.3",
     "@vitest/coverage-v8": "^5.0.5",
-    "ajv": "^8.20.0",
     "gltf-pipeline": "^4.3.1",
     "jsdom": "^30.1.3",
     "lint-staged": "^17.6.0",
