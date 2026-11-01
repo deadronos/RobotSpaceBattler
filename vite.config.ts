@@ -54,34 +54,20 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
+        // Put all `node_modules` into a single `vendor` chunk. Finer-grained
+        // splits (react/three/debug stacks) caused cross-chunk initialization
+        // races (React runtime undefined) and let rolldown hoist shared deps
+        // into the lazy debug chunk, which then got preloaded at startup.
+        // Only the self-contained Rapier wasm package is split out, so its size
+        // is visible for #159; lazy-loaded debug tooling splits on its own.
         manualChunks(id) {
           if (id.includes("/node_modules/@dimforge/rapier3d-compat/")) {
             return "rapier";
           }
-          if (id.includes("/node_modules/@react-three/rapier/")) {
-            return "rapier";
-          }
-          if (
-            id.includes("/node_modules/three/") ||
-            id.includes("/node_modules/@react-three/fiber/") ||
-            id.includes("/node_modules/@react-three/drei/") ||
-            id.includes("/node_modules/@react-three/postprocessing/") ||
-            id.includes("/node_modules/postprocessing/")
-          ) {
-            return "three-stack";
-          }
-          if (
-            id.includes("/node_modules/react/") ||
-            id.includes("/node_modules/react-dom/") ||
-            id.includes("/node_modules/zustand/")
-          ) {
-            return "react-stack";
-          }
+          // r3f-perf is only used by the lazy perf overlay; leave it out of
+          // vendor so it ships with that chunk instead of at startup.
           if (id.includes("/node_modules/r3f-perf/")) {
-            return "debug-tools";
-          }
-          if (id.includes("/src/components/debug/")) {
-            return "debug-tools";
+            return undefined;
           }
           if (id.includes("node_modules")) {
             return "vendor";
