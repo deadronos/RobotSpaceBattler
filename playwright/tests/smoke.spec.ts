@@ -111,5 +111,45 @@ test("the battle loads and runs with no errors", async ({ page }, testInfo) => {
   });
   await testInfo.attach("smoke", { body: shot, contentType: "image/png" });
 
+  // Regression for #194: the pill sits before the canvas wrapper in the DOM, so
+  // it needs an explicit z-index or the canvas paints over it. Assert both the
+  // hit test and that it stays clear of the gear and the team-strength bar.
+  const pillLayout = () =>
+    page.evaluate(() => {
+      const box = (selector: string) =>
+        document.querySelector(selector)?.getBoundingClientRect() ?? null;
+      const pill = box("#status");
+      if (!pill) return { hit: "missing #status", overlaps: ["#status"] };
+      const hit = document.elementFromPoint(
+        pill.left + pill.width / 2,
+        pill.top + pill.height / 2,
+      );
+      const overlaps = [".settings-button", ".app-team-strength"].filter(
+        (selector) => {
+          const other = box(selector);
+          return (
+            other != null &&
+            pill.left < other.right &&
+            other.left < pill.right &&
+            pill.top < other.bottom &&
+            other.top < pill.bottom
+          );
+        },
+      );
+      return {
+        hit: hit?.closest("#status") ? "status" : (hit?.tagName ?? "none"),
+        overlaps,
+      };
+    });
+
+  for (const width of [1280, 820, 390]) {
+    await page.setViewportSize({ width, height: 720 });
+    const layout = await pillLayout();
+    expect(layout.hit, `elementFromPoint over #status at ${width}px`).toBe(
+      "status",
+    );
+    expect(layout.overlaps, `#status overlaps at ${width}px`).toEqual([]);
+  }
+
   expect(problems).toEqual([]);
 });

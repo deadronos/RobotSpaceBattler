@@ -7,7 +7,7 @@
 .app-debug-ui {
   position: absolute;
   left: 16px;
-  top: 72px;
+  top: 108px; /* below the team-strength bar (top 64px) */
   max-width: 440px;
   z-index: 2;
   display: flex;
@@ -17,7 +17,7 @@
 
 .app-alive-panel {
   position: absolute;
-  top: 64px;
+  top: 108px; /* below the team-strength bar (top 64px) */
   right: 16px;
   display: flex;
   flex-direction: column;
@@ -32,7 +32,10 @@
 
 .app-team-strength {
   position: absolute;
-  top: 16px;
+  /* #194: the top row is the gear + match-status pill, which can grow to
+     ~350px wide during victory. A centered 680px bar overlaps it below
+     ~1400px, so the bar always gets its own row under the pill. */
+  top: 64px;
   left: 50%;
   transform: translateX(-50%);
   width: min(680px, calc(100vw - 64px));
@@ -184,11 +187,10 @@
 }
 
 @media (max-width: 768px) {
-  /* Below the settings button row; the bar already shows alive counts, so
-     the separate Alive panel is hidden to keep the top-right clear. */
+  /* Full-width bar; it already shows alive counts, so the separate Alive
+     panel is hidden to keep the right side clear. */
   .app-team-strength {
     width: calc(100vw - 24px);
-    top: 64px;
   }
 
   .app-alive-panel {

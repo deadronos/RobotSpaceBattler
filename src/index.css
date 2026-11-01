@@ -24,12 +24,24 @@ canvas {
   position: absolute;
   top: 16px;
   left: 72px;
+  /* #194: the canvas wrapper is a later positioned sibling, so without an
+     explicit z-index this pill paints underneath it. Matches the gear. */
+  z-index: 100;
   padding: 8px 12px;
   border-radius: 8px;
   background: rgba(12, 14, 32, 0.75);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
   font-size: 14px;
   letter-spacing: 0.02em;
+}
+
+/* Keep the longest label ("Victory: Azure Vanguard · restart in 3s") on one
+   line on phones so the pill cannot grow into the team-strength bar row. */
+@media (max-width: 480px) {
+  .match-status {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
 }
 
 .modal-backdrop {
@@ -344,7 +356,7 @@ canvas {
 /* Robot List Panel */
 .robot-list-panel {
   position: absolute;
-  top: 150px; /* below the Alive panel (top 64px) */
+  top: 180px; /* below the Alive panel (top 108px) */
   right: 16px;
   width: 420px;
   max-width: calc(100vw - 32px);
