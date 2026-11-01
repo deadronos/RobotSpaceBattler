@@ -7,9 +7,13 @@ Short, learned lessons. Append new ones.
   `src/visuals/instanceColorUtils.ts`), or instances render black. `instanceColor` is
   created lazily. Initialise the slots once, and set `material.needsUpdate = true` if it
   appears after the first shader compile.
-- **Rapier types:** `@dimforge/rapier3d-compat` and the copy bundled with
-  `@react-three/rapier` can disagree on types, so some call sites need assertions.
-  The Vite alias keeps one runtime copy.
+- **No physics engine:** Rapier was removed in #184. Static geometry is tested with
+  plain 2D segment tests (`src/simulation/environment/staticOcclusionIndex.ts`) and dynamic
+  obstacles with `segmentIntersectsAABB`/`segmentIntersectsCircle`. Don't reintroduce a
+  physics engine for line-of-sight or avoidance without reading #184 first.
+- **Collider heights:** the old Rapier wall colliders started at y = 0.025 and the pillars at
+  y = 0.015, so rays at robot height (y = 0) passed underneath them. Anything that tests rays
+  against arena geometry must state which height it assumes.
 - **Best-of scans:** use a linear `findBestEntity`-style scan instead of
   `sort(...)[0]`, which is O(n log n) and allocates.
 - **Keyboard shortcuts:** ignore `e.repeat` for toggles, and skip events whose target is an input.

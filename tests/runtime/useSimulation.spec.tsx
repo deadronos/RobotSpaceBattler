@@ -22,7 +22,6 @@ const simulationTestState = vi.hoisted(() => {
   return {
     mockCreateBattleRunner: vi.fn<typeof createBattleRunner>(),
     mockRecordRendererFrame: vi.fn<typeof recordRendererFrame>(),
-    mockRapierWorld: { id: "rapier-world" },
     clearFrameCallback: () => {
       frameCallback = undefined;
     },
@@ -39,10 +38,6 @@ vi.mock("@react-three/fiber", () => ({
   useFrame: (callback: (state: { gl: unknown }, delta: number) => void) => {
     simulationTestState.setFrameCallback(callback);
   },
-}));
-
-vi.mock("@react-three/rapier", () => ({
-  useRapier: () => ({ world: simulationTestState.mockRapierWorld }),
 }));
 
 vi.mock("../../src/runtime/simulation/battleRunner", () => ({
@@ -99,67 +94,11 @@ describe("useSimulation", () => {
     simulationTestState.clearFrameCallback();
   });
 
-  it("wires the Rapier world to each created runner and clears it on cleanup", () => {
-    const firstRunner = {
-      step: vi.fn<BattleRunner["step"]>(),
-      advance: vi.fn<BattleRunner["advance"]>(),
-      reset: vi.fn<BattleRunner["reset"]>(),
-      setRapierWorld: vi.fn<BattleRunner["setRapierWorld"]>(),
-      getRapierWorld: vi.fn<BattleRunner["getRapierWorld"]>(),
-      dispose: vi.fn<BattleRunner["dispose"]>(),
-    };
-    const secondRunner = {
-      step: vi.fn<BattleRunner["step"]>(),
-      advance: vi.fn<BattleRunner["advance"]>(),
-      reset: vi.fn<BattleRunner["reset"]>(),
-      setRapierWorld: vi.fn<BattleRunner["setRapierWorld"]>(),
-      getRapierWorld: vi.fn<BattleRunner["getRapierWorld"]>(),
-      dispose: vi.fn<BattleRunner["dispose"]>(),
-    };
-
-    simulationTestState.mockCreateBattleRunner
-      .mockReturnValueOnce(firstRunner)
-      .mockReturnValueOnce(secondRunner);
-
-    const battleWorld = createBattleWorld();
-    const matchMachine = createMatchMachineStub();
-    const { rerender, unmount } = render(
-      <HookHarness
-        battleWorld={battleWorld}
-        matchMachine={matchMachine}
-        telemetry={createTelemetryStub()}
-      />,
-    );
-
-    expect(firstRunner.setRapierWorld).toHaveBeenCalledWith(
-      simulationTestState.mockRapierWorld,
-    );
-
-    rerender(
-      <HookHarness
-        battleWorld={battleWorld}
-        matchMachine={matchMachine}
-        telemetry={createTelemetryStub()}
-      />,
-    );
-
-    expect(firstRunner.setRapierWorld).toHaveBeenCalledWith(null);
-    expect(secondRunner.setRapierWorld).toHaveBeenCalledWith(
-      simulationTestState.mockRapierWorld,
-    );
-
-    unmount();
-
-    expect(secondRunner.setRapierWorld).toHaveBeenLastCalledWith(null);
-  });
-
   it("disposes the runner on unmount", () => {
     const runner = {
       step: vi.fn<BattleRunner["step"]>(),
       advance: vi.fn<BattleRunner["advance"]>(),
       reset: vi.fn<BattleRunner["reset"]>(),
-      setRapierWorld: vi.fn<BattleRunner["setRapierWorld"]>(),
-      getRapierWorld: vi.fn<BattleRunner["getRapierWorld"]>(),
       dispose: vi.fn<BattleRunner["dispose"]>(),
     };
     simulationTestState.mockCreateBattleRunner.mockReturnValueOnce(runner);
@@ -183,8 +122,6 @@ describe("useSimulation", () => {
       step: vi.fn<BattleRunner["step"]>(),
       advance: vi.fn<BattleRunner["advance"]>(),
       reset: vi.fn<BattleRunner["reset"]>(),
-      setRapierWorld: vi.fn<BattleRunner["setRapierWorld"]>(),
-      getRapierWorld: vi.fn<BattleRunner["getRapierWorld"]>(),
       dispose: vi.fn<BattleRunner["dispose"]>(),
     };
 

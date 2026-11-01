@@ -27,6 +27,9 @@ pids
 
 # Dependency directories
 node_modules/
+# A worktree may symlink the main checkout's node_modules (no trailing slash
+# also matches that symlink, not just the directory).
+node_modules
 # If you use pnpm
 .pnpm-store/
 

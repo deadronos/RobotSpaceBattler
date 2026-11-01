@@ -28,7 +28,7 @@ Every tier of the 2026-10-31 plan is closed: the live quick fixes (#153–#156),
 ## Tier 3: performance and size (M)
 
 8. ~~**#201: AI perf phase 2.**~~ Done.
-9. **#159 + #184: bundle diet and the Rapier 0.21 decision, together.** Robots no longer have Rapier bodies (#162), and Rapier is only used for static-geometry raycasts. Re-evaluate whether Rapier is needed at all: plain ray-vs-AABB/cylinder tests against the arena obstacles might replace it and save about 836 kB gzip. That's a bigger and better question than lazy-loading.
+9. ~~**#159 + #184: bundle diet and the Rapier 0.21 decision, together.**~~ Done: Rapier removed (its only consumer was a dead deprecated avoidance path), `node_modules` split into `react`/`three`/`r3f`/`vendor`, and `npm run check:bundle` gates the gzip budget.
 
 ## Tier 4: features (L, now unblocked)
 
