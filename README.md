@@ -48,8 +48,7 @@ Open your browser to `http://localhost:5173`.
 
 ### Other Commands
 
-- **Build**: `npm run build` - Builds the project for production.
-- **Build (analyze chunks)**: `npm run build:analyze`
+- **Build**: `npm run build` - Builds the project for production and writes a bundle treemap to `dist/stats.html`.
 - **Preview**: `npm run preview` - Serves the production build locally.
 - **Lint**: `npm run lint` - Runs oxlint.
 - **Lint (auto-fix)**: `npm run lint:fix`
@@ -61,7 +60,7 @@ Open your browser to `http://localhost:5173`.
 - **Test (coverage)**: `npm run test:coverage`
 - **E2E Test**: `npm run playwright:test` - Runs end-to-end tests.
 - **E2E smoke via preview**: `npm run playwright:preview`
-- **E2E smoke against live deployment**: `npm run playwright:smoke:live`
+- **E2E smoke against a deployed site**: `SMOKE_BASE_URL=https://deadronos.github.io/RobotSpaceBattler/ npm run playwright:smoke:live` (without `SMOKE_BASE_URL` it builds and tests the local preview instead)
 
 ## Continuous Integration
 
@@ -80,7 +79,7 @@ Open your browser to `http://localhost:5173`.
 
 - Merges to `main` run CI only.
 - GitHub Pages deploy is tag-driven: creating a `v*` tag triggers `.github/workflows/publish-pages.yml`.
-- Deploy smoke validation can be run with `npm run playwright:smoke:live`.
+- After deploying, the `smoke-live` job runs the smoke spec against the published URL. To run it by hand, set `SMOKE_BASE_URL` (see above).
 
 ## Project Structure
 

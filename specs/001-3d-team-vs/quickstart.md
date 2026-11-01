@@ -34,7 +34,7 @@ Open [http://localhost:5173/](http://localhost:5173/).
 
 ## Debug console (optional)
 
-`App` exposes the battle world for debugging:
+`App` exposes the battle world for debugging in `npm run dev`. In a production build (`npm run preview` or the Pages site), add `?debug` to the URL to enable it:
 
 ```js
 window.__battleWorld
