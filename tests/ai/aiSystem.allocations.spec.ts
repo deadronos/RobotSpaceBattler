@@ -15,11 +15,12 @@ import {
 
 /**
  * Guards the "no per-tick allocations in AI/combat hot paths" goal of #171.
- * heapUsed deltas are noisy, so thresholds sit far above the measured
- * steady-state values and far below the pre-change values.
+ * Allocation is measured with the V8 sampling heap profiler (statistical), so
+ * thresholds sit above the measured steady-state values and far below the
+ * pre-change values.
  */
 describe("AI hot path allocations", () => {
-  it("targeting + neighbour queries are allocation free in steady state", () => {
+  it("targeting + neighbour queries stay nearly allocation free in steady state", () => {
     const world = buildScenarioWorld(100);
     const robots = world.robots.entities;
     const grid = new SpatialGrid(SENSOR_RANGE / 2);
@@ -52,14 +53,16 @@ describe("AI hot path allocations", () => {
       }
     };
 
-    const allocated = bytesPerTick(tick, 100, 30, 10);
-    // Pre-change this path allocated several MB per tick at 100 robots.
-    expect(allocated).toBeLessThan(48 * 1024);
+    const allocated = bytesPerTick(tick, 150, 200);
+    // Measured ~35 KB per tick at 100 robots (boxed doubles at call
+    // boundaries); the pre-change implementation allocated far more here.
+    expect(allocated).toBeLessThan(80 * 1024);
   });
 
-  it("full AI tick at 100 robots stays well below the pre-change baseline", () => {
-    const { aiBytes } = measureAllocationsPerTick(100, 20);
-    // Baseline before #171 was ~2.8 MB per tick.
-    expect(aiBytes).toBeLessThan(512 * 1024);
+  it("full AI tick at 100 robots stays far below the pre-change baseline", () => {
+    const { aiBytes } = measureAllocationsPerTick(100, 200);
+    // Baseline before #171 was ~3.0 MB per tick; now ~0.33 MB, mostly movement
+    // planning (pathing/) and team anchors, which are outside this change.
+    expect(aiBytes).toBeLessThan(768 * 1024);
   });
 });

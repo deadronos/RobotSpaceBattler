@@ -52,7 +52,7 @@ describe("AI + combat scaling benchmark", () => {
     ];
     for (const count of COUNTS) {
       const time = timeTicks(count);
-      const alloc = measureAllocationsPerTick(count, FULL ? 30 : 2, WARMUP);
+      const alloc = measureAllocationsPerTick(count, FULL ? 300 : 10, WARMUP);
       expect(time.median).toBeGreaterThan(0);
       rows.push(
         `| ${count} | ${time.median.toFixed(3)} | ${time.p95.toFixed(3)} | ${(alloc.aiBytes / 1024).toFixed(1)} | ${alloc.combatBytes.toFixed(0)} |`,

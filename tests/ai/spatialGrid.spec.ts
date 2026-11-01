@@ -6,7 +6,11 @@ import { SpatialGrid } from "../../src/simulation/ai/spatialGrid";
 import { createLcg } from "../helpers/aiScenario";
 import { createTestRobot } from "../helpers/robotFactory";
 
-function randomRobots(count: number, seed: number, spread = 100): RobotEntity[] {
+function randomRobots(
+  count: number,
+  seed: number,
+  spread = 100,
+): RobotEntity[] {
   const rand = createLcg(seed);
   return Array.from({ length: count }, (_, i) =>
     createTestRobot({

@@ -135,7 +135,8 @@ export function updateRobotSensors(
   }
 
   // Reuse the id array in place instead of allocating a new one per tick.
-  const visibleIds = robot.ai.visibleEnemyIds ?? (robot.ai.visibleEnemyIds = []);
+  const visibleIds =
+    robot.ai.visibleEnemyIds ?? (robot.ai.visibleEnemyIds = []);
   visibleIds.length = visible.length;
   for (let i = 0; i < visible.length; i += 1) {
     visibleIds[i] = visible[i].id;

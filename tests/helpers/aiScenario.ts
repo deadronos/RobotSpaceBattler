@@ -1,3 +1,5 @@
+import inspector from "node:inspector";
+
 import { updateAISystem } from "../../src/ecs/systems/aiSystem";
 import { updateCombatSystem } from "../../src/ecs/systems/combatSystem";
 import {
@@ -60,31 +62,50 @@ export function buildScenarioWorld(count: number, seed = 7): BattleWorld {
 export type ScenarioProbe = (phase: "ai" | "combat", run: () => void) => void;
 const runDirect: ScenarioProbe = (_phase, run) => run();
 
+interface HeapProfileNode {
+  selfSize: number;
+  children: HeapProfileNode[];
+}
+
+function sumSelfSize(node: HeapProfileNode): number {
+  let total = node.selfSize;
+  for (const child of node.children) total += sumSelfSize(child);
+  return total;
+}
+
 /**
- * Bytes allocated per call of `runTick`, estimated from `heapUsed` growth over
- * batches of ticks (sampling per batch rather than per call avoids allocation
- * granularity noise). Batches in which a GC shrank the heap are ignored.
+ * Bytes allocated per call of `runTick` (garbage included), measured with the
+ * V8 sampling heap profiler, which reports objects freed by minor and major
+ * GCs too. The result is a statistical estimate (sampling interval 256 B).
  */
 export function bytesPerTick(
   runTick: (tick: number) => void,
   warmup: number,
-  batches: number,
-  batchTicks: number,
+  ticks: number,
 ): number {
   let tick = 0;
   for (; tick < warmup; tick += 1) runTick(tick);
-  let bytes = 0;
-  let counted = 0;
-  for (let batch = 0; batch < batches; batch += 1) {
-    const before = process.memoryUsage().heapUsed;
-    for (let i = 0; i < batchTicks; i += 1, tick += 1) runTick(tick);
-    const delta = process.memoryUsage().heapUsed - before;
-    if (delta > 0) {
-      bytes += delta;
-      counted += batchTicks;
-    }
+
+  const session = new inspector.Session();
+  session.connect();
+  let total = 0;
+  try {
+    session.post("HeapProfiler.startSampling", {
+      samplingInterval: 256,
+      includeObjectsCollectedByMajorGC: true,
+      includeObjectsCollectedByMinorGC: true,
+    });
+    for (let i = 0; i < ticks; i += 1, tick += 1) runTick(tick);
+    session.post("HeapProfiler.stopSampling", (_error, result) => {
+      total = sumSelfSize(
+        (result as unknown as { profile: { head: HeapProfileNode } }).profile
+          .head,
+      );
+    });
+  } finally {
+    session.disconnect();
   }
-  return counted > 0 ? bytes / counted : 0;
+  return total / ticks;
 }
 
 /**
@@ -94,8 +115,8 @@ export function bytesPerTick(
  */
 export function measureAllocationsPerTick(
   count: number,
-  batches = 30,
-  warmup = 120,
+  ticks = 300,
+  warmup = 200,
 ): { aiBytes: number; combatBytes: number } {
   const aiWorld = buildScenarioWorld(count);
   const rng = createLcg(3);
@@ -112,8 +133,7 @@ export function measureAllocationsPerTick(
       void tick;
     },
     warmup,
-    batches,
-    20,
+    ticks,
   );
 
   // Combat: compress the roster so every robot is in range of its target and
@@ -137,8 +157,7 @@ export function measureAllocationsPerTick(
       }
     },
     warmup,
-    batches,
-    20,
+    ticks,
   );
   return { aiBytes, combatBytes: combatBytes / count };
 }
