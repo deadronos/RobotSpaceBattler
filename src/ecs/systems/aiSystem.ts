@@ -10,7 +10,10 @@ import {
   planRobotMovement,
   resolveSpawnCenter,
 } from "../../simulation/ai/pathing";
-import type { MovementContext } from "../../simulation/ai/pathing/types";
+import type {
+  MovementContext,
+  MovementPlan,
+} from "../../simulation/ai/pathing/types";
 import { SENSOR_RANGE } from "../../simulation/ai/sensors";
 import { SpatialGrid } from "../../simulation/ai/spatialGrid";
 import { BattleWorld, RobotEntity } from "../world";
@@ -39,6 +42,12 @@ const behaviorContextScratch: {
   anchorDistance: number | null;
   rng: () => number;
 } = { targetDistance: null, anchorDistance: null, rng: Math.random };
+// Reusable plan whose velocity vector is the robot's own, so movement planning
+// writes the final velocity in place instead of allocating a plan per robot.
+const movementPlanScratch: MovementPlan = {
+  velocity: { x: 0, y: 0, z: 0 },
+  orientation: 0,
+};
 
 /**
  * Updates the AI for all robots in the battle world.
@@ -73,7 +82,7 @@ export function updateAISystem(
     const allies = grid.teamMembers(robot.team);
     // Sensors reject anything beyond SENSOR_RANGE, so querying exactly that
     // radius yields the same candidates (in the same order) as a full scan.
-    const potentialEnemies = grid.query(
+    const enemyCount = grid.queryInto(
       robot.position.x,
       robot.position.z,
       SENSOR_RANGE,
@@ -86,10 +95,11 @@ export function updateAISystem(
     const { target } = updateTargeting(
       robot,
       robots,
-      potentialEnemies,
+      enemiesScratch,
       battleWorld,
       rng,
       allies,
+      enemyCount,
     );
 
     const assignment = anchors[robot.id];
@@ -168,17 +178,18 @@ export function updateAISystem(
       robot.pathComponent.requestedTarget = null;
     }
 
-    const movementPlan = planRobotMovement(
+    movementPlanScratch.velocity = robot.velocity;
+    planRobotMovement(
       robot,
       behavior,
       target,
       undefined,
       neighborsContext,
+      movementPlanScratch,
     );
 
-    robot.velocity = movementPlan.velocity;
-    robot.orientation = movementPlan.orientation;
-    robot.speed = lengthVec3(movementPlan.velocity);
+    robot.orientation = movementPlanScratch.orientation;
+    robot.speed = lengthVec3(robot.velocity);
   }
 
   perfMarkEnd("updateAISystem");

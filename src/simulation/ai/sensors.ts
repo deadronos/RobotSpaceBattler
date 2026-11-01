@@ -43,6 +43,12 @@ const proximityScratch: RobotEntity[] = [];
 const losOptionsScratch: {
   obstacles: BattleWorld["obstacles"]["entities"] | undefined;
 } = { obstacles: undefined };
+const snapshotScratch: SensorSnapshot = {
+  visibleEnemies: visibleScratch,
+  visibleCount: 0,
+  proximityDetections: proximityScratch,
+  proximityCount: 0,
+};
 
 /**
  * Snapshot of sensor data for a robot.
@@ -53,8 +59,12 @@ export interface SensorSnapshot {
    * scratch buffer, only valid until the next `updateRobotSensors` call.
    */
   visibleEnemies: RobotEntity[];
+  /** Number of valid entries in `visibleEnemies`. */
+  visibleCount: number;
   /** List of enemies detected by proximity sensors (even if not visible). */
   proximityDetections: RobotEntity[];
+  /** Number of valid entries in `proximityDetections`. */
+  proximityCount: number;
 }
 
 function pruneMemory(
@@ -83,15 +93,17 @@ export function updateRobotSensors(
   timestampMs: number,
   battleWorld?: BattleWorld,
   potentialEnemies?: RobotEntity[],
+  potentialEnemyCount = potentialEnemies?.length ?? 0,
 ): SensorSnapshot {
   const enemies = potentialEnemies ?? collectEnemies(robot, robots);
+  const enemyCount = potentialEnemies ? potentialEnemyCount : enemies.length;
   const visible = visibleScratch;
   const proximity = proximityScratch;
   let visibleCount = 0;
   let proximityCount = 0;
   losOptionsScratch.obstacles = battleWorld?.obstacles?.entities;
 
-  for (let i = 0; i < enemies.length; i += 1) {
+  for (let i = 0; i < enemyCount; i += 1) {
     const enemy = enemies[i];
     const distanceSq = distanceSquaredVec3(robot.position, enemy.position);
     if (distanceSq > SENSOR_RANGE_SQ) {
@@ -142,10 +154,12 @@ export function updateRobotSensors(
     visibleIds[i] = visible[i].id;
   }
 
-  return {
-    visibleEnemies: visible,
-    proximityDetections: proximity,
-  };
+  const snapshot = snapshotScratch;
+  snapshot.visibleEnemies = visible;
+  snapshot.visibleCount = visibleCount;
+  snapshot.proximityDetections = proximity;
+  snapshot.proximityCount = proximityCount;
+  return snapshot;
 }
 
 const latestMemoryScratch: [string, EnemyMemoryEntry] = [

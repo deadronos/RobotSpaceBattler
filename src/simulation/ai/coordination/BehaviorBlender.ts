@@ -10,13 +10,7 @@
  * @module ai/coordination
  */
 
-import {
-  addVec3,
-  lengthVec3,
-  normalizeVec3,
-  scaleVec3,
-  type Vec3,
-} from "../../../lib/math/vec3";
+import type { Vec3 } from "../../../lib/math/vec3";
 import type { MovementDesire, PriorityWeights } from "./types";
 
 /**
@@ -79,43 +73,81 @@ export class BehaviorBlender {
    * @returns Blended velocity vector
    */
   blend(desires: MovementDesire[]): Vec3 {
+    return this.blendRange(desires, desires.length, { x: 0, y: 0, z: 0 });
+  }
+
+  /**
+   * Blends the first `count` desires into `out`, without allocating.
+   *
+   * Hot path for the AI tick: `blend` is kept as an allocating wrapper so
+   * callers that want a fresh vector keep that contract.
+   *
+   * @param desires - Array of movement desires (may be a reused scratch array).
+   * @param count - Number of entries of `desires` to read.
+   * @param out - The vector to overwrite with the blended velocity.
+   * @returns `out`.
+   */
+  blendRange(
+    desires: readonly MovementDesire[],
+    count: number,
+    out: Vec3,
+  ): Vec3 {
     // Handle empty input
-    if (desires.length === 0) {
-      return { x: 0, y: 0, z: 0 };
+    if (count === 0) {
+      out.x = 0;
+      out.y = 0;
+      out.z = 0;
+      return out;
     }
 
     // Calculate effective weights and weighted velocities
     let totalWeight = 0;
-    let weightedSum: Vec3 = { x: 0, y: 0, z: 0 };
+    let sumX = 0;
+    let sumY = 0;
+    let sumZ = 0;
 
-    for (const desire of desires) {
+    for (let i = 0; i < count; i += 1) {
+      const desire = desires[i];
       // Effective weight = base weight * priority multiplier
       const priorityMultiplier = this.priorityWeights[desire.priority];
       const effectiveWeight = desire.weight * priorityMultiplier;
 
-      // Add weighted velocity to sum
-      const weightedVelocity = scaleVec3(desire.velocity, effectiveWeight);
-      weightedSum = addVec3(weightedSum, weightedVelocity);
-
+      sumX += desire.velocity.x * effectiveWeight;
+      sumY += desire.velocity.y * effectiveWeight;
+      sumZ += desire.velocity.z * effectiveWeight;
       totalWeight += effectiveWeight;
     }
 
     // Handle case where all weights are zero
     if (totalWeight === 0) {
-      return { x: 0, y: 0, z: 0 };
+      out.x = 0;
+      out.y = 0;
+      out.z = 0;
+      return out;
     }
 
     // Normalize by total weight to get average weighted direction
-    const blended = scaleVec3(weightedSum, 1 / totalWeight);
+    const inverse = 1 / totalWeight;
+    const blendedX = sumX * inverse;
+    const blendedY = sumY * inverse;
+    const blendedZ = sumZ * inverse;
 
     // Clamp to max speed
-    const magnitude = lengthVec3(blended);
+    const magnitude = Math.sqrt(
+      blendedX * blendedX + blendedY * blendedY + blendedZ * blendedZ,
+    );
     if (magnitude > MAX_SPEED) {
-      const normalized = normalizeVec3(blended);
-      return scaleVec3(normalized, MAX_SPEED);
+      const normalizeScale = 1 / magnitude;
+      out.x = blendedX * normalizeScale * MAX_SPEED;
+      out.y = blendedY * normalizeScale * MAX_SPEED;
+      out.z = blendedZ * normalizeScale * MAX_SPEED;
+      return out;
     }
 
-    return blended;
+    out.x = blendedX;
+    out.y = blendedY;
+    out.z = blendedZ;
+    return out;
   }
 
   /**

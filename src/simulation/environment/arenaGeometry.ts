@@ -1,10 +1,15 @@
 import { Ray } from "@dimforge/rapier3d-compat";
 
 import {
+  Point2D,
   segmentIntersectsAABB,
   segmentIntersectsCircle,
 } from "../../lib/math/geometry";
 import { distanceVec3, Vec3, vec3 } from "../../lib/math/vec3";
+import {
+  blocksStaticSegment,
+  buildStaticOcclusionIndex,
+} from "./staticOcclusionIndex";
 
 /**
  * Definition of a rectangular arena wall.
@@ -70,6 +75,16 @@ export const ARENA_PILLARS: readonly ArenaPillar[] = Object.freeze([
 
 const EPSILON = 1e-3;
 
+// Built once: the AI runs a line-of-sight test per in-range robot pair every
+// tick, so the static walls and pillars are indexed by cell to skip the open
+// parts of the arena instead of testing all 17 shapes.
+buildStaticOcclusionIndex(ARENA_WALLS, ARENA_PILLARS, {
+  minX: ARENA_BOUNDS.min.x - 4,
+  minZ: ARENA_BOUNDS.min.z - 4,
+  maxX: ARENA_BOUNDS.max.x + 4,
+  maxZ: ARENA_BOUNDS.max.z + 4,
+});
+
 /**
  * Checks if the line of sight between two points is blocked by any static geometry (walls or pillars).
  * Performed in 2D (XZ plane).
@@ -78,30 +93,8 @@ const EPSILON = 1e-3;
  * @param end - The ending point.
  * @returns True if line of sight is blocked.
  */
-export function isLineOfSightBlocked(start: Vec3, end: Vec3): boolean {
-  if (start.x === end.x && start.z === end.z) {
-    return false;
-  }
-
-  // Indexed loops: this runs for every robot pair each tick and for-of would
-  // allocate an iterator per call.
-  for (let i = 0; i < ARENA_WALLS.length; i += 1) {
-    const wall = ARENA_WALLS[i];
-    if (
-      segmentIntersectsAABB(start, end, wall, wall.halfWidth, wall.halfDepth)
-    ) {
-      return true;
-    }
-  }
-
-  for (let i = 0; i < ARENA_PILLARS.length; i += 1) {
-    const pillar = ARENA_PILLARS[i];
-    if (segmentIntersectsCircle(start, end, pillar, pillar.radius)) {
-      return true;
-    }
-  }
-
-  return false;
+export function isLineOfSightBlocked(start: Point2D, end: Point2D): boolean {
+  return blocksStaticSegment(start, end);
 }
 
 export interface RuntimeObstacleShapeBox {
@@ -126,7 +119,7 @@ export interface RuntimeObstacle {
 }
 
 export interface RuntimeCheckOptions {
-  obstacles?: Array<RuntimeObstacle>;
+  obstacles?: ReadonlyArray<RuntimeObstacle | null | undefined>;
   rapierWorld?: {
     castRayAndGetNormal?: (
       ray: Ray,
@@ -166,7 +159,9 @@ function checkIntersectionRuntime(
   }
 
   if (options && Array.isArray(options.obstacles)) {
-    const obstacles = options.obstacles;
+    const obstacles = options.obstacles as ReadonlyArray<
+      RuntimeObstacle | null | undefined
+    >;
     for (let i = 0; i < obstacles.length; i += 1) {
       const obs = obstacles[i];
       if (!obs) continue;

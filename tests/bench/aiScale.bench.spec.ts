@@ -54,6 +54,12 @@ describe("AI + combat scaling benchmark", () => {
       const time = timeTicks(count);
       const alloc = measureAllocationsPerTick(count, FULL ? 300 : 10, WARMUP);
       expect(time.median).toBeGreaterThan(0);
+      // Acceptance criterion of #201: AI allocation below 50 KB/tick at 100
+      // robots. Only enforced in the full run; the smoke run samples too few
+      // ticks for the heap profiler to be meaningful.
+      const allocationBudgetKb =
+        FULL && count === 100 ? 50 : Number.POSITIVE_INFINITY;
+      expect(alloc.aiBytes / 1024).toBeLessThan(allocationBudgetKb);
       rows.push(
         `| ${count} | ${time.median.toFixed(3)} | ${time.p95.toFixed(3)} | ${(alloc.aiBytes / 1024).toFixed(1)} | ${alloc.combatBytes.toFixed(0)} |`,
       );

@@ -6,6 +6,7 @@ import {
   lengthVec3,
   normalizeVec3,
   projectOntoPlane,
+  ReadonlyVec3,
   scaleVec3,
   subtractVec3,
   Vec3,
@@ -72,6 +73,100 @@ export function applySeparation(
     const push = scaleVec3(normalizeVec3(delta), strength);
     return addVec3(acc, push);
   }, cloneVec3(baseVelocity));
+}
+
+/**
+ * Normalized planar direction from `from` to `to`, written into `out`.
+ *
+ * Allocation-free equivalent of
+ * `normalizeVec3(projectOntoPlane(subtractVec3(to, from)))`: the Y component is
+ * dropped before normalizing, so the length is over XZ only.
+ *
+ * @param out - The vector to overwrite.
+ * @param from - The starting position (read only).
+ * @param to - The target position (read only).
+ * @returns `out`.
+ */
+export function computeForwardDirectionInto(
+  out: Vec3,
+  from: ReadonlyVec3,
+  to: ReadonlyVec3,
+): Vec3 {
+  const dx = to.x - from.x;
+  const dz = to.z - from.z;
+  const length = Math.sqrt(dx * dx + dz * dz);
+  if (length === 0) {
+    out.x = 0;
+    out.y = 0;
+    out.z = 0;
+    return out;
+  }
+
+  const inverse = 1 / length;
+  out.x = dx * inverse;
+  out.y = 0;
+  out.z = dz * inverse;
+  return out;
+}
+
+/**
+ * Adds separation forces in place, avoiding a copy of the base velocity.
+ *
+ * @param velocity - The velocity to modify (already a writable copy).
+ * @param robot - The robot entity.
+ * @param neighbors - List of positions of nearby robots.
+ * @returns `velocity`.
+ */
+export function applySeparationInto(
+  velocity: Vec3,
+  robot: RobotEntity,
+  neighbors?: readonly Vec3[],
+): Vec3 {
+  if (!neighbors || neighbors.length === 0) {
+    return velocity;
+  }
+
+  const origin = robot.position;
+  for (let i = 0; i < neighbors.length; i += 1) {
+    const neighbor = neighbors[i];
+    const dx = origin.x - neighbor.x;
+    const dy = origin.y - neighbor.y;
+    const dz = origin.z - neighbor.z;
+    const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (distance === 0) continue;
+
+    const strength =
+      Math.max(0, ROBOT_SEPARATION_DISTANCE - distance) /
+      ROBOT_SEPARATION_DISTANCE;
+    const inverse = 1 / distance;
+    velocity.x += dx * inverse * strength;
+    velocity.y += dy * inverse * strength;
+    velocity.z += dz * inverse * strength;
+  }
+
+  return velocity;
+}
+
+/**
+ * Clamps the magnitude of a velocity vector in place.
+ *
+ * @param velocity - The velocity to modify.
+ * @param maxSpeed - The maximum allowed speed.
+ * @returns `velocity`.
+ */
+export function clampVelocityInto(velocity: Vec3, maxSpeed: number): Vec3 {
+  const magnitude = Math.sqrt(
+    velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z,
+  );
+  if (magnitude <= maxSpeed) {
+    return velocity;
+  }
+
+  const scale = maxSpeed / magnitude;
+  velocity.x *= scale;
+  velocity.y *= scale;
+  velocity.z *= scale;
+  return velocity;
 }
 
 /**
