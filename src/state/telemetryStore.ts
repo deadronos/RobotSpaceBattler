@@ -116,11 +116,32 @@ export interface TeamTelemetryTotals {
 export interface TelemetryState {
   /** The ID of the current match. */
   matchId: string | null;
-  /** List of all recorded events in the current match. */
+  /**
+   * List of all recorded events in the current match.
+   *
+   * `recordEvent` appends in place, so this array reference is stable for the
+   * whole match (#207). Read it through `getState()`; if a subscriber needs to
+   * react to new events, subscribe to `eventCount` instead of this array.
+   */
   events: TelemetryEvent[];
-  /** Map of robot IDs to their aggregated stats. */
+  /**
+   * Number of events recorded in the current match.
+   *
+   * Cheap, O(1) version counter for `events`: it changes whenever an event is
+   * appended, without rebuilding the event log.
+   */
+  eventCount: number;
+  /**
+   * Map of robot IDs to their aggregated stats.
+   *
+   * Updated in place, so the reference is stable for the whole match (#207).
+   */
   robots: Record<string, RobotTelemetryStats>;
-  /** Map of team IDs to their aggregated totals. */
+  /**
+   * Map of team IDs to their aggregated totals.
+   *
+   * Updated in place, so the reference is stable for the whole match (#207).
+   */
   teamTotals: Record<TeamId, TeamTelemetryTotals>;
   /** Records a new event. */
   recordEvent: (event: TelemetryEvent) => void;
@@ -159,40 +180,41 @@ function createTeamTotals(): Record<TeamId, TeamTelemetryTotals> {
   };
 }
 
-function cloneTeamTotals(totals: Record<TeamId, TeamTelemetryTotals>) {
-  return {
-    red: { ...totals.red },
-    blue: { ...totals.blue },
-  };
-}
-
 /**
  * Zustand store for managing match telemetry data.
+ *
+ * Recording is amortised O(1): `recordEvent` appends to the event log and
+ * mutates the aggregates in place, then bumps `eventCount` so the store still
+ * notifies subscribers (#207).
  */
 export const useTelemetryStore = create<TelemetryState>((set) => ({
   matchId: null,
   events: [],
+  eventCount: 0,
   robots: {},
   teamTotals: createTeamTotals(),
   reset: (matchId) =>
     set({
       matchId: matchId ?? null,
       events: [],
+      eventCount: 0,
       robots: {},
       teamTotals: createTeamTotals(),
     }),
   recordEvent: (event) =>
     set((state) => {
-      const robots = { ...state.robots };
-      const teamTotals = cloneTeamTotals(state.teamTotals);
+      // Append in place: copying the log made every event O(n) and a whole
+      // match O(n²). Nothing in `src/` subscribes to `events` any more (#206),
+      // so readers use `getState().events` and the reference can stay put.
+      state.events.push(event);
+
+      const { robots, teamTotals } = state;
 
       const ensureRobot = (id: string, teamId: TeamId): RobotTelemetryStats => {
         const existing = robots[id];
         if (existing) {
-          if (existing.teamId !== teamId) {
-            robots[id] = { ...existing, teamId };
-          }
-          return robots[id];
+          existing.teamId = teamId;
+          return existing;
         }
 
         const stats = createRobotStats(id, teamId);
@@ -208,46 +230,31 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
         }
         case "fire": {
           const robot = ensureRobot(event.entityId, event.teamId);
-          robots[event.entityId] = {
-            ...robot,
-            shotsFired: robot.shotsFired + 1,
-          };
+          robot.shotsFired += 1;
           teamTotals[event.teamId].shotsFired += 1;
           break;
         }
         case "damage": {
           const attacker = ensureRobot(event.attackerId, event.teamId);
-          robots[event.attackerId] = {
-            ...attacker,
-            damageDealt: attacker.damageDealt + event.amount,
-          };
+          attacker.damageDealt += event.amount;
           teamTotals[event.teamId].damageDealt += event.amount;
 
           const target = robots[event.targetId];
           if (target) {
-            robots[event.targetId] = {
-              ...target,
-              damageTaken: target.damageTaken + event.amount,
-            };
+            target.damageTaken += event.amount;
             teamTotals[target.teamId].damageTaken += event.amount;
           }
           break;
         }
         case "death": {
           const deceased = ensureRobot(event.entityId, event.teamId);
-          robots[event.entityId] = {
-            ...deceased,
-            deaths: deceased.deaths + 1,
-          };
+          deceased.deaths += 1;
           teamTotals[event.teamId].deaths += 1;
 
           if (event.attackerId) {
             const attacker = robots[event.attackerId];
             if (attacker) {
-              robots[event.attackerId] = {
-                ...attacker,
-                kills: attacker.kills + 1,
-              };
+              attacker.kills += 1;
             }
           }
           break;
@@ -262,11 +269,8 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
           break;
       }
 
-      return {
-        ...state,
-        events: [...state.events, event],
-        robots,
-        teamTotals,
-      };
+      // Bump the version counter instead of rebuilding the log, so subscribers
+      // are still notified at O(1) cost.
+      return { eventCount: state.eventCount + 1 };
     }),
 }));

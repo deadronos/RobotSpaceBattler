@@ -1,6 +1,9 @@
+import { useMemo } from "react";
+
 import { TEAM_CONFIGS } from "../../lib/teamConfig";
 import { useTelemetryStore } from "../../state/telemetryStore";
 import { Modal } from "./Modal";
+import { useHudTick } from "./useHudTick";
 
 interface BattleStatsModalProps {
   isOpen: boolean;
@@ -19,8 +22,15 @@ function OpenBattleStatsModal({
   onClose,
   winner,
 }: BattleStatsModalProps) {
-  const teamTotals = useTelemetryStore((state) => state.teamTotals);
-  const robots = useTelemetryStore((state) => state.robots);
+  // The telemetry aggregates are mutated in place, so their references never
+  // change and subscribing to them would never fire (#207). Re-read them on the
+  // throttled HUD tick, like the robot list does, so this modal does not hook
+  // the render loop up to the event stream.
+  const hudTick = useHudTick();
+  const { robots, teamTotals } = useMemo(() => {
+    void hudTick;
+    return useTelemetryStore.getState();
+  }, [hudTick]);
 
   const redStats = teamTotals.red;
   const blueStats = teamTotals.blue;
