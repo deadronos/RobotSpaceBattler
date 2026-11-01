@@ -18,6 +18,9 @@ Miniplex ECS, Zustand, Rapier (static-geometry raycasts only), Vite, Vitest, Pla
 - The ECS owns simulation state. Rendering only projects it.
 - The simulation is deterministic per seed: no `Math.random()` or `Date.now()` in sim code.
 - ESM only, no `any`, and tests with every behaviour change.
+- Keep docs in lockstep with code. When behaviour changes, update the matching docs/agents
+  file, plan or architecture note in the same PR. If code and docs disagree, don't
+  silently pick one: tell the user and ask whether to fix the code or the docs.
 
 ## Read when relevant
 

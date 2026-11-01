@@ -12,6 +12,7 @@ Closes #
 - [ ] `npm test`
 - [ ] `npm run build`
 - [ ] Tests added or updated for behaviour changes
+- [ ] Docs (`AGENTS.md`, `docs/agents/`, plans) updated to match
 
 ## Screenshots / notes
 

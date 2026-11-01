@@ -13,3 +13,10 @@
 
 Agents work in their own worktree and branch (see [tooling.md](tooling.md)).
 Ask the maintainer before changing CI, release flow, or anything that needs secrets.
+
+## Keep docs and code in sync
+
+Docs, plans and specs change in the same PR as the code they describe, in either direction:
+a code change updates the docs, and a docs or plan change gets implemented or flagged.
+If you find drift between them, report it and ask the user which side is correct before
+changing either one.
