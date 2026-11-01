@@ -77,7 +77,11 @@ describe("PathCalculator", () => {
     calculator.onTelemetry((e) => events.push(e));
 
     await calculator.calculate(start, pc, "r2");
+    // Results are buffered until a sim tick applies them.
+    expect(calculator.queuedResultCount).toBe(1);
+    calculator.applyPendingResults(0, true);
 
+    expect(calculator.queuedResultCount).toBe(0);
     expect(pc.path).toBeTruthy();
     expect(pc.status).toBe("valid");
     const complete = events.find((e) => e.type === "path-calculation-complete");
@@ -111,6 +115,7 @@ describe("PathCalculator", () => {
     calculator.onTelemetry((e) => events.push(e));
 
     await calculator.calculate(start, pc, "r3");
+    calculator.applyPendingResults(0, true);
 
     expect(pc.path).toBeNull();
     expect(pc.status).toBe("failed");

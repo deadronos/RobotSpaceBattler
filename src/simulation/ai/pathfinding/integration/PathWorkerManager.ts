@@ -23,13 +23,14 @@ export interface PathWorkerManagerOptions {
   initTimeoutMs?: number;
 }
 
-type RunResult =
+/** Outcome of a single path request (worker or inline). */
+export type PathRunResult =
   | { ok: true; value: WorkerPathResult }
   | { ok: false; error: unknown };
 
 interface PendingEntry {
   req: WorkerPathRequest;
-  resolve: (result: RunResult) => void;
+  resolve: (result: PathRunResult) => void;
 }
 
 function defaultCreateWorker(): WorkerLike | null {
@@ -86,11 +87,11 @@ export class PathWorkerManager {
     }
   }
 
-  runWorker(req: WorkerPathRequest): Promise<RunResult> {
+  runWorker(req: WorkerPathRequest): Promise<PathRunResult> {
     if (this.currentMode === "main-thread" || !this.startWorker()) {
       return Promise.resolve(this.runOnMainThread(req));
     }
-    return new Promise<RunResult>((resolve) => {
+    return new Promise<PathRunResult>((resolve) => {
       const mesh = this.navMeshResource.getSerializedMesh();
       if (mesh !== this.lastInitMesh) this.postInit(mesh);
       const seq = ++this.seq;
@@ -107,6 +108,17 @@ export class PathWorkerManager {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Calculates a path synchronously on the calling thread.
+   *
+   * Used by the inline execution mode (headless harness, tests) so that path
+   * results exist as soon as the sim step that requested them, without any
+   * wall-clock promise settlement.
+   */
+  runInline(req: WorkerPathRequest): PathRunResult {
+    return this.runOnMainThread(req);
   }
 
   /** Terminates the worker silently; pending requests finish on the main thread. */
@@ -228,7 +240,7 @@ export class PathWorkerManager {
     for (const waiter of waiters) waiter();
   }
 
-  private runOnMainThread(req: WorkerPathRequest): RunResult {
+  private runOnMainThread(req: WorkerPathRequest): PathRunResult {
     try {
       const mesh = this.navMeshResource.getSerializedMesh();
       if (!this.mainEngine || this.mainEngineMesh !== mesh) {

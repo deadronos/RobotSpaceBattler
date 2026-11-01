@@ -20,6 +20,10 @@ interface PathfindingSystemOptions {
   timeoutMs?: number; // Timeout threshold (default: 100ms)
   enableNearestFallback?: boolean; // Enable nearest accessible point fallback
   maxWorkers?: number;
+  /** `"worker"` (default) or `"inline"` (synchronous, for headless runs). */
+  executionMode?: "worker" | "inline";
+  /** Sim ticks between dispatching a path request and applying its result. */
+  resultLatencyTicks?: number;
   telemetry?: TelemetryPort;
 }
 
@@ -77,6 +81,22 @@ export class PathfindingSystem {
     this.calculator.setSimTime(simTimeMs);
   }
 
+  /**
+   * Applies path results that are due at `tick`, in request order. Called from
+   * the fixed-step loop so results never land outside a sim step.
+   *
+   * @param tick - Current simulation tick (defaults to the last tick set).
+   * @returns How many results were applied.
+   */
+  applyPendingResults(tick?: number): number {
+    return this.calculator.applyPendingResults(tick);
+  }
+
+  /** Drops buffered results and pending requests (called between matches). */
+  reset(): void {
+    this.calculator.reset();
+  }
+
   onTelemetry(callback: PathfindingTelemetryCallback): void {
     this.telemetry.on(callback);
   }
@@ -84,20 +104,26 @@ export class PathfindingSystem {
   /**
    * Backwards-compatible helper: calculate a single path synchronously (returns a Promise)
    */
-  calculatePath(
+  async calculatePath(
     start: Point3D,
     pathComponent: PathComponent,
     robotId?: string,
   ): Promise<void> {
-    return this.calculator.calculate(start, pathComponent, robotId);
+    await this.calculator.calculate(start, pathComponent, robotId);
+    // Synchronous helper: apply the result immediately instead of waiting for
+    // the next step. The live loop uses execute() instead.
+    this.calculator.flushPendingResults();
   }
 
   /**
-   * Dispatches path requests for robots that need one.
+   * Advances pathfinding by one fixed simulation step: applies due worker
+   * results at the start of the step (deterministic request order), then
+   * dispatches requests for robots that need a path.
    *
    * @param robotsWithPaths - Robots to inspect.
    * @param simTimeMs - Current simulation time in ms (drives request
    *   throttling and result timestamps; no wall-clock is read).
+   * @param tick - Current simulation tick, used to schedule result application.
    */
   execute(
     robotsWithPaths: Array<{
@@ -106,8 +132,11 @@ export class PathfindingSystem {
       id?: string;
     }>,
     simTimeMs = 0,
+    tick = 0,
   ): void {
     this.setSimTime(simTimeMs);
+    this.calculator.setSimTick(tick);
+    this.applyPendingResults(tick);
     let dispatched = 0;
 
     for (const robot of robotsWithPaths) {
