@@ -304,6 +304,7 @@ describe("AI Behavior Blending", () => {
 
       // With higher combat priority and weight, combat component should be significant
       expect(combatInfluence).toBeGreaterThan(0);
+      expect(pathfindingInfluence).toBeGreaterThan(0);
     });
 
     it("should blend pathfinding with retreat behavior when health is low", () => {

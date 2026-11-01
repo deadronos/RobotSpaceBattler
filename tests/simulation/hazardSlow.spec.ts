@@ -3,7 +3,6 @@ import { describe, it, expect } from "vitest";
 import { createBattleWorld } from "../../src/ecs/world";
 import { vec3 } from "../../src/lib/math/vec3";
 import { updateHazardSystem } from "../../src/simulation/obstacles/hazardSystem";
-import { updateMovementSystem } from "../../src/ecs/systems/movementSystem";
 
 describe("hazard slow/status effects", () => {
   it("applies slow effect to robot while inside active hazard and removes when inactive", () => {

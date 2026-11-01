@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { NavMeshDebugger } from "@/visuals/debug/NavMeshDebugger";
-import type { NavigationMesh } from "@/simulation/ai/pathfinding/types";
 
 /**
  * T068: Debug visualization component for NavMesh polygons
@@ -11,35 +10,6 @@ import type { NavigationMesh } from "@/simulation/ai/pathfinding/types";
  */
 
 describe("NavMeshDebugger", () => {
-  let mockNavMesh: NavigationMesh;
-
-  beforeEach(() => {
-    mockNavMesh = {
-      id: "test-mesh",
-      polygons: [
-        {
-          index: 0,
-          vertices: [
-            { x: -5, z: -5 },
-            { x: 5, z: -5 },
-            { x: 5, z: 5 },
-            { x: -5, z: 5 },
-          ],
-          centroid: { x: 0, z: 0 },
-          area: 100,
-        },
-      ],
-      adjacency: new Map(),
-      clearanceRadius: 0.95,
-      metadata: {
-        generatedAt: Date.now(),
-        arenaSize: { width: 10, depth: 10 },
-        polygonCount: 1,
-        memorySize: 1024,
-      },
-    };
-  });
-
   it("T068: should export NavMeshDebugger component", () => {
     expect(NavMeshDebugger).toBeDefined();
     expect(typeof NavMeshDebugger).toBe("function");

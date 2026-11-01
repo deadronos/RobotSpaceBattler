@@ -7,7 +7,6 @@ import type {
   PathComponentStatus,
 } from "@/simulation/ai/pathfinding/integration/PathComponent";
 import type { NavigationMesh } from "@/simulation/ai/pathfinding/types";
-import { ObstacleType } from "@/simulation/ai/pathfinding/types";
 
 describe("PathfindingSystem Performance", () => {
   let system: PathfindingSystem;

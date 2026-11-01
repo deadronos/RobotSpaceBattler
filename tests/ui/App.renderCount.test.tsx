@@ -33,6 +33,7 @@ vi.mock("@/components/ui/SettingsIcon", () => ({
 vi.mock("@/components/Simulation", () => ({
   Simulation: memo(function SimulationMock(props: any) {
     counters.bumpSimulation();
+    const { battleWorld, matchMachine } = props;
     useEffect(() => {
       const telemetry = {
         reset: () => {},
@@ -41,15 +42,15 @@ vi.mock("@/components/Simulation", () => ({
         recordDamage: () => {},
         recordDeath: () => {},
       } as TelemetryPort;
-      const runner = createBattleRunner(props.battleWorld, {
+      const runner = createBattleRunner(battleWorld, {
         seed: 7,
         telemetry,
-        matchMachine: props.matchMachine,
+        matchMachine,
         maxMatchDurationMs: null,
       });
       captured.runner = runner;
       return () => runner.dispose();
-    }, []);
+    }, [battleWorld, matchMachine]);
     return <div data-testid="simulation-mock" />;
   }),
 }));

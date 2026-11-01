@@ -40,7 +40,10 @@
       "plugins": ["vitest"],
       "env": { "vitest": true },
       "rules": {
-        "vitest/expect-expect": "warn"
+        "vitest/expect-expect": [
+          "warn",
+          { "assertFunctionNames": ["expect", "expectSuccess", "closeTo"] }
+        ]
       }
     },
     {
