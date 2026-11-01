@@ -59,7 +59,11 @@ export default defineConfig({
             },
             {
               name: "r3f",
-              test: /node_modules[\\/](@react-three|postprocessing|its-fine)[\\/]/,
+              // `postprocessing` / `@react-three/postprocessing` are left out:
+              // they are only imported by the lazily-loaded PostProcessing
+              // component, so keeping them here would put ~35 kB gzip of
+              // optional visual polish into the initial load.
+              test: /node_modules[\\/](@react-three(?!\/postprocessing)|its-fine)[\\/]/,
             },
           ],
         },
