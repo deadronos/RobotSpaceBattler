@@ -55,6 +55,12 @@ export interface BattleRunnerOptions {
    * Pass null to disable the limit.
    */
   maxMatchDurationMs?: number | null;
+  /**
+   * Pathfinding execution mode. `"worker"` (default) is used live;
+   * `"inline"` computes paths synchronously so headless runs exercise the
+   * navmesh deterministically.
+   */
+  pathfindingMode?: "worker" | "inline";
 }
 
 /**
@@ -120,6 +126,7 @@ export function createBattleRunner(
   const navMeshResource = createNavMeshResource(navigationMesh, meshInstance);
   const pathfindingSystem = new PathfindingSystem(navMeshResource, {
     telemetry,
+    executionMode: options.pathfindingMode ?? "worker",
   });
 
   // Wire up pathfinding telemetry
@@ -140,6 +147,7 @@ export function createBattleRunner(
       onRobotSpawn: (robot) =>
         telemetry.recordSpawn(robot, world.state.elapsedMs),
     });
+    pathfindingSystem.reset();
     matchMachine.reset();
     matchMachine.start();
   }
@@ -168,8 +176,13 @@ export function createBattleRunner(
         perfMarkEnd("updateAISystem");
 
         perfMarkStart("pathfindingSystem");
-        // Update pathfinding for all robots
-        pathfindingSystem.execute(world.robots.entities, world.state.elapsedMs);
+        // Applies due worker results in request order at the start of the step,
+        // then dispatches new requests. Results never land outside step().
+        pathfindingSystem.execute(
+          world.robots.entities,
+          world.state.elapsedMs,
+          world.state.frameIndex,
+        );
         perfMarkEnd("pathfindingSystem");
 
         perfMarkStart("updateCombatSystem");

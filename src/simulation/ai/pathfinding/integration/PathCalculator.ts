@@ -1,11 +1,12 @@
 import { PathCache } from "../search/PathCache";
 import type { Point3D } from "../types";
-import type { WorkerPathRequest, WorkerPathResult } from "../worker/types";
+import type { WorkerPathRequest } from "../worker/types";
 import type { NavMeshResource } from "./NavMeshResource";
 import type { PathComponent } from "./PathComponent";
 import type { PathfindingTelemetryCallback } from "./PathfindingTelemetry";
 import { PathResultHandler, type PendingRequest } from "./PathResultHandler";
-import { PathWorkerManager } from "./PathWorkerManager";
+import { PathResultQueue } from "./PathResultQueue";
+import { PathWorkerManager, type PathRunResult } from "./PathWorkerManager";
 
 export interface PathCalculatorOptions {
   enableSmoothing?: boolean;
@@ -14,6 +15,13 @@ export interface PathCalculatorOptions {
   throttleInterval?: number;
   enableNearestFallback?: boolean;
   timeoutMs?: number;
+  /**
+   * `"worker"` (default) runs requests on the pathfinding worker;
+   * `"inline"` computes them synchronously on the calling thread.
+   */
+  executionMode?: "worker" | "inline";
+  /** Fixed latency, in sim ticks, before a result may be applied. */
+  resultLatencyTicks?: number;
 }
 
 /**
@@ -30,6 +38,8 @@ export class PathCalculator {
   private telemetryCallbacks: PathfindingTelemetryCallback[] = [];
   /** Latest simulation time (ms); the only clock used for throttling/timestamps. */
   private simTimeMs = 0;
+  private resultQueue: PathResultQueue;
+  private executionMode: "worker" | "inline";
 
   private workerManager: PathWorkerManager;
   private resultHandler: PathResultHandler;
@@ -41,6 +51,8 @@ export class PathCalculator {
     this.enableSmoothing = options?.enableSmoothing ?? true;
     this.throttleInterval = options?.throttleInterval ?? 333;
     this.enableNearestFallback = options?.enableNearestFallback ?? true;
+    this.executionMode = options?.executionMode ?? "worker";
+    this.resultQueue = new PathResultQueue(options?.resultLatencyTicks);
 
     if (options?.enableCaching ?? true) {
       this.cache = new PathCache({
@@ -67,6 +79,7 @@ export class PathCalculator {
    * This avoids initializing with empty test doubles in unit tests.
    */
   async ensureInitialized() {
+    if (this.executionMode === "inline") return;
     await this.workerManager.ensureInitialized();
   }
 
@@ -77,6 +90,53 @@ export class PathCalculator {
    */
   setSimTime(nowMs: number): void {
     this.simTimeMs = nowMs;
+  }
+
+  /** Sets the current simulation tick used to schedule result application. */
+  setSimTick(tick: number): void {
+    this.resultQueue.setTick(tick);
+  }
+
+  /** Number of worker results buffered for a future tick (diagnostics). */
+  get queuedResultCount(): number {
+    return this.resultQueue.size;
+  }
+
+  /**
+   * Applies buffered worker results whose tick has arrived, in request order.
+   *
+   * This is the only place async path results mutate path components, so every
+   * effect of pathfinding happens inside a fixed sim step at a reproducible
+   * tick.
+   *
+   * @param tick - Current simulation tick.
+   * @param applyAll - Apply every buffered result now, ignoring its due tick
+   *   (reserved for the synchronous single-path helper).
+   * @returns How many results were applied.
+   */
+  applyPendingResults(
+    tick: number = this.resultQueue.tick,
+    applyAll = false,
+  ): number {
+    let applied = 0;
+    for (const entry of this.resultQueue.drain(tick, applyAll)) {
+      if (this.resultHandler.applyQueuedResult(entry, this.pendingRequests)) {
+        applied += 1;
+      }
+    }
+    return applied;
+  }
+
+  /** Applies every buffered result now (synchronous single-path helper). */
+  flushPendingResults(): number {
+    return this.applyPendingResults(this.resultQueue.tick, true);
+  }
+
+  /** Clears per-match async state (buffered results, requests, throttles). */
+  reset(): void {
+    this.resultQueue.clear();
+    this.pendingRequests.clear();
+    this.lastCalculationTimes.clear();
   }
 
   dispose(): void {
@@ -91,11 +151,7 @@ export class PathCalculator {
    * Worker execution method - kept as a separate method on PathCalculator
    * so tests can stub/monkeypatch this for testing purposes.
    */
-  protected async runWorker(
-    req: WorkerPathRequest,
-  ): Promise<
-    { ok: true; value: WorkerPathResult } | { ok: false; error: unknown }
-  > {
+  protected async runWorker(req: WorkerPathRequest): Promise<PathRunResult> {
     return this.workerManager.runWorker(req);
   }
 
@@ -125,24 +181,7 @@ export class PathCalculator {
     if (this.cache) {
       const cached = this.cache.get(start, target);
       if (cached) {
-        pathComponent.path = cached;
-        pathComponent.status = "valid" as const;
-        pathComponent.lastCalculationTime = this.simTimeMs;
-
-        this.navMeshResource.recordCalculation(0);
-        const stats = this.cache.getStats();
-        this.navMeshResource.updateCacheHitRate(stats.hitRate);
-
-        this.emitTelemetry({
-          type: "path-calculation-complete",
-          entityId: robotId,
-          timestamp: this.simTimeMs,
-          success: true,
-          durationMs: 0,
-          pathLength: cached.totalDistance,
-          waypointCount: cached.waypoints.length,
-          fromCache: true,
-        });
+        this.resultHandler.handleCacheHit(cached, pathComponent, robotId);
         return;
       }
     }
@@ -179,27 +218,33 @@ export class PathCalculator {
     }
 
     // Dispatch to worker
-    await this.dispatchWorkerRequest(start, target, pathComponent, robotId);
+    await this.dispatchRequest(start, target, pathComponent, robotId);
   }
 
-  private async dispatchWorkerRequest(
+  /**
+   * Sends a request to the worker (or computes it inline) and buffers the result
+   * for a later, deterministic tick.
+   */
+  private async dispatchRequest(
     start: Point3D,
     target: Point3D,
     pathComponent: PathComponent,
     robotId?: string,
-  ) {
+  ): Promise<void> {
     pathComponent.status = "calculating" as const;
 
-    const requestId = robotId || Math.random().toString(36).substr(2, 9);
+    const slot = this.resultQueue.reserveSlot();
+    const requestId = robotId ?? `path-request-${slot.order}`;
     const startTime = this.simTimeMs;
 
-    this.pendingRequests.set(requestId, {
+    const request: PendingRequest = {
       pathComponent,
       startTime,
       robotId,
       start,
       target,
-    });
+    };
+    this.pendingRequests.set(requestId, request);
 
     this.emitTelemetry({
       type: "path-calculation-start",
@@ -209,38 +254,32 @@ export class PathCalculator {
       to: target,
     });
 
+    const req: WorkerPathRequest = {
+      type: "path_request",
+      id: requestId,
+      start,
+      target,
+      enableSmoothing: this.enableSmoothing,
+      enableNearestFallback: this.enableNearestFallback,
+    };
+    if (this.executionMode === "inline") {
+      const outcome = this.workerManager.runInline(req);
+      this.resultQueue.enqueue(requestId, request, slot, outcome);
+      return;
+    }
+
+    let pending: Promise<PathRunResult>;
     try {
-      const req: WorkerPathRequest = {
-        type: "path_request",
-        id: requestId,
-        start,
-        target,
-        enableSmoothing: this.enableSmoothing,
-        enableNearestFallback: this.enableNearestFallback,
-      };
+      pending = this.runWorker(req);
+    } catch (error) {
+      this.resultQueue.enqueue(requestId, request, slot, { ok: false, error });
+      return;
+    }
 
-      const res = await this.runWorker(req);
-
-      if (res.ok) {
-        this.resultHandler.handleWorkerResult(res.value, this.pendingRequests);
-      } else {
-        throw res.error;
-      }
-    } catch (err) {
-      const req = this.pendingRequests.get(requestId);
-      if (req) {
-        req.pathComponent.status = "failed" as const;
-      }
-      this.pendingRequests.delete(requestId);
-
-      this.emitTelemetry({
-        type: "path-calculation-failed",
-        entityId: robotId,
-        timestamp: this.simTimeMs,
-        success: false,
-        durationMs: this.simTimeMs - startTime,
-        error: String(err),
-      });
+    try {
+      this.resultQueue.enqueue(requestId, request, slot, await pending);
+    } catch (error) {
+      this.resultQueue.enqueue(requestId, request, slot, { ok: false, error });
     }
   }
 }

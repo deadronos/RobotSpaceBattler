@@ -14,6 +14,13 @@ export interface HeadlessMatchOptions {
   dt?: number;
   maxSteps?: number;
   maxMatchDurationMs?: number | null;
+  /**
+   * Pathfinding execution mode. `worker` (default) keeps the historical
+   * behaviour where worker promises never settle inside the synchronous step
+   * loop. `inline` computes paths in-process so navmesh results are applied at
+   * deterministic ticks and can be replayed.
+   */
+  pathfindingMode?: "worker" | "inline";
 }
 
 export interface HeadlessMatchResult {
@@ -31,6 +38,8 @@ export interface HeadlessMatchResult {
     z: number;
   }>;
   counts: { spawns: number; fires: number; damage: number; deaths: number };
+  /** Navmesh path results applied during the run. */
+  paths: { calculations: number; cacheHits: number };
   /** FNV-1a hash folded over the world state after every step. */
   stateHash: string;
   /** Sampled (every 60 steps) per-step hashes, for diffing diverging runs. */
@@ -73,6 +82,7 @@ export function runHeadlessMatch(
   const maxSteps = options.maxSteps ?? 60 * 200;
 
   const counts = { spawns: 0, fires: 0, damage: 0, deaths: 0 };
+  const paths = { calculations: 0, cacheHits: 0 };
   const telemetry: TelemetryPort = {
     reset: vi.fn<TelemetryPort["reset"]>(),
     recordSpawn: vi.fn<TelemetryPort["recordSpawn"]>(() => {
@@ -87,6 +97,12 @@ export function runHeadlessMatch(
     recordDeath: vi.fn<TelemetryPort["recordDeath"]>(() => {
       counts.deaths += 1;
     }),
+    recordPathfinding: vi.fn<NonNullable<TelemetryPort["recordPathfinding"]>>(
+      (event) => {
+        if (event.type === "cache_hit") paths.cacheHits += 1;
+        else if (event.type === "calculation") paths.calculations += 1;
+      },
+    ),
   };
   const world = createBattleWorld();
   const matchMachine = createMatchStateMachine({ autoRestartDelayMs: 1000 });
@@ -95,6 +111,7 @@ export function runHeadlessMatch(
     telemetry,
     matchMachine,
     maxMatchDurationMs: options.maxMatchDurationMs,
+    pathfindingMode: options.pathfindingMode ?? "worker",
   });
 
   let steps = 0;
@@ -136,6 +153,7 @@ export function runHeadlessMatch(
     survivors,
     robots,
     counts,
+    paths,
     stateHash: running.toString(16),
     trace,
   };
