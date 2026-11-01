@@ -50,25 +50,36 @@ export type TeamAnchorAssignments = Record<string, AnchorAssignment>;
  * @returns A map of directives for each team.
  */
 export function buildTeamDirectives(robots: RobotEntity[]): TeamDirectiveMap {
-  const counts = robots.reduce(
-    (acc, robot) => {
-      if (isActiveRobot(robot)) {
-        acc[robot.team] += 1;
-      }
-      return acc;
-    },
-    { red: 0, blue: 0 },
-  );
+  return fillTeamDirectives(robots, { red: "balanced", blue: "balanced" });
+}
 
-  if (counts.red > counts.blue) {
-    return { red: "offense", blue: "defense" };
+/** Allocation-free `buildTeamDirectives` into a reused result object. */
+export function fillTeamDirectives(
+  robots: RobotEntity[],
+  out: TeamDirectiveMap,
+): TeamDirectiveMap {
+  let red = 0;
+  let blue = 0;
+
+  for (let i = 0; i < robots.length; i += 1) {
+    const robot = robots[i];
+    if (!isActiveRobot(robot)) continue;
+    if (robot.team === "red") red += 1;
+    else blue += 1;
   }
 
-  if (counts.blue > counts.red) {
-    return { red: "defense", blue: "offense" };
+  if (red > blue) {
+    out.red = "offense";
+    out.blue = "defense";
+  } else if (blue > red) {
+    out.red = "defense";
+    out.blue = "offense";
+  } else {
+    out.red = "balanced";
+    out.blue = "balanced";
   }
 
-  return { red: "balanced", blue: "balanced" };
+  return out;
 }
 
 /**
@@ -81,23 +92,45 @@ export function computeEnemyCentroid(
   team: TeamId,
   robots: RobotEntity[],
 ): Vec3 | null {
-  const enemies = robots.filter(
-    (robot) => robot.team !== team && isActiveRobot(robot),
-  );
-
-  if (enemies.length === 0) {
-    return null;
-  }
-
-  const sum = enemies.reduce(
-    (acc, robot) => addVec3(acc, robot.position),
-    vec3(0, 0, 0),
-  );
-
-  return scaleVec3(sum, 1 / enemies.length);
+  const centroid = vec3(0, 0, 0);
+  return fillEnemyCentroid(team, robots, centroid) ? centroid : null;
 }
 
-type AnchorTarget = RobotEntity | Vec3;
+/**
+ * Sums the positions of the active robots of the enemy team into `out`.
+ * @returns False when the enemy team has no active robots.
+ */
+export function fillEnemyCentroid(
+  team: TeamId,
+  robots: RobotEntity[],
+  out: Vec3,
+): boolean {
+  out.x = 0;
+  out.y = 0;
+  out.z = 0;
+  let count = 0;
+
+  for (let i = 0; i < robots.length; i += 1) {
+    const robot = robots[i];
+    if (robot.team === team || !isActiveRobot(robot)) continue;
+    out.x += robot.position.x;
+    out.y += robot.position.y;
+    out.z += robot.position.z;
+    count += 1;
+  }
+
+  if (count === 0) {
+    return false;
+  }
+
+  const inverse = 1 / count;
+  out.x *= inverse;
+  out.y *= inverse;
+  out.z *= inverse;
+  return true;
+}
+
+export type AnchorTarget = RobotEntity | Vec3;
 
 function resolveTargetPosition(target: AnchorTarget | undefined): Vec3 {
   if (!target) {
@@ -123,21 +156,45 @@ export function buildFormationAnchor(
   robot: RobotEntity,
   target: AnchorTarget | undefined,
 ): Vec3 {
+  return buildFormationAnchorInto(vec3(), robot, target);
+}
+
+/** Allocation-free `buildFormationAnchor` writing into `out`. */
+export function buildFormationAnchorInto(
+  out: Vec3,
+  robot: RobotEntity,
+  target: AnchorTarget | undefined,
+): Vec3 {
   const targetPosition = resolveTargetPosition(
     target ?? TEAM_CONFIGS[robot.team === "red" ? "blue" : "red"].spawnCenter,
   );
-  const direction = normalizeVec3(subtractVec3(targetPosition, robot.position));
+  const dx = targetPosition.x - robot.position.x;
+  const dy = targetPosition.y - robot.position.y;
+  const dz = targetPosition.z - robot.position.z;
+  const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  let directionX = 0;
+  let directionZ = 0;
+  if (length !== 0) {
+    // The rotated direction keeps y at 0, so only x and z are needed; the
+    // length above still includes dy to match the original vector maths.
+    const inverse = 1 / length;
+    directionX = dx * inverse;
+    directionZ = dz * inverse;
+  }
+
   const baseRadius =
     FORMATION_BASE_RADIUS + (robot.spawnIndex % 3) * FORMATION_RADIUS_VARIANCE;
   const strafe = robot.ai.strafeSign ?? 1;
   const angleOffset = ((robot.spawnIndex % 5) - 2) * 0.12 * strafe;
-  const rotatedDirection = vec3(
-    Math.sin(angleOffset) * direction.z + Math.cos(angleOffset) * direction.x,
-    0,
-    Math.cos(angleOffset) * direction.z - Math.sin(angleOffset) * direction.x,
-  );
+  const sin = Math.sin(angleOffset);
+  const cos = Math.cos(angleOffset);
+  const rotatedX = sin * directionZ + cos * directionX;
+  const rotatedZ = cos * directionZ - sin * directionX;
 
-  return addVec3(targetPosition, scaleVec3(rotatedDirection, baseRadius));
+  out.x = targetPosition.x + rotatedX * baseRadius;
+  out.y = targetPosition.y;
+  out.z = targetPosition.z + rotatedZ * baseRadius;
+  return out;
 }
 
 /**
@@ -181,63 +238,4 @@ export function computeEnemyTarget(
 
   const centroid = computeEnemyCentroid(team, robots);
   return centroid ?? undefined;
-}
-
-/**
- * Computes the anchor assignments (positions and directives) for all robots in the team.
- * Coordinates the team's formation and strategy.
- *
- * @param robots - The list of all robots.
- * @returns A map of assignments for each robot.
- */
-export function computeTeamAnchors(
-  robots: RobotEntity[],
-): TeamAnchorAssignments {
-  const assignments: TeamAnchorAssignments = {};
-  const directives = buildTeamDirectives(robots);
-
-  const grouped: Record<TeamId, RobotEntity[]> = {
-    red: [],
-    blue: [],
-  };
-
-  robots.filter(isActiveRobot).forEach((robot) => {
-    grouped[robot.team].push(robot);
-  });
-
-  (Object.keys(grouped) as TeamId[]).forEach((team) => {
-    const teamRobots = grouped[team].slice().sort((a, b) => {
-      if (a.spawnIndex !== b.spawnIndex) {
-        return a.spawnIndex - b.spawnIndex;
-      }
-
-      return a.id.localeCompare(b.id);
-    });
-
-    const captain = teamRobots.find((robot) => robot.isCaptain);
-    const anchorTarget = computeEnemyTarget(team, robots, captain?.ai.targetId);
-
-    teamRobots.forEach((robot, index) => {
-      const strafeSign = (index % 2 === 0 ? 1 : -1) as 1 | -1;
-
-      let anchorPosition: Vec3 | null;
-      if (anchorTarget) {
-        anchorPosition = buildFormationAnchor(robot, anchorTarget);
-      } else {
-        const fallbackOffset = vec3(strafeSign * (4 + index), 0, 4 + index);
-        anchorPosition = addVec3(
-          TEAM_CONFIGS[team].spawnCenter,
-          fallbackOffset,
-        );
-      }
-
-      assignments[robot.id] = {
-        anchorPosition,
-        strafeSign,
-        directive: directives[team],
-      };
-    });
-  });
-
-  return assignments;
 }

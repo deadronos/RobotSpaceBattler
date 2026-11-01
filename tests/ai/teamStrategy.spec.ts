@@ -121,3 +121,87 @@ describe("teamStrategy", () => {
     expect(anchors.r1.strafeSign).toBe(-1);
   });
 });
+
+describe("computeTeamAnchors scratch reuse (#201)", () => {
+  it("keeps the same assignment objects and anchor vectors between ticks", () => {
+    const robots = [
+      createTestRobot({
+        id: "r0",
+        team: "red",
+        spawnIndex: 0,
+        position: toVec3(-20, 0, 0),
+      }),
+      createTestRobot({
+        id: "r1",
+        team: "red",
+        spawnIndex: 1,
+        position: toVec3(-18, 0, 2),
+      }),
+      createTestRobot({
+        id: "b0",
+        team: "blue",
+        spawnIndex: 0,
+        position: toVec3(20, 0, 0),
+      }),
+    ];
+
+    const first = computeTeamAnchors(robots);
+    const assignment = first.r0;
+    const anchor = assignment.anchorPosition;
+    expect(anchor).toBeTruthy();
+
+    robots[0].position.x = -10;
+    const second = computeTeamAnchors(robots);
+
+    expect(second).toBe(first);
+    expect(second.r0).toBe(assignment);
+    expect(second.r0.anchorPosition).toBe(anchor);
+  });
+
+  it("drops assignments for robots that are no longer active", () => {
+    const captain = createTestRobot({ id: "r0", team: "red", spawnIndex: 0 });
+    const ally = createTestRobot({ id: "r1", team: "red", spawnIndex: 1 });
+    const enemy = createTestRobot({ id: "b0", team: "blue", spawnIndex: 0 });
+
+    const first = computeTeamAnchors([captain, ally, enemy]);
+    expect(first.r1).toBeTruthy();
+
+    ally.health = 0;
+    const second = computeTeamAnchors([captain, ally, enemy]);
+    expect(second.r1).toBeUndefined();
+    expect(second.r0).toBeTruthy();
+  });
+
+  it("matches the values of a freshly computed assignment map", () => {
+    const robots = [
+      createTestRobot({
+        id: "r0",
+        team: "red",
+        spawnIndex: 0,
+        isCaptain: true,
+        ai: { mode: "seek", targetId: "b0" },
+      }),
+      createTestRobot({ id: "r1", team: "red", spawnIndex: 1 }),
+      createTestRobot({ id: "r2", team: "red", spawnIndex: 2 }),
+      createTestRobot({
+        id: "b0",
+        team: "blue",
+        spawnIndex: 0,
+        position: toVec3(30, 0, 4),
+      }),
+    ];
+
+    const anchors = computeTeamAnchors(robots);
+    const captain = robots[0];
+    const expected = buildFormationAnchor(robots[1], robots[3]);
+    const actual = anchors.r1.anchorPosition;
+
+    expect(actual).toBeTruthy();
+    expect(actual?.x).toBe(expected.x);
+    expect(actual?.y).toBe(expected.y);
+    expect(actual?.z).toBe(expected.z);
+    expect(anchors.r0.directive).toBe("offense");
+    expect(anchors.r0.strafeSign).toBe(1);
+    expect(captain.ai.targetId).toBe("b0");
+  });
+});

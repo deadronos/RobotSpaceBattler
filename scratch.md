@@ -9,6 +9,7 @@ Every tier of the 2026-10-31 plan is closed: the live quick fixes (#153–#156),
 - **#161 (PR #196):** fixed 60 Hz timestep with a 5-substep cap, sim time instead of `Date.now()`, swept projectile-vs-robot hits, and a same-seed determinism test.
 - **#162 (PR #197):** React no longer re-renders per frame, robots move via refs with shared materials, and the ECS is the sole owner of robot positions (robot Rapier bodies dropped).
 - **#171 (PR #198):** spatial grid for AI targeting, 72–93% less AI allocation, and `npm run bench`.
+- **#201:** allocation-free AI movement planning, in-place team anchors, a cell-indexed static line-of-sight check and count-based spatial-grid queries: ~36 KB/tick at 100 robots (from 331) and 1.7 ms/tick at 200 robots (from 3.0).
 - **#202 + #203 (PR #206):** real-GPU measurement on an M4. React commits went from 120/s to 4/s and scripting dropped 28%. HUD panels no longer re-render on every telemetry event, and the smoke liveness check is now based on `frameIndex`.
 
 ## Tier 1: quick wins (S, any order, all parallel-safe)
@@ -26,7 +27,7 @@ Every tier of the 2026-10-31 plan is closed: the live quick fixes (#153–#156),
 
 ## Tier 3: performance and size (M)
 
-8. **#201: AI perf phase 2.** Make movement planning allocation-free and line-of-sight checks cheaper. Do it before anything that raises robot counts. Benchmark baseline: 3.0 ms/tick at 200 robots (`tests/bench/RESULTS.md`).
+8. ~~**#201: AI perf phase 2.**~~ Done.
 9. **#159 + #184: bundle diet and the Rapier 0.21 decision, together.** Robots no longer have Rapier bodies (#162), and Rapier is only used for static-geometry raycasts. Re-evaluate whether Rapier is needed at all: plain ray-vs-AABB/cylinder tests against the arena obstacles might replace it and save about 836 kB gzip. That's a bigger and better question than lazy-loading.
 
 ## Tier 4: features (L, now unblocked)

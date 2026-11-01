@@ -31,7 +31,7 @@ describe("AI hot path allocations", () => {
       grid.rebuild(robots);
       for (let i = 0; i < robots.length; i += 1) {
         const robot = robots[i];
-        const near = grid.query(
+        const enemyCount = grid.queryInto(
           robot.position.x,
           robot.position.z,
           SENSOR_RANGE,
@@ -43,19 +43,20 @@ describe("AI hot path allocations", () => {
         updateTargeting(
           robot,
           robots,
-          near,
+          enemies,
           world,
           rng,
           grid.teamMembers(robot.team),
+          enemyCount,
         );
         buildNeighbors(robot, grid, neighbors);
       }
     };
 
     const allocated = bytesPerTick(tick, 150, 200);
-    // Measured ~35 KB per tick at 100 robots (boxed doubles at call
-    // boundaries), ~150 KB with v8 coverage instrumentation on; the pre-change
-    // implementation allocated several times more.
-    expect(allocated).toBeLessThan(256 * 1024);
+    // Measured ~26 KB per tick at 100 robots (#201: boxed doubles at call
+    // boundaries are what is left), with a wide margin for v8 coverage
+    // instrumentation; the pre-#201 implementation was several times higher.
+    expect(allocated).toBeLessThan(160 * 1024);
   }, 30000);
 });

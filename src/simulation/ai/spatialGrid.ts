@@ -136,9 +136,32 @@ export class SpatialGrid {
     exclude: RobotEntity | undefined,
     out: RobotEntity[],
   ): RobotEntity[] {
+    const found = this.queryInto(x, z, radius, team, sameTeam, exclude, out);
+    // Resizing `out` every call thrashes the backing store when the result
+    // count varies (which it does per robot), so hot callers use `queryInto`
+    // and read `count` instead.
+    if (out.length !== found) out.length = found;
+    return out;
+  }
+
+  /**
+   * Collects active robots within `radius` (XZ) of (x, z) into `out`, in
+   * source order, without resizing `out`.
+   *
+   * @returns The number of robots written to `out`. Entries at or past that
+   * index are stale leftovers from a previous query.
+   */
+  queryInto(
+    x: number,
+    z: number,
+    radius: number,
+    team: string,
+    sameTeam: boolean,
+    exclude: RobotEntity | undefined,
+    out: RobotEntity[],
+  ): number {
     if (this.members.length === 0) {
-      if (out.length !== 0) out.length = 0;
-      return out;
+      return 0;
     }
 
     const x0 = this.cellX(x - radius);
@@ -187,10 +210,7 @@ export class SpatialGrid {
     for (let i = 0; i < found; i += 1) {
       out[i] = this.members[this.picked[i]];
     }
-    // Write by index and trim once: `length = 0` + push would free and then
-    // reallocate the backing store on every query.
-    if (out.length !== found) out.length = found;
-    return out;
+    return found;
   }
 
   private cellX(x: number): number {

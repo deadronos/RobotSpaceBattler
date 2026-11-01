@@ -40,6 +40,8 @@ const targetingResultScratch: TargetingResult = {
  * @param battleWorld - The world state.
  * @param rng - Random number generator.
  * @param potentialAllies - Optional list of potential allies (optimization for medics).
+ * @param potentialEnemyCount - Number of valid entries in `potentialEnemies`
+ *   (the buffer may be longer; see `SpatialGrid.queryInto`).
  * @returns The chosen target (if any) and the currently visible enemies. The
  * returned object and array are scratch buffers: read them before the next call.
  */
@@ -50,6 +52,7 @@ export function updateTargeting(
   battleWorld: BattleWorld,
   rng: () => number,
   potentialAllies?: RobotEntity[],
+  potentialEnemyCount?: number,
 ): TargetingResult {
   // Sensors mainly update enemy visibility
   const { visibleEnemies } = updateRobotSensors(
@@ -58,6 +61,7 @@ export function updateTargeting(
     battleWorld.state.elapsedMs,
     battleWorld,
     potentialEnemies,
+    potentialEnemyCount,
   );
 
   let target: RobotEntity | undefined;
