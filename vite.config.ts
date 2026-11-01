@@ -9,6 +9,7 @@ import checker from "vite-plugin-checker";
 import AutoImport from "unplugin-auto-import/vite";
 import { visualizer } from "rollup-plugin-visualizer";
 import { setupPlugins as responsiveSetupPlugins } from "@responsive-image/vite-plugin";
+import { resolveRapierPackageDir } from "./scripts/rapierAlias.ts";
 
 export default defineConfig({
   // Build base for GitHub Pages (repo published at /RobotSpaceBattler/)
@@ -33,18 +34,16 @@ export default defineConfig({
     // closures where `init` runs in one and `EventQueue` is created in another).
     include: ["@dimforge/rapier3d-compat", "@react-three/rapier"],
   },
-  // Force all imports of the rapier compat package to resolve to the top-level
-  // node_modules path. This avoids multiple different package copies being
-  // bundled or prebundled which would create duplicate WASM runtimes.
+  // Force all imports of the rapier compat package to resolve to a single copy of
+  // the package. This avoids multiple different copies being bundled or
+  // prebundled, which would create duplicate WASM runtimes. The path comes from
+  // Node resolution rather than a hard-coded `node_modules` path so the config
+  // also works in git worktrees, which have no `node_modules` of their own and
+  // rely on resolution walking up to the parent checkout (#204).
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
-      "@dimforge/rapier3d-compat": path.resolve(
-        import.meta.dirname,
-        "node_modules",
-        "@dimforge",
-        "rapier3d-compat",
-      ),
+      "@dimforge/rapier3d-compat": resolveRapierPackageDir(import.meta.url),
     },
   },
   worker: { format: "es" },

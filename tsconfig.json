@@ -11,6 +11,9 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    // Build tooling (vite.config.ts) imports the Rapier alias helper with an
+    // explicit `.ts` extension so Vite's native config loader can resolve it.
+    "allowImportingTsExtensions": true,
     "noEmit": true,
     "paths": {
       "@/*": ["./src/*"]
