@@ -27,6 +27,11 @@ Canonical system patterns used across the repo:
   - Runtime systems call a `TelemetryPort` to record important events:
     spawn/fire/damage/death plus obstacle/hazard events.
   - The UI consumes aggregated telemetry from the Zustand store (`src/state/telemetryStore.ts`).
+  - The store is append-only and mutable on purpose (#207): `recordEvent` pushes
+    onto `events` and updates `robots` / `teamTotals` in place, then bumps
+    `eventCount`. Never subscribe to `events`, `robots` or `teamTotals` — their
+    references are stable for the match. Read them with `getState()` (HUD panels
+    do this on `useHudTick`) or subscribe to `eventCount`.
 
 
 - Object pooling for hot entities
