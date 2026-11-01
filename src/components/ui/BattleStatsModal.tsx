@@ -8,12 +8,19 @@ interface BattleStatsModalProps {
   winner?: "red" | "blue" | null;
 }
 
-export function BattleStatsModal({
+export function BattleStatsModal(props: BattleStatsModalProps) {
+  // Only subscribe to the telemetry store while open: it changes on every
+  // shot, so a closed-but-mounted subscriber would re-render at sim rate.
+  return props.isOpen ? <OpenBattleStatsModal {...props} /> : null;
+}
+
+function OpenBattleStatsModal({
   isOpen,
   onClose,
   winner,
 }: BattleStatsModalProps) {
-  const { teamTotals, robots } = useTelemetryStore();
+  const teamTotals = useTelemetryStore((state) => state.teamTotals);
+  const robots = useTelemetryStore((state) => state.robots);
 
   const redStats = teamTotals.red;
   const blueStats = teamTotals.blue;

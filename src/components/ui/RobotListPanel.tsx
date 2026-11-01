@@ -48,14 +48,14 @@ export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
   }, [collapsed]);
 
   const hudTick = useHudTick();
-  const telemetryEvents = useTelemetryStore((state) => state.events);
-  const robotStats = useTelemetryStore((state) => state.robots);
 
   const robotsByTeam = useMemo(() => {
-    // Re-derive on telemetry events and on the throttled HUD tick (health and
-    // AI mode are mutated in place by the simulation).
-    void telemetryEvents;
+    // Re-derive only on the throttled HUD tick. Health and AI mode are mutated
+    // in place by the simulation, and telemetry stats change on every shot, so
+    // subscribing to the telemetry store would re-render this panel at the
+    // simulation rate. Read the stats imperatively instead.
     void hudTick;
+    const robotStats = useTelemetryStore.getState().robots;
 
     const teams: Record<TeamId, RobotDisplayData[]> = {
       red: [],
@@ -92,7 +92,7 @@ export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
     teams.blue.sort((a, b) => a.spawnIndex - b.spawnIndex);
 
     return teams;
-  }, [battleWorld, telemetryEvents, robotStats, hudTick]);
+  }, [battleWorld, hudTick]);
 
   const toggleCollapsed = (teamId: TeamId) => {
     setCollapsed((prev) => ({ ...prev, [teamId]: !prev[teamId] }));
