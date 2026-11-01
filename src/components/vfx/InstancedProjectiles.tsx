@@ -1,13 +1,13 @@
 import { useEffect, useMemo } from "react";
 import { CylinderGeometry, Object3D } from "three";
 
-import { ProjectileEntity } from "../../ecs/world";
+import { ProjectileEntity, Store } from "../../ecs/world";
 import { ensureGeometryHasVertexColors } from "../../visuals/instanceColorUtils";
 import { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
 import { InstancedProjectileGroup } from "./InstancedProjectileGroup";
 
 interface InstancedProjectilesProps {
-  projectiles: ProjectileEntity[];
+  projectiles: Store<ProjectileEntity>;
   instanceManager: VisualInstanceManager;
 }
 
@@ -110,6 +110,9 @@ export function InstancedProjectilesDemo({
     [],
   );
   return (
-    <InstancedProjectiles projectiles={projectiles} instanceManager={manager} />
+    <InstancedProjectiles
+      projectiles={{ entities: projectiles }}
+      instanceManager={manager}
+    />
   );
 }

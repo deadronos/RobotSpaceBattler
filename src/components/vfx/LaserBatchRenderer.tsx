@@ -1,5 +1,5 @@
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   AdditiveBlending,
   Color,
@@ -10,7 +10,7 @@ import {
   Vector3,
 } from "three";
 
-import { ProjectileEntity, RobotEntity } from "../../ecs/world";
+import { ProjectileEntity, RobotEntity, Store } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
 import {
   applyHiddenInstanceMatrix,
@@ -26,9 +26,28 @@ import {
   useInstancedMeshLifecycle,
 } from "./useInstancedMeshLifecycle";
 
+interface RobotLookup {
+  source: RobotEntity[] | null;
+  map: Map<string, RobotEntity>;
+}
+
+/** Rebuilds the id lookup only when the store hands out a new array. */
+function lookupRobots(
+  source: RobotEntity[],
+  cache: RobotLookup,
+): Map<string, RobotEntity> {
+  if (cache.source !== source) {
+    cache.source = source;
+    cache.map.clear();
+    for (const robot of source) cache.map.set(robot.id, robot);
+  }
+  return cache.map;
+}
+
 interface LaserBatchRendererProps {
-  projectiles: ProjectileEntity[];
-  robotsById: Map<string, RobotEntity>;
+  /** Live stores; `.entities` is re-read every frame. */
+  projectiles: Store<ProjectileEntity>;
+  robots: Store<RobotEntity>;
   instanceManager: VisualInstanceManager;
 }
 
@@ -38,7 +57,7 @@ interface LaserBatchRendererProps {
  */
 export function LaserBatchRenderer({
   projectiles,
-  robotsById,
+  robots,
   instanceManager,
 }: LaserBatchRendererProps) {
   const capacity = instanceManager.getCapacity("lasers");
@@ -53,6 +72,7 @@ export function LaserBatchRenderer({
   const tempQuaternion = useMemo(() => new Quaternion(), []);
   const yAxis = useMemo(() => new Vector3(0, 1, 0), []);
   const tempVelocity = useMemo(() => new Vector3(), []);
+  const lookupRef = useRef<RobotLookup>({ source: null, map: new Map() });
   const { meshRef, activeRef, previousActiveRef, initStateRef } =
     useInstancedMeshLifecycle(capacity);
 
@@ -111,8 +131,10 @@ export function LaserBatchRenderer({
     let matricesDirty = false;
     let colorsDirty = false;
 
-    for (let i = 0; i < projectiles.length; i += 1) {
-      const projectile = projectiles[i];
+    const robotsById = lookupRobots(robots.entities, lookupRef.current);
+    const list = projectiles.entities;
+    for (let i = 0; i < list.length; i += 1) {
+      const projectile = list[i];
       if (projectile.weapon !== "laser" || capacity === 0) {
         continue;
       }

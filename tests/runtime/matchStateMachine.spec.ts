@@ -80,3 +80,35 @@ describe("matchStateMachine", () => {
     expect(machine.getSnapshot().isDraw).toBe(false);
   });
 });
+
+describe("matchStateMachine emission rate (#162)", () => {
+  it("does not notify on per-step elapsed updates while running", () => {
+    const emitted: MatchStateSnapshot[] = [];
+    const machine = createMatchStateMachine({
+      onChange: (s) => emitted.push(s),
+    });
+    machine.start();
+    emitted.length = 0;
+
+    for (let i = 0; i < 600; i += 1) machine.tick(1000 / 60);
+
+    expect(emitted).toHaveLength(0);
+    expect(machine.getSnapshot().elapsedMs).toBeCloseTo(10_000, 3);
+  });
+
+  it("notifies the victory countdown only when the whole second changes", () => {
+    const emitted: MatchStateSnapshot[] = [];
+    const machine = createMatchStateMachine({
+      autoRestartDelayMs: 2000,
+      onChange: (s) => emitted.push(s),
+    });
+    machine.start();
+    machine.declareVictory("red", 2000);
+    emitted.length = 0;
+
+    for (let i = 0; i < 12; i += 1) machine.tick(100);
+
+    expect(emitted.length).toBeLessThanOrEqual(2);
+    expect(emitted[0]?.restartTimerMs).toBeLessThanOrEqual(1000);
+  });
+});

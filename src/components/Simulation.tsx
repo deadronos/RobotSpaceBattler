@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useCallback } from "react";
 
 import { BattleWorld } from "../ecs/world";
 import { TEAM_CONFIGS } from "../lib/teamConfig";
@@ -13,12 +13,12 @@ import { useQualitySettings } from "../state/quality/QualityManager";
 import { ObstacleVisual } from "../visuals/ObstacleVisual";
 import { RobotPlaceholder } from "./RobotPlaceholder";
 import { Scene } from "./Scene";
+import { useEntityList } from "./useEntityList";
 import { SpaceStation } from "./SpaceStation";
-import { EffectVisual } from "./vfx/EffectVisual";
+import { FallbackVfx } from "./vfx/FallbackVfx";
 import { InstancedEffects } from "./vfx/InstancedEffects";
 import { InstancedProjectiles } from "./vfx/InstancedProjectiles";
 import { LaserBatchRenderer } from "./vfx/LaserBatchRenderer";
-import { ProjectileVisual } from "./vfx/ProjectileVisual";
 
 /**
  * Props for the Simulation component.
@@ -46,13 +46,13 @@ interface SimulationProps {
  * @param props - Component props.
  * @returns The Simulation component tree.
  */
-export function Simulation(props: SimulationProps) {
+export const Simulation = memo(function Simulation(props: SimulationProps) {
   return (
     <Scene showPerfOverlay={props.showPerfOverlay}>
       <SimulationContent {...props} />
     </Scene>
   );
-}
+});
 
 /**
  * Internal content of the simulation scene.
@@ -70,33 +70,15 @@ function SimulationContent(props: SimulationProps) {
   const shadowMapSize = qualitySettings.visuals.render.shadowMapSize;
   const instanceManager = battleWorld.visuals.instanceManager;
 
-  const robots = battleWorld.robots.entities;
-  const projectiles = battleWorld.projectiles.entities;
-  const effects = battleWorld.effects.entities;
-  const obstacles = battleWorld.obstacles.entities;
-
-  const robotsById = useMemo(
-    () => new Map(robots.map((robot) => [robot.id, robot])),
-    [robots],
+  // Entities are never read into render-time snapshots here. Moving things are
+  // updated imperatively from the ECS in useFrame; React only re-renders the
+  // robot layer when a robot is added or removed (see useEntityList).
+  const robots = useEntityList(battleWorld.robots);
+  const obstacles = useEntityList(battleWorld.obstacles);
+  const getTimeMs = useCallback(
+    () => battleWorld.state.elapsedMs,
+    [battleWorld],
   );
-
-  const currentTimeMs = battleWorld.state.elapsedMs;
-
-  const fallbackProjectiles = useMemo(() => {
-    if (!instancingEnabled) {
-      return projectiles;
-    }
-    return projectiles.filter(
-      (projectile) => projectile.instanceIndex === undefined,
-    );
-  }, [projectiles, instancingEnabled]);
-
-  const fallbackEffects = useMemo(() => {
-    if (!instancingEnabled) {
-      return effects;
-    }
-    return effects.filter((effect) => effect.instanceIndex === undefined);
-  }, [effects, instancingEnabled]);
 
   return (
     <>
@@ -112,47 +94,32 @@ function SimulationContent(props: SimulationProps) {
       {robots.map((robot) => (
         <RobotPlaceholder
           key={robot.id}
+          robot={robot}
           color={TEAM_CONFIGS[robot.team].color}
-          position={[robot.position.x, 0.8, robot.position.z]}
         />
       ))}
       {instancingEnabled ? (
         <>
           <InstancedProjectiles
-            projectiles={projectiles}
+            projectiles={battleWorld.projectiles}
             instanceManager={instanceManager}
           />
           <LaserBatchRenderer
-            projectiles={projectiles}
-            robotsById={robotsById}
+            projectiles={battleWorld.projectiles}
+            robots={battleWorld.robots}
             instanceManager={instanceManager}
           />
           <InstancedEffects
-            effects={effects}
+            effects={battleWorld.effects}
             instanceManager={instanceManager}
-            currentTimeMs={currentTimeMs}
+            getTimeMs={getTimeMs}
           />
         </>
       ) : null}
-      {fallbackProjectiles.map((projectile) => (
-        <ProjectileVisual
-          key={projectile.id}
-          projectile={projectile}
-          shooter={robotsById.get(projectile.shooterId)}
-          target={
-            projectile.targetId
-              ? robotsById.get(projectile.targetId)
-              : undefined
-          }
-        />
-      ))}
-      {fallbackEffects.map((effect) => (
-        <EffectVisual
-          key={effect.id}
-          effect={effect}
-          currentTimeMs={currentTimeMs}
-        />
-      ))}
+      <FallbackVfx
+        battleWorld={battleWorld}
+        instancingEnabled={instancingEnabled}
+      />
     </>
   );
 }

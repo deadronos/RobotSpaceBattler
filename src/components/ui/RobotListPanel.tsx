@@ -6,6 +6,7 @@ import { isActiveRobot } from "../../lib/robotHelpers";
 import { readStoredBoolean, writeStoredBoolean } from "../../lib/storedBoolean";
 import { TEAM_CONFIGS, TeamId } from "../../lib/teamConfig";
 import { useTelemetryStore } from "../../state/telemetryStore";
+import { useHudTick } from "./useHudTick";
 
 interface RobotListPanelProps {
   battleWorld: BattleWorld;
@@ -46,12 +47,15 @@ export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
     writeStoredBoolean(ROBOT_LIST_COLLAPSE_BLUE_STORAGE_KEY, collapsed.blue);
   }, [collapsed]);
 
+  const hudTick = useHudTick();
   const telemetryEvents = useTelemetryStore((state) => state.events);
   const robotStats = useTelemetryStore((state) => state.robots);
 
   const robotsByTeam = useMemo(() => {
-    // Trigger re-render on telemetry events
+    // Re-derive on telemetry events and on the throttled HUD tick (health and
+    // AI mode are mutated in place by the simulation).
     void telemetryEvents;
+    void hudTick;
 
     const teams: Record<TeamId, RobotDisplayData[]> = {
       red: [],
@@ -88,7 +92,7 @@ export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
     teams.blue.sort((a, b) => a.spawnIndex - b.spawnIndex);
 
     return teams;
-  }, [battleWorld, telemetryEvents, robotStats]);
+  }, [battleWorld, telemetryEvents, robotStats, hudTick]);
 
   const toggleCollapsed = (teamId: TeamId) => {
     setCollapsed((prev) => ({ ...prev, [teamId]: !prev[teamId] }));

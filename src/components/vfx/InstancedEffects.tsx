@@ -1,8 +1,8 @@
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { Color, InstancedMesh, Object3D, SphereGeometry } from "three";
 
-import { EffectEntity } from "../../ecs/world";
+import { EffectEntity, Store } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
 import {
   applyHiddenInstance,
@@ -19,9 +19,11 @@ import {
 } from "./useInstancedMeshLifecycle";
 
 interface InstancedEffectsProps {
-  effects: EffectEntity[];
+  /** Live store; `.entities` is re-read every frame. */
+  effects: Store<EffectEntity>;
   instanceManager: VisualInstanceManager;
-  currentTimeMs: number;
+  /** Returns the current simulation time in ms (read each frame). */
+  getTimeMs: () => number;
 }
 
 /**
@@ -31,7 +33,7 @@ interface InstancedEffectsProps {
 export function InstancedEffects({
   effects,
   instanceManager,
-  currentTimeMs,
+  getTimeMs,
 }: InstancedEffectsProps) {
   const capacity = instanceManager.getCapacity("effects");
   const { meshRef, activeRef, previousActiveRef, dirtyRef, initStateRef } =
@@ -58,12 +60,6 @@ export function InstancedEffects({
   }, [meshRef]);
   const color = useMemo(() => new Color(), []);
   const hiddenColor = useMemo(() => new Color("#000000"), []);
-  const timeRef = useRef(currentTimeMs);
-
-  useEffect(() => {
-    timeRef.current = currentTimeMs;
-  }, [currentTimeMs]);
-
   useFrame(() => {
     perfMarkStart("InstancedEffects.useFrame");
     const mesh = meshRef.current;
@@ -80,10 +76,11 @@ export function InstancedEffects({
 
     activeIndices.clear();
     dirtyIndices.clear();
-    const now = timeRef.current;
+    const now = getTimeMs();
+    const list = effects.entities;
 
-    for (let i = 0; i < effects.length; i += 1) {
-      const effect = effects[i];
+    for (let i = 0; i < list.length; i += 1) {
+      const effect = list[i];
       const index =
         effect.instanceIndex ?? instanceManager.getIndex("effects", effect.id);
       if (index === null || index === undefined || index >= capacity) {

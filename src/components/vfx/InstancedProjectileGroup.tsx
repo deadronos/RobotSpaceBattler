@@ -9,7 +9,7 @@ import {
   Vector3,
 } from "three";
 
-import { ProjectileEntity } from "../../ecs/world";
+import { ProjectileEntity, Store } from "../../ecs/world";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
 import {
   applyHiddenInstance,
@@ -25,7 +25,8 @@ import {
 } from "./useInstancedMeshLifecycle";
 
 export interface InstancedProjectileGroupProps {
-  projectiles: ProjectileEntity[];
+  /** Live store; `.entities` is re-read every frame (the array is replaced on world mutation). */
+  projectiles: Store<ProjectileEntity>;
   instanceManager: VisualInstanceManager;
   category: "bullets" | "rockets";
   geometry: BufferGeometry;
@@ -90,8 +91,9 @@ export function InstancedProjectileGroup({
     let matrixDirty = false;
     let colorsDirty = false;
 
-    for (let i = 0; i < projectiles.length; i += 1) {
-      const projectile = projectiles[i];
+    const list = projectiles.entities;
+    for (let i = 0; i < list.length; i += 1) {
+      const projectile = list[i];
       if (!isMatch(projectile)) {
         continue;
       }
