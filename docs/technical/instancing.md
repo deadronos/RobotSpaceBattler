@@ -48,6 +48,22 @@ Telemetry events (`VFX:Instancing:Alloc/Release/Fallback`) are mirrored to `wind
 - Tests: `tests/visuals/arenaGeometry.spec.ts` checks merged triangle counts,
   bounds against the config arrays and the baked vertex colours.
 
+## Live instance counts (#233)
+
+- Every instanced mesh draws only what is live. Densely filled layers (robots per
+  role, health bars, team markers) set `count` to the live count; the sparse VFX
+  pools (`bullets`, `rockets`, `effects`, `flashes`) set it to
+  `highWaterCount(activeIndexes)` from `src/visuals/instanceCountWindow.ts` — the
+  highest live slot + 1, because a freed slot can be re-used by a later entity and
+  a hole below the top must stay a hidden instance.
+- Buffers are still allocated at capacity, so slot indices stay stable and nothing
+  reallocates mid-match. What changes is how many instances the GPU
+  vertex-processes: the frame went from 197 028 to 16 085 triangles at a default
+  roster. A layer that empties completely also drops its draw call (~34 → 22 with
+  no robots on the field).
+- Tests: `tests/visuals/visualInstanceManager.spec.ts` covers the high-water
+  window against real allocations and releases.
+
 ## Renderer Instrumentation
 
 - `window.__rendererStats` tracks draw calls, triangle counts, and frame times per frame.

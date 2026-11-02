@@ -18,6 +18,7 @@ import {
   ROBOT_HIT_FLASH_RADIUS,
   ROBOT_MUZZLE_OFFSETS,
 } from "../../visuals/robots/robotLayout";
+import { highWaterCount } from "../../visuals/instanceCountWindow";
 import type { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
 import {
   ensureInstancedMeshReady,
@@ -178,6 +179,8 @@ export function InstancedFlashes({
       applyHiddenInstance(mesh, index, dummy, hiddenColor);
       dirtyIndices.add(index);
     });
+
+    mesh.count = highWaterCount(activeIndices);
 
     markInstanceBuffersDirty(mesh, { dirtyIndices });
     swapActiveInstanceSets(activeRef, previousActiveRef);

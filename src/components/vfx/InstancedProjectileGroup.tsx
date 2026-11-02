@@ -16,6 +16,7 @@ import {
   markInstanceBuffersDirty,
   normalizeHDRForInstance,
 } from "../../visuals/instanceColorUtils";
+import { highWaterCount } from "../../visuals/instanceCountWindow";
 import { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
 import {
   ensureInstancedMeshReady,
@@ -150,6 +151,8 @@ export function InstancedProjectileGroup({
       matrixDirty = true;
       colorsDirty = true;
     });
+
+    mesh.count = highWaterCount(currentActive);
 
     markInstanceBuffersDirty(mesh, {
       matrix: matrixDirty,

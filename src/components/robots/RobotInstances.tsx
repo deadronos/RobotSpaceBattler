@@ -34,8 +34,9 @@ const HIDDEN_Y = -512;
  * and brightens the instance colour briefly when the robot has just been hit.
  *
  * Draw calls are constant: four roles × one merged body+head geometry, plus
- * the shadow pass. `count` stays at capacity and unused instances are hidden,
- * so adding or removing robots never changes the draw-call count.
+ * the shadow pass. `count` follows the live robots per role, so dead robots
+ * are not vertex-processed in the main or the shadow pass, and adding or
+ * removing robots still never changes the draw-call count (#233).
  */
 export function RobotInstances({
   battleWorld,
@@ -109,8 +110,9 @@ export function RobotInstances({
         mesh.setColorAt(i, color);
       }
 
-      // Slots that were used last frame but not this one are hidden, not
-      // un-drawn, so `count` (and the draw-call count) never changes.
+      // Slots that were used last frame but not this one fall outside the
+      // live window; hide them anyway so a later re-use cannot show a stale
+      // matrix for one frame.
       for (let i = count; i < previous; i += 1) {
         dummy.position.set(0, HIDDEN_Y, 0);
         dummy.rotation.set(0, 0, 0);
@@ -120,6 +122,7 @@ export function RobotInstances({
       }
 
       previousCounts.current[roleSlot] = count;
+      mesh.count = count;
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) {
         mesh.instanceColor.needsUpdate = true;

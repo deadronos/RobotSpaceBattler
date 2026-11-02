@@ -10,6 +10,7 @@ import {
   ensureGeometryHasVertexColors,
   markInstanceBuffersDirty,
 } from "../../visuals/instanceColorUtils";
+import { highWaterCount } from "../../visuals/instanceCountWindow";
 import { VisualInstanceManager } from "../../visuals/VisualInstanceManager";
 import {
   ensureInstancedMeshReady,
@@ -123,6 +124,10 @@ export function InstancedEffects({
       applyHiddenInstance(mesh, index, dummy, hiddenColor);
       dirtyIndices.add(index);
     });
+
+    // Draw only up to the highest live slot: hidden instances above it are
+    // not vertex-processed (#233).
+    mesh.count = highWaterCount(activeIndices);
 
     markInstanceBuffersDirty(mesh, { dirtyIndices });
     swapActiveInstanceSets(activeRef, previousActiveRef);

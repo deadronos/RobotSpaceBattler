@@ -98,6 +98,7 @@ authoritative for the noise-sensitive numbers (machine noise is ±10%).
 | 3    | #230 23 lights → 6                         |      3 |         36 |   197 028 |        197.3 |        17.43 | yes  |
 | 4a   | #232 msaa 4 + mipmapBlur (rejected)        |      3 |         45 |   197 035 |        235.6 |        17.93 | no   |
 | 4b   | #232 antialias off + msaa 4                |      3 |         36 |   197 028 |        358.6 |        17.60 | yes  |
+| 5    | #233 draw only live instances              |      3 |         35 |    16 085 |        349.1 |        18.37 | yes  |
 
 ### Measured scene (baseline `--breakdown`)
 
@@ -134,6 +135,18 @@ authoritative for the noise-sensitive numbers (machine noise is ±10%).
 - Team colour statistics before/after (mean of the saturated red and blue
   pixels in the screenshot): red (182,75,76) → (175,74,76), blue (35,75,125) →
   (36,73,120). No measurable contrast loss.
+
+### Step 5 (#233) live instance counts
+
+- Triangles drawn fell from 197 028 to 16 085 at a default roster (92% of the
+  old triangles were hidden instance capacity).
+- Draw calls 34.7 on average; with the roster emptied they drop to 22 because a
+  layer whose `count` reaches 0 no longer issues its draw call. That is the one
+  behaviour change against the #168 note "count stays at capacity": the count is
+  now a floor, never a growth path.
+- Uncapped fps 358.6 → 349.1 and vsync p95 17.60 → 18.37 are inside the run-to-run
+  noise on this machine (the step's win is triangles and mobile vertex cost, not
+  M4 frame rate). Kept for that reason.
 
 ## Tests
 
