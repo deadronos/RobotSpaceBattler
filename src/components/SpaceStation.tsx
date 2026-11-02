@@ -3,23 +3,17 @@ import { LampPanels } from "./SpaceStation/LampPanels";
 import { Pillars } from "./SpaceStation/Pillars";
 import { WallGroup } from "./SpaceStation/WallGroup";
 
-interface SpaceStationProps {
-  shadowsEnabled?: boolean;
-  shadowMapSize?: number;
-}
-
 /**
  * SpaceStation - A battle arena with corridors, walls, and obstacles.
- * Physics-enabled with proper Rapier configuration.
  * Composes various sub-components to build the environment.
+ *
+ * The floor receives shadows (robots and walls fall on it) but never casts:
+ * there is nothing below it (#231).
  */
-export function SpaceStation({
-  shadowsEnabled = false,
-  shadowMapSize = 512,
-}: SpaceStationProps) {
+export function SpaceStation() {
   return (
     <>
-      <mesh position={[0, -1, 0]} receiveShadow castShadow>
+      <mesh position={[0, -1, 0]} receiveShadow>
         <boxGeometry args={[100, 0.5, 100]} />
         <meshPhysicalMaterial
           color="#262b46"
@@ -33,10 +27,7 @@ export function SpaceStation({
       <WallGroup />
       <LampPanels />
       <Pillars />
-      <ArenaLightRig
-        shadowsEnabled={shadowsEnabled}
-        shadowMapSize={shadowMapSize}
-      />
+      <ArenaLightRig />
     </>
   );
 }

@@ -82,8 +82,6 @@ function SimulationContent(props: SimulationProps) {
     reducedMotion: props.reducedMotion ?? false,
   });
   const instancingEnabled = qualitySettings.visuals.instancing.enabled;
-  const shadowsEnabled = qualitySettings.visuals.render.shadowsEnabled;
-  const shadowMapSize = qualitySettings.visuals.render.shadowMapSize;
   const instanceManager = battleWorld.visuals.instanceManager;
 
   // Entities are never read into render-time snapshots here. Robots, health
@@ -98,10 +96,7 @@ function SimulationContent(props: SimulationProps) {
 
   return (
     <>
-      <SpaceStation
-        shadowsEnabled={shadowsEnabled}
-        shadowMapSize={shadowMapSize}
-      />
+      <SpaceStation />
       {qualitySettings.visuals.obstacles.visualsEnabled
         ? obstacles.map((obstacle) => (
             <ObstacleVisual key={obstacle.id} obstacle={obstacle} />
