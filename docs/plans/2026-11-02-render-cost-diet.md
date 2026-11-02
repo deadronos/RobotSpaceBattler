@@ -1,7 +1,8 @@
 # Plan: render-cost diet — arena draw calls, lights, shadows, post-processing (#229–#233)
 
-Status: draft. Rendering-only; simulation behaviour, the determinism goldens and
-the parity tests must not change.
+Status: implemented in one branch, one commit per step (PR pending review).
+Rendering-only: simulation behaviour, the determinism goldens and the parity
+tests did not change.
 
 ## Why
 
@@ -50,6 +51,9 @@ The static arena is about 64 of the 73 main-pass draw calls. About 150k of the
   `window.__robotScene.gl.render`). A working prototype is
   `scripts/perf/probe-render-cost.mjs` in the starting commit; fold it into
   `scripts/perf/visuals/` and delete the prototype. Keep every file ≤ 300 lines.
+  Done: `scripts/perf/visuals/sceneBreakdown.js` behind `--breakdown`, prototype
+  deleted, and `scripts/perf/visuals/pageMetrics.js` gained `--palette=colorblind`
+  so the #166 palette is measured too.
 - Machine noise is ±10% on uncapped fps, so the authoritative before/after is a
   paired 3-trial run of `main` versus the branch, made at the same time.
 
