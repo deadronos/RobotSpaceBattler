@@ -15,7 +15,9 @@
 - Coverage thresholds live in `vitest.config.ts` and must not be lowered.
 - Tests must not depend on order or shared mutable state.
 - The simulation is deterministic per seed. Prefer seeded headless-match tests
-  (see `tests/determinism.spec.ts`) over timing-based ones.
+  (see `tests/determinism.spec.ts`) over timing-based ones. `runHeadlessMatch`
+  (`tests/helpers/headlessMatch.ts`) accepts `pauseAtStep`/`pauseSteps` to prove that a
+  pause cannot change a match digest.
 
 ## Commands
 

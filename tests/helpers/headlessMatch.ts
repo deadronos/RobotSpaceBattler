@@ -21,13 +21,27 @@ export interface HeadlessMatchOptions {
    * deterministic ticks and can be replayed.
    */
   pathfindingMode?: "worker" | "inline";
+  /**
+   * Pause the match once this many simulation steps have completed (the step
+   * is taken, then the match pauses). Used to prove that a pause cannot change
+   * the outcome of a seed.
+   */
+  pauseAtStep?: number;
+  /** Fixed steps spent paused before resuming (default 180, i.e. 3 s). */
+  pauseSteps?: number;
 }
 
 export interface HeadlessMatchResult {
   phase: MatchRuntimePhase;
   winner: TeamId | null;
   isDraw: boolean;
+  /**
+   * Simulation steps the match actually ran. Paused steps are not counted;
+   * they are reported separately in `pausedSteps`.
+   */
   steps: number;
+  /** Fixed steps spent in the paused phase. */
+  pausedSteps: number;
   elapsedMs: number;
   survivors: Record<TeamId, number>;
   robots: Array<{
@@ -45,9 +59,9 @@ export interface HeadlessMatchResult {
     noPath: number;
     failures: number;
   };
-  /** FNV-1a hash folded over the world state after every step. */
+  /** FNV-1a hash folded over the world state after every simulation step. */
   stateHash: string;
-  /** Sampled (every 60 steps) per-step hashes, for diffing diverging runs. */
+  /** Sampled (every 60 simulation steps) per-step hashes, for diffing runs. */
   trace: Array<{ step: number; hash: string }>;
 }
 
@@ -122,10 +136,38 @@ export function runHeadlessMatch(
   });
 
   let steps = 0;
+  let pausedSteps = 0;
+  let pauseRemaining = 0;
+  let didPause = false;
+  const pauseAtStep = options.pauseAtStep;
+  const pauseSteps = options.pauseSteps ?? 180;
   let running = 0x811c9dc5;
   const trace: HeadlessMatchResult["trace"] = [];
   try {
-    while (matchMachine.getSnapshot().phase === "running" && steps < maxSteps) {
+    while (steps < maxSteps) {
+      const phase = matchMachine.getSnapshot().phase;
+      if (phase !== "running" && phase !== "paused") break;
+
+      if (phase === "paused") {
+        if (pauseRemaining > 0) {
+          // Paused steps must not touch the world: no clock, obstacles or
+          // hazards, so they are not folded into the digest either.
+          runner.step(dt);
+          pausedSteps += 1;
+          pauseRemaining -= 1;
+          continue;
+        }
+        matchMachine.resume();
+        continue;
+      }
+
+      if (!didPause && pauseAtStep != null && steps >= pauseAtStep) {
+        didPause = true;
+        pauseRemaining = pauseSteps;
+        matchMachine.pause();
+        continue;
+      }
+
       runner.step(dt);
       steps += 1;
       const h = hashWorld(world, running);
@@ -156,6 +198,7 @@ export function runHeadlessMatch(
     winner: snapshot.winner,
     isDraw: snapshot.isDraw,
     steps,
+    pausedSteps,
     elapsedMs: world.state.elapsedMs,
     survivors,
     robots,

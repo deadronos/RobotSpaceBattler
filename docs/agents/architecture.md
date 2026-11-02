@@ -17,6 +17,14 @@
 ## Simulation owns state; rendering projects it
 
 - `BattleRunner` steps the ECS at a fixed 60 Hz (at most 5 substeps per frame) using sim time.
+- Only the `running` phase advances the world (#225). While paused (and in the victory
+  phase) `world.state.elapsedMs`, obstacle movement, hazards and the sim tick counter
+  `world.state.frameIndex` all freeze. A pause therefore cannot leak sim time into AI
+  timers (engage memory, roam refresh), hazard windows, obstacle movement or
+  `lastDamageTimestamp` hit flashes, and pause → resume replays the seed identically.
+  `world.state.frameIndex` counts simulation steps, not render frames, so it is not a
+  "match is paused" indicator either. The victory auto-restart countdown in
+  `matchStateMachine.tick` keeps ticking while the world is frozen.
 - The ECS is the single owner of robot positions. There is no physics engine (#184).
   Line-of-sight and movement blocking use 2D segment tests in
   `src/simulation/environment/`: `staticOcclusionIndex.ts` indexes the arena walls and
