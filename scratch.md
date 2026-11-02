@@ -12,6 +12,7 @@ Every tier of the 2026-10-31 plan is closed: the live quick fixes (#153–#156),
 - **#201:** allocation-free AI movement planning, in-place team anchors, a cell-indexed static line-of-sight check and count-based spatial-grid queries: ~36 KB/tick at 100 robots (from 331) and 1.7 ms/tick at 200 robots (from 3.0).
 - **#202 + #203 (PR #206):** real-GPU measurement on an M4. React commits went from 120/s to 4/s and scripting dropped 28%. HUD panels no longer re-render on every telemetry event, and the smoke liveness check is now based on `frameIndex`.
 - **#170 (PR #228):** match-end summary, series score, auto-restart switch and 0.5×/1×/2×/4× speed. The speed scales the accumulator input and the substep cap, so a seed produces one digest at every speed.
+- **#229–#233 (render-cost diet, one branch):** 124 → ~35 draw calls, 210 411 → 16 085 triangles, uncapped fps 139.8 → ~350 (Apple M4, ANGLE Metal, 1440×900, `?debug`). One shadow-casting light, 6 scene lights, a merged arena with unlit HDR neon, no canvas MSAA under the composer, and instanced meshes that draw only live slots. Rendering only: the sim, the determinism goldens and the parity tests are untouched. Results table: [docs/plans/2026-11-02-render-cost-diet.md](docs/plans/2026-11-02-render-cost-diet.md).
 
 ## Tier 1: quick wins (S, any order, all parallel-safe)
 
@@ -38,9 +39,9 @@ Every tier of the 2026-10-31 plan is closed: the live quick fixes (#153–#156),
 12. **#166: accessibility pass.** UX polish that can go anytime, alongside #170.
 13. **#163: team builder (XL).** Last. It needs #192 fixed so that balance is meaningful.
 
-## Tier 5: render-cost diet (from the 2026-11-02 assessment)
+## Tier 5: render-cost diet (from the 2026-11-02 assessment) — done
 
-The frame is render-bound: 124 draw calls and about 139 fps uncapped on an M4, with about 7.0 of the 7.2 ms frame inside `gl.render`. Plan: [docs/plans/2026-11-02-render-cost-diet.md](docs/plans/2026-11-02-render-cost-diet.md). One hillclimb PR, in this order: #231 (one shadow light) → #229 (merge the arena, unlit neon) → #230 (23 → ~6 lights) → #232 (MSAA 8× and a redundant canvas antialias) → #233 (draw only live instances). Rendering only; it can run alongside Tier 2.
+The frame was render-bound: 124 draw calls and ~139 fps uncapped on an M4, with ~7.0 of the 7.2 ms frame inside `gl.render`. #231 (one shadow light) → #229 (merged arena, unlit neon) → #230 (23 → 6 lights) → #232 (no canvas MSAA under the composer) → #233 (draw only live instances) landed on one branch, one commit per step, each with a `perf:visuals` measurement. Numbers and the rejected variants (mipmap bloom, fake floor pools) are in [docs/plans/2026-11-02-render-cost-diet.md](docs/plans/2026-11-02-render-cost-diet.md). Follow-ups worth filing: the shadow-map size on the high tier, and a mobile check of the worst case (many live projectiles).
 
 ## Housekeeping / blocked
 

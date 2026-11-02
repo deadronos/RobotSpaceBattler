@@ -44,6 +44,7 @@ import {
   sampleRendererStats,
   measureRobotScaling,
   captureScreenshot,
+  seedPalette,
   waitForCombat,
 } from "./visuals/pageMetrics.js";
 import {
@@ -61,7 +62,13 @@ const OUTPUT_DIR = "test-results/visuals";
 const MEASURE_MS = 10_000;
 
 function parseArgs(argv) {
-  const args = { trials: 1, bench: false, build: true, breakdown: false };
+  const args = {
+    trials: 1,
+    bench: false,
+    build: true,
+    breakdown: false,
+    palette: "default",
+  };
   for (const arg of argv) {
     if (arg.startsWith("--label=")) args.label = arg.slice("--label=".length);
     else if (arg.startsWith("--trials=")) args.trials = Number(arg.slice(9));
@@ -69,6 +76,7 @@ function parseArgs(argv) {
     else if (arg === "--bench") args.bench = true;
     else if (arg === "--skip-build") args.build = false;
     else if (arg === "--breakdown") args.breakdown = true;
+    else if (arg.startsWith("--palette=")) args.palette = arg.slice(10);
     else if (arg === "--help" || arg === "-h") args.help = true;
     else throw new Error(`Unknown argument: ${arg}`);
   }
@@ -121,12 +129,14 @@ async function measureOneTrial({
   trial,
   capture,
   breakdown,
+  palette,
 }) {
   const screenShot = path.join(OUTPUT_DIR, `${label}-trial${trial}.png`);
   const page = await browsers.vsync.newPage({
     viewport: { width: 1440, height: 900 },
   });
   const messages = installConsoleCapture(page);
+  await seedPalette(page, palette);
   await openDebugPage(page, `${baseUrl}?debug`);
   await waitForCombat(page);
   const gpu = await readGpuString(page);
@@ -145,6 +155,7 @@ async function measureOneTrial({
     viewport: { width: 1440, height: 900 },
   });
   const uncappedMessages = installConsoleCapture(uncappedPage);
+  await seedPalette(uncappedPage, palette);
   await openDebugPage(uncappedPage, `${baseUrl}?debug`);
   await waitForCombat(uncappedPage);
   const uncapped = await sampleFrameTimes(uncappedPage, MEASURE_MS);
@@ -170,7 +181,7 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help || !args.label) {
     console.log(
-      "Usage: node scripts/perf/measure-visuals.js --label=<name> [--trials=3] [--skip-build] [--bench] [--breakdown] [--port=4299]",
+      "Usage: node scripts/perf/measure-visuals.js --label=<name> [--trials=3] [--skip-build] [--bench] [--breakdown] [--palette=colorblind] [--port=4299]",
     );
     return;
   }
@@ -214,6 +225,7 @@ async function main() {
           trial,
           capture,
           breakdown: args.breakdown,
+          palette: args.palette,
         }),
       );
     }
@@ -222,6 +234,7 @@ async function main() {
     const bench = args.bench ? runBench() : null;
     const report = {
       label: args.label,
+      palette: args.palette,
       gpu: trials[0].gpu,
       generatedAt: new Date().toISOString(),
       trials,

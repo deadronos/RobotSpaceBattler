@@ -8,6 +8,25 @@
 // The GPU must be real: launch headed Chrome with `--use-angle=metal` and
 // without Playwright's `--enable-unsafe-swiftshader` (see PR #206).
 
+/** Persisted accessibility preference for the #166 team palette. */
+const COLOR_BLIND_PALETTE_KEY = "a11y.colorBlindPalette";
+
+/**
+ * Seeds the persisted colour-blind team palette before the app loads (#166),
+ * so a `--palette=colorblind` run measures and screenshots the same scene the
+ * accessibility settings produce.
+ */
+export async function seedPalette(page, palette) {
+  if (palette !== "colorblind") return;
+  await page.addInitScript((key) => {
+    try {
+      window.localStorage.setItem(key, "1");
+    } catch {
+      // Storage can be unavailable; the run then keeps the default palette.
+    }
+  }, COLOR_BLIND_PALETTE_KEY);
+}
+
 /** Collects console output so the harness can report warnings and errors. */
 export function installConsoleCapture(page) {
   const messages = [];

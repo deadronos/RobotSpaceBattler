@@ -79,6 +79,7 @@ export function formatReport(report) {
   lines.push("");
   lines.push(`- GPU: ${report.gpu}`);
   lines.push(`- Trials: ${report.trials.length}`);
+  lines.push(`- Team palette: ${report.palette ?? "default"}`);
   lines.push(
     `- Sim frames per trial: ${report.trials.map((t) => t.frameIndex).join(", ")}`,
   );
