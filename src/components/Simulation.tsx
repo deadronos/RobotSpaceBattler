@@ -1,7 +1,6 @@
 import { memo, useCallback } from "react";
 
 import { BattleWorld } from "../ecs/world";
-import { TEAM_IDENTITIES } from "../lib/teamConfig";
 import {
   BattleRunner,
   createBattleRunner,
@@ -11,13 +10,15 @@ import { useSimulation } from "../runtime/simulation/useSimulation";
 import { MatchStateMachine } from "../runtime/state/matchStateMachine";
 import { useQualitySettings } from "../state/quality/QualityManager";
 import { ObstacleVisual } from "../visuals/ObstacleVisual";
-import { RobotPlaceholder } from "./RobotPlaceholder";
+import { RobotInstances } from "./robots/RobotInstances";
 import { Scene } from "./Scene";
 import { useEntityList } from "./useEntityList";
 import { SpaceStation } from "./SpaceStation";
 import { FallbackVfx } from "./vfx/FallbackVfx";
 import { InstancedEffects } from "./vfx/InstancedEffects";
+import { InstancedFlashes } from "./vfx/InstancedFlashes";
 import { InstancedProjectiles } from "./vfx/InstancedProjectiles";
+import { RobotHealthBars } from "./vfx/RobotHealthBars";
 import { LaserBatchRenderer } from "./vfx/LaserBatchRenderer";
 
 /**
@@ -70,10 +71,10 @@ function SimulationContent(props: SimulationProps) {
   const shadowMapSize = qualitySettings.visuals.render.shadowMapSize;
   const instanceManager = battleWorld.visuals.instanceManager;
 
-  // Entities are never read into render-time snapshots here. Moving things are
-  // updated imperatively from the ECS in useFrame; React only re-renders the
-  // robot layer when a robot is added or removed (see useEntityList).
-  const robots = useEntityList(battleWorld.robots);
+  // Entities are never read into render-time snapshots here. Robots, health
+  // bars and combat flashes are projected from the ECS in useFrame, so adding
+  // or removing a robot does not re-render React at all. Obstacles still use
+  // useEntityList because each one is a separate mounted component.
   const obstacles = useEntityList(battleWorld.obstacles);
   const getTimeMs = useCallback(
     () => battleWorld.state.elapsedMs,
@@ -91,13 +92,13 @@ function SimulationContent(props: SimulationProps) {
             <ObstacleVisual key={obstacle.id} obstacle={obstacle} />
           ))
         : null}
-      {robots.map((robot) => (
-        <RobotPlaceholder
-          key={robot.id}
-          robot={robot}
-          color={TEAM_IDENTITIES[robot.team].color}
-        />
-      ))}
+      <RobotInstances battleWorld={battleWorld} />
+      <RobotHealthBars robots={battleWorld.robots} />
+      <InstancedFlashes
+        robots={battleWorld.robots}
+        instanceManager={instanceManager}
+        getTimeMs={getTimeMs}
+      />
       {instancingEnabled ? (
         <>
           <InstancedProjectiles

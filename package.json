@@ -24,6 +24,7 @@
     "playwright:smoke:live": "playwright test -c playwright.preview.config.ts smoke",
     "bench": "node ./scripts/perf/ai-bench.js",
     "perf:vfx-instancing": "node ./scripts/perf/measure_drawcalls.js",
+    "perf:visuals": "node ./scripts/perf/measure-visuals.js",
     "check:source-size": "node ./scripts/check_source_size.js",
     "bundle:size": "node ./scripts/bundle-size.js",
     "check:bundle": "node ./scripts/check_bundle_budget.js",

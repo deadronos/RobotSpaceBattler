@@ -11,7 +11,8 @@ This note captures the developer-facing guidance for the Weapon Diversity (005) 
 
 ## VisualInstanceManager
 
-The manager owns fixed-capacity pools per category (`bullets`, `rockets`, `lasers`, `effects`). It exposes:
+The manager owns fixed-capacity pools per category (`bullets`, `rockets`, `lasers`,
+`effects`, `flashes`). It exposes:
 
 - `allocateIndex(category, entityId)` → stable instance slot or `null` (capacity exhausted)
 - `releaseIndex(category, entityId)` → returns the slot to the free list
@@ -24,6 +25,9 @@ Telemetry events (`VFX:Instancing:Alloc/Release/Fallback`) are mirrored to `wind
 
 - `window.__rendererStats` tracks draw calls, triangle counts, and frame times per frame.
 - The instancing perf harness (`npm run perf:vfx-instancing`) builds the app, launches `vite preview`, and captures baseline vs instanced stats headlessly using Playwright.
+- `npm run perf:visuals -- --label=<step>` is the real-GPU harness (#168): draw calls,
+  draw calls vs robot count, rAF p95, uncapped fps, console warnings, a mid-match
+  screenshot, bundle gzip and the AI bench. See [testing.md](../agents/testing.md).
 - Telemetry from the instanced run is printed in the harness output (last ten events) to highlight exhaustion/fallback patterns.
 
 ## Pools & Object Reuse
@@ -36,6 +40,13 @@ Telemetry events (`VFX:Instancing:Alloc/Release/Fallback`) are mirrored to `wind
 - `InstancedProjectiles` batches gun/rocket visuals with `InstancedMesh` and hides unused slots by teleporting them out of view.
 - `LaserBatchRenderer` batches laser beams via `LineSegments` with per-beam colors.
 - `InstancedEffects` batches explosion/impact spheres and scales/fades per frame.
+- `InstancedFlashes` batches the hit flash and the muzzle flash (#168) in one additive
+  mesh. Its two slots per robot (`hit:<id>`, `muzzle:<id>`) live in the `flashes`
+  category, and they are released when the flash expires.
+- `RobotInstances` draws the robots themselves: one merged body+head geometry per role,
+  one shared material, team colour as an instance attribute (#168).
+- `RobotHealthBars` draws a billboarded background and fill quad per living robot, two
+  draw calls in total.
 - Legacy components (`ProjectileVisual`, `EffectVisual`) remain active for fallback slots and when instancing is disabled.
 
 ## Debug Tips

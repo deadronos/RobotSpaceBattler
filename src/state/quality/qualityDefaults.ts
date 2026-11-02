@@ -17,6 +17,8 @@ const DEFAULT_INSTANCING_MAX: InstancingMaxInstancesConfig = {
   rockets: 64,
   lasers: 64,
   effects: 256,
+  // Hit and muzzle flashes: two per robot at most (see robotFeedback.ts).
+  flashes: 128,
 };
 
 function parseBooleanFlag(value: string | null): boolean | undefined {

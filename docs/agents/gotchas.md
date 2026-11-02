@@ -20,3 +20,11 @@ Short, learned lessons. Append new ones.
 - **Slow devices:** each frame runs at most 5 fixed steps, so on slow GPUs the sim runs
   slower than real time. CI's software GL is slow too.
 - **Telemetry store:** see [architecture.md](architecture.md). Subscribing to `events` causes renders on every event.
+- **Instanced robot draw calls:** keep `InstancedMesh.count` at capacity and hide unused
+  slots. Setting `count` to the live robot count makes the draw-call count grow with the
+  roster, which is exactly what instancing was meant to stop (#168). Merge body and head
+  per role so a role is one draw call in the main pass plus one in the shadow pass.
+- **Combat feedback needs no new sim state:** `robot.lastDamageTimestamp` and the
+  `fireCooldown`/`fireRate` pair are enough to time a hit flash and a muzzle flash
+  (#168, `src/visuals/robots/robotFeedback.ts`). Do not add effect entities or timers to
+  the simulation just to draw feedback.

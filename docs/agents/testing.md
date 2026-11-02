@@ -27,10 +27,15 @@
 | `npm run playwright:preview` | Smoke + pathfinding-worker e2e on a production build (what CI runs) |
 | `npm run playwright:test` | All e2e specs against the dev server |
 | `npm run bench` | AI tick time and allocation benchmark |
-| `npm run perf:vfx-instancing` | Draw-call measurement |
+| `npm run perf:vfx-instancing` | Draw-call measurement (instanced vs fallback VFX) |
+| `npm run perf:visuals` | Real-GPU visual harness: M1 draw calls, M2 draw calls vs robot count, M3 frame time, M4 console, M5 screenshot, M6 bundle, M7 AI bench (#168) |
 
 ## Performance
 
 - Pathfinding: < 16 ms per tick for 20 robots.
 - For real-GPU numbers (#206), use headed Chrome with `--use-angle=metal` and without
   Playwright's `--enable-unsafe-swiftshader`. Software GL in CI is not representative.
+  `scripts/perf/measure-visuals.js` does this for you: it prints
+  `UNMASKED_RENDERER_WEBGL`, runs a vsync and an uncapped pass, and writes
+  `test-results/visuals/<label>.{json,md}` plus a mid-match screenshot. Run it
+  before and after a visual change (`npm run perf:visuals -- --label=<step>`).

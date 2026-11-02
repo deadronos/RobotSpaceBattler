@@ -23,8 +23,30 @@
   pillars by cell, and `arenaGeometry.ts` adds the live obstacle list.
 - React does not re-render per frame. `matchStateMachine` notifies only on phase changes,
   resets and countdown seconds. `Simulation` is `React.memo`.
-- `RobotPlaceholder` and `ObstacleVisual` copy ECS positions onto refs in `useFrame`.
-  Geometries and materials are shared at module level.
+- Robots are projected from the ECS into instance buffers, not React elements
+  (#168, `src/components/robots/RobotInstances.tsx`):
+  - One `InstancedMesh` per role (`assault`, `tank`, `sniper`, `medic`), each a
+    merged body+head geometry, so a role costs one draw call in the main pass and
+    one in the shadow pass. Adding or removing robots never changes the count:
+    `count` stays at capacity and unused instances are hidden.
+  - One shared `MeshStandardMaterial` for every role. The team colour is an
+    instance attribute (`setColorAt`); the head is baked brighter in the
+    geometry's colour attribute, so proportions and head shape identify the role
+    while the team colour stays readable.
+  - `src/visuals/robots/robotInstanceBuffer.ts` fills dense per-role slot buffers
+    allocation-free; `robotTransform.ts` writes each matrix from ECS state.
+- `RobotHealthBars` (2 draw calls total) billboards a background and a fill quad
+  per living robot from `health` / `maxHealth`. Dead robots leave the list, so
+  bars disappear with them. Pure mapping lives in
+  `src/visuals/robots/healthBarLogic.ts`.
+- `InstancedFlashes` (1 draw call) renders the hit flash on a damaged robot and
+  the muzzle flash at a firing robot. Triggers come from fields the simulation
+  already maintains (`lastDamageTimestamp`, `fireCooldown`/`fireRate`), so no
+  simulation state was added for visuals; slots are allocated through the
+  `flashes` category of `VisualInstanceManager`. See
+  `src/visuals/robots/robotFeedback.ts`.
+- `ObstacleVisual` still copies ECS positions onto refs in `useFrame`. Geometries
+  and materials are shared at module level.
 - `useEntityList` re-renders a layer only when entities are added or removed.
 - The HUD reads mutable ECS and telemetry data on a ~4 Hz tick (`useHudTick`).
 - Telemetry store (`state/telemetryStore.ts`) is append-only and mutated in place (#207).
