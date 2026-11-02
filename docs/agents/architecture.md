@@ -106,6 +106,11 @@
   merge and `components/SpaceStation/ArenaMeshes.tsx` for the meshes and the one
   neon pulse `useFrame`. Add walls, pillars or lamp panels to the config arrays,
   never as a component per object.
+- Scene lighting is data in `visuals/lightRig.ts`: ambient, hemisphere, the one
+  shadow-casting directional, a fill directional and two coloured key spots
+  (#230). That is the whole budget (6). Lamp panels, neon strips and hover
+  beacons are emissive + bloom instead of getting a light each; measured, the
+  15 deleted point lights changed the frame by 0.25/255 per channel.
 - Instanced projectiles, lasers and effects use per-instance colour. See [gotchas.md](gotchas.md)
   and [technical/instancing.md](../technical/instancing.md).
 - Scale: 1 world unit = 1 metre.

@@ -95,6 +95,7 @@ authoritative for the noise-sensitive numbers (machine noise is ±10%).
 | 0    | baseline (`main` content)                  |      3 |        124 |   210 411 |        139.8 |        17.37 | –    |
 | 1    | #231 one shadow light, floor does not cast |      3 |        106 |   196 675 |        140.5 |        18.23 | yes  |
 | 2    | #229 merged arena + unlit neon groups      |      3 |         36 |   197 028 |        147.5 |        18.23 | yes  |
+| 3    | #230 23 lights → 6                         |      3 |         36 |   197 028 |        197.3 |        17.43 | yes  |
 
 ### Measured scene (baseline `--breakdown`)
 
@@ -115,6 +116,22 @@ authoritative for the noise-sensitive numbers (machine noise is ±10%).
   emissive materials did. The intensities were re-tuned against screenshots
   (2.4 / 1.8 / 3.4 / 5.0 instead of the old 2 / 1.5 / 3 / 4.2), because the old
   lit strips added a diffuse term on top of the emissive one.
+
+### Step 3 (#230) lights
+
+- 23 lights → 6: ambient, hemisphere, the shadow directional, a fill
+  directional and two coloured key spots. The rig is data in
+  `src/visuals/lightRig.ts` with a budget test.
+- The 15 point lights (6 lamp panels, 4 corridor, 4 hover beacon, 1 centre) and
+  the arena spot are gone. Measured contribution of those 15 lights with a
+  runtime A/B on the same frame (render the scene with and without them, then
+  diff the pixels): **mean 0.25/255 per channel, 0.3 % of channels above 6
+  levels**. Their `distance`/`decay` made them nearly invisible on the dark
+  floor, so fake additive pools were tried and then dropped: they were more
+  visible than the lights they replaced, which would have changed the look.
+- Team colour statistics before/after (mean of the saturated red and blue
+  pixels in the screenshot): red (182,75,76) → (175,74,76), blue (35,75,125) →
+  (36,73,120). No measurable contrast loss.
 
 ## Tests
 

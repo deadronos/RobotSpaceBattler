@@ -38,6 +38,9 @@ Telemetry events (`VFX:Instancing:Alloc/Release/Fallback`) are mirrored to `wind
   above the bloom threshold (`POSTPROCESSING_PRESETS.bloomThreshold`). Do not
   convert it back to a lit `MeshStandardMaterial`/`MeshPhysicalMaterial`: a lit
   strip costs a program and loses the HDR value that feeds bloom.
+- The arena has no lights of its own (#230): the scene rig lives in
+  `src/visuals/lightRig.ts` (6 lights, one shadow caster) and the lamp panels,
+  strips and beacons are emissive. Do not add a point light per lamp or beacon.
 - The pulse is one `useFrame` in `ArenaMeshes`, scaling each pulsing group's
   material colour by `neonPulse(elapsed, flickerSpeed)` (0.8×–1.2×). A new group
   is an entry in `ARENA_NEON_GROUPS`; `flickerSpeed: 0` means no per-frame write

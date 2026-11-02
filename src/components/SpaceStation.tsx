@@ -1,5 +1,3 @@
-import { ArenaLampLights } from "./SpaceStation/ArenaLampLights";
-import { ArenaLightRig } from "./SpaceStation/ArenaLightRig";
 import { ArenaMeshes } from "./SpaceStation/ArenaMeshes";
 
 /**
@@ -9,13 +7,11 @@ import { ArenaMeshes } from "./SpaceStation/ArenaMeshes";
  * mesh (walls, pillars, lamp housings) and one unlit mesh per neon pulse group.
  * The floor receives shadows (robots and walls fall on it) but never casts:
  * there is nothing below it (#231).
+ *
+ * The arena has no lights of its own (#230): the lamp panels, neon strips and
+ * hover beacons are emissive and bloom, and the scene rig in `visuals/Lighting`
+ * lights the surfaces.
  */
 export function SpaceStation() {
-  return (
-    <>
-      <ArenaMeshes />
-      <ArenaLampLights />
-      <ArenaLightRig />
-    </>
-  );
+  return <ArenaMeshes />;
 }

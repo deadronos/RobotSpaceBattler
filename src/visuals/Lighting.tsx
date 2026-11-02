@@ -1,3 +1,5 @@
+import { SCENE_LIGHTS, type SceneLightConfig } from "./lightRig";
+
 /**
  * Props for the Lighting component.
  */
@@ -7,7 +9,10 @@ interface LightingProps {
 }
 
 /**
- * Sets up the lighting for the scene.
+ * Renders the scene light rig (#230).
+ *
+ * The rig itself is data in `lightRig.ts` (at most 6 lights, one shadow
+ * caster); this component only projects it into react-three-fiber elements.
  *
  * @param props - Component props.
  * @returns The lighting elements.
@@ -15,68 +20,76 @@ interface LightingProps {
 export function Lighting({ shadowsEnabled, shadowMapSize }: LightingProps) {
   return (
     <>
-      <ambientLight intensity={0.2} color="#1a1d35" />
-      <hemisphereLight
-        groundColor="#03040a"
-        intensity={0.3}
-        color="#3d4c99"
-        position={[0, 34, 0]}
-      />
-      <directionalLight
-        position={[25, 32, 18]}
-        intensity={1.5}
-        color="#f3f0ff"
-        castShadow={shadowsEnabled}
-        shadow-mapSize-width={shadowMapSize}
-        shadow-mapSize-height={shadowMapSize}
-        shadow-camera-near={1}
-        shadow-camera-far={120}
-        shadow-camera-left={-60}
-        shadow-camera-right={60}
-        shadow-camera-top={60}
-        shadow-camera-bottom={-60}
-        shadow-bias={-0.0008}
-      />
-      <directionalLight
-        position={[-28, 26, -24]}
-        intensity={1.1}
-        color="#c8d7ff"
-        castShadow={false}
-        shadow-camera-near={1}
-        shadow-camera-far={90}
-        shadow-camera-left={-45}
-        shadow-camera-right={45}
-        shadow-camera-top={45}
-        shadow-camera-bottom={-45}
-        shadow-bias={-0.0006}
-      />
-      <spotLight
-        position={[-30, 22, -20]}
-        angle={0.6}
-        penumbra={0.4}
-        intensity={0.85}
-        color="#88aaff"
-        castShadow={false}
-        distance={120}
-      />
-      <spotLight
-        position={[18, 30, -28]}
-        angle={0.55}
-        penumbra={0.35}
-        intensity={0.9}
-        color="#ffcf9b"
-        castShadow={false}
-        distance={110}
-      />
-      <spotLight
-        position={[0, 42, 0]}
-        angle={0.8}
-        penumbra={0.5}
-        intensity={1.1}
-        color="#fff1d7"
-        castShadow={false}
-        distance={140}
-      />
+      {SCENE_LIGHTS.map((light, index) =>
+        renderLight(light, index, shadowsEnabled, shadowMapSize),
+      )}
     </>
   );
+}
+
+function renderLight(
+  light: SceneLightConfig,
+  index: number,
+  shadowsEnabled: boolean,
+  shadowMapSize: number,
+) {
+  const key = `${light.kind}-${index}`;
+  switch (light.kind) {
+    case "ambient":
+      return (
+        <ambientLight
+          key={key}
+          color={light.color}
+          intensity={light.intensity}
+        />
+      );
+    case "hemisphere":
+      return (
+        <hemisphereLight
+          key={key}
+          groundColor={light.groundColor}
+          color={light.color}
+          intensity={light.intensity}
+          position={[light.position[0], light.position[1], light.position[2]]}
+        />
+      );
+    case "directional": {
+      const shadowProps = light.castShadow
+        ? {
+            castShadow: shadowsEnabled,
+            "shadow-mapSize-width": shadowMapSize,
+            "shadow-mapSize-height": shadowMapSize,
+            "shadow-camera-near": 1,
+            "shadow-camera-far": 120,
+            "shadow-camera-left": -60,
+            "shadow-camera-right": 60,
+            "shadow-camera-top": 60,
+            "shadow-camera-bottom": -60,
+            "shadow-bias": -0.0008,
+          }
+        : { castShadow: false };
+      return (
+        <directionalLight
+          key={key}
+          position={[light.position[0], light.position[1], light.position[2]]}
+          color={light.color}
+          intensity={light.intensity}
+          {...shadowProps}
+        />
+      );
+    }
+    case "spot":
+      return (
+        <spotLight
+          key={key}
+          position={[light.position[0], light.position[1], light.position[2]]}
+          angle={light.angle}
+          penumbra={light.penumbra}
+          intensity={light.intensity}
+          color={light.color}
+          distance={light.distance}
+          castShadow={false}
+        />
+      );
+  }
 }
