@@ -96,6 +96,8 @@ authoritative for the noise-sensitive numbers (machine noise is ±10%).
 | 1    | #231 one shadow light, floor does not cast |      3 |        106 |   196 675 |        140.5 |        18.23 | yes  |
 | 2    | #229 merged arena + unlit neon groups      |      3 |         36 |   197 028 |        147.5 |        18.23 | yes  |
 | 3    | #230 23 lights → 6                         |      3 |         36 |   197 028 |        197.3 |        17.43 | yes  |
+| 4a   | #232 msaa 4 + mipmapBlur (rejected)        |      3 |         45 |   197 035 |        235.6 |        17.93 | no   |
+| 4b   | #232 antialias off + msaa 4                |      3 |         36 |   197 028 |        358.6 |        17.60 | yes  |
 
 ### Measured scene (baseline `--breakdown`)
 
@@ -148,3 +150,28 @@ authoritative for the noise-sensitive numbers (machine noise is ±10%).
 `npm run lint && npm run format:check && npm run typecheck && npm test && npm run build`,
 `npm run check:bundle`, `npm run playwright:preview`, `npm run bench`, and the
 paired `npm run perf:visuals -- --trials=3` against `main`.
+
+### Step 4 (#232) post-processing
+
+The three candidates were measured with a rebuild before each run:
+
+| variant (all with `antialias: false` on the canvas)       | draw calls | textures | uncapped fps | kept |
+| --------------------------------------------------------- | ---------: | -------: | -----------: | ---- |
+| `multisampling` 8, `mipmapBlur: false` (pre-#232 quality) |         36 |        8 |        332.3 | –    |
+| `multisampling` 4, `mipmapBlur: false`                    |         36 |        8 |        358.6 | yes  |
+| `multisampling` 4, `mipmapBlur: true`                     |         45 |       20 |        235.6 | no   |
+
+- The win is `antialias: false` on the canvas: with the composer running, the
+  default framebuffer was still multisampled and resolved on every present.
+  msaa 8 → 200 fps, msaa 4 → 359 fps, and 200 → 332 with `multisampling` 8.
+- `mipmapBlur: true` costs about 100 fps _and_ 9 draw calls + 12 textures on
+  this GPU, so it is not kept.
+- `multisampling` 4 is at least as fast as 8 here (±2.5 vs ±23 across trials)
+  and halves the multisample buffer; edge screenshots show no aliasing, so 4
+  stays.
+- An `multisampling: 0` + SMAA variant was measured against a stale build by
+  mistake and then dropped: 0 + SMAA only wins if MSAA is the cost, and the
+  numbers above show it is not.
+- Caveat: `antialias` is a creation-time flag, so it is captured on the first
+  render (`resolveCanvasAntialias`). Turning reduced motion on at runtime drops
+  the composer and leaves the canvas without MSAA until a reload.
