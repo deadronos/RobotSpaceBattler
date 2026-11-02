@@ -4,6 +4,7 @@ import {
   VisualInstanceTelemetryEvent,
   createVisualInstanceManager,
 } from "../../src/visuals/VisualInstanceManager";
+import { highWaterCount } from "../../src/visuals/instanceCountWindow";
 
 function createTelemetryCollector() {
   const events: VisualInstanceTelemetryEvent[] = [];
@@ -139,5 +140,42 @@ describe("VisualInstanceManager", () => {
     expect(manager.allocateIndex("bullets", "b2")).toBeNull(); // Bullets full
 
     expect(manager.allocateIndex("rockets", "r1")).not.toBeNull(); // Rockets still open
+  });
+});
+
+describe("instanced mesh count window (#233)", () => {
+  it("counts up to the highest live slot, not the capacity", () => {
+    expect(highWaterCount([])).toBe(0);
+    expect(highWaterCount([0])).toBe(1);
+    expect(highWaterCount([0, 1, 2])).toBe(3);
+    // Sparse allocation: a hole below the top is a hidden instance, not a gap.
+    expect(highWaterCount([0, 7])).toBe(8);
+  });
+
+  it("grows and shrinks with the live allocations", () => {
+    const manager = createVisualInstanceManager(
+      { maxInstances: { effects: 8 } },
+      createTelemetryCollector().emitter,
+    );
+    const live = () =>
+      highWaterCount(
+        ["a", "b", "c", "d"]
+          .map((id) => manager.getIndex("effects", id))
+          .filter((index): index is number => index !== null),
+      );
+
+    expect(live()).toBe(0);
+    manager.allocateIndex("effects", "a");
+    manager.allocateIndex("effects", "b");
+    expect(live()).toBe(2);
+
+    const top = manager.allocateIndex("effects", "c");
+    expect(live()).toBe(3);
+    manager.releaseIndex("effects", "c");
+    expect(top).not.toBeNull();
+    expect(live()).toBe(2);
+
+    manager.allocateIndex("effects", "d");
+    expect(live()).toBe(3);
   });
 });

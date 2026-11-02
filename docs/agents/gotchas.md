@@ -20,10 +20,24 @@ Short, learned lessons. Append new ones.
 - **Slow devices:** each frame runs at most 5 fixed steps, so on slow GPUs the sim runs
   slower than real time. CI's software GL is slow too.
 - **Telemetry store:** see [architecture.md](architecture.md). Subscribing to `events` causes renders on every event.
-- **Instanced robot draw calls:** keep `InstancedMesh.count` at capacity and hide unused
-  slots. Setting `count` to the live robot count makes the draw-call count grow with the
-  roster, which is exactly what instancing was meant to stop (#168). Merge body and head
-  per role so a role is one draw call in the main pass plus one in the shadow pass.
+- **Instanced counts (#168, #233):** one `InstancedMesh` per role, with body and head
+  merged, keeps a role at one draw call in the main pass plus one in the shadow pass —
+  a taller roster never adds draw calls. Draw only the live instances: robots, health
+  bars and team markers set `count` to the live count, and the sparse VFX pools set it
+  to `highWaterCount(activeIndexes)` (`src/visuals/instanceCountWindow.ts`), so hidden
+  capacity is not vertex-processed (about 180k of the 197k triangles were hidden slots).
+  A layer whose count reaches 0 also drops its draw call, so the count is a floor, not a
+  constant; do not "fix" it back to capacity.
+- **Arena geometry is data, not components (#229):** walls, pillars and lamp panels
+  live in `src/visuals/arena/arenaConfig.ts` and get merged into a few meshes. A new
+  wall is a config entry, not a `<mesh>`; a new neon strip is an entry in
+  `ARENA_NEON_GROUPS`, not a component with its own `useFrame`. Neon must stay unlit
+  with HDR vertex colours (`toneMapped: false`) or bloom stops picking it up.
+- **Light budget is 6 (#230):** `src/visuals/lightRig.ts` is the whole scene rig and
+  `tests/visuals/lightRig.spec.ts` enforces the cap and the single shadow caster. A new
+  per-object light (a lamp, a beacon, a muzzle flash) costs every lit fragment in the
+  scene; make the object emissive and let bloom do it. The deleted point lights were
+  measured at 0.25/255 mean contribution, so "it needs its own light" is usually wrong.
 - **Combat feedback needs no new sim state:** `robot.lastDamageTimestamp` and the
   `fireCooldown`/`fireRate` pair are enough to time a hit flash and a muzzle flash
   (#168, `src/visuals/robots/robotFeedback.ts`). Do not add effect entities or timers to

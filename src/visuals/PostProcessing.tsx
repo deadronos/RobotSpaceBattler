@@ -11,7 +11,7 @@ import { useQualitySettings } from "../state/quality/QualityManager";
 
 export const POSTPROCESSING_PRESETS = {
   low: {
-    multisampling: 8,
+    multisampling: 4,
     bloomIntensity: 0.9,
     bloomRadius: 0.35,
     bloomThreshold: 1.35,
@@ -20,7 +20,7 @@ export const POSTPROCESSING_PRESETS = {
     chromaticOffset: [0.001, 0.001] as [number, number],
   },
   high: {
-    multisampling: 8,
+    multisampling: 4,
     bloomIntensity: 1.2,
     bloomRadius: 0.5,
     bloomThreshold: 1.2,

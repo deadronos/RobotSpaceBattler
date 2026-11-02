@@ -5,6 +5,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 
 import { measureBundle } from "../../bundle-size.js";
+import { formatBreakdown, formatLightList } from "./sceneBreakdown.js";
 
 const BUDGET_FILE = "scripts/bundle-budget.json";
 
@@ -78,6 +79,7 @@ export function formatReport(report) {
   lines.push("");
   lines.push(`- GPU: ${report.gpu}`);
   lines.push(`- Trials: ${report.trials.length}`);
+  lines.push(`- Team palette: ${report.palette ?? "default"}`);
   lines.push(
     `- Sim frames per trial: ${report.trials.map((t) => t.frameIndex).join(", ")}`,
   );
@@ -127,6 +129,11 @@ export function formatReport(report) {
   lines.push("");
   for (const file of report.screenshots) {
     lines.push(`- ${file}`);
+  }
+  if (report.breakdown) {
+    lines.push("");
+    lines.push(...formatBreakdown(report.breakdown));
+    lines.push(...formatLightList(report.breakdown));
   }
   lines.push("");
   lines.push("## M6 bundle (gzip)");

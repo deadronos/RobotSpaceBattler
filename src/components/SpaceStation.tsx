@@ -1,42 +1,17 @@
-import { ArenaLightRig } from "./SpaceStation/ArenaLightRig";
-import { LampPanels } from "./SpaceStation/LampPanels";
-import { Pillars } from "./SpaceStation/Pillars";
-import { WallGroup } from "./SpaceStation/WallGroup";
-
-interface SpaceStationProps {
-  shadowsEnabled?: boolean;
-  shadowMapSize?: number;
-}
+import { ArenaMeshes } from "./SpaceStation/ArenaMeshes";
 
 /**
  * SpaceStation - A battle arena with corridors, walls, and obstacles.
- * Physics-enabled with proper Rapier configuration.
- * Composes various sub-components to build the environment.
+ *
+ * The static geometry is merged into a few meshes (#229): the floor, one solid
+ * mesh (walls, pillars, lamp housings) and one unlit mesh per neon pulse group.
+ * The floor receives shadows (robots and walls fall on it) but never casts:
+ * there is nothing below it (#231).
+ *
+ * The arena has no lights of its own (#230): the lamp panels, neon strips and
+ * hover beacons are emissive and bloom, and the scene rig in `visuals/Lighting`
+ * lights the surfaces.
  */
-export function SpaceStation({
-  shadowsEnabled = false,
-  shadowMapSize = 512,
-}: SpaceStationProps) {
-  return (
-    <>
-      <mesh position={[0, -1, 0]} receiveShadow castShadow>
-        <boxGeometry args={[100, 0.5, 100]} />
-        <meshPhysicalMaterial
-          color="#262b46"
-          emissive="#04060f"
-          emissiveIntensity={0.3}
-          metalness={0.35}
-          roughness={0.55}
-        />
-      </mesh>
-
-      <WallGroup />
-      <LampPanels />
-      <Pillars />
-      <ArenaLightRig
-        shadowsEnabled={shadowsEnabled}
-        shadowMapSize={shadowMapSize}
-      />
-    </>
-  );
+export function SpaceStation() {
+  return <ArenaMeshes />;
 }

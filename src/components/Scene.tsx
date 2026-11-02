@@ -4,6 +4,7 @@ import { ComponentRef, lazy, ReactNode, Suspense, useRef } from "react";
 
 import { canExposeDebugGlobals } from "../lib/debugFlags";
 import { useQualitySettings } from "../state/quality/QualityManager";
+import { resolveCanvasAntialias } from "../visuals/canvasSettings";
 import { INITIAL_CAMERA_POSITION } from "../visuals/cameraKeyboard";
 import { DynamicResScaler } from "../visuals/DynamicResScaler";
 import { Lighting } from "../visuals/Lighting";
@@ -55,6 +56,14 @@ export function Scene({
     reducedMotion,
   });
   const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null);
+  // Creation-time flag: captured on the first render, so a later quality or
+  // reduced-motion change does not try to recreate the WebGL context (#232).
+  const antialias = useRef(
+    resolveCanvasAntialias({
+      postprocessingEnabled: motion.postprocessing,
+      reducedMotion,
+    }),
+  ).current;
 
   return (
     <Canvas
@@ -71,7 +80,7 @@ export function Scene({
         fov: 45,
       }}
       gl={{
-        antialias: true,
+        antialias,
         powerPreference: "high-performance",
       }}
       onCreated={({ gl, scene, camera }) => {

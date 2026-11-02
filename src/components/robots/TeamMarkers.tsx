@@ -118,6 +118,7 @@ export function TeamMarkers({
       }
 
       previousCounts.current[team] = count;
+      mesh.count = count;
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) {
         mesh.instanceColor.needsUpdate = true;

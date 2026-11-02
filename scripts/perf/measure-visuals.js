@@ -10,6 +10,9 @@
  *   M5  a mid-match screenshot under `test-results/` (not committed)
  *   M6  initial-load gzip from `npm run build` against the bundle budget
  *   M7  AI ms/tick from `npm run bench`
+ *   M8  opt-in (`--breakdown`) scene dump: lights by type, meshes grouped by
+ *       material/triangles/instances/castShadow, programs, and the share of the
+ *       frame spent inside `gl.render` (#229-#233)
  *
  * The GPU must be real, following the PR #206 method: headed Chrome with
  * `--use-angle=metal`, Playwright's `--enable-unsafe-swiftshader` dropped, and
@@ -19,7 +22,7 @@
  * Usage:
  *   node scripts/perf/measure-visuals.js --label=baseline
  *   node scripts/perf/measure-visuals.js --label=step-2 --skip-build --trials=3
- *   node scripts/perf/measure-visuals.js --label=final --bench
+ *   node scripts/perf/measure-visuals.js --label=final --bench --breakdown
  *
  * Results go to test-results/visuals/<label>.json and <label>.md.
  */
@@ -41,6 +44,7 @@ import {
   sampleRendererStats,
   measureRobotScaling,
   captureScreenshot,
+  seedPalette,
   waitForCombat,
 } from "./visuals/pageMetrics.js";
 import {
@@ -49,18 +53,30 @@ import {
   measureBundleSize,
   runBench,
 } from "./visuals/report.js";
+import {
+  collectSceneBreakdown,
+  sampleRenderCallTime,
+} from "./visuals/sceneBreakdown.js";
 
 const OUTPUT_DIR = "test-results/visuals";
 const MEASURE_MS = 10_000;
 
 function parseArgs(argv) {
-  const args = { trials: 1, bench: false, build: true };
+  const args = {
+    trials: 1,
+    bench: false,
+    build: true,
+    breakdown: false,
+    palette: "default",
+  };
   for (const arg of argv) {
     if (arg.startsWith("--label=")) args.label = arg.slice("--label=".length);
     else if (arg.startsWith("--trials=")) args.trials = Number(arg.slice(9));
     else if (arg.startsWith("--port=")) args.port = Number(arg.slice(7));
     else if (arg === "--bench") args.bench = true;
     else if (arg === "--skip-build") args.build = false;
+    else if (arg === "--breakdown") args.breakdown = true;
+    else if (arg.startsWith("--palette=")) args.palette = arg.slice(10);
     else if (arg === "--help" || arg === "-h") args.help = true;
     else throw new Error(`Unknown argument: ${arg}`);
   }
@@ -106,12 +122,21 @@ function launchBrowser({ uncapped }) {
   });
 }
 
-async function measureOneTrial({ browsers, baseUrl, label, trial, capture }) {
+async function measureOneTrial({
+  browsers,
+  baseUrl,
+  label,
+  trial,
+  capture,
+  breakdown,
+  palette,
+}) {
   const screenShot = path.join(OUTPUT_DIR, `${label}-trial${trial}.png`);
   const page = await browsers.vsync.newPage({
     viewport: { width: 1440, height: 900 },
   });
   const messages = installConsoleCapture(page);
+  await seedPalette(page, palette);
   await openDebugPage(page, `${baseUrl}?debug`);
   await waitForCombat(page);
   const gpu = await readGpuString(page);
@@ -130,9 +155,17 @@ async function measureOneTrial({ browsers, baseUrl, label, trial, capture }) {
     viewport: { width: 1440, height: 900 },
   });
   const uncappedMessages = installConsoleCapture(uncappedPage);
+  await seedPalette(uncappedPage, palette);
   await openDebugPage(uncappedPage, `${baseUrl}?debug`);
   await waitForCombat(uncappedPage);
   const uncapped = await sampleFrameTimes(uncappedPage, MEASURE_MS);
+  // The scene dump is the same for every trial, so it runs once.
+  if (breakdown && trial === 1) {
+    capture.breakdown = {
+      scene: await collectSceneBreakdown(uncappedPage),
+      render: await sampleRenderCallTime(uncappedPage),
+    };
+  }
   await uncappedPage.close();
   capture.messages.push(...uncappedMessages);
 
@@ -148,7 +181,7 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help || !args.label) {
     console.log(
-      "Usage: node scripts/perf/measure-visuals.js --label=<name> [--trials=3] [--skip-build] [--bench] [--port=4299]",
+      "Usage: node scripts/perf/measure-visuals.js --label=<name> [--trials=3] [--skip-build] [--bench] [--breakdown] [--palette=colorblind] [--port=4299]",
     );
     return;
   }
@@ -191,6 +224,8 @@ async function main() {
           label: args.label,
           trial,
           capture,
+          breakdown: args.breakdown,
+          palette: args.palette,
         }),
       );
     }
@@ -199,6 +234,7 @@ async function main() {
     const bench = args.bench ? runBench() : null;
     const report = {
       label: args.label,
+      palette: args.palette,
       gpu: trials[0].gpu,
       generatedAt: new Date().toISOString(),
       trials,
@@ -206,6 +242,7 @@ async function main() {
       robotScaling: trials[0].robotScaling,
       screenshots: trials.map((trial) => trial.screenShot),
       console: summarizeConsole(capture.messages),
+      breakdown: capture.breakdown ?? null,
       bundle,
       bench,
     };
