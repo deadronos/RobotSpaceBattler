@@ -38,12 +38,10 @@
 ### Task 1: Headless match harness + full-match tests
 
 **Files:**
-
 - Create: `tests/helpers/headlessMatch.ts`
 - Create: `tests/runtime/headlessMatch.spec.ts`
 
 **Interfaces:**
-
 - Produces: `runHeadlessMatch(options: { seed: number; dt?: number /* default 1/60 */; maxSteps?: number /* default 60*200 */; maxMatchDurationMs?: number | null }): HeadlessMatchResult`, where
   `HeadlessMatchResult = { phase; winner: TeamId | null; isDraw: boolean; steps: number; elapsedMs: number; survivors: Record<TeamId, number>; robots: Array<{ id: string; team: TeamId; health: number; x: number; z: number }>; counts: { spawns: number; fires: number; damage: number; deaths: number } }`.
   It steps until the phase leaves `"running"` or `maxSteps` is hit, then calls `runner.dispose()`. Counts come from a recording `TelemetryPort`. Use the real field names from `matchStateMachine.ts` (`winner`, and the draw flag it exposes).
@@ -63,11 +61,9 @@
 ### Task 2: Direct `combatSystem` unit tests
 
 **Files:**
-
 - Create: `tests/ecs/combatSystem.spec.ts`
 
 **Interfaces:**
-
 - Consumes: `updateCombatSystem(world, telemetry, deltaSeconds)` from `src/ecs/systems/combatSystem.ts`, `createBattleWorld`, `createTestRobot` (`tests/helpers/robotFactory.ts`) and `getWeaponProfile`. Add robots with whatever `world` API the existing tests use (check `tests/ecs/*.spec.ts`).
 
 - [ ] **Step 1:** Write the tests. Two robots, A (red, laser, at the origin) targeting B (blue, at `(5,0,0)`), with `fireCooldown 0`, in a mode other than retreat, healthy:
@@ -85,7 +81,6 @@
 ### Task 3: Node environment for pure-sim tests
 
 **Files:**
-
 - Modify: `vitest.config.ts`
 - Possibly create: `tests/setup.node.ts`, only if node tests need any setup.
 
@@ -98,7 +93,6 @@
 ### Task 4: Coverage floor + CI, with a mutation check
 
 **Files:**
-
 - Modify: `vitest.config.ts` (the `test.coverage` block at the root config)
 - Modify: `.github/workflows/ci.yml` (the Test step)
 
@@ -112,6 +106,6 @@
   3. In combatSystem, change `distance > profile.range` to `distance > profile.range * 2`.
   4. In battleRunner, comment out `updateCombatSystem(...)`. The headless match must then fail to end decisively.
   5. In battleRunner, comment out `telemetry.recordSpawn(...)` in `onRobotSpawn`.
-     Every mutation that survives means a test is missing: add it.
+  Every mutation that survives means a test is missing: add it.
 - [ ] **Step 6:** Run the full gate: `npm run lint && npm run format:check && npm run typecheck && npm run test:coverage && npm run build && npm run check:source-size`. All of it must pass.
 - [ ] **Step 7:** Commit `ci: enforce coverage floor`.

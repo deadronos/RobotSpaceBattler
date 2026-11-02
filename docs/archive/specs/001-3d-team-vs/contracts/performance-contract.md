@@ -44,3 +44,4 @@ These items were mentioned in earlier draft requirements but are not implemented
 - Automatic quality scaling based on FPS thresholds.
 - Time dilation / simulation time-scale reduction.
 - In-game performance warning overlays.
+

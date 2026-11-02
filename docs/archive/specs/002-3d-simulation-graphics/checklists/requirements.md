@@ -46,3 +46,4 @@
 
 - Move explicit test-tool mentions (Playwright, screenshot diffs) from the spec's Next
   steps to the plan or tasks where specific tooling is appropriate.
+

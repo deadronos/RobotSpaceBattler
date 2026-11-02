@@ -1,7 +1,6 @@
 # Refactor Task Breakdown: Core Match Runtime
 
 ## Phase 1 – Application Shell & HUD State
-
 1. [x] **Extract layout primitives**
    - [x] Create `src/ui/layout/AppLayout.tsx` with grid + sidebar structure.
    - [x] Move HUD containers into `src/ui/hud/HudShell.tsx`; expose props for visibility flags.
@@ -13,7 +12,6 @@
    - Isolate initial fetch logic into `src/runtime/bootstrap/loadInitialMatch.ts`; ensure errors propagate through React Query/Suspense boundary.
 
 ## Phase 2 – Simulation Runtime Extraction
-
 1. [x] **Create `src/runtime/useMatchRuntime.ts`**
    - [x] Manage ECS world init, clock stepping, pause/resume, and disposal.
    - [x] Emit MatchTrace events via `onEvent` callbacks using the Spec 003 schema.
@@ -25,7 +23,6 @@
    - [x] Remove direct ECS mutation; render-only responsibilities remain.
 
 ## Phase 3 – AI Module Refactor
-
 1. [x] **Carve out targeting helpers**
    - [x] Move `findClosestEnemy`, `pickCaptainTarget` into `src/simulation/ai/targeting.ts` with deterministic tie-breakers from Spec 001.
 2. [x] **State machine clarification**
@@ -37,7 +34,6 @@
    - [x] Add Vitest suites covering captain reassignment, mode transitions, and deterministic outputs.
 
 ## Phase 4 – Combat Systems Separation
-
 1. **Weapon firing controller**
    - Implement `src/simulation/combat/weapons/firingController.ts` responsible for cooldown checks, ammo use, and event emission.
 2. **Projectile system module**
@@ -51,7 +47,6 @@
    - Add collision unit tests and golden MatchTrace event snapshots for multi-hit scenarios.
 
 ## Phase 5 – Scene Graph Modularization
-
 1. **Mesh + material composition**
    - Create `src/scene/robots/RobotMesh.tsx` returning instanced meshes per robot team.
    - Extract material creation to `src/scene/robots/materials.ts` to apply quality scaling toggles.
@@ -62,7 +57,6 @@
    - Implement `useRobotsForFrame` selector hooking into `useMatchRuntime` snapshot API to remove manual intervals.
 
 ## Phase 6 – Regression Hardening
-
 1. **Expand automated tests**
    - Write integration tests for `useMatchRuntime` (pause/resume, victory handling) and AI + combat modules.
 2. **Performance + visual checks**
@@ -71,7 +65,6 @@
    - Document new module boundaries in `/docs/runtime-architecture.md` and update existing quickstarts referencing old components.
 
 ## Dependencies & Sequencing Notes
-
 - Land phases sequentially to minimize merge risk; avoid parallelizing phases 2–4 because they modify shared systems.
 - Maintain backward compatibility with existing tests after each phase; introduce feature flags if partial rewrites risk regressions.
 - Coordinate with QA to schedule performance validation after Phase 5 before shipping changes to main.

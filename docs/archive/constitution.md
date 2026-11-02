@@ -36,7 +36,6 @@ SYNC IMPACT REPORT
 ## Core Principles
 
 ### I. Component & Library-First
-
 Every new feature or game subsystem MUST be organized as a small, well-scoped component
 or library. Components/libraries MUST be self-contained, expose a clear API, and include
 unit and integration tests. Reuse is preferred over duplication; prefer composition over
@@ -47,7 +46,6 @@ Rationale: Small, testable units improve reviewability, make incremental refacto
 and enable feature-level reuse across the project and pipelines.
 
 ### II. Test-First (TDD) — NON-NEGOTIABLE
-
 All production-facing behavior MUST be driven by tests. The red-green-refactor cycle is
 MANDATORY: write failing tests to lock expected behavior, implement to make tests pass,
 then refactor. Tests MUST include unit tests for pure logic, component tests for UI, and
@@ -59,7 +57,7 @@ contract/integration tests for cross-system guarantees.
   - Unit tests: `tests/` directory mirroring `src/` structure
   - Integration tests: `tests/integration/` for cross-system scenarios
   - E2E tests: `playwright/tests/` for user journey validation
-
+  
 - Test naming convention: `*.test.ts`, `*.test.tsx`, `*.spec.ts`, `*.spec.tsx`
 
 - Coverage expectations:
@@ -79,7 +77,6 @@ maintainable as the project scales. Explicit coverage targets and organization s
 ensure tests remain valuable and maintainable.
 
 ### III. Size & Separation Limits
-
 Source files MUST be easy to review. Individual source files MUST be kept under or equal
 to 300 lines of code (LOC). If a file grows beyond 300 LOC a mandatory refactor workflow
 must be followed. When an immediate refactor isn't possible (hotfix, experimental POC),
@@ -137,7 +134,6 @@ Refactor plan guidance
 ```
 
 Example:
-
 ```typescript
 // CONSTITUTION-EXEMPT: ECS world definitions require comprehensive entity types
 // Exemption granted: 2025-12-21 | Target refactor: v0.2.0 or 2026-03-01
@@ -145,7 +141,6 @@ Example:
 ```
 
 ### IV. React & react-three-fiber (r3f) Best Practices
-
 Front-end React code MUST follow modern React and r3f best practices:
 
 - Use functional components and hooks; TypeScript is STRONGLY RECOMMENDED for all
@@ -186,22 +181,22 @@ render performance predictable, tests isolated, and the codebase maintainable.
 
 **Target Platform Baselines** (updated: 2026-10-31):
 
-| Component  | Baseline      | Version | Rationale                                       |
-| ---------- | ------------- | ------- | ----------------------------------------------- |
-| Browser    | Chrome/Edge   | 120+    | Modern WebGL 2.0, ES2022, Web Workers support   |
-| Node.js    | Active LTS    | 22+     | Matches package.json engines; CI runs 22 and 24 |
-| TypeScript | Latest stable | 7.0+    | Native compiler (tsc 7); strict mode            |
-| React      | Latest stable | 19.3+   | Concurrent features, Server Components ready    |
-| Three.js   | Latest stable | 0.186+  | WebGL 2.0 optimizations, r3f compatibility      |
+| Component   | Baseline        | Version | Rationale                                           |
+| ----------- | --------------- | ------- | --------------------------------------------------- |
+| Browser     | Chrome/Edge     | 120+    | Modern WebGL 2.0, ES2022, Web Workers support       |
+| Node.js     | Active LTS      | 22+     | Matches package.json engines; CI runs 22 and 24     |
+| TypeScript  | Latest stable   | 7.0+    | Native compiler (tsc 7); strict mode                |
+| React       | Latest stable   | 19.3+   | Concurrent features, Server Components ready        |
+| Three.js    | Latest stable   | 0.186+  | WebGL 2.0 optimizations, r3f compatibility          |
 
-Front-end code MUST target modern Chromium-based browsers (Chrome and Edge) current
-stable releases as specified in the baseline table above. Update this baseline
-annually or when platform features used require newer releases. Polyfills or
-transpilation for legacy browsers MUST be justified in a spec and added as explicit
-build steps.
+  Front-end code MUST target modern Chromium-based browsers (Chrome and Edge) current
+  stable releases as specified in the baseline table above. Update this baseline
+  annually or when platform features used require newer releases. Polyfills or
+  transpilation for legacy browsers MUST be justified in a spec and added as explicit
+  build steps.
 
-All TypeScript code MUST compile with `strict: true` and target `esnext` module
-resolution with bundler-compatible output.
+  All TypeScript code MUST compile with `strict: true` and target `esnext` module
+  resolution with bundler-compatible output.
 
 Rationale: Defining explicit target platforms and tool baselines reduces accidental
 compatibility work, allows use of modern JS/DOM/WebGL features safely, and ensures

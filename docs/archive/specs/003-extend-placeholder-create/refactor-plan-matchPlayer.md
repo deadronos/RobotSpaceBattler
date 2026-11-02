@@ -24,7 +24,6 @@ private findNextEventTimestamp(currentTimestamp: number) { ... }  // ~15 lines
 ```
 
 **Characteristics**:
-
 - Pure data structure management
 - No state mutations beyond the Map itself
 - Used by playback engine
@@ -45,7 +44,6 @@ private getProgress() { ... }  // ~5 lines
 ```
 
 **Characteristics**:
-
 - Time and frame tracking
 - Boundary checks and validation
 - Rate multiplication logic
@@ -135,10 +133,10 @@ export class MatchPlayer {
   private trace: MatchTrace;
   private state: PlaybackState = PlaybackState.Idle;
   private rngManager: RNGManager | null = null;
-
+  
   private eventIndex: EventIndex;
   private clock: PlaybackClock;
-
+  
   // Main playback orchestration (~150–170 lines)
   constructor(config: MatchPlayerConfig) { ... }
   step(deltaMs: number): PlaybackSnapshot { ... }
@@ -183,7 +181,6 @@ export class PlaybackClock { ... }
 ```
 
 **Breaking Changes**: NONE
-
 - MatchPlayer API remains unchanged
 - Extraction is internal refactoring
 - Backward compatible
@@ -343,14 +340,12 @@ git commit -m "refactor: extract event index and playback clock from matchPlayer
 **Risk Level**: MEDIUM (playback is critical path, but well-tested) ✅
 
 Why medium:
-
 1. Extraction affects core replay logic
 2. Existing tests provide good safety net (370+ tests in matchPlayer.test.ts)
 3. Delegation pattern is clean (no complex state sharing)
 4. New classes have clear responsibilities
 
 Mitigation:
-
 - Write unit tests for extracted classes FIRST
 - Run full test suite after each step
 - Easy rollback if needed (revert extraction and remove eventIndex.ts, playbackClock.ts)

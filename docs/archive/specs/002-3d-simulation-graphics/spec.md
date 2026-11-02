@@ -30,30 +30,31 @@ between rounds and show a battle UI during rounds."
 
 ### Session 2025-10-14
 
-- Q: What match scale should visuals and performance be designed for? → A: Moderate — 11–50 robots. - Implication: Expect repeated robot visuals at this scale. Implementation should
-  prefer GPU instancing, geometry/texture atlasing, and LOD tiers for robot models
-  to keep the r3f render loop light. The performance manager must expose knobs
-  (particle density, shadow resolution, LOD thresholds) so CI and QA can validate
-  quality-scaling behavior for matches in this range.
+ - Q: What match scale should visuals and performance be designed for? → A: Moderate — 11–50 robots.
+		- Implication: Expect repeated robot visuals at this scale. Implementation should
+			prefer GPU instancing, geometry/texture atlasing, and LOD tiers for robot models
+			to keep the r3f render loop light. The performance manager must expose knobs
+			(particle density, shadow resolution, LOD thresholds) so CI and QA can validate
+			quality-scaling behavior for matches in this range.
 
-- Q: How should simulation state be delivered to the UI? → A: Hybrid — event push for
-  discrete changes and a lightweight per-frame snapshot API for continuous values.
-  - Implication: Selectors/adapters must expose both subscription-based event hooks
-    (e.g., onRoundStart, onRobotUpdate) and a low-overhead per-frame snapshot getter
-    (e.g., getCameraSnapshot() or getFrameSnapshot()) for values that must be
-    frame-aligned (camera transforms, interpolation targets). Implementations must
-    minimize allocations during per-frame reads and provide deterministic ordering
-    so renderers can run without additional synchronization complexity.
+ - Q: How should simulation state be delivered to the UI? → A: Hybrid — event push for
+	 discrete changes and a lightweight per-frame snapshot API for continuous values.
+	 - Implication: Selectors/adapters must expose both subscription-based event hooks
+		 (e.g., onRoundStart, onRobotUpdate) and a low-overhead per-frame snapshot getter
+		 (e.g., getCameraSnapshot() or getFrameSnapshot()) for values that must be
+		 frame-aligned (camera transforms, interpolation targets). Implementations must
+		 minimize allocations during per-frame reads and provide deterministic ordering
+		 so renderers can run without additional synchronization complexity.
 
-- Q: How should UI toggle latency be measured? → A: Event → first visible frame.
-  - Implication: Define a canonical measurement: the latency is measured from the
-    authoritative event (hotkey press for user toggles; round-start event for
-    round transitions) to the first rendered frame in which the battle UI root
-    element is present and visible. Tests and perf harnesses must implement a
-    helper that records the event timestamp and the first-visible-frame timestamp
-    and report the delta for assertion in CI (e.g., 95th percentile < 100ms).
+ - Q: How should UI toggle latency be measured? → A: Event → first visible frame.
+	 - Implication: Define a canonical measurement: the latency is measured from the
+		 authoritative event (hotkey press for user toggles; round-start event for
+		 round transitions) to the first rendered frame in which the battle UI root
+		 element is present and visible. Tests and perf harnesses must implement a
+		 helper that records the event timestamp and the first-visible-frame timestamp
+		 and report the delta for assertion in CI (e.g., 95th percentile < 100ms).
 
-## User Scenarios & Testing _(mandatory)_
+## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Enter match and watch a round (Priority: P1)
 
@@ -69,13 +70,13 @@ specified.
 **Acceptance Scenarios**:
 
 1. **Given** the game is in lobby or post-round state, **When** a round starts, **Then** the
-   standard (menu/summary) UI is hidden and the battle UI (in-round HUD) is displayed.
+	 standard (menu/summary) UI is hidden and the battle UI (in-round HUD) is displayed.
 2. **Given** the game is mid-round, **When** the round ends, **Then** the battle UI hides and the round-summary UI appears.
 3. **Given** the player toggles UI visibility, **When** they press the configured hotkey,
-   **Then** the battle UI toggles on/off without breaking simulation.
+	 **Then** the battle UI toggles on/off without breaking simulation.
 4. **Given** performance drops below the threshold during a round, **When** quality-scaling
-   triggers, **Then** visual fidelity reduces (level-of-detail / particle adjustments)
-   while UI remains responsive and visible.
+	 triggers, **Then** visual fidelity reduces (level-of-detail / particle adjustments)
+	 while UI remains responsive and visible.
 
 ---
 
@@ -114,7 +115,7 @@ unchanged.
 **Acceptance Scenarios**:
 
 1. **Given** user sets prefers-reduced-motion, **When** a round starts, **Then** animations
-   are simplified and no motion-induced effects occur.
+	 are simplified and no motion-induced effects occur.
 
 ---
 
@@ -122,11 +123,11 @@ unchanged.
 
 - What happens when a round restarts mid-transition (UI hide/show)? Ensure transitions are idempotent and not stacked.
 - If the rendering context is lost (e.g., device sleep), ensure UI state recovers and the
-  battle UI returns when rendering resumes.
+	battle UI returns when rendering resumes.
 - If a player disconnects and reconnects during a round, ensure the battle UI reflects the
-  current round state and does not reveal hidden match internals.
+	current round state and does not reveal hidden match internals.
 
-## Requirements _(mandatory)_
+## Requirements *(mandatory)*
 
 ### Functional Requirements
 
@@ -142,6 +143,7 @@ unchanged.
 - **FR-007**: The system MUST provide performance-scaled visual fidelity (LOD, particle reduction) controlled by the existing performance manager so the battle UI remains responsive.
 - **FR-008**: The system MUST be testable via automated tests (unit/integration) that can mount the scene in headless contexts and assert UI visibility and state transitions.
 
+
 ### Non-Functional Requirements
 
 - **NFR-001**: Visual performance during rounds MUST target 60 fps when measured on the
@@ -152,7 +154,8 @@ unchanged.
 - **NFR-002**: UI transitions must complete within 250ms to maintain perceived responsiveness.
 - **NFR-003**: Reduced-motion mode MUST disable camera shakes and particle bursts (where applicable) and be togglable at runtime.
 
-## Success Criteria _(mandatory)_
+
+## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
@@ -163,54 +166,58 @@ unchanged.
   2025-10-13), average frame time during representative rounds is <=16ms (60 fps) in
   80% of recorded runs. When below threshold, automated CI tests must verify the
   performance manager's quality-scaling compensates to maintain ≥30 fps.
-- **SC-003**: Player toggles UI visibility via hotkey with action latency under 100ms in 95% of trials.
-  - Measurement: Latency is measured from the authoritative event to the first visible
-    frame of the battle UI. For hotkey toggles the authoritative event is the
-    keypress; for round transitions the authoritative event is the round-start
-    signal. The Playwright/CI harness must record event timestamp and the
-    first-visible-frame timestamp and assert the 95th percentile is < 100ms.
+ - **SC-003**: Player toggles UI visibility via hotkey with action latency under 100ms in 95% of trials.
+	 - Measurement: Latency is measured from the authoritative event to the first visible
+		 frame of the battle UI. For hotkey toggles the authoritative event is the
+		 keypress; for round transitions the authoritative event is the round-start
+		 signal. The Playwright/CI harness must record event timestamp and the
+		 first-visible-frame timestamp and assert the 95th percentile is < 100ms.
 - **SC-004**: Accessibility reduced-motion toggles take effect within one frame of change and persist across rounds.
 
 ### Qualitative Outcomes
 
 - **SC-005**: Players report that the battle UI improves situational awareness during rounds (measured via user testing or internal QA rating on a 1-5 scale, median >=4).
 
-## Key Entities _(include if feature involves data)_
+
+## Key Entities *(include if feature involves data)*
 
 - **Round**: Represents an active match round. Fields: id, status (initializing, running, ending, finished), startTime, endTime, metadata (map, rules).
 - **Robot**: Existing entity; battle UI reads robot: id, team, currentHealth, statusFlags, currentTarget, isCaptain.
 - **CameraState**: mode (follow|cinematic|free), targetEntityId (optional), interpolation settings.
 - **UIState**: inRound (bool), activeUI (battle|lobby|summary), userPreferences
-  (reducedMotion, minimalUi, followModeShowsPerRobot), lastToggleTime.
+	(reducedMotion, minimalUi, followModeShowsPerRobot), lastToggleTime.
+
 
 ## Assumptions
 
 - The project uses the existing ECS, a performance manager, and a client-side rendering
-  pipeline already present in the codebase.
+	pipeline already present in the codebase.
 - The battle UI will be delivered as small, focused modules that follow the project's
-  constitution constraints (file size, test-first approach, separation of concerns).
+	constitution constraints (file size, test-first approach, separation of concerns).
 - State required by the battle UI can be exposed from simulation systems via a thin
-  adapter or selector layer so rendering remains decoupled from authoritative logic.
+	adapter or selector layer so rendering remains decoupled from authoritative logic.
 - Device-specific rendering features will target modern Chromium browsers and fall
-  back gracefully on older platforms.
+	back gracefully on older platforms.
+
 
 ## Implementation Notes (for planners)
 
 - The battle UI should be decoupled from simulation: rendering must consume authoritative
-  state exposed by simulation systems rather than drive simulation behavior.
+	state exposed by simulation systems rather than drive simulation behavior.
 - UI modules should be small and focused to keep reviewability and testability high. Avoid
-  placing heavy computations in the render loop; prefer pre-computed selectors or an
-  adapter layer that surfaces read-only state for the UI.
+	placing heavy computations in the render loop; prefer pre-computed selectors or an
+	adapter layer that surfaces read-only state for the UI.
 - Reuse the existing performance management system to adjust visual fidelity (LOD,
-  particle density, shadow/detail levels) during heavy scenes rather than adding
-  separate ad-hoc mechanisms.
+	particle density, shadow/detail levels) during heavy scenes rather than adding
+	separate ad-hoc mechanisms.
 - Expose runtime preferences (UI visibility, reduced-motion, minimal UI) in a single UI
-  state area so tests can assert behavior deterministically.
+	state area so tests can assert behavior deterministically.
 
-- Implementation note: Use Playwright's accessibility snapshot utilities (toMatchAriaSnapshot)
-  as the primary regression check. Add a tolerant visual-diff stage that computes SSIM for
-  Playwright screenshots with a threshold of 0.97; failures produce a triage artifact bundle
-  (video + failing frames + aria snapshot) for human review.
+ - Implementation note: Use Playwright's accessibility snapshot utilities (toMatchAriaSnapshot)
+	 as the primary regression check. Add a tolerant visual-diff stage that computes SSIM for
+	 Playwright screenshots with a threshold of 0.97; failures produce a triage artifact bundle
+	 (video + failing frames + aria snapshot) for human review.
+
 
 ## Traceability
 
@@ -223,19 +230,21 @@ unchanged.
 - FR-007 → SC-002
 - FR-008 → SC-001
 
+
 ## Next steps
 
 1. Author failing tests (Gate 0) that assert UI visibility during round start/end and
-   that the UI adapts to camera-mode changes. Tests should be written first and fail.
+	 that the UI adapts to camera-mode changes. Tests should be written first and fail.
 2. Implement the battle UI modules to satisfy the functional requirements. Keep
-   modules small and testable.
+	 modules small and testable.
 3. Ensure simulation systems expose read-only state for the UI via selectors or an
-   adapter so rendering remains decoupled from authoritative logic.
+	 adapter so rendering remains decoupled from authoritative logic.
 4. Add end-to-end Playwright scenarios that verify round transitions visually (video or
-   screenshot diffs) and validate accessibility and reduced-motion behaviors.
+	 screenshot diffs) and validate accessibility and reduced-motion behaviors.
 5. Define and document a QA lab reference machine (hardware + browser configuration) and
    add CI tests that verify quality-scaling behavior; CI should avoid asserting raw
    baseline FPS as an absolute gate.
+
 
 ---
 
@@ -245,3 +254,6 @@ unchanged.
 - Generated: 2025-10-13
 - Branch (suggested): `002-3d-simulation-graphics`
 - Status: Draft
+
+
+

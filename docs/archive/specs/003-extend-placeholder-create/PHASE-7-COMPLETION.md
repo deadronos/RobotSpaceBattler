@@ -55,22 +55,21 @@ Phase 7 unified live simulation rendering with deterministic replay by implement
 
 ## Key Metrics
 
-| Metric           | Value           | Status        |
-| ---------------- | --------------- | ------------- |
-| Phase 7 Tasks    | 7/7 (100%)      | ✅ Complete   |
-| Cumulative (1–7) | 56/56 (100%)    | ✅ Complete   |
-| Test Suite       | 406/407 (99.8%) | ✅ Passing    |
-| Lint             | 0 errors        | ✅ Clean      |
-| Coverage         | 60.21%          | ✅ Maintained |
-| Breaking Changes | 0               | ✅ None       |
-| API Stability    | Preserved       | ✅ Yes        |
+| Metric | Value | Status |
+|--------|-------|--------|
+| Phase 7 Tasks | 7/7 (100%) | ✅ Complete |
+| Cumulative (1–7) | 56/56 (100%) | ✅ Complete |
+| Test Suite | 406/407 (99.8%) | ✅ Passing |
+| Lint | 0 errors | ✅ Clean |
+| Coverage | 60.21% | ✅ Maintained |
+| Breaking Changes | 0 | ✅ None |
+| API Stability | Preserved | ✅ Yes |
 
 ---
 
 ## Deliverables
 
 ### Code Changes
-
 - ✅ `src/hooks/useLiveMatchTrace.ts` (live trace capture)
 - ✅ `src/components/match/BetweenRoundsUI.tsx` (results UI)
 - ✅ `src/components/hud/ControlStrip.tsx` (quality toggle)
@@ -78,14 +77,12 @@ Phase 7 unified live simulation rendering with deterministic replay by implement
 - ✅ 3 E2E test suites (live rendering, quality toggle, deterministic replay)
 
 ### Test Coverage
-
 - ✅ 7 new unit tests in `liveTrace.test.ts`
 - ✅ 3 new E2E test suites (38 test cases total)
 - ✅ 406/407 existing tests remain passing
 - ✅ 0 regressions detected
 
 ### Documentation
-
 - ✅ Phase 7 implementation documented
 - ✅ Quick start guide created
 - ✅ API contracts preserved
@@ -106,27 +103,24 @@ Phase 7 unified live simulation rendering with deterministic replay by implement
 ✅ 406+ tests passing  
 ✅ 0 lint errors  
 ✅ 60%+ coverage maintained  
-✅ No breaking changes
+✅ No breaking changes  
 
 ### Phase 8 Ready to Start
 
 Phase 8 addresses **constitutional compliance** (FR-011): refactor three oversized files.
 
 **Target Files**:
-
 - `src/ecs/world.ts` (470 LOC) → T058, T062
 - `src/systems/matchTrace/matchPlayer.ts` (391 LOC) → T059, T063
 - `src/hooks/useCameraControls.ts` (342 LOC) → T060, T061
 
 **Phase 8 Structure**:
-
 - Tasks: T057–T066 (10 tasks)
 - Effort: ~21 hours (3–4 days)
 - Approach: Planning → Extraction → Validation
 - Risk: Low (all extractions have unit tests first)
 
 **Documentation**:
-
 - ✅ `tasks.md` updated with Phase 8 (full task descriptions)
 - ✅ `COMPLETION-SUMMARY.md` created (Phase 7–8 overview)
 - ✅ `PHASE-8-QUICKSTART.md` created (work breakdown + checklists)
@@ -167,13 +161,13 @@ Phase 8 addresses **constitutional compliance** (FR-011): refactor three oversiz
 
 ## Files to Reference
 
-| File                      | Purpose                                       |
-| ------------------------- | --------------------------------------------- |
-| `tasks.md`                | Full task list with Phase 8 section           |
-| `COMPLETION-SUMMARY.md`   | Phase 7 outcomes + Phase 8 overview           |
-| `PHASE-8-QUICKSTART.md`   | Work breakdown, checklists, timeline          |
-| `implementation-notes.md` | Phase 7 technical decisions                   |
-| `spec.md`                 | Feature specification and acceptance criteria |
+| File | Purpose |
+|------|---------|
+| `tasks.md` | Full task list with Phase 8 section |
+| `COMPLETION-SUMMARY.md` | Phase 7 outcomes + Phase 8 overview |
+| `PHASE-8-QUICKSTART.md` | Work breakdown, checklists, timeline |
+| `implementation-notes.md` | Phase 7 technical decisions |
+| `spec.md` | Feature specification and acceptance criteria |
 
 ---
 
@@ -192,4 +186,4 @@ Phase 8 addresses **constitutional compliance** (FR-011): refactor three oversiz
 
 ---
 
-_For Phase 8 details, see PHASE-8-QUICKSTART.md and Phase 8 section in tasks.md_
+*For Phase 8 details, see PHASE-8-QUICKSTART.md and Phase 8 section in tasks.md*

@@ -31,13 +31,10 @@ export const MULTIPLIERS: Record<WeaponType, Record<WeaponType, number>> = {
   },
 };
 
-export function expectedFinalDamage(
-  attacker: WeaponType,
-  defender: WeaponType,
-): number {
+export function expectedFinalDamage(attacker: WeaponType, defender: WeaponType): number {
   return BASE_DAMAGE[attacker] * MULTIPLIERS[attacker][defender];
 }
-import type { WeaponType } from "../../../src/types";
+import type { WeaponType } from '../../../src/types';
 
 // Canonical scoring contract exported as a TypeScript module so tests and
 // runtime code can import and reuse the authoritative damage values and
@@ -83,9 +80,6 @@ export const MULTIPLIERS: Record<WeaponType, Record<WeaponType, number>> = {
  * @param defender - The weapon type used by the defender.
  * @returns The final damage amount.
  */
-export function expectedFinalDamage(
-  attacker: WeaponType,
-  defender: WeaponType,
-): number {
+export function expectedFinalDamage(attacker: WeaponType, defender: WeaponType): number {
   return BASE_DAMAGE[attacker] * MULTIPLIERS[attacker][defender];
 }

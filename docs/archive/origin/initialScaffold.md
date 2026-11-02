@@ -16,64 +16,62 @@ Extend AI behaviors, add rockets / projectiles, particle effects, and scoring.
 Profile & optimize for many entities (instancing, batching, worker threads for physics/AI).
 Now the actual files I prepared:
 
-README.md
 
+README.md
 # Space Station Auto-Battler (Prototype)
 
 This repository is a starter/skeleton for a 3D team-vs-team auto-battler:
-
 - 10 vs 10 humanoid robots (red vs blue)
 - Procedurally-generated robot meshes (replaceable with glTF later via gltfjsx)
 - Rapier physics via @react-three/rapier
 
 SPEC.md
-
 # Spec & Concept — Space Station Auto-Battler (10v10 prototype)
 
 Overview
-
 - Objective: A deterministic-feeling 3D auto-battler with two AI teams (red vs blue) fighting inside a space-station-like environment with shadows, lighting, lasers/guns/rockets and humanoid robots.
 - Tech: TypeScript, React, react-three-fiber, @react-three/rapier, @react-three/drei, miniplex (ECS), zustand (state), vite, vitest, playwright, eslint, prettier.
 
+
 package.json
 {
-"name": "space-station-autobattler",
-"version": "0.1.0",
-"private": true,
-"scripts": {
-"dev": "vite",
+  "name": "space-station-autobattler",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
 
 vite.config.ts
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 
 export default defineConfig({
-plugins: [react()],
-server: {
+  plugins: [react()],
+  server: {
 
 tsconfig.json
 {
-"compilerOptions": {
-"target": "ES2021",
-"lib": ["DOM", "DOM.Iterable", "ESNext"],
-"module": "ESNext",
-"moduleResolution": "Node",
+  "compilerOptions": {
+    "target": "ES2021",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "Node",
 
 .eslintrc.cjs
 module.exports = {
-env: {
-browser: true,
-es2021: true,
-node: true,
-jest: true
+  env: {
+    browser: true,
+    es2021: true,
+    node: true,
+    jest: true
 
 .prettierrc
 {
-"singleQuote": true,
-"semi": true,
-"trailingComma": "es5",
-"tabWidth": 2,
-"printWidth": 100
+  "singleQuote": true,
+  "semi": true,
+  "trailingComma": "es5",
+  "tabWidth": 2,
+  "printWidth": 100
 
 src/main.tsx
 import React from 'react'
@@ -85,11 +83,11 @@ createRoot(document.getElementById('root')!).render(
 
 src/index.css
 html, body, #root {
-height: 100%;
-margin: 0;
-background: #0b0f1a;
-color: #e6eef8;
-font-family: Inter, Arial, sans-serif;
+  height: 100%;
+  margin: 0;
+  background: #0b0f1a;
+  color: #e6eef8;
+  font-family: Inter, Arial, sans-serif;
 
 src/App.tsx
 import React from 'react'
@@ -97,7 +95,7 @@ import Scene from './components/Scene'
 import useUI from './store/uiStore'
 
 export default function App() {
-const { paused, togglePause } = useUI()
+  const { paused, togglePause } = useUI()
 
 src/components/Scene.tsx
 import React, { Suspense } from 'react'
@@ -105,6 +103,7 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Html } from '@react-three/drei'
 import { Physics } from '@react-three/rapier'
 import Simulation from './Simulation'
+
 
 src/components/Simulation.tsx
 import React, { useEffect } from 'react'
@@ -120,14 +119,14 @@ import { RigidBody } from '@react-three/rapier'
 import * as THREE from 'three'
 
 type Props = {
-team: 'red' | 'blue'
+  team: 'red' | 'blue'
 
 src/store/uiStore.ts
 import create from 'zustand'
 
 type UIState = {
-paused: boolean
-togglePause: () => void
+  paused: boolean
+  togglePause: () => void
 }
 
 src/ecs/miniplexStore.ts
@@ -136,16 +135,18 @@ import { createStore } from 'miniplex'
 export const store = createStore()
 export default store
 
+
 vitest.config.ts
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
-test: {
-globals: true,
-environment: 'jsdom',
+  test: {
+    globals: true,
+    environment: 'jsdom',
 
 src/tests/setup.ts
 // add any global test setup here
+
 
 src/tests/Simulation.test.tsx
 import { render, screen } from '@testing-library/react'
@@ -153,23 +154,23 @@ import App from '../App'
 import React from 'react'
 
 test('renders status text and button', () => {
-render(<App />)
+  render(<App />)
 
 playwright.config.ts
 import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
-testDir: 'playwright/tests',
-webServer: {
-command: 'npm run dev',
+  testDir: 'playwright/tests',
+  webServer: {
+    command: 'npm run dev',
 
 playwright/tests/smoke.spec.ts
 import { test, expect } from '@playwright/test'
 
 test('page loads and canvas exists', async ({ page }) => {
-await page.goto('http://localhost:5173')
-await expect(page.locator('canvas')).toHaveCount(1)
-await expect(page.locator('#status')).toContainText('Space Station')
+  await page.goto('http://localhost:5173')
+  await expect(page.locator('canvas')).toHaveCount(1)
+  await expect(page.locator('#status')).toContainText('Space Station')
 Notes, next steps, and caveats
 
 Replace procedural robots with gltf files and gltfjsx components when you have Blender exports. gltfjsx components will give you typed React components to drop into RobotFactory.

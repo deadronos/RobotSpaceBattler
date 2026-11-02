@@ -7,7 +7,7 @@
 system with convex polygon decomposition, A* search across polygons, and string
 pulling for smooth paths"
 
-## User Scenarios & Testing _(mandatory)_
+## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Compute Paths Over NavMesh (Priority: P1)
 
@@ -26,13 +26,13 @@ non-empty and ends at (or near) the requested target.
 **Acceptance Scenarios**:
 
 1. **Given** a NavMesh and a start/target separated by obstacles, **When** a path
-   is requested, **Then** the system returns a `NavigationPath` with waypoints
-   that route around the obstacles.
+  is requested, **Then** the system returns a `NavigationPath` with waypoints
+  that route around the obstacles.
 2. **Given** an unreachable target, **When** `enableNearestFallback` is enabled,
-   **Then** the system returns a path to the nearest accessible point to the
-   target when possible.
+  **Then** the system returns a path to the nearest accessible point to the
+  target when possible.
 3. **Given** `requestedTarget = null`, **When** `calculatePath(...)` is called,
-   **Then** the call is a no-op and does not change component state.
+  **Then** the call is a no-op and does not change component state.
 
 ---
 
@@ -51,10 +51,10 @@ count reduces while still reaching the same destination.
 **Acceptance Scenarios**:
 
 1. **Given** smoothing is enabled, **When** a path is calculated, **Then** the
-   returned `NavigationPath.smoothed` flag is set and waypoint count is reduced
-   when possible.
+  returned `NavigationPath.smoothed` flag is set and waypoint count is reduced
+  when possible.
 2. **Given** smoothing is disabled, **When** a path is calculated, **Then** the
-   raw waypoint output from search is preserved.
+  raw waypoint output from search is preserved.
 
 ---
 
@@ -74,10 +74,10 @@ verify it stops processing once the configured `frameBudget` is exceeded.
 **Acceptance Scenarios**:
 
 1. **Given** many pending path requests, **When** `execute(...)` runs, **Then**
-   it processes requests until it hits `frameBudget` and defers the remainder.
+  it processes requests until it hits `frameBudget` and defers the remainder.
 2. **Given** repeated recalculation requests for a single robot, **When**
-   `robotId` is provided, **Then** recalculation is throttled according to
-   `throttleInterval`.
+  `robotId` is provided, **Then** recalculation is throttled according to
+  `throttleInterval`.
 
 ---
 
@@ -108,7 +108,7 @@ verify it stops processing once the configured `frameBudget` is exceeded.
 - Q: Are dynamic obstacle invalidation events supported? → A: Not currently.
   Dynamic obstacle handling remains in the reactive steering layer.
 
-## Requirements _(mandatory)_
+## Requirements *(mandatory)*
 
 ### Functional Requirements
 
@@ -127,7 +127,7 @@ verify it stops processing once the configured `frameBudget` is exceeded.
 - **FR-008**: The system MUST provide callback telemetry for path calculation
   start/complete/failure.
 
-### Key Entities _(include if feature involves data)_
+### Key Entities *(include if feature involves data)*
 
 - **Navigation Mesh**: Represents walkable space in the arena as a collection of
   connected regions, each defining a traversable area
@@ -140,7 +140,7 @@ verify it stops processing once the configured `frameBudget` is exceeded.
 - **Obstacle Geometry**: Static arena features (walls, pillars) that define
   boundaries of walkable space
 
-## Success Criteria _(mandatory)_
+## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
@@ -153,7 +153,7 @@ verify it stops processing once the configured `frameBudget` is exceeded.
 - **SC-004**: `execute(...)` respects its `frameBudget` by stopping early when
   exceeded.
 
-## Assumptions _(document reasonable defaults)_
+## Assumptions *(document reasonable defaults)*
 
 - Arena geometry is provided up-front as an `ArenaConfiguration`.
 - Default `clearanceRadius` is `0.95`.
@@ -161,7 +161,7 @@ verify it stops processing once the configured `frameBudget` is exceeded.
 - Caching uses position quantization (grid size `0.5`) to maximize reuse.
 - The module uses wall-clock time (`Date.now()`) for throttling and telemetry.
 
-## Constraints _(document limitations)_
+## Constraints *(document limitations)*
 
 - `PathfindingSystem` does not modify robot positions; it only produces waypoints.
 - Dynamic obstacle invalidation and partial mesh updates are not implemented.

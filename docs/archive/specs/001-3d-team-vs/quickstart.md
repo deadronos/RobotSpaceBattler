@@ -37,22 +37,18 @@ Open [http://localhost:5173/](http://localhost:5173/).
 `App` exposes the battle world for debugging in `npm run dev`. In a production build (`npm run preview` or the Pages site), add `?debug` to the URL to enable it:
 
 ```js
-window.__battleWorld;
+window.__battleWorld
 ```
 
 Examples:
 
 ```js
 // Count robots
-window.__battleWorld.robots.entities.length;
+window.__battleWorld.robots.entities.length
 
 // Count alive robots per team
-window.__battleWorld.robots.entities.filter(
-  (r) => r.team === "red" && r.health > 0,
-).length;
-window.__battleWorld.robots.entities.filter(
-  (r) => r.team === "blue" && r.health > 0,
-).length;
+window.__battleWorld.robots.entities.filter((r) => r.team === 'red' && r.health > 0).length
+window.__battleWorld.robots.entities.filter((r) => r.team === 'blue' && r.health > 0).length
 ```
 
 ## Tests

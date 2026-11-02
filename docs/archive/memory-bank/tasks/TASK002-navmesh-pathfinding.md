@@ -38,7 +38,6 @@ This task documents the work, links to relevant specs, and records remaining fol
 - Tests increase confidence and document intended behavior.
 
 ## Remaining follow-ups
-
 - All remaining pathfinding follow-ups (telemetry, refactor, observability) have been moved to [TASK003](file:///Users/openclaw/Github/RobotSpaceBattler/memory-bank/tasks/TASK003-pathfinding-refactor-and-telemetry.md). This task is considered fully completed.
 
 ## References

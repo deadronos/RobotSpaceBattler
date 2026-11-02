@@ -8,7 +8,6 @@
 ## Summary
 
 Unify specs 001 and 002 into a concrete 3D team fight implementation that:
-
 - Drives visuals from a deterministic MatchTrace produced by the simulation.
 - Supports record-and-replay with RNG seed + ordering guarantees.
 - Exposes runtime visual quality modes without affecting simulation correctness.
@@ -36,7 +35,7 @@ Plan reflects the current `src/systems/matchTrace/*`, `src/components/match/*`, 
 
 ## Constitution Check
 
-_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
 Applicable gates and preliminary assessment (must be justified in PR):
 
@@ -62,7 +61,6 @@ specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
-
 <!--
   ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
   for this feature. Delete unused options and expand the chosen structure with
@@ -245,12 +243,12 @@ from that live trace in real-time.**
 
 ### Key Design Decisions
 
-| Decision                     | Rationale                                  | Trade-off                          |
-| ---------------------------- | ------------------------------------------ | ---------------------------------- |
-| Capture during simulation    | Events already computed; simpler at source | Requires instrumenting ECS         |
-| Use existing MatchSceneInner | No new rendering path                      | Negligible trace-to-render latency |
-| Grow trace each frame        | Simple accumulation                        | Memory grows with duration         |
-| No separate Live/Replay      | Single code path                           | Less future flexibility            |
+| Decision | Rationale | Trade-off |
+|----------|-----------|-----------|
+| Capture during simulation | Events already computed; simpler at source | Requires instrumenting ECS |
+| Use existing MatchSceneInner | No new rendering path | Negligible trace-to-render latency |
+| Grow trace each frame | Simple accumulation | Memory grows with duration |
+| No separate Live/Replay | Single code path | Less future flexibility |
 
 ### Event Capture Points
 
@@ -273,11 +271,13 @@ Instruments needed in ECS simulation:
 
 Each capture gets a `sequenceId` counter for deterministic tie-breaking.
 
+
+
 ## Complexity Tracking
 
 Fill ONLY if Constitution Check has violations that must be justified:
 
-| Violation                     | Why Needed                                 | Simpler Alternative              |
-| ----------------------------- | ------------------------------------------ | -------------------------------- |
+| Violation | Why Needed | Simpler Alternative |
+|-----------|------------|---------------------|
 | Trace capture instrumentation | Live trace needs events from 5 ECS systems | Post-sim collection loses timing |
-| New hook `useLiveMatchTrace`  | Expose growing trace to React              | Event emitter less integrated    |
+| New hook `useLiveMatchTrace` | Expose growing trace to React | Event emitter less integrated |

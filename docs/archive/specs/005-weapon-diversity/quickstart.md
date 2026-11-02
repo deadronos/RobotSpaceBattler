@@ -39,9 +39,7 @@ npm run perf:vfx-instancing -- --skip-build
 - Use API endpoints (see contracts) for automated event emission and duel runs.
 
 ---
-
 ## Dev Environment
-
 - All tests and flows are deterministic and replayable.
 - Placeholder assets are used for visuals until final art/sound delivery.
 - See `data-model.md` and `contracts/` for entity and API details.

@@ -12,9 +12,9 @@
         "minimalUi": { "type": "boolean" },
         "followModeShowsPerRobot": { "type": "boolean" }
       },
-      "required": ["reducedMotion", "minimalUi", "followModeShowsPerRobot"]
+      "required": ["reducedMotion","minimalUi","followModeShowsPerRobot"]
     },
-    "lastToggleTime": { "type": ["integer", "null"] }
+    "lastToggleTime": { "type": ["integer","null"] }
   },
-  "required": ["inRound", "activeUI", "userPreferences"]
+  "required": ["inRound","activeUI","userPreferences"]
 }

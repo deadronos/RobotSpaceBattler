@@ -23,7 +23,6 @@ post_date: 2025-10-18
 ## Problem Statement
 
 The spec (Spec 003, SC-001) requires:
-
 > "When a match starts, two teams of robots spawn in the arena with 3D models, move, fire
 > projectiles, and the match runs to completion with a single winning team displayed."
 
@@ -74,7 +73,6 @@ ECS Simulation                Live Trace Builder              Renderer
 New hook: `useLiveMatchTrace(world: SimulationWorld): MatchTrace`
 
 Responsibilities:
-
 - Subscribe to entity spawns/deaths
 - Capture move events from position changes
 - Capture fire events from projectile creation
@@ -87,7 +85,6 @@ Responsibilities:
 **Modify**: `src/components/Scene.tsx` and `src/components/Simulation.tsx`
 
 Changes:
-
 - Call `useLiveMatchTrace(world)` in Simulation component
 - Pass live trace to `MatchSceneInner` when rendering
 - Remove static `RobotPlaceholder` components
@@ -100,7 +97,6 @@ Result: Live match renders in 3D as simulation runs.
 **Modify**: `src/components/hud/ControlStrip.tsx` and `useVisualQuality` hook
 
 Changes:
-
 - Add button to toggle visual quality (High/Medium/Low)
 - Update UI store to expose quality selector
 - Verify visual changes don't affect trace (quality-invariant simulation)
@@ -112,7 +108,6 @@ Result: Players can trade graphics fidelity for performance.
 **Create**: `src/components/match/BetweenRoundsUI.tsx`
 
 Responsibilities:
-
 - Display match result summary (winner, team stats)
 - Show kill/damage breakdown
 - "Rematch" button (new RNG seed, same teams)
@@ -132,13 +127,13 @@ Five instrumentation points in ECS simulation:
 ```typescript
 // Add after entity creation:
 traceBuilder.addEvent({
-  type: "spawn",
+  type: 'spawn',
   timestampMs: currentTimestampMs,
   sequenceId: nextSequenceId(),
   entityId: robot.id,
   teamId: robot.team,
   position: { x: robot.position.x, y: robot.position.y, z: robot.position.z },
-});
+})
 ```
 
 ### 2. Move Events
@@ -148,12 +143,12 @@ traceBuilder.addEvent({
 ```typescript
 // Add after position update:
 traceBuilder.addEvent({
-  type: "move",
+  type: 'move',
   timestampMs: currentTimestampMs,
   sequenceId: nextSequenceId(),
   entityId: robot.id,
   newPosition: robot.position,
-});
+})
 ```
 
 ### 3. Fire Events
@@ -163,13 +158,13 @@ traceBuilder.addEvent({
 ```typescript
 // Add after projectile spawn:
 traceBuilder.addEvent({
-  type: "fire",
+  type: 'fire',
   timestampMs: currentTimestampMs,
   sequenceId: nextSequenceId(),
   firingEntityId: firer.id,
   projectileId: projectile.id,
   targetPosition: projectile.position,
-});
+})
 ```
 
 ### 4. Damage Events
@@ -179,7 +174,7 @@ traceBuilder.addEvent({
 ```typescript
 // Add after health update:
 traceBuilder.addEvent({
-  type: "damage",
+  type: 'damage',
   timestampMs: currentTimestampMs,
   sequenceId: nextSequenceId(),
   targetId: target.id,
@@ -187,7 +182,7 @@ traceBuilder.addEvent({
   amount: damage,
   newHealth: target.health,
   maxHealth: target.maxHealth,
-});
+})
 ```
 
 ### 5. Death Events
@@ -197,12 +192,12 @@ traceBuilder.addEvent({
 ```typescript
 // Add before entity removal:
 traceBuilder.addEvent({
-  type: "death",
+  type: 'death',
   timestampMs: currentTimestampMs,
   sequenceId: nextSequenceId(),
   deadEntityId: robot.id,
   killerEntityId: killerRobot?.id,
-});
+})
 ```
 
 ## Integration Checklist
@@ -224,25 +219,21 @@ traceBuilder.addEvent({
 ## Testing Strategy
 
 ### Unit Tests (T050)
-
 - Verify events captured with correct timestamps
 - Verify sequenceId ordering for simultaneous events
 - Verify RNG metadata recorded in trace
 
 ### Integration Tests (T051)
-
 - Start app → see match render
 - Verify HUD updates match trace progress
 - Verify victory overlay triggers on match end
 
 ### E2E Tests (T052-T053)
-
 - Toggle quality settings → visual changes only
 - Click Rematch → new trace generated
 - Export trace → valid JSON structure
 
 ### Existing Tests (verify no regression)
-
 - All 367 existing tests still pass
 - Replay system unchanged
 - Contract validation still works
@@ -255,17 +246,17 @@ traceBuilder.addEvent({
 ✅ Quality settings don't affect simulation outcome  
 ✅ Traces are deterministic (same seed = same winner)  
 ✅ All 367 tests passing  
-✅ ESLint 0 errors
+✅ ESLint 0 errors  
 
 ## Design Decisions
 
-| Decision                         | Rationale             | Alternative                                 |
-| -------------------------------- | --------------------- | ------------------------------------------- |
-| Capture at source (not post-sim) | Timing precision      | Could reconstruct after, but loses accuracy |
-| Reuse MatchSceneInner            | No new rendering code | Could create separate live renderer         |
-| Single trace-driven path         | Fewer bugs, clearer   | Separate live/replay implementations        |
-| Grow trace linearly              | Simple, debuggable    | Could use circular buffer                   |
-| sequenceId for ordering          | Deterministic         | Could use insertion order only              |
+| Decision | Rationale | Alternative |
+|----------|-----------|-------------|
+| Capture at source (not post-sim) | Timing precision | Could reconstruct after, but loses accuracy |
+| Reuse MatchSceneInner | No new rendering code | Could create separate live renderer |
+| Single trace-driven path | Fewer bugs, clearer | Separate live/replay implementations |
+| Grow trace linearly | Simple, debuggable | Could use circular buffer |
+| sequenceId for ordering | Deterministic | Could use insertion order only |
 
 ---
 

@@ -21,6 +21,7 @@ Canonical system patterns used across the repo:
   - Systems accept explicit inputs (`BattleWorld`, `rng`, `deltaSeconds`, `elapsedMs`).
   - Decision logic is kept in pure functions under `src/simulation/*` where possible.
 
+
 - Telemetry as the event sink
 
   - Runtime systems call a `TelemetryPort` to record important events:
@@ -31,6 +32,7 @@ Canonical system patterns used across the repo:
     `eventCount`. Never subscribe to `events`, `robots` or `teamTotals` — their
     references are stable for the match. Read them with `getState()` (HUD panels
     do this on `useHudTick`) or subscribe to `eventCount`.
+
 
 - Object pooling for hot entities
 

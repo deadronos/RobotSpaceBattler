@@ -32,7 +32,6 @@ This document outlines the refactor strategy for the remaining file and records 
 4. `src/ecs/systems/projectileSystem.ts` (158 LOC) - Physics complexity (now below threshold; deprioritized)
 
 ### P3 - Low (Can defer)
-
 6. `src/simulation/ai/collision/geometry.ts` (379 LOC) - Utility library
 7. `src/App.tsx` (323 LOC) - Root component, lowest excess
 
@@ -65,7 +64,6 @@ This document outlines the refactor strategy for the remaining file and records 
 ## File 2: src/components/debug/ObstacleSpawner.tsx (refactor completed)
 
 ### Completion Summary (2025-12-22)
-
 - **Status**: Refactor completed — `src/components/debug/ObstacleSpawner.tsx` reduced to **~65 LOC**.
   The component now composes a thin UI shell and delegates behavior to extracted modules.
 - **Extracted modules & files**:
@@ -133,15 +131,11 @@ export class PathCalculator {
   constructor(
     private navMesh: NavigationMesh,
     private search: AStarSearch,
-    private smoother: PathOptimizer,
+    private smoother: PathOptimizer
   ) {}
-
-  calculatePath(start: Vec3, goal: Vec3): NavigationPath {
-    /* ... */
-  }
-  validatePath(path: NavigationPath): boolean {
-    /* ... */
-  }
+  
+  calculatePath(start: Vec3, goal: Vec3): NavigationPath { /* ... */ }
+  validatePath(path: NavigationPath): boolean { /* ... */ }
 }
 ```
 
@@ -150,15 +144,9 @@ export class PathCalculator {
 ```typescript
 // NEW: src/simulation/ai/pathfinding/integration/PathfindingTelemetry.ts (~50 LOC)
 export class PathfindingTelemetry {
-  emitPathCalculation(event: PathCalculationEvent): void {
-    /* ... */
-  }
-  emitCacheHit(robotId: string): void {
-    /* ... */
-  }
-  emitPerformanceMetric(metric: PerformanceMetric): void {
-    /* ... */
-  }
+  emitPathCalculation(event: PathCalculationEvent): void { /* ... */ }
+  emitCacheHit(robotId: string): void { /* ... */ }
+  emitPerformanceMetric(metric: PerformanceMetric): void { /* ... */ }
 }
 ```
 
@@ -202,18 +190,14 @@ export class PathfindingTelemetry {
 export function detectDirectHit(
   projectile: ProjectileEntity,
   robots: RobotEntity[],
-  rapierWorld: RapierWorld,
-): RobotEntity | null {
-  /* ... */
-}
+  rapierWorld: RapierWorld
+): RobotEntity | null { /* ... */ }
 
 export function detectSplashDamage(
   impact: Vec3,
   radius: number,
-  robots: RobotEntity[],
-): Array<{ robot: RobotEntity; distance: number }> {
-  /* ... */
-}
+  robots: RobotEntity[]
+): Array<{ robot: RobotEntity; distance: number }> { /* ... */ }
 ```
 
 **Phase 2: Extract Damage Application** (Target: -70 LOC)
@@ -224,20 +208,16 @@ export function applyDirectDamage(
   target: RobotEntity,
   damage: number,
   shooter: RobotEntity,
-  telemetry: TelemetryStore,
-): void {
-  /* ... */
-}
+  telemetry: TelemetryStore
+): void { /* ... */ }
 
 export function applySplashDamage(
   targets: Array<{ robot: RobotEntity; distance: number }>,
   baseDamage: number,
   falloffRadius: number,
   shooter: RobotEntity,
-  telemetry: TelemetryStore,
-): void {
-  /* ... */
-}
+  telemetry: TelemetryStore
+): void { /* ... */ }
 ```
 
 **Remaining: src/ecs/systems/projectileSystem.ts** (~220 LOC)
@@ -278,42 +258,24 @@ export function applySplashDamage(
 
 ```typescript
 // NEW: src/simulation/ai/collision/geometry/lineIntersection.ts (~80 LOC)
-export function lineSegmentIntersectsCircle(/* ... */): boolean {
-  /* ... */
-}
-export function lineIntersectsPlane(/* ... */): Vec3 | null {
-  /* ... */
-}
+export function lineSegmentIntersectsCircle(/* ... */): boolean { /* ... */ }
+export function lineIntersectsPlane(/* ... */): Vec3 | null { /* ... */ }
 
 // NEW: src/simulation/ai/collision/geometry/distanceCalculations.ts (~60 LOC)
-export function pointToLineSegmentDistance(/* ... */): number {
-  /* ... */
-}
-export function pointToPlaneDistance(/* ... */): number {
-  /* ... */
-}
+export function pointToLineSegmentDistance(/* ... */): number { /* ... */ }
+export function pointToPlaneDistance(/* ... */): number { /* ... */ }
 
 // NEW: src/simulation/ai/collision/geometry/boundingVolumes.ts (~60 LOC)
-export function computeAABB(points: Vec3[]): AABB {
-  /* ... */
-}
-export function sphereIntersectsAABB(/* ... */): boolean {
-  /* ... */
-}
+export function computeAABB(points: Vec3[]): AABB { /* ... */ }
+export function sphereIntersectsAABB(/* ... */): boolean { /* ... */ }
 ```
 
 **Phase 2: Extract Constants and Types** (Target: -30 LOC)
 
 ```typescript
 // NEW: src/simulation/ai/collision/geometry/types.ts (~30 LOC)
-export interface AABB {
-  min: Vec3;
-  max: Vec3;
-}
-export interface Ray {
-  origin: Vec3;
-  direction: Vec3;
-}
+export interface AABB { min: Vec3; max: Vec3; }
+export interface Ray { origin: Vec3; direction: Vec3; }
 export const EPSILON = 1e-6;
 ```
 
@@ -433,7 +395,7 @@ export function SceneSetup() {
 
 1. **world.ts**: Core dependency, breaking changes could cascade
    - Mitigation: Incremental extraction, maintain backwards-compatible exports
-
+   
 2. **ObstacleSpawner.tsx**: Complex 3D interactions
    - Mitigation: Add E2E tests before refactor, manual QA pass
 
@@ -453,7 +415,6 @@ export function SceneSetup() {
 If timeline cannot be met, files MAY receive temporary exemptions with the following requirements:
 
 1. Add exemption header to file (within first 30 lines):
-
    ```typescript
    // CONSTITUTION-EXEMPT: [Brief justification]
    // Exemption granted: 2025-12-21 | Target refactor: v0.3.0 or 2026-06-01

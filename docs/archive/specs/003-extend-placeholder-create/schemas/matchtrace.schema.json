@@ -20,10 +20,7 @@
         "type": "object",
         "required": ["type", "timestampMs"],
         "properties": {
-          "type": {
-            "type": "string",
-            "enum": ["spawn", "move", "fire", "hit", "damage", "death", "score"]
-          },
+          "type": { "type": "string", "enum": ["spawn", "move", "fire", "hit", "damage", "death", "score"] },
           "timestampMs": { "type": "integer" },
           "frameIndex": { "type": "integer" },
           "sequenceId": { "type": "integer" },
@@ -32,21 +29,13 @@
           "targetId": { "type": "string" },
           "position": {
             "type": "object",
-            "properties": {
-              "x": { "type": "number" },
-              "y": { "type": "number" },
-              "z": { "type": "number" }
-            },
+            "properties": { "x": { "type": "number" }, "y": { "type": "number" }, "z": { "type": "number" } },
             "required": ["x", "y", "z"]
           },
           "projectileId": { "type": "string" },
           "collisionNormal": {
             "type": "object",
-            "properties": {
-              "x": { "type": "number" },
-              "y": { "type": "number" },
-              "z": { "type": "number" }
-            }
+            "properties": { "x": { "type": "number" }, "y": { "type": "number" }, "z": { "type": "number" } }
           },
           "amount": { "type": "number" },
           "resultingHealth": { "type": "number" },

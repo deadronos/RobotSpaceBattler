@@ -37,11 +37,12 @@ Robots carry an AI state object on the entity:
 - `BehaviorBlender` blends path-following desires with combat/retreat priorities so pathfinding does not override higher-priority behaviors (retreat > combat > pathfinding > idle).
 - Debug visuals: `NavMeshDebugger` and `PathDebugger` are available for observability; a UI toggle is a pending follow-up.
 
+
 ```ts
 export interface RobotAIState {
-  mode: "seek" | "engage" | "retreat";
+  mode: 'seek' | 'engage' | 'retreat';
   targetId?: string;
-  directive?: "offense" | "defense" | "balanced";
+  directive?: 'offense' | 'defense' | 'balanced';
   anchorPosition?: Vec3 | null;
   anchorDistance?: number | null;
   strafeSign?: 1 | -1;
@@ -107,3 +108,4 @@ flowchart TD
 - `src/simulation/ai/sensors.ts`
 - `src/simulation/ai/targeting.ts`
 - `src/simulation/ai/pathing/*`
+

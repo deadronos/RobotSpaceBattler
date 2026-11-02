@@ -9,23 +9,19 @@ Phase 8 created a behavior blending system that allows pathfinding to work harmo
 ## Files Created
 
 ### Production Code
-
 - `src/simulation/ai/coordination/types.ts` [NEW ~40 LOC] - Type definitions for behavior priorities and movement desires
 - `src/simulation/ai/coordination/BehaviorBlender.ts` [NEW ~130 LOC] - Weighted behavior blending system
 
 ### Tests
-
 - `tests/simulation/ai/pathfinding/integration/movement-desire.test.ts` [NEW ~210 LOC] - 5 tests for T072
 - `tests/integration/ai-behavior-blending.test.ts` [NEW ~350 LOC] - 13 tests for T074-T076
 
 ## Key Findings
 
 ### T073: PathfindingSystem Already Outputs Desires
-
 **Discovery**: The PathfindingSystem was already designed correctly - it outputs waypoint-based navigation paths rather than directly modifying robot positions. No refactoring needed!
 
 **Evidence**:
-
 ```typescript
 // PathfindingSystem.calculatePath() signature
 calculatePath(start: Point3D, pathComponent: PathComponent, robotId?: string): void
@@ -39,7 +35,6 @@ pathComponent.path = {
 ```
 
 The system naturally integrates with the concurrent execution model because:
-
 1. `calculatePath()` doesn't modify robot position directly
 2. Waypoints represent movement desires (direction + magnitude)
 3. Higher-level systems extract velocity from current waypoint
@@ -50,25 +45,23 @@ The system naturally integrates with the concurrent execution model because:
 ### BehaviorBlender Design
 
 **Algorithm**: Weighted Additive Blending
-
 ```
 1. For each behavior desire:
    effectiveWeight = baseWeight * priorityMultiplier
    weightedVelocity = velocity * effectiveWeight
-
+   
 2. Sum all weighted velocities
 3. Normalize by total effective weight
 4. Clamp to MAX_SPEED (10.0)
 ```
 
 **Priority Multipliers** (T075):
-
 ```typescript
 const DEFAULT_PRIORITY_WEIGHTS = {
-  retreat: 2.0, // Highest - survival
-  combat: 1.5, // High - tactical positioning
-  pathfinding: 1.0, // Medium - navigation
-  idle: 0.5, // Low - fallback
+  retreat: 2.0,      // Highest - survival
+  combat: 1.5,       // High - tactical positioning
+  pathfinding: 1.0,  // Medium - navigation
+  idle: 0.5,         // Low - fallback
 };
 ```
 
@@ -78,15 +71,15 @@ const DEFAULT_PRIORITY_WEIGHTS = {
 // 1. Pathfinding provides waypoint-based desire
 const pathfindingDesire: MovementDesire = {
   velocity: computeDirectionToWaypoint(robot, path.waypoints[currentIndex]),
-  priority: "pathfinding",
-  weight: 0.6,
+  priority: 'pathfinding',
+  weight: 0.6
 };
 
 // 2. Combat provides tactical positioning desire
 const combatDesire: MovementDesire = {
   velocity: computeStrafeDirection(robot, target),
-  priority: "combat",
-  weight: 0.8,
+  priority: 'combat',
+  weight: 0.8
 };
 
 // 3. Blend behaviors
@@ -102,7 +95,6 @@ robot.velocity = finalVelocity;
 **Phase 8 Tests**: 18/18 passing (100%)
 
 ### T072: Movement Desire Output (5 tests)
-
 - ✅ Outputs movement desire vector from path calculation
 - ✅ Does NOT directly modify robot position
 - ✅ Path waypoints represent directional desires
@@ -110,13 +102,11 @@ robot.velocity = finalVelocity;
 - ✅ Provides waypoint-based desires for concurrent blending
 
 ### T074: Behavior Blending System (3 tests)
-
 - ✅ Blends multiple movement desires into single output
 - ✅ Handles empty desires list gracefully
 - ✅ Normalizes blended output velocity to MAX_SPEED
 
 ### T075: Weighted Blending Priorities (5 tests)
-
 - ✅ Prioritizes retreat over combat
 - ✅ Prioritizes combat over pathfinding
 - ✅ Prioritizes pathfinding over idle
@@ -124,7 +114,6 @@ robot.velocity = finalVelocity;
 - ✅ Applies priority multipliers correctly
 
 ### T076: Pathfinding + Combat Integration (5 tests)
-
 - ✅ Blends pathfinding with combat strafe behavior (diagonal movement)
 - ✅ Handles conflicting desires (combat overrides pathfinding)
 - ✅ Maintains combat effectiveness while pathfinding
@@ -132,7 +121,6 @@ robot.velocity = finalVelocity;
 - ✅ Allows idle behavior when no other desires present
 
 **Total Test Count**: 55 tests passing
-
 - 37 pathfinding tests (Phases 1-7)
 - 18 Phase 8 tests (movement desire + blending)
 
@@ -143,14 +131,12 @@ robot.velocity = finalVelocity;
 **Chosen**: Weighted additive blending with priority multipliers
 
 **Rationale**:
-
 - Simple and predictable
 - Allows smooth transitions between behaviors
 - Natural priority expression via multipliers
 - No hard behavior switching (avoids jittery movement)
 
 **Alternatives Considered**:
-
 - **Hard switching (state machine)**: Would cause abrupt movement changes, poor player experience
 - **Highest priority wins**: Would ignore lower-priority but still valuable inputs (e.g., obstacle avoidance)
 - **Utility-based AI**: Overkill for this use case, adds complexity
@@ -158,7 +144,6 @@ robot.velocity = finalVelocity;
 ### Priority Multipliers
 
 **Design**: Separate priority multipliers from behavior weights
-
 - Priority: Global importance ranking (retreat > combat > pathfinding > idle)
 - Weight: Instance-specific strength (e.g., high combat weight when enemy close)
 
@@ -172,13 +157,11 @@ robot.velocity = finalVelocity;
 ## Integration Benefits
 
 ### For Existing Systems
-
 1. **AI System**: Can use blender to combine pathfinding with existing movement logic
 2. **Combat System**: Tactical positioning blends naturally with navigation
 3. **Retreat System**: Pathfinding helps find safe retreat routes while avoiding obstacles
 
 ### For Future Development
-
 1. **Formation Movement**: Pathfinding + formation cohesion blend smoothly
 2. **Cover System**: Combat desire + pathfinding desire = tactical navigation to cover
 3. **Squad Coordination**: Multiple desires per robot without conflicts
@@ -192,7 +175,6 @@ robot.velocity = finalVelocity;
 **Finding**: System already designed correctly - no refactoring needed!
 
 **Why**: The original implementation followed best practices:
-
 - Waypoint-based output (desire representation)
 - No direct position modification
 - Natural integration point for blending
@@ -209,38 +191,32 @@ function updateRobotMovement(robot: RobotEntity, context: BehaviorContext) {
 
   // Add pathfinding desire if active path
   if (robot.pathComponent?.path) {
-    const waypoint =
-      robot.pathComponent.path.waypoints[
-        robot.pathComponent.currentWaypointIndex
-      ];
+    const waypoint = robot.pathComponent.path.waypoints[robot.pathComponent.currentWaypointIndex];
     const direction = computeDirection(robot.position, waypoint);
     desires.push({
       velocity: scaleVec3(direction, 6.0),
-      priority: "pathfinding",
-      weight: 0.6,
+      priority: 'pathfinding',
+      weight: 0.6
     });
   }
 
   // Add combat desire if engaging
-  if (context.mode === "engage" && context.target) {
+  if (context.mode === 'engage' && context.target) {
     const combatVelocity = computeCombatMovement(robot, context.target);
     desires.push({
       velocity: combatVelocity,
-      priority: "combat",
-      weight: 0.8,
+      priority: 'combat',
+      weight: 0.8
     });
   }
 
   // Add retreat desire if low health
   if (robot.health < robot.maxHealth * 0.3) {
-    const retreatDirection = computeRetreatDirection(
-      robot,
-      context.spawnCenter,
-    );
+    const retreatDirection = computeRetreatDirection(robot, context.spawnCenter);
     desires.push({
       velocity: scaleVec3(retreatDirection, 7.0),
-      priority: "retreat",
-      weight: 0.9,
+      priority: 'retreat',
+      weight: 0.9
     });
   }
 
@@ -295,7 +271,6 @@ Closes #T072, #T073, #T074, #T075, #T076
 ## Next Steps (Phase 9)
 
 Phase 9: Polish & Cross-Cutting Concerns (T077-T088)
-
 - Documentation updates (AGENTS.md, README.md)
 - TypeScript docs for public APIs
 - Code review for constitution compliance (<300 LOC, TDD)

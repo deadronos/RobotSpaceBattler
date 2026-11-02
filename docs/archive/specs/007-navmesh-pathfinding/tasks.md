@@ -10,7 +10,7 @@
 
 ## Spec/Docs Alignment (done)
 
-- [x] T001 Align spec.md to “implemented library and integrated into runtime (behavior blending + PathfindingSystem)”.
+- [x] T001 Align spec.md to “implemented library and integrated into runtime (behavior blending + PathfindingSystem)”. 
 - [x] T002 Align contracts/pathfinding-api.md to current API surface.
 - [x] T003 Align plan.md to the actual file layout and constraints.
 - [x] T004 Align data-model.md to the actual exported types/components.

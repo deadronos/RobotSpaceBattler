@@ -32,7 +32,7 @@ npm run test -- PathfindingSystem.test.ts
 The public API is exported from `src/simulation/ai/pathfinding/index.ts`.
 
 ```ts
-import NavMesh from "navmesh";
+import NavMesh from 'navmesh';
 
 import {
   extractArenaConfiguration,
@@ -40,7 +40,7 @@ import {
   NavMeshResource,
   PathfindingSystem,
   createPathComponent,
-} from "@/simulation/ai/pathfinding";
+} from '@/simulation/ai/pathfinding';
 
 const arenaConfig = extractArenaConfiguration();
 const mesh = new NavMeshGenerator().generateFromArena(arenaConfig, 0.95);
@@ -50,10 +50,10 @@ const pathfinding = new PathfindingSystem(navMeshResource);
 
 const pathComponent = createPathComponent();
 pathComponent.requestedTarget = { x: 10, y: 0, z: 10 };
-pathComponent.status = "pending";
+pathComponent.status = 'pending';
 
 pathfinding.execute([
-  { id: "robot-1", position: { x: 0, y: 0, z: 0 }, pathComponent },
+  { id: 'robot-1', position: { x: 0, y: 0, z: 0 }, pathComponent },
 ]);
 
 // If a path exists, PathfindingSystem mutates the component:
@@ -73,16 +73,10 @@ They are not wired into the app by default; mount them in a dev-only scene where
 access to the generated `NavigationMesh` and active paths.
 
 ```tsx
-import { NavMeshDebugger } from "@/visuals/debug/NavMeshDebugger";
-import { PathDebugger } from "@/visuals/debug/PathDebugger";
+import { NavMeshDebugger } from '@/visuals/debug/NavMeshDebugger';
+import { PathDebugger } from '@/visuals/debug/PathDebugger';
 
-export function DebugOverlay({
-  navMesh,
-  paths,
-}: {
-  navMesh: any;
-  paths: any[];
-}) {
+export function DebugOverlay({ navMesh, paths }: { navMesh: any; paths: any[] }) {
   return (
     <>
       <NavMeshDebugger navMesh={navMesh} />

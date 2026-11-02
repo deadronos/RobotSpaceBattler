@@ -58,17 +58,13 @@
 - timestampMs: number
 
 ---
-
 ## Relationships
-
 - WeaponProfile is referenced by ProjectileInstance, WeaponTelemetry, and ExplosionEvent.
 - BalanceMultipliers are applied in damage calculation between WeaponProfile and target archetype.
 - TelemetryAggregator summarizes WeaponTelemetry events per match.
 
 ---
-
 ## Validation Rules
-
 - Archetype must be one of 'gun', 'laser', 'rocket'.
 - Multipliers must be positive numbers.
 - AoE radius and falloff must be defined for rockets.

@@ -43,3 +43,4 @@ Each event MUST include:
 - sequenceId: integer (optional, for tie-breaking)
 
 Event-specific payloads described in `schemas/matchtrace.schema.json`.
+

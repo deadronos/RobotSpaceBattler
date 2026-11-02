@@ -9,12 +9,10 @@ Phase 7 added structured telemetry logging, performance metrics export, and Reac
 ## Files Created
 
 ### Production Code
-
 - `src/visuals/debug/NavMeshDebugger.tsx` [NEW ~70 LOC] - React component for rendering NavMesh polygon wireframes
 - `src/visuals/debug/PathDebugger.tsx` [NEW ~80 LOC] - React component for rendering active robot navigation paths
 
 ### Tests
-
 - `tests/simulation/ai/pathfinding/observability.test.ts` [NEW ~180 LOC] - 5 tests for T067 & T070
 - `tests/visuals/debug/NavMeshDebugger.test.tsx` [NEW ~70 LOC] - 4 tests for T068
 - `tests/visuals/debug/PathDebugger.test.tsx` [NEW ~70 LOC] - 6 tests for T069
@@ -22,24 +20,20 @@ Phase 7 added structured telemetry logging, performance metrics export, and Reac
 ## Files Modified
 
 ### PathfindingSystem.ts
-
 **Added telemetry capabilities:**
-
 - `PathfindingTelemetryEvent` interface (type: 'path-calculation-start' | 'path-calculation-complete' | 'path-calculation-failed')
 - `PathfindingTelemetryCallback` type for subscriber functions
 - `onTelemetry(callback)` method - registers telemetry listeners
 - `emitTelemetry(event)` private method - dispatches events to all subscribers
 - Telemetry emissions at: calculation start, cache hit, calculation complete, calculation failed
-- **BREAKING CHANGE**: `calculatePath()` signature changed from
+- **BREAKING CHANGE**: `calculatePath()` signature changed from 
   `(start, target, pathComponent, robotId?)` to `(start, pathComponent, robotId?)`
   - Target is now read from `pathComponent.requestedTarget` instead of being a separate parameter
 
 **Impact:** ~30 LOC added, all existing tests updated for new signature
 
 ### NavMeshResource.ts
-
 **Enhanced performance metrics:**
-
 - Updated `PerformanceMetrics` interface:
   - `totalPathsCalculated` → `totalCalculations`
   - `averageCalculationTime` → `averageCalculationTimeMs`
@@ -52,16 +46,13 @@ Phase 7 added structured telemetry logging, performance metrics export, and Reac
 **Impact:** ~15 LOC modified, metrics tracking enhanced
 
 ### pathfinding/index.ts
-
 **New exports:**
-
 - `PathfindingTelemetryEvent` type
 - `PathfindingTelemetryCallback` type
 
 ## Test Suite Updates
 
 Fixed 9 broken tests that were using old `calculatePath` signature:
-
 - `tests/simulation/ai/pathfinding/integration/PathfindingSystem.test.ts` (3 tests)
 - `tests/simulation/ai/pathfinding/edge-cases.test.ts` (3 tests)
 - `tests/simulation/ai/pathfinding/performance.test.ts` (3 tests)
@@ -71,7 +62,6 @@ Fixed 9 broken tests that were using old `calculatePath` signature:
 ## New Capabilities
 
 ### Telemetry System
-
 ```typescript
 // Register callback to observe path calculations
 system.onTelemetry((event) => {
@@ -79,13 +69,12 @@ system.onTelemetry((event) => {
     from: event.from,
     to: event.to,
     duration: event.duration,
-    entityId: event.entityId,
+    entityId: event.entityId
   });
 });
 ```
 
 ### Performance Metrics Export
-
 ```typescript
 const metrics = navMeshResource.getMetrics();
 // {
@@ -98,18 +87,17 @@ const metrics = navMeshResource.getMetrics();
 ```
 
 ### Debug Visualization Components
-
 ```typescript
 // Show NavMesh structure (polygon wireframes)
-<NavMeshDebugger
-  navMesh={navMesh}
-  visible={showDebug}
-  color="yellow"
+<NavMeshDebugger 
+  navMesh={navMesh} 
+  visible={showDebug} 
+  color="yellow" 
 />
 
 // Show active robot paths with waypoints
-<PathDebugger
-  paths={activePaths}
+<PathDebugger 
+  paths={activePaths} 
   visible={showDebug}
   showWaypoints={true}
   pathColor="cyan"
@@ -120,40 +108,34 @@ const metrics = navMeshResource.getMetrics();
 ## Test Coverage
 
 **Phase 7 Tests**: 15/15 passing (100%)
-
 - T067 Telemetry: 3 tests (start events, complete events, cache hit events)
 - T070 Metrics: 2 tests (export validation, cache hit rate tracking)
 - T068 NavMeshDebugger: 4 tests (export validation, component signature)
 - T069 PathDebugger: 6 tests (export validation, component signature, prop interface)
 
 **Total Pathfinding Tests**: 42/42 passing (100%)
-
 - No regressions after Phase 7 changes
 - All signature updates propagated correctly
 
 ## Design Decisions
 
 ### Telemetry Pattern
-
 - Followed existing `visuals/telemetry.ts` event-based callback pattern
 - Allows multiple subscribers without coupling
 - Events include timestamp, entity ID, positions, and timing data
 
 ### Metrics Field Naming
-
 - Changed to explicit units: `averageCalculationTimeMs`, `memoryUsageBytes`
 - Prevents ambiguity about measurement units
 - Breaking change but improves API clarity
 
 ### Debug Component Testing Strategy
-
 - **Decision**: Export validation tests only (no full R3F rendering in unit tests)
 - **Rationale**: React Three Fiber requires WebGL context and ResizeObserver polyfill
 - **Alternative**: Full rendering tests deferred to E2E/manual testing
 - **Trade-off**: Reduced unit test coverage but faster, more reliable test execution
 
 ### calculatePath Signature Change
-
 - **Old**: `calculatePath(start, target, pathComponent, robotId?)`
 - **New**: `calculatePath(start, pathComponent, robotId?)`
 - **Rationale**: Target is already in `pathComponent.requestedTarget`, reduces parameter duplication
@@ -162,13 +144,11 @@ const metrics = navMeshResource.getMetrics();
 ## Known Limitations
 
 ### T071 Not Implemented
-
 **Task**: "Create toggle for debug visualization (DEBUG env var check) in src/App.tsx"
 
 **Status**: Deferred - Component `visible` props provide toggle capability
 
-**Rationale**:
-
+**Rationale**: 
 - Debug components accept `visible` boolean prop for runtime toggling
 - Application-level toggle can be added later when integrated into UI
 - Component implementation complete, integration step remains
@@ -178,19 +158,16 @@ const metrics = navMeshResource.getMetrics();
 ## Integration Notes
 
 ### For Phase 8 (AI Behavior Coordination)
-
 - Telemetry system ready for behavior blending observations
 - PathfindingSystem outputs movement desires (not direct position updates) - signature already refactored
 - Metrics can track blending performance impact
 
 ### For UI Integration
-
 - NavMeshDebugger and PathDebugger are ready to import
 - Both use @react-three/drei Line component (no additional dependencies)
 - Add to Scene component with conditional rendering based on debug state
 
 ### For Performance Monitoring
-
 - Metrics export enables real-time performance dashboards
 - Cache hit rate tracking helps tune cache parameters
 - Max calculation time helps identify worst-case scenarios

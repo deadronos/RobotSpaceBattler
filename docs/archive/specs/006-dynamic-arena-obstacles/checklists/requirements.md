@@ -41,6 +41,6 @@
 
 Quoted updates:
 
-- FR-008: "Dynamic obstacles are scoped to local/single-instance simulation for this feature (no multiplayer replication or authoritative server behaviour for dynamic obstacle state at this time)."
-- FR-009: "Destructible cover is removed permanently for the duration of a match when its durability reaches zero (no automatic respawn within a match)."
-- FR-010: "Moving obstacles act as strict blockers and do not displace or push units on collision. Units must path around or wait for obstacle movement; obstacle collisions do not change unit positions."
+ - FR-008: "Dynamic obstacles are scoped to local/single-instance simulation for this feature (no multiplayer replication or authoritative server behaviour for dynamic obstacle state at this time)."
+ - FR-009: "Destructible cover is removed permanently for the duration of a match when its durability reaches zero (no automatic respawn within a match)."
+ - FR-010: "Moving obstacles act as strict blockers and do not displace or push units on collision. Units must path around or wait for obstacle movement; obstacle collisions do not change unit positions."

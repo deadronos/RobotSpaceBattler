@@ -18,7 +18,6 @@ and steer away before collision using a 3-ray fan pattern with frame staggering.
 ## All Files Created/Modified
 
 ### New Files
-
 - `src/lib/physics/collisionGroups.ts` (~30 LOC)
 - `src/simulation/ai/pathing/physicsQueryService.ts` (~126 LOC)
 - `src/simulation/ai/pathing/raycastScheduler.ts` (~47 LOC)
@@ -30,7 +29,6 @@ and steer away before collision using a 3-ray fan pattern with frame staggering.
 - `tests/runtime/battleRunner.spec.ts`
 
 ### Modified Files
-
 - `src/simulation/world.ts` (+2 LOC)
 - `src/runtime/simulation/battleRunner.ts` (+10 LOC)
 - `src/components/Simulation.tsx` (+19 LOC)

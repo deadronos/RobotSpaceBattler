@@ -4,7 +4,7 @@ Purpose: Define observable behaviours and deterministic acceptance tests for eac
 
 ## Moving Barrier — Acceptance
 
-- Behaviour: follows a deterministic `MovementPattern` and toggles blocking state only by location.
+- Behaviour: follows a deterministic `MovementPattern` and toggles blocking state only by location.  
 - Acceptance tests:
   - Unit: `movementSystem` deterministic step tests — after N ticks the barrier has moved to expected position within tolerance (±0.01 units).
   - Integration: Place barrier between points A and B such that it blocks LOS for 1200ms. Verify `isLineOfSightBlocked` reports blocked during that window and unblocked when barrier moves away.

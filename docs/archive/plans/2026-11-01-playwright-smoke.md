@@ -39,7 +39,6 @@
 ### Task 1: Smoke spec
 
 **Files:**
-
 - Create: `playwright/tests/smoke.spec.ts`
 - Modify: `playwright.preview.config.ts`
 - Modify: `package.json`: replace the `playwright:preview` script with `playwright test -c playwright.preview.config.ts smoke pathfinding-worker`, and add `"playwright:smoke:live": "playwright test -c playwright.preview.config.ts smoke"`. The live script relies on `SMOKE_BASE_URL`.
@@ -57,13 +56,12 @@
   1. Add `console.error("x")` in `src/main.tsx`.
   2. Add a `fetch("./missing.json")` in `src/main.tsx`.
   3. Make the simulation never step. For example, return early in battleRunner `step`, so the robots stay frozen. The movement assertion must catch it. If the screenshots still differ because of camera motion or VFX, find a steadier signal (for example, the HUD counts changing over about 15 s, or the robot list health), and report what you chose.
-     Record the outcomes in the PR body.
+  Record the outcomes in the PR body.
 - [ ] **Step 5:** Commit `test: playwright smoke spec against the production build`.
 
 ### Task 2: PR CI job
 
 **Files:**
-
 - Modify: `.github/workflows/ci.yml`
 
 - [ ] **Step 1:** Add the job `e2e` (name `E2E smoke (Chromium)`), on ubuntu-latest, Node 24, with `timeout-minutes: 15`. Steps: checkout, setup-node with npm cache, `npm ci`, `npx playwright install --with-deps chromium`, `npm run playwright:preview` with `env: CI: true`, then upload-artifact of `test-results/` and `playwright-report/` with `if: ${{ !cancelled() }}` and `retention-days: 7`.
@@ -74,7 +72,6 @@
 ### Task 3: Post-deploy job
 
 **Files:**
-
 - Modify: `.github/workflows/publish-pages.yml`
 
 - [ ] **Step 1:** Add the job `smoke-live`: `needs: build-and-deploy`, ubuntu-latest, `permissions: contents: read`. Steps: checkout, setup-node, `npm ci`, `npx playwright install --with-deps chromium`, then `npm run playwright:smoke:live` with `SMOKE_BASE_URL: ${{ needs.build-and-deploy.outputs.page_url }}` (expose `page_url` as a job output from `build-and-deploy`). Fall back to `https://deadronos.github.io/RobotSpaceBattler/` if it's empty. Finish with upload-artifact with `if: ${{ !cancelled() }}`.
