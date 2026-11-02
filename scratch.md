@@ -38,6 +38,10 @@ Every tier of the 2026-10-31 plan is closed: the live quick fixes (#153–#156),
 12. **#166: accessibility pass.** UX polish that can go anytime, alongside #170.
 13. **#163: team builder (XL).** Last. It needs #192 fixed so that balance is meaningful.
 
+## Tier 5: render-cost diet (from the 2026-11-02 assessment)
+
+The frame is render-bound: 124 draw calls and about 139 fps uncapped on an M4, with about 7.0 of the 7.2 ms frame inside `gl.render`. Plan: [docs/plans/2026-11-02-render-cost-diet.md](docs/plans/2026-11-02-render-cost-diet.md). One hillclimb PR, in this order: #231 (one shadow light) → #229 (merge the arena, unlit neon) → #230 (23 → ~6 lights) → #232 (MSAA 8× and a redundant canvas antialias) → #233 (draw only live instances). Rendering only; it can run alongside Tier 2.
+
 ## Housekeeping / blocked
 
 - **#165: root clutter.** S-sized, for any quiet window. This file (`scratch.md`) is itself root clutter, so consider moving planning notes to `docs/` or an issue as part of it.
