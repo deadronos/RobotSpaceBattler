@@ -154,10 +154,18 @@ export interface Store<T extends BattleEntity> {
 }
 
 export interface BattleWorldState {
+  /**
+   * Simulated time in ms. Only advances during `running` steps, so pausing a
+   * match freezes it (see `battleRunner.step`).
+   */
   elapsedMs: number;
   nextProjectileId: number;
   nextEffectId: number;
   seed: number;
+  /**
+   * Completed simulation steps. Counts `running` steps only and freezes while
+   * paused or in the victory phase, so it is a sim tick, not a render frame.
+   */
   frameIndex: number;
 }
 

@@ -143,14 +143,19 @@ export function createBattleRunner(
     step: (deltaSeconds: number) => {
       perfMarkStart("battleRunner.step");
       const deltaMs = deltaSeconds * 1000;
-      world.state.elapsedMs += deltaMs;
-
-      updateObstacleMovement(world, deltaMs, telemetry);
-      updateHazardSystem(world, deltaMs, telemetry);
-
       const snapshot = matchMachine.getSnapshot();
 
+      // Only the running phase advances the world. While paused (and in the
+      // victory phase) the world clock, obstacles, hazards and the sim tick
+      // counter all freeze, so a pause cannot leak sim time into AI timers,
+      // hazard windows, obstacle movement or damage/hit-flash timestamps.
+      // `frameIndex` therefore counts simulation steps, not render frames.
       if (snapshot.phase === "running") {
+        world.state.elapsedMs += deltaMs;
+
+        updateObstacleMovement(world, deltaMs, telemetry);
+        updateHazardSystem(world, deltaMs, telemetry);
+
         perfMarkStart("updateAISystem");
         updateAISystem(world, () => rng.next());
         perfMarkEnd("updateAISystem");
@@ -180,14 +185,17 @@ export function createBattleRunner(
         perfMarkEnd("updateEffectSystem");
 
         evaluateMatchOutcome(world, matchMachine, matchTimeLimitMs);
+
+        world.state.frameIndex += 1;
       }
 
+      // Outside the running phase this only drains the victory auto-restart
+      // countdown, which must keep ticking while the world is frozen.
       const shouldRestart = matchMachine.tick(deltaMs);
       if (shouldRestart) {
         spawnMatch();
       }
 
-      world.state.frameIndex += 1;
       perfMarkEnd("battleRunner.step");
     },
     advance: (frameDeltaSeconds: number) => {
