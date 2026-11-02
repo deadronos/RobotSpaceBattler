@@ -82,6 +82,25 @@ p95, kept).
 6. **Docs.** Update `docs/technical/instancing.md` (the arena path, live counts),
    `docs/agents/architecture.md` if the code map changes, and `scratch.md`.
 
+## Results (hillclimb)
+
+Machine: Apple M4, ANGLE Metal, headed Chrome, uncapped run with vsync disabled,
+1440×900, `?debug`, 10 s rAF sample per trial. Each row is a `perf:visuals`
+run, uncapped fps and vsync p95 averaged over the trials shown. The paired
+`main` row is measured in the same session as the final row, so only that pair is
+authoritative for the noise-sensitive numbers (machine noise is ±10%).
+
+| step | change | trials | draw calls | triangles | uncapped fps | vsync p95 ms | kept |
+| --- | --- | --: | --: | --: | --: | --: | --- |
+| 0 | baseline (`main` content) | 3 | 124 | 210 411 | 139.8 | 17.37 | – |
+
+### Measured scene (baseline `--breakdown`)
+
+- lights: 1 ambient, 1 hemisphere, 2 directional, 4 spot, 15 point (23);
+  2 cast shadows.
+- 81 meshes, 77 unique materials, 23 programs.
+- uncapped: 142.7 fps, 7.01 ms per frame, 6.81 ms of it inside `gl.render` (97%).
+
 ## Tests
 
 - `arenaGeometry`: merged vertex/index counts and bounding boxes match the

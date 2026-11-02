@@ -33,7 +33,7 @@
 | `npm run playwright:test` | All e2e specs against the dev server |
 | `npm run bench` | AI tick time and allocation benchmark |
 | `npm run perf:vfx-instancing` | Draw-call measurement (instanced vs fallback VFX) |
-| `npm run perf:visuals` | Real-GPU visual harness: M1 draw calls, M2 draw calls vs robot count, M3 frame time, M4 console, M5 screenshot, M6 bundle, M7 AI bench (#168) |
+| `npm run perf:visuals` | Real-GPU visual harness: M1 draw calls, M2 draw calls vs robot count, M3 frame time, M4 console, M5 screenshot, M6 bundle, M7 AI bench (#168), and the opt-in M8 scene breakdown (`--breakdown`: lights by type, meshes grouped by material/triangles/instances, programs, ms inside `gl.render`) |
 
 ## Accessibility checks
 
