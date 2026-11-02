@@ -33,7 +33,7 @@ Every tier of the 2026-10-31 plan is closed: the live quick fixes (#153–#156),
 ## Tier 4: features (L, now unblocked)
 
 10. **#168: robot visuals.** Instanced meshes, health bars, hit flashes. It was blocked on #162, which is now done. Also fix the shadow-map and `THREE.Clock` deprecation warnings (see #185). Ask for real-GPU before/after numbers using the #206 method: headed Chrome, `--use-angle=metal`, and dropping Playwright's `--enable-unsafe-swiftshader`.
-11. **#170: match-end summary, series score and speed control.** The draw outcome (#155) and fixed timestep (#161) are in. Note that 4× speed needs 4 steps per frame, so the 5-substep cap leaves no headroom below about 75 fps. Decide how speed control interacts with the cap (scale the cap with the speed, or accept slow-motion).
+11. ~~**#170: match-end summary, series score and speed control.**~~ Done: 0.5×/1×/2×/4× scales the accumulator input *and* the substep cap (5 × speed), so 4× has headroom and a seed produces the same digest at every speed. The summary, series score and auto-restart switch are runtime state; the parity goldens are unchanged.
 12. **#166: accessibility pass.** UX polish that can go anytime, alongside #170.
 13. **#163: team builder (XL).** Last. It needs #192 fixed so that balance is meaningful.
 

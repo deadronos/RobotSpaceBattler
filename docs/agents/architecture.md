@@ -16,7 +16,11 @@
 
 ## Simulation owns state; rendering projects it
 
-- `BattleRunner` steps the ECS at a fixed 60 Hz (at most 5 substeps per frame) using sim time.
+- `BattleRunner` steps the ECS at a fixed 60 Hz (at most 5 substeps per frame at 1×)
+  using sim time. The speed control (#170) feeds the accumulator `frameDelta × speed`
+  and scales the substep budget with the speed (5 × speed, so 4× can take 20 steps).
+  The step length never changes, so a seed produces the same digest at 0.5×, 1×, 2×
+  and 4×; a slow machine just runs in slow motion.
 - Only the `running` phase advances the world (#225). While paused (and in the victory
   phase) `world.state.elapsedMs`, obstacle movement, hazards and the sim tick counter
   `world.state.frameIndex` all freeze. A pause therefore cannot leak sim time into AI
@@ -24,7 +28,8 @@
   `lastDamageTimestamp` hit flashes, and pause → resume replays the seed identically.
   `world.state.frameIndex` counts simulation steps, not render frames, so it is not a
   "match is paused" indicator either. The victory auto-restart countdown in
-  `matchStateMachine.tick` keeps ticking while the world is frozen.
+  `matchStateMachine.tick` keeps ticking while the world is frozen; it follows the
+  simulation speed, because `tick` runs once per fixed step.
 - The ECS is the single owner of robot positions. There is no physics engine (#184).
   Line-of-sight and movement blocking use 2D segment tests in
   `src/simulation/environment/`: `staticOcclusionIndex.ts` indexes the arena walls and
@@ -59,6 +64,23 @@
 - The HUD reads mutable ECS and telemetry data on a ~4 Hz tick (`useHudTick`).
 - Telemetry store (`state/telemetryStore.ts`) is append-only and mutated in place (#207).
   Never subscribe to `events`, `robots` or `teamTotals`; subscribe to `eventCount` or read with `getState()`.
+
+## Match end, summary and series (#170)
+
+- `matchStateMachine` owns the victory phase, the auto-restart switch
+  (`autoRestartEnabled` in the snapshot, `setAutoRestartEnabled()`) and the restart
+  countdown. With auto-restart off the match stays frozen in the victory phase and
+  `restartTimerMs` is null.
+- The post-match summary is runtime state: `useMatchSummaryTracker`
+  (`runtime/state/useMatchSummary.ts`) snapshots telemetry and the ECS robot roles once
+  per victory and keeps the `seriesScore` counter in React. Neither is written into the
+  ECS, the telemetry store or the RNG, so the simulation and the parity goldens are
+  unaffected.
+- The state machine re-emits during the victory phase (countdown seconds, toggles), so
+  the tracker records each round once and resets its guard when the phase leaves victory.
+- UI: `components/ui/MatchEndOverlay.tsx` (result, series, auto-restart toggle),
+  `MatchSummaryModal.tsx` (per team/role/robot stats, MVP, duration) on the shared
+  `Modal`, and `SimSpeedControl.tsx` for 0.5×/1×/2×/4×.
 
 ## Pathfinding (`simulation/ai/pathfinding/`)
 

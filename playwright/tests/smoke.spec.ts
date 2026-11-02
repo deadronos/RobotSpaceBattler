@@ -106,6 +106,13 @@ test("the battle loads and runs with no errors", async ({ page }, testInfo) => {
   // The robot status panel still has to render.
   await expect(page.locator(".robot-list-content")).toBeVisible();
 
+  // #170: the speed selector sits in the control row and starts at 1×.
+  const speedControl = page.getByRole("group", { name: "Simulation speed" });
+  await expect(speedControl).toBeVisible();
+  await expect(
+    speedControl.getByRole("button", { name: "1×" }),
+  ).toHaveAttribute("aria-pressed", "true");
+
   const shot = await page.screenshot({
     path: testInfo.outputPath("smoke.png"),
   });
