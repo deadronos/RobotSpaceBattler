@@ -95,7 +95,6 @@ These tasks MUST complete before user story implementation begins.
   - Files: `playwright/utils/latency.ts` (new), `playwright/tests/toggle-latency.spec.ts` (new), `tests/unit/latency.test.ts` (new)
   - Depends on: T003 (Playwright skeleton), T020 (US1 unit test skeleton) to exist so the helper can be exercised.
 
-
 - [x] T018 [x] [Foundational] Implement per-frame snapshot getter in `uiAdapter`
   - Add `getFrameSnapshot()` to `src/systems/uiAdapter.ts` that returns a minimal, allocation-light object with frame-aligned values (camera transform, interpolation targets, small numeric deltas) intended for per-frame reads.
   - File: `src/systems/uiAdapter.ts` (implemented)
@@ -241,6 +240,7 @@ Purpose: Final integration, documentation, CI updates, and performance tuning.
   - Status: ✅ COMPLETE — CSS-only fix (2 lines) ensures UI overlays battle scene without document overflow
 
 **Final Status**: All user stories (US1, US2, US3) implemented & test suites passing locally.
+
 - **Total Tasks Complete**: 40/41 core tasks (97.6%)
 - **Test Results**: 215 tests passed, 1 skipped (performance contract test)
 - **Code Quality**: ESLint passes, Prettier formatting complete

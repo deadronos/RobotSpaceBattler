@@ -8,7 +8,7 @@
 
 ## Summary
 
-This repository already contains a NavMesh pathfinding *library* under
+This repository already contains a NavMesh pathfinding _library_ under
 `src/simulation/ai/pathfinding/` (plus unit/integration tests under `tests/`). The
 remaining work for this spec is primarily documentation alignment (this plan, data model,
 quickstart) and optional gameplay integration (routing robot movement through the
@@ -43,14 +43,13 @@ are not currently integrated; mesh updates require recreating the
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### I. Component & Library-First
 
 - ✅ **PASS**: Pathfinding will be organized as a library under `src/simulation/ai/pathfinding/` with clear API exports
 - ✅ **PASS**: Navigation mesh generation, A* search, and path smoothing will be separate composable modules
 - ✅ **PASS**: All modules will include unit tests and integration tests with ECS systems
-
 
 ### II. Test-First (TDD)
 
@@ -59,21 +58,18 @@ are not currently integrated; mesh updates require recreating the
 - ✅ **PASS**: Integration tests for ECS system integration and robot navigation behavior
 - ✅ **PASS**: Contract tests for API guarantees (path calculation time, memory usage)
 
-
 ### III. Size & Separation Limits
 
 - ⚠️ **EXCEPTION (documented in code)**: `PathfindingSystem.ts` exceeds the 300 LOC guideline and
-   includes a `CONSTITUTION-EXEMPT` header with justification.
+  includes a `CONSTITUTION-EXEMPT` header with justification.
 - ✅ **PASS**: Related functionality is still separated into modules (navmesh generation,
-   search, smoothing, integration).
-
+  search, smoothing, integration).
 
 ### IV. React & r3f Best Practices
 
 - ✅ **PASS**: Pathfinding is simulation logic - will be pure TypeScript with no React dependencies
 - ✅ **PASS**: Visualization (if needed) will be separate r3f components consuming pathfinding state
 - ✅ **PASS**: No heavy computations in useFrame - pathfinding runs in ECS systems outside render loop
-
 
 ### V. Observability, Performance & Target Platforms
 
@@ -82,14 +78,12 @@ are not currently integrated; mesh updates require recreating the
 - ✅ **PASS**: Target platform: Chrome 120+/Edge 120+ with WebGL 2.0
 - ⚠️ **MONITOR**: Need to add structured logging for pathfinding failures and recalculations
 
-
 ### VI. Deprecation & Dependency Hygiene
 
 - ✅ **PASS**: NavMesh library choice is captured in research.md and implemented via the
-   `navmesh` npm package.
+  `navmesh` npm package.
 - ✅ **PASS**: Will evaluate existing reactive steering system for deprecation after NavMesh is stable
 - ⚠️ **MONITOR**: Dependency audit required if adding external NavMesh library
-
 
 ## Project Structure
 
@@ -229,14 +223,14 @@ style smoothing primitives.
 **Key Design Decisions (current behavior)**:
 
 - `PathfindingSystem.calculatePath(start, pathComponent, robotId?)` reads
-   `pathComponent.requestedTarget` and mutates the component (sets `path`, `status`,
-   timestamps).
+  `pathComponent.requestedTarget` and mutates the component (sets `path`, `status`,
+  timestamps).
 - `PathfindingSystem.execute(robotsWithPaths)` processes a list of robot snapshots, enforcing a
-   per-call time budget.
+  per-call time budget.
 - Recalculation is driven by the caller marking/setting `requestedTarget` (there is no
-   integrated event bus or obstacle invalidation API).
+  integrated event bus or obstacle invalidation API).
 - When a requested target is unreachable, the system can fall back to a nearest-accessible
-   point (enabled by default).
+  point (enabled by default).
 
 **Memory Budget**:
 
@@ -261,4 +255,4 @@ style smoothing primitives.
 Only used when Constitution Check has violations requiring justification.
 
 - `src/simulation/ai/pathfinding/integration/PathfindingSystem.ts` exceeds the 300 LOC guideline
-   and is explicitly marked `CONSTITUTION-EXEMPT` in-code with justification.
+  and is explicitly marked `CONSTITUTION-EXEMPT` in-code with justification.

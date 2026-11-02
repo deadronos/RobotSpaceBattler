@@ -34,17 +34,22 @@
 ### Task 1: Pure `PathfindingEngine` with static imports
 
 **Files:**
+
 - Create: `src/simulation/ai/pathfinding/worker/pathfindingEngine.ts`
 - Test: `tests/simulation/ai/pathfinding/worker/pathfindingEngine.test.ts`
 
 **Interfaces:**
+
 - Consumes: `AStarSearch` (`../search/AStarSearch`), `NearestAccessiblePoint` (`../search/NearestAccessiblePoint`), `PathOptimizer` (`../smoothing/PathOptimizer`), `distanceXZ` (`../../../../lib/math/geometry`). All are **static** imports.
 - Produces:
+
   ```ts
   export interface PathfindingEngine {
     calculatePath(req: WorkerPathRequest): WorkerPathResult; // synchronous
   }
-  export function createPathfindingEngine(mesh: NavigationMesh): PathfindingEngine;
+  export function createPathfindingEngine(
+    mesh: NavigationMesh,
+  ): PathfindingEngine;
   ```
 
 - [ ] **Step 1: Write failing tests.** Build a real mesh the way `tests/integration/pathfinding-navigation.test.ts` does (NavMeshGenerator over an arena fixture; copy its setup). Tests:
@@ -60,14 +65,17 @@
 ### Task 2: Typed message protocol and worker entry
 
 **Files:**
+
 - Modify: `src/simulation/ai/pathfinding/worker/types.ts`
 - Create: `src/simulation/ai/pathfinding/worker/workerMessageHandler.ts`
 - Rewrite: `src/simulation/ai/pathfinding/worker/pathfinding.worker.ts` (entry only, ~15 LOC)
 - Test: `tests/simulation/ai/pathfinding/worker/workerMessageHandler.test.ts`
 
 **Interfaces:**
+
 - Consumes: `createPathfindingEngine` (Task 1).
 - Produces (in `types.ts`; keep the existing `WorkerPathRequest` / `WorkerPathResult` unchanged, and replace `WorkerInitMessage` / `WorkerMessage`):
+
   ```ts
   export type WorkerInbound =
     | { type: "init"; seq: number; mesh: NavigationMesh }
@@ -77,12 +85,21 @@
     | { type: "init_error"; seq: number; error: string }
     | { type: "path_result"; seq: number; result: WorkerPathResult };
   ```
+
   In `workerMessageHandler.ts`:
+
   ```ts
-  export interface WorkerHandlerState { engine: PathfindingEngine | null; served: number }
+  export interface WorkerHandlerState {
+    engine: PathfindingEngine | null;
+    served: number;
+  }
   export function createWorkerHandlerState(): WorkerHandlerState;
-  export function handleWorkerMessage(state: WorkerHandlerState, msg: WorkerInbound): WorkerOutbound;
+  export function handleWorkerMessage(
+    state: WorkerHandlerState,
+    msg: WorkerInbound,
+  ): WorkerOutbound;
   ```
+
   `served` counts `path_result` messages whose result status is not `"failed"`. The Playwright test in Task 5 reads it.
 
 - [ ] **Step 1: Write failing tests:**
@@ -94,7 +111,9 @@
   ```ts
   /// <reference lib="webworker" />
   const state = createWorkerHandlerState();
-  (self as unknown as { __pathfindingState: WorkerHandlerState }).__pathfindingState = state;
+  (
+    self as unknown as { __pathfindingState: WorkerHandlerState }
+  ).__pathfindingState = state;
   self.onmessage = (e: MessageEvent<WorkerInbound>) => {
     self.postMessage(handleWorkerMessage(state, e.data));
   };
@@ -106,32 +125,45 @@
 ### Task 3: Rewrite `PathWorkerManager` on a native module worker with one-time fallback
 
 **Files:**
+
 - Rewrite: `src/simulation/ai/pathfinding/integration/PathWorkerManager.ts`
 - Modify: `src/simulation/ai/pathfinding/integration/PathCalculator.ts` (drop the `unwrapWorkerResult` call and the `console.debug` on line 205, add `dispose()`)
 - Modify: `src/simulation/ai/pathfinding/integration/PathResultHandler.ts` (remove the `multithreading` / `initWorker` imports, `handleWorkerNotInitialized`, the `"Worker not initialized"` branch in `handleWorkerResult`, and the `console.debug` on line 53. Such a result now goes through `handleFailure`.)
 - Test: `tests/simulation/ai/pathfinding/integration/PathWorkerManager.test.ts`
 
 **Interfaces:**
+
 - Consumes: `WorkerInbound`, `WorkerOutbound` (Task 2), `createPathfindingEngine` (Task 1), `NavMeshResource.getSerializedMesh()`.
 - Produces:
   ```ts
-  export type WorkerLike = Pick<Worker, "postMessage" | "terminate" | "addEventListener">;
+  export type WorkerLike = Pick<
+    Worker,
+    "postMessage" | "terminate" | "addEventListener"
+  >;
   export interface PathWorkerManagerOptions {
     createWorker?: () => WorkerLike | null; // default below; null = no Worker support
-    initTimeoutMs?: number;                 // default 5000
+    initTimeoutMs?: number; // default 5000
   }
   export class PathWorkerManager {
-    constructor(navMeshResource: NavMeshResource, options?: PathWorkerManagerOptions);
+    constructor(
+      navMeshResource: NavMeshResource,
+      options?: PathWorkerManagerOptions,
+    );
     get mode(): "worker" | "main-thread";
-    ensureInitialized(): Promise<void>;     // starts init if mesh valid; never throws
-    runWorker(req: WorkerPathRequest): Promise<{ ok: true; value: WorkerPathResult } | { ok: false; error: unknown }>;
-    isValidMesh(): boolean;                 // unchanged behaviour
-    dispose(): void;                        // terminate worker, resolve pending via main thread
+    ensureInitialized(): Promise<void>; // starts init if mesh valid; never throws
+    runWorker(
+      req: WorkerPathRequest,
+    ): Promise<
+      { ok: true; value: WorkerPathResult } | { ok: false; error: unknown }
+    >;
+    isValidMesh(): boolean; // unchanged behaviour
+    dispose(): void; // terminate worker, resolve pending via main thread
   }
   ```
   `PathCalculator` gains `dispose(): void { this.workerManager.dispose(); }`. The rest of its public API is unchanged, and the existing `runWorker` monkeypatch seam stays.
 
 **Behaviour to implement:**
+
 - Default `createWorker`: `typeof Worker === "undefined" ? null : new Worker(new URL("../worker/pathfinding.worker.ts", import.meta.url), { type: "module", name: "pathfinding" })`. Keep the `new URL(...)` literal inline in that expression, because Vite only detects that exact shape.
 - Create the worker lazily, on the first `ensureInitialized` / `runWorker`. If `createWorker()` returns `null`, use main-thread mode **silently**. If it **throws**, fall back with a warning.
 - Before posting each `path` message, if `getSerializedMesh() !== lastInitMesh`, post an `init` first. The worker handles messages in order, so don't wait for `init_ok` before posting the path. Do start the init timeout.
@@ -158,6 +190,7 @@
 ### Task 4: Lifecycle wiring and remove `multithreading`
 
 **Files:**
+
 - Modify: `src/simulation/ai/pathfinding/integration/PathfindingSystem.ts` (add `dispose(): void` → `this.calculator.dispose()`)
 - Modify: `src/runtime/simulation/battleRunner.ts` (add `dispose: () => void` to `interface BattleRunner` at line 52, implemented as `pathfindingSystem.dispose()`)
 - Modify: `src/runtime/simulation/useSimulation.ts:55-60` (call `runner.dispose()` in the effect cleanup, so StrictMode double-mount and HMR don't leak workers)
@@ -176,11 +209,13 @@
 ### Task 5: Browser proof (dev and preview)
 
 **Files:**
+
 - Create: `playwright/tests/pathfinding-worker.spec.ts`
 - Create: `playwright.preview.config.ts` (same as `playwright.config.ts`, but with `webServer.command: "npm run build && npm run preview -- --port 4173 --strictPort"`, `port: 4173`, `use.baseURL: "http://localhost:4173/RobotSpaceBattler/"`, `timeout: 180_000` on webServer)
 - Modify: `package.json` (add script `"playwright:preview": "playwright test -c playwright.preview.config.ts pathfinding-worker"`)
 
 **Interfaces:**
+
 - Consumes: `self.__pathfindingState.served` in the worker global (Task 2).
 
 - [ ] **Step 1: Write the spec** `"pathfinding runs in a module worker with no console errors"`:

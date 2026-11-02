@@ -10,7 +10,7 @@ export const TEAM_IDS: TeamId[] = ["red", "blue"];
 export function getSpawnPoints(team: TeamId) {
   return TEAM_CONFIGS[team].spawnPoints.slice(0, ROBOTS_PER_TEAM);
 }
-import type { SpawnZone } from '../../../src/types';
+import type { SpawnZone } from "../../../src/types";
 
 // Canonical spawn contract values exported as a TypeScript module so
 // tests and systems can import them directly.
@@ -61,7 +61,7 @@ export const BLUE_SPAWN_ZONE: SpawnZone = {
 /**
  * Mapping of team IDs to their spawn zones.
  */
-export const SPAWN_ZONES: Record<'red' | 'blue', SpawnZone> = {
+export const SPAWN_ZONES: Record<"red" | "blue", SpawnZone> = {
   red: RED_SPAWN_ZONE,
   blue: BLUE_SPAWN_ZONE,
 };

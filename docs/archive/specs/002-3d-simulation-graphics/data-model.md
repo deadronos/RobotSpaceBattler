@@ -11,7 +11,7 @@ useful for implementation and tests.
 ```ts
 export interface RoundView {
   id: string;
-  status: 'initializing' | 'running' | 'ending' | 'finished';
+  status: "initializing" | "running" | "ending" | "finished";
   startTime: number | null; // epoch ms
   endTime: number | null; // epoch ms
   map?: string;
@@ -44,7 +44,7 @@ Validation rules: `currentHealth` >= 0 and <= `maxHealth` (if provided).
 
 ```ts
 export interface CameraState {
-  mode: 'follow' | 'cinematic' | 'free';
+  mode: "follow" | "cinematic" | "free";
   targetEntityId?: string | null;
   interpolationMs?: number; // smoothing duration
 }
@@ -55,7 +55,7 @@ export interface CameraState {
 ```ts
 export interface BattleUiState {
   inRound: boolean;
-  activeUI: 'battle' | 'lobby' | 'summary';
+  activeUI: "battle" | "lobby" | "summary";
   userPreferences: {
     reducedMotion: boolean;
     minimalUi: boolean;
@@ -67,17 +67,17 @@ export interface BattleUiState {
 
 ## State Transitions
 
-- Lobby -> Round Start: `inRound` transitions from false -> true, `activeUI` becomes `battle`.  
-- Round End: `inRound` true -> false, `activeUI` becomes `summary`.  
-- UI Toggle: `minimalUi` toggles without changing authoritative simulation state.  
+- Lobby -> Round Start: `inRound` transitions from false -> true, `activeUI` becomes `battle`.
+- Round End: `inRound` true -> false, `activeUI` becomes `summary`.
+- UI Toggle: `minimalUi` toggles without changing authoritative simulation state.
 
 Transitions must be idempotent: applying the same transition twice is a no-op.
 
 ## Selector Contracts (summary)
 
-- `getRoundView(): RoundView | null`  
-- `getRobotView(robotId: string): RobotView | null`  
-- `getActiveCamera(): CameraState`  
+- `getRoundView(): RoundView | null`
+- `getRobotView(robotId: string): RobotView | null`
+- `getActiveCamera(): CameraState`
 - `getBattleUiState(): BattleUiState`
 
 These selectors are pure, synchronous, and cheap to call from render code — heavy

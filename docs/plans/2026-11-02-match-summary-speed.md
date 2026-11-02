@@ -25,12 +25,12 @@ outcome. When the machine cannot keep up the sim runs in slow motion.
 
 ## What is runtime state and what is simulation state
 
-| Data | Owner | Feeds the sim? |
-|---|---|---|
-| speed | `BattleRunner` (runtime) | Only the accumulator input, never a step value |
-| summary snapshot | React state in `App` | No |
-| series score | React state in `App` | No |
-| auto-restart | `matchStateMachine` (runtime) | No |
+| Data             | Owner                         | Feeds the sim?                                 |
+| ---------------- | ----------------------------- | ---------------------------------------------- |
+| speed            | `BattleRunner` (runtime)      | Only the accumulator input, never a step value |
+| summary snapshot | React state in `App`          | No                                             |
+| series score     | React state in `App`          | No                                             |
+| auto-restart     | `matchStateMachine` (runtime) | No                                             |
 
 The parity goldens (`tests/ai/aiSystem.parity.spec.ts`) and the headless match
 digests must stay unchanged: nothing above is written into the ECS.

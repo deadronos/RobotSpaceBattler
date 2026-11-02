@@ -44,7 +44,7 @@ The specification successfully meets all quality criteria:
    - Technology-agnostic (no mention of NavMesh, A*, or specific algorithms)
    - User/observer-focused (smooth movement, no getting stuck, fluid appearance)
 
-4. **Feature Readiness**: 
+4. **Feature Readiness**:
    - Three prioritized user stories (P1: Core navigation, P2: Path quality, P3: Performance)
    - Each story is independently testable with clear acceptance scenarios
    - Edge cases cover common failure modes (no path exists, narrow passages, dynamic obstacles)

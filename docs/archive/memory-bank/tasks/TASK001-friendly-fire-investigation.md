@@ -5,9 +5,11 @@
 **Updated:** 2025-12-19
 
 ## Original Request
+
 Investigate friendly-fire handling and AoE attribution edge cases and add tasks/tests to lock down desired behavior.
 
 ## Updated Scope (2025-12-19)
+
 The current implementation does not expose a friendly-fire toggle. Projectiles are
 team-filtered in the projectile simulation: direct hits and rocket explosions skip
 same-team robots.
@@ -34,23 +36,24 @@ and verify kill/telemetry attribution.
   build a minimal `BattleWorld` with a few robots and one projectile.
 
 ## Progress Tracking
+
 **Overall Status:** Not Started - 10%
 
 ### Subtasks
 
-| ID  | Description                         | Status      | Updated    | Notes                   |
-| --- | ----------------------------------- | ----------- | ---------- | ----------------------- |
-| 1.1 | Confirm projectile team filtering   | Complete    | 2025-12-19 | Direct hit + rocket AoE |
-| 1.2 | Test: direct hit ignores same-team  | Not Started |            |                         |
-| 1.3 | Test: rocket AoE ignores same-team  | Not Started |            |                         |
-| 1.4 | Test: telemetry/kill attribution    | Not Started |            |                         |
+| ID  | Description                        | Status      | Updated    | Notes                   |
+| --- | ---------------------------------- | ----------- | ---------- | ----------------------- |
+| 1.1 | Confirm projectile team filtering  | Complete    | 2025-12-19 | Direct hit + rocket AoE |
+| 1.2 | Test: direct hit ignores same-team | Not Started |            |                         |
+| 1.3 | Test: rocket AoE ignores same-team | Not Started |            |                         |
+| 1.4 | Test: telemetry/kill attribution   | Not Started |            |                         |
 
 ## Progress Log
+
 ### 2025-12-19
 
 - Rescoped task: no friendly-fire toggle exists; behavior is hard-coded team filtering.
 - Identified regression-test targets: direct hit, rocket AoE, telemetry/kill attribution.
-
 
 ### 2025-10-17
 

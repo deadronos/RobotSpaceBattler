@@ -28,20 +28,17 @@ Next steps
 
 Active decisions
 
-
 - Keep simulation state in `BattleWorld` as authoritative; rendering reads state and does not mutate it.
 - Use Rapier for arena colliders, obstacle integration, and raycasts (LOS/avoidance), not per-robot physics.
 - Prefer pure logic modules under `src/simulation/*` for testability.
 
 How to run (short)
 
-
 - Dev server: `npm run dev`
 - Unit tests: `npm run test`
 - E2E: `npm run playwright:install` then `npm run playwright:test`
 
 Where to look next
-
 
 - `tasks/_index.md` — current tasks and statuses
 - `designs/` — design snapshots for AI, weapons, and Rapier integration

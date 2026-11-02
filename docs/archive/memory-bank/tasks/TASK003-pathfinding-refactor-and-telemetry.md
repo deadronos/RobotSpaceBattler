@@ -21,13 +21,13 @@ Refactor `src/simulation/ai/pathfinding/integration/PathfindingSystem.ts` into s
 
 ## Subtasks
 
-| ID  | Description                                    | Status      | Notes |
-| --- | ---------------------------------------------- | ----------- | ----- |
-| 3.1 | Extract `PathCalculator`                       | Not Started | Refer to `memory-bank/designs/loc-refactor-plan.md` |
-| 3.2 | Create `PathfindingTelemetry` abstraction     | Not Started | Emits structured telemetry to `TelemetryPort` |
-| 3.3 | Reduce `PathfindingSystem.ts` LOC to ≤ 200    | Not Started | Target <=200 LOC after extraction |
-| 3.4 | Add tests for calculator and telemetry        | Not Started | Unit tests + integration coverage |
-| 3.5 | Add debug toggle for NavMesh / Path Debuggers | Not Started | Implement UI toggle in debug panel |
+| ID  | Description                                   | Status      | Notes                                               |
+| --- | --------------------------------------------- | ----------- | --------------------------------------------------- |
+| 3.1 | Extract `PathCalculator`                      | Not Started | Refer to `memory-bank/designs/loc-refactor-plan.md` |
+| 3.2 | Create `PathfindingTelemetry` abstraction     | Not Started | Emits structured telemetry to `TelemetryPort`       |
+| 3.3 | Reduce `PathfindingSystem.ts` LOC to ≤ 200    | Not Started | Target <=200 LOC after extraction                   |
+| 3.4 | Add tests for calculator and telemetry        | Not Started | Unit tests + integration coverage                   |
+| 3.5 | Add debug toggle for NavMesh / Path Debuggers | Not Started | Implement UI toggle in debug panel                  |
 
 ## Acceptance criteria
 
@@ -36,5 +36,6 @@ Refactor `src/simulation/ai/pathfinding/integration/PathfindingSystem.ts` into s
 - Telemetry surface exists and emits cache-hit / path-duration metrics.
 
 ## Related docs
+
 - `memory-bank/designs/loc-refactor-plan.md`
 - `specs/007-specify-scripts-bash/tasks.md` (integration tasks)

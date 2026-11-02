@@ -23,6 +23,3 @@ This file reflects what exists in the repository and highlights optional follow-
 - Automatic quality scaling and time dilation
 - Humanoid robot meshes (replace placeholders)
 - Contract tests for weapon balance table
-
-
-

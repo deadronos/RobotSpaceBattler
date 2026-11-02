@@ -27,4 +27,3 @@ points are stable within that session.
 - Team config and spawn points: `src/lib/teamConfig.ts`
 - Spawning logic: `src/ecs/systems/spawnSystem.ts`
 - Tests: `tests/spawn-system.spec.ts`
-

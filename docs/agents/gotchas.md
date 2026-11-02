@@ -24,6 +24,11 @@ Short, learned lessons. Append new ones.
   slots. Setting `count` to the live robot count makes the draw-call count grow with the
   roster, which is exactly what instancing was meant to stop (#168). Merge body and head
   per role so a role is one draw call in the main pass plus one in the shadow pass.
+- **Arena geometry is data, not components (#229):** walls, pillars and lamp panels
+  live in `src/visuals/arena/arenaConfig.ts` and get merged into a few meshes. A new
+  wall is a config entry, not a `<mesh>`; a new neon strip is an entry in
+  `ARENA_NEON_GROUPS`, not a component with its own `useFrame`. Neon must stay unlit
+  with HDR vertex colours (`toneMapped: false`) or bloom stops picking it up.
 - **Combat feedback needs no new sim state:** `robot.lastDamageTimestamp` and the
   `fireCooldown`/`fireRate` pair are enough to time a hit flash and a muzzle flash
   (#168, `src/visuals/robots/robotFeedback.ts`). Do not add effect entities or timers to

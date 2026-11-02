@@ -31,6 +31,7 @@ Implement contract validator infrastructure (blocks all user stories).
 **Story Goal**: Execute fully automated 3D match from spawn to victory.
 
 **Independent Test Criteria**:
+
 - Complete match runs spawn to victory in dev scene
 - Two teams spawn with 3D models and move correctly
 - Projectiles fire and collisions are visible
@@ -53,21 +54,19 @@ Implement contract validator infrastructure (blocks all user stories).
 - [x] T019 [US1] Implement asset fallback in `src/systems/matchTrace/assetLoader.ts`
 
 ### Task Group 3.3: Victory & Match End State
+
 - [x] T020 [P] [US1] Create `src/systems/matchTrace/matchValidator.ts`
 - [x] T021 [US1] Implement `src/components/match/MatchHUD.tsx`
 - [x] T022 [US1] Implement `src/components/match/MatchCinematic.tsx` stub
-
 
 - [x] T023 [P] [US1] Create `src/hooks/useMatchSimulation.ts` orchestrator
 - [x] T024 [US1] Integrate components into `src/components/Scene.tsx`
 - [x] T025 [US1] Write tests in `tests/unit/matchPlayer.test.ts`
 - [x] T026 [US1] Write tests in `tests/unit/entityMapper.test.ts`
 
-
 ## Phase 4: User Story 2 — Visual Quality & Graphics Options (P2)
 
 **Story Goal**: Toggle visual quality settings (High/Medium/Low) without simulation impact.
-
 
 - Visual quality profile can be set before/during match
 - Low/Performance mode uses simplified materials
@@ -247,40 +246,40 @@ modular separation of concerns.
 ### Task Group 8.1: Refactor Planning & Analysis
 
 - [x] T057 [P] Create `specs/003-extend-placeholder-create/filesize-scan.txt` with
-  complete repo scan output identifying all oversized files and their current LOC
-  (2h) ✅ 2025-10-19
+      complete repo scan output identifying all oversized files and their current LOC
+      (2h) ✅ 2025-10-19
 
 - [x] T058 [P] Create `specs/003-extend-placeholder-create/refactor-plan-world.md`:
-  propose splitting `src/ecs/world.ts` (470 LOC) into `createWorld.ts`,
-  `simulationLoop.ts`, and `worldApi/*` modules. Include intended public APIs,
-  dependency graph, and first extraction task (4h) ✅ 2025-10-19
+      propose splitting `src/ecs/world.ts` (470 LOC) into `createWorld.ts`,
+      `simulationLoop.ts`, and `worldApi/*` modules. Include intended public APIs,
+      dependency graph, and first extraction task (4h) ✅ 2025-10-19
 
 - [x] T059 [P] Create `specs/003-extend-placeholder-create/refactor-plan-matchPlayer.md`:
-  propose splitting `src/systems/matchTrace/matchPlayer.ts` (391 LOC) into
-  `eventIndex.ts`, `playbackClock.ts`, and `replayRng.ts`. Include intended
-  public APIs, dependency graph, and first extraction task (4h) ✅ 2025-10-19
+      propose splitting `src/systems/matchTrace/matchPlayer.ts` (391 LOC) into
+      `eventIndex.ts`, `playbackClock.ts`, and `replayRng.ts`. Include intended
+      public APIs, dependency graph, and first extraction task (4h) ✅ 2025-10-19
 
 - [x] T060 [P] Create `specs/003-extend-placeholder-create/refactor-plan-cameraControls.md`:
-  propose extracting pure math helpers from `src/hooks/useCameraControls.ts`
-  (342 LOC) into `src/utils/cameraMath.ts`, plus optional `useSpherical.ts` for
-  state normalization. Include intended public APIs and first extraction task (3h) ✅ 2025-10-19
+      propose extracting pure math helpers from `src/hooks/useCameraControls.ts`
+      (342 LOC) into `src/utils/cameraMath.ts`, plus optional `useSpherical.ts` for
+      state normalization. Include intended public APIs and first extraction task (3h) ✅ 2025-10-19
 
 ### Task Group 8.2: Low-Risk Extractions
 
 - [x] T061 [P] Implement initial extraction: move camera math helpers into
-  `src/utils/cameraMath.ts`, add unit tests `tests/unit/utils/cameraMath.test.ts`,
-  update `useCameraControls.ts` imports, and verify all tests pass (2–3h) ✅ 2025-10-19
+      `src/utils/cameraMath.ts`, add unit tests `tests/unit/utils/cameraMath.test.ts`,
+      update `useCameraControls.ts` imports, and verify all tests pass (2–3h) ✅ 2025-10-19
   - **Result**: cameraMath.ts created (128 LOC), useCameraControls.ts reduced to 299 LOC ✅
   - **Tests**: 406/407 passing, no regressions ✅
 
 - [ ] T062 Implement `src/ecs/createWorld.ts` extraction: move factory logic from
-  `world.ts`, add unit tests `tests/unit/ecs/createWorld.test.ts`, and verify
-  public API preserved (3h)
+      `world.ts`, add unit tests `tests/unit/ecs/createWorld.test.ts`, and verify
+      public API preserved (3h)
   - **Current state**: world.ts at 300 LOC (just at limit, evaluate for skip)
 
 - [ ] T063 Implement `src/systems/matchTrace/eventIndex.ts` extraction: move event
-  indexing logic from `matchPlayer.ts`, add unit tests
-  `tests/unit/systems/eventIndex.test.ts`, and verify integration (2–3h)
+      indexing logic from `matchPlayer.ts`, add unit tests
+      `tests/unit/systems/eventIndex.test.ts`, and verify integration (2–3h)
   - **Current state**: matchPlayer.ts at 391 LOC (91 lines over limit, priority target)
 
 ### Task Group 8.3: Validation & Integration
@@ -292,10 +291,10 @@ modular separation of concerns.
   - [ ] Verify no TypeScript errors in strict mode
 
 - [ ] T065 Update constitution check script to include refactored files and
-  confirm all files now ≤ 300 LOC (1h)
+      confirm all files now ≤ 300 LOC (1h)
 
 - [ ] T066 Document refactoring outcomes in
-  `specs/003-extend-placeholder-create/refactor-summary.md` including:
+      `specs/003-extend-placeholder-create/refactor-summary.md` including:
   - [ ] Before/after LOC breakdown by file
   - [ ] API contracts preserved
   - [ ] Test coverage impact
@@ -418,33 +417,33 @@ proper between-rounds flow.
 
 ## Summary
 
-| Metric | Value |
-|--------|-------|
-| Total Tasks | 66 |
-| Phase 1 (Setup) | 3 |
-| Phase 2 (Contracts) | 7 |
-| Phase 3 (US1) | 16 |
-| Phase 4 (US2) | 8 |
-| Phase 5 (US3) | 8 |
-| Phase 6 (Polish) | 7 |
-| Phase 7 (Live Rendering) | 7 |
-| Phase 8 (Refactoring) | 10 |
-| **Parallelizable** | **28** |
-| **MVP (1–3)** | 26 tasks (~16h) |
-| **Enhanced MVP (1–3, 7)** | 33 tasks (~22h) |
-| **Full (1–7)** | 49 tasks (~36h) |
-| **Full + Polish (1–7, 6)** | 56 tasks (~40h) |
-| **Full + Refactoring (1–8)** | 66 tasks (~61h) |
-| **Status** | **✅ PHASES 1–7 COMPLETE (56/56)** |
-| **Phase 8** | **🔄 IN PROGRESS (5/10 complete, ~5h invested, ~16h remain)** |
-| **Phase 8 Progress** | **T057–T061 ✅ (planning + extraction)** |
-| **useCameraControls** | **299 LOC ✅** |
-| **world.ts** | **300 LOC ✅** |
-| **matchPlayer.ts** | **391 LOC ⚠️** |
-| **Tests Passing** | **406/407 (99.8%)** |
-| **ESLint** | **0 errors** |
-| **TypeScript** | **✅ Strict mode** |
-| **Coverage** | **60.21%** |
+| Metric                       | Value                                                         |
+| ---------------------------- | ------------------------------------------------------------- |
+| Total Tasks                  | 66                                                            |
+| Phase 1 (Setup)              | 3                                                             |
+| Phase 2 (Contracts)          | 7                                                             |
+| Phase 3 (US1)                | 16                                                            |
+| Phase 4 (US2)                | 8                                                             |
+| Phase 5 (US3)                | 8                                                             |
+| Phase 6 (Polish)             | 7                                                             |
+| Phase 7 (Live Rendering)     | 7                                                             |
+| Phase 8 (Refactoring)        | 10                                                            |
+| **Parallelizable**           | **28**                                                        |
+| **MVP (1–3)**                | 26 tasks (~16h)                                               |
+| **Enhanced MVP (1–3, 7)**    | 33 tasks (~22h)                                               |
+| **Full (1–7)**               | 49 tasks (~36h)                                               |
+| **Full + Polish (1–7, 6)**   | 56 tasks (~40h)                                               |
+| **Full + Refactoring (1–8)** | 66 tasks (~61h)                                               |
+| **Status**                   | **✅ PHASES 1–7 COMPLETE (56/56)**                            |
+| **Phase 8**                  | **🔄 IN PROGRESS (5/10 complete, ~5h invested, ~16h remain)** |
+| **Phase 8 Progress**         | **T057–T061 ✅ (planning + extraction)**                      |
+| **useCameraControls**        | **299 LOC ✅**                                                |
+| **world.ts**                 | **300 LOC ✅**                                                |
+| **matchPlayer.ts**           | **391 LOC ⚠️**                                                |
+| **Tests Passing**            | **406/407 (99.8%)**                                           |
+| **ESLint**                   | **0 errors**                                                  |
+| **TypeScript**               | **✅ Strict mode**                                            |
+| **Coverage**                 | **60.21%**                                                    |
 
 ---
 

@@ -106,17 +106,17 @@ Feature: ../spec.md | Audience: Implementation team pre-implementation gate
 
 ## Summary
 
-| Category | Status | Notes |
-|----------|--------|-------|
-| Completeness | PASS | All FRs, events, data shapes documented |
-| Clarity | PASS | Timing/RNG clear; visual fidelity deferred |
-| Consistency | PASS | Data shapes and naming standardized |
-| Criteria | PASS | Measurable (±16ms, 2s, percentages) |
-| Scenarios | PASS | Primary, alternate, exceptions covered |
-| Edge Cases | PASS | Spawn/lag/asset failures documented |
-| NFRs | PASS | Perf, observability, resilience; a11y partial |
-| Dependencies | PASS | specs/001-002 mapped; assumptions clear |
-| Ambiguities | PASS | No conflicts; minor items deferred |
-| Traceability | PASS | 100% citations; T### mapping defined |
+| Category     | Status | Notes                                         |
+| ------------ | ------ | --------------------------------------------- |
+| Completeness | PASS   | All FRs, events, data shapes documented       |
+| Clarity      | PASS   | Timing/RNG clear; visual fidelity deferred    |
+| Consistency  | PASS   | Data shapes and naming standardized           |
+| Criteria     | PASS   | Measurable (±16ms, 2s, percentages)           |
+| Scenarios    | PASS   | Primary, alternate, exceptions covered        |
+| Edge Cases   | PASS   | Spawn/lag/asset failures documented           |
+| NFRs         | PASS   | Perf, observability, resilience; a11y partial |
+| Dependencies | PASS   | specs/001-002 mapped; assumptions clear       |
+| Ambiguities  | PASS   | No conflicts; minor items deferred            |
+| Traceability | PASS   | 100% citations; T### mapping defined          |
 
 **READY FOR IMPLEMENTATION** - All critical requirements validated.

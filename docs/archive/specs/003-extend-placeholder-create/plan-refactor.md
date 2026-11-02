@@ -1,9 +1,11 @@
 # Refactor Plan: Address Tech Debt in Core Match Runtime
 
 ## Objective
+
 Create a staged refactor that resolves the five high-priority tech debt items identified in `docs/tech-debt-refactor-report.md` while preserving the functional and visual requirements captured in feature specs `001`, `002`, and `003`. The outcome should be a modular runtime that cleanly separates layout, simulation orchestration, AI decision making, combat resolution, and rendering.
 
 ## Inputs Consolidated from Existing Specs
+
 - **Autobattler simulation requirements (Spec 001)**: deterministic 10v10 spawns, captain election rules, adaptive AI behavior, weapon triangle balance, victory announcement flow, and space-station arena presentation. 【F:specs/001-3d-team-vs/spec.md†L1-L48】
 - **Graphics and UI orchestration requirements (Spec 002)**: round-state HUD transitions, quality scaling knobs, camera/spectator modes, and hybrid event + snapshot data delivery. 【F:specs/002-3d-simulation-graphics/spec.md†L1-L58】
 - **Integration and replay guarantees (Spec 003)**: renderer/simulation synchronization, MatchTrace schema, deterministic replays, and quality configuration inheritance. 【F:specs/003-extend-placeholder-create/spec.md†L1-L74】
@@ -11,6 +13,7 @@ Create a staged refactor that resolves the five high-priority tech debt items id
 These specs collectively require that any refactor maintain deterministic simulation outputs, configurable graphics, responsive HUD transitions, and match trace fidelity while improving maintainability.
 
 ## Refactor Pillars
+
 1. **Application shell modularization (addresses App.tsx debt)**
    - Extract layout primitives (grid, sidebar, HUD container) into presentational components so that `App` coordinates routing/data loading only.
    - Isolate HUD visibility and quality toggle state into a dedicated UI state store (leveraging existing Redux/Zustand-equivalent infrastructure if available) aligned with Spec 002 latency expectations.
@@ -37,11 +40,13 @@ These specs collectively require that any refactor maintain deterministic simula
    - Provide a batched entity subscription (`useRobotsForFrame`) to eliminate interval polling and leverage the main runtime loop.
 
 ## Cross-Cutting Concerns
+
 - **Testing & Observability**: Ensure each extracted module exposes deterministic unit-testable APIs. Update Vitest suites to cover AI transitions, projectile collisions, and runtime state changes while preserving the `MatchTrace` schema contracts.
 - **Performance Budgets**: Enforce GPU instancing, LOD toggles, and quality scaling hooks defined in Spec 002 during refactor to avoid regressing frame times.
 - **Configuration & Replay**: Maintain RNG seed propagation, event ordering, and trace recording per Spec 003 when moving logic between modules.
 
 ## Phased Delivery
+
 1. **Phase 1 – App & HUD shell**: Split layout, introduce UI state store, align HUD toggles with Spec 002 requirements.
 2. **Phase 2 – Runtime hook extraction**: Carve out `useMatchRuntime` and supporting modules from `Simulation.tsx`; update component tree accordingly.
 3. **Phase 3 – AI module refactor**: Separate targeting and behavior state machine, update references, add unit tests for captain reassignment and behavior transitions.

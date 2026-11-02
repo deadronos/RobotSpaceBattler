@@ -4,7 +4,6 @@
 
 - TASK003 — PathfindingSystem refactor & telemetry (see `TASK003-pathfinding-refactor-and-telemetry.md`)
 
-
 ## Pending
 
 - TASK001 — AoE damage attribution regression tests (see `TASK001-friendly-fire-investigation.md`)

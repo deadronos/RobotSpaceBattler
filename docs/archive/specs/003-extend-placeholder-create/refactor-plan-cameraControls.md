@@ -134,6 +134,7 @@ export type { SphericalCoordinates };
 ```
 
 **Breaking Changes**: NONE
+
 - useCameraControls hook remains unchanged
 - New exports available if needed by other modules
 - Backward compatible
@@ -258,6 +259,7 @@ git commit -m "refactor: extract pure math utilities from useCameraControls into
 **Risk Level**: LOW ✅
 
 Why low:
+
 1. Pure math functions have no side effects
 2. Clear, isolated dependencies
 3. Well-tested math (standard spherical coordinate math)
@@ -265,6 +267,7 @@ Why low:
 5. Existing tests provide safety net
 
 Mitigation:
+
 - Write unit tests FIRST
 - Run full test suite after each step
 - Easy rollback if needed (just remove cameraMath.ts and revert imports)

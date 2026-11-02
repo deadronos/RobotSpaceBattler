@@ -21,8 +21,8 @@
 - In-memory telemetry aggregator for test harness
 - MatchTrace file persistence for replay/analysis
 - Quality-scaling manager for VFX
-
 ---
+
 ## Research Tasks
 
 1. Research best practices for damage multipliers in RPS systems (game balance).
@@ -33,5 +33,7 @@
 6. Research telemetry event design for automated test harnesses and replay.
 
 ---
+
 ## Decision Log (to be updated as research completes)
+
 - [Pending]

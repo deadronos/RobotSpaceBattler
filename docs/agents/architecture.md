@@ -2,17 +2,17 @@
 
 ## `src/`
 
-| Path | What lives there |
-|---|---|
-| `main.tsx`, `App.tsx` | Entry points and app shell |
-| `ecs/` | Miniplex world (`world.ts`), systems (`systems/`: ai, combat, movement, projectile, effect, spawn), pools |
-| `runtime/` | `simulation/battleRunner.ts` (fixed-step loop), `state/matchStateMachine.ts`, telemetry adapter |
-| `simulation/` | Game rules: `ai/` (decision, targeting, pathfinding, coordination), `combat/`, `environment/`, `match/`, `obstacles/` |
-| `components/` | r3f scene, robots, VFX, HUD (`ui/`), debug tools |
-| `visuals/` | Instancing helpers, lighting, post-processing, dynamic resolution, debug overlays |
-| `state/` | Zustand stores (telemetry, quality) |
-| `lib/` | Math, seeded RNG, constants, fixed stepper, team config |
-| `ui/` | Fixture loader and inspector |
+| Path                  | What lives there                                                                                                                    |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `main.tsx`, `App.tsx` | Entry points and app shell                                                                                                          |
+| `ecs/`                | Miniplex world (`world.ts`), systems (`systems/`: ai, combat, movement, projectile, effect, spawn), pools                           |
+| `runtime/`            | `simulation/battleRunner.ts` (fixed-step loop), `state/matchStateMachine.ts`, telemetry adapter                                     |
+| `simulation/`         | Game rules: `ai/` (decision, targeting, pathfinding, coordination), `combat/`, `environment/`, `match/`, `obstacles/`               |
+| `components/`         | r3f scene, robots, VFX, HUD (`ui/`), debug tools                                                                                    |
+| `visuals/`            | Instancing helpers, lighting, post-processing, dynamic resolution, debug overlays, `arena/` (static arena layout + merged geometry) |
+| `state/`              | Zustand stores (telemetry, quality)                                                                                                 |
+| `lib/`                | Math, seeded RNG, constants, fixed stepper, team config                                                                             |
+| `ui/`                 | Fixture loader and inspector                                                                                                        |
 
 ## Simulation owns state; rendering projects it
 
@@ -101,6 +101,11 @@
 
 ## Rendering notes
 
+- The static arena is merged into 6 draw calls (#229): see
+  `visuals/arena/arenaConfig.ts` for the layout data, `arenaGeometry.ts` for the
+  merge and `components/SpaceStation/ArenaMeshes.tsx` for the meshes and the one
+  neon pulse `useFrame`. Add walls, pillars or lamp panels to the config arrays,
+  never as a component per object.
 - Instanced projectiles, lasers and effects use per-instance colour. See [gotchas.md](gotchas.md)
   and [technical/instancing.md](../technical/instancing.md).
 - Scale: 1 world unit = 1 metre.

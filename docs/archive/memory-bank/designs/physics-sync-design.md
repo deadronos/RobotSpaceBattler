@@ -63,7 +63,7 @@ Obstacle movement updates run every frame in `BattleRunner.step()`.
 - At the end of obstacle movement, `updateRapierObstacleTransforms(world)` is
   called so Rapier queries see the current arena geometry.
 
-## What is *not* using Rapier right now
+## What is _not_ using Rapier right now
 
 - Robot movement: `updateMovementSystem` updates positions/velocities directly.
 - Projectile hits: `updateProjectileSystem` uses ECS-space checks and does not

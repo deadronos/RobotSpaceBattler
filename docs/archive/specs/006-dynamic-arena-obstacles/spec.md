@@ -10,13 +10,13 @@ Examples include moving barriers that slide or rotate, timed hazard zones that
 periodically apply effects, and destructible cover that blocks attacks until its
 durability is reduced to zero.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 <!--
   IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
   Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
   you should still have a viable MVP (Minimum Viable Product) that delivers value.
-  
+
   Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
   Think of each story as a standalone slice of functionality that can be:
   - Developed independently
@@ -41,16 +41,16 @@ player-facing behaviour for that feature in isolation.
 **Acceptance Scenarios**:
 
 1. **Given** a playing area with a moving barrier, **When** the barrier follows
-  its pattern so that a line-of-sight or path becomes blocked, **Then** units
-  should no longer be able to see or traverse the blocked area until the
-  barrier moves away.
+   its pattern so that a line-of-sight or path becomes blocked, **Then** units
+   should no longer be able to see or traverse the blocked area until the
+   barrier moves away.
 2. **Given** an inactive hazard zone, **When** the zone becomes active, **Then**
-  units inside the zone receive the configured effect (damage or movement
-  penalty) while the zone is active and stop receiving it when it becomes
-  inactive.
+   units inside the zone receive the configured effect (damage or movement
+   penalty) while the zone is active and stop receiving it when it becomes
+   inactive.
 3. **Given** destructible cover, **When** it receives enough damage to reach
-  zero durability, **Then** it no longer blocks attacks, line-of-sight or
-  traversal and is removed from obstruction/pathing calculations.
+   zero durability, **Then** it no longer blocks attacks, line-of-sight or
+   traversal and is removed from obstruction/pathing calculations.
 
 ---
 
@@ -69,11 +69,11 @@ changes.
 **Acceptance Scenarios**:
 
 1. **Given** the designer places a moving obstacle and sets a pattern and speed,
-  **When** the match starts, **Then** the obstacle follows the configured
-  pattern and the designer-observed blocking behavior matches configuration.
+   **When** the match starts, **Then** the obstacle follows the configured
+   pattern and the designer-observed blocking behavior matches configuration.
 2. **Given** a hazard zone with parameters (active interval, duration, effect
-  type), **When** those parameters are changed in the editor, **Then** the
-  runtime behaviour reflects the new settings immediately in test runs.
+   type), **When** those parameters are changed in the editor, **Then** the
+   runtime behaviour reflects the new settings immediately in test runs.
 
 ---
 
@@ -92,9 +92,9 @@ wait/retreat rather than become stuck.
 **Acceptance Scenarios**:
 
 1. **Given** an AI must navigate from A to B and a moving barrier intersects its
-  planned path, **When** the barrier blocks the path, **Then** AI reroutes
-  within a bounded time and either finds a valid path or determines the path is
-  unreachable and reacts accordingly.
+   planned path, **When** the barrier blocks the path, **Then** AI reroutes
+   within a bounded time and either finds a valid path or determines the path is
+   unreachable and reacts accordingly.
 
 ---
 
@@ -112,7 +112,7 @@ wait/retreat rather than become stuck.
   current runtime geometry and systems should recover when the region becomes
   reachable again.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -193,7 +193,7 @@ wait/retreat rather than become stuck.
 - Telemetry is recorded via `src/runtime/simulation/telemetryAdapter.ts` into
   `src/state/telemetryStore.ts`.
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **Dynamic Obstacle (conceptual)**: Represents any environment object whose
   position, rotation or state can change over time and that can affect vision,
@@ -213,7 +213,7 @@ wait/retreat rather than become stuck.
 - **Obstacle Configuration**: Metadata used by designers to tune movement speed,
   amplitude, delay, active/inactive schedule, effect strength and durability.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

@@ -51,7 +51,7 @@ This plan converts those suggestions into deliverable tasks and validation steps
 ## Goals & Acceptance Criteria
 
 1. Measurable performance improvement in representative stress scenarios
-  (lots of robots, projectiles, lasers and effects).
+   (lots of robots, projectiles, lasers and effects).
    - Goal: Reduce average CPU frame time attributed to the top-5 hot paths by >= 25% in the target scenario.
    - Baseline: Capture a performance trace with the existing implementation and
      record the time spent in `updateProjectileSystem`, `InstancedProjectiles`
@@ -73,8 +73,8 @@ This plan converts those suggestions into deliverable tasks and validation steps
 
 4. Maintain functional behavior and visual fidelity.
 
-    - The gameplay and visuals should remain correct. Where trade-offs are made
-      (e.g., lower update frequency), ensure the trade-off is acceptable via QA.
+   - The gameplay and visuals should remain correct. Where trade-offs are made
+     (e.g., lower update frequency), ensure the trade-off is acceptable via QA.
 
 ---
 
@@ -283,7 +283,9 @@ projectiles.forEach((projectile) => {
 for (let i = 0; i < world.projectiles.entities.length; i++) {
   const projectile = world.projectiles.entities[i];
   // find target with nearest neighbor single pass or spatial index.
-  const target = boundingSpatialIndex.findNearest(projectile.position, /*params*/);
+  const target = boundingSpatialIndex.findNearest(
+    projectile.position /*params*/,
+  );
 }
 ```
 
@@ -383,9 +385,9 @@ for (let i = 0; i < world.projectiles.entities.length; i++) {
 - [ ] Tests updated/added (`npm run test`).
 - [ ] Confirm trace captures show improvements for the target metrics.
 - [ ] Code has a brief performance rationale and comments explaining
-  trade-offs.
+      trade-offs.
 - [ ] Update `specs/005-weapon-diversity/plan-performance-enhancement.md` with
-  link(s) to perf traces, artifacts, and a benchmark summary.
+      link(s) to perf traces, artifacts, and a benchmark summary.
 - [ ] Add a small demo note for maintainers to reproduce:
 
   `http://localhost:5173/?instancing=1&robots=256&projectiles=512&lasers=64`

@@ -11,22 +11,22 @@ Introduce three types of dynamic arena elements: moving barriers, timed hazard z
 
 ## Technical Context
 
-- Language: TypeScript (existing runtime and ECS).  
-- Physics engine: Rapier (rapier3d-compat) is available in the runtime and tests.  
-- Simulation: ECS-based simulation (src/simulation, src/ecs).  
-- Testing: Vitest + harness utilities (existing tests).  
+- Language: TypeScript (existing runtime and ECS).
+- Physics engine: Rapier (rapier3d-compat) is available in the runtime and tests.
+- Simulation: ECS-based simulation (src/simulation, src/ecs).
+- Testing: Vitest + harness utilities (existing tests).
 - Target: Local, deterministic simulation (no multiplayer replication for this work).
 
 ### Key integration points
 
-- `src/simulation/environment/arenaGeometry.ts` — currently implements `isLineOfSightBlocked` for static geometry.  
-- AI sensors & pathing: `src/simulation/ai/sensors.ts`, `src/simulation/ai/pathing/*` — both call `isLineOfSightBlocked` or use obstacle heuristics.  
+- `src/simulation/environment/arenaGeometry.ts` — currently implements `isLineOfSightBlocked` for static geometry.
+- AI sensors & pathing: `src/simulation/ai/sensors.ts`, `src/simulation/ai/pathing/*` — both call `isLineOfSightBlocked` or use obstacle heuristics.
 - Rapier integration points: `BattleRunner`/`BattleWorld` expose a Rapier world reference used in tests and runtime.
 
 ## Constitution Check
 
-- Component-first: New behaviour will be implemented as focused ECS components and systems.  
-- Test-first: Each production-facing feature will have unit & integration tests.  
+- Component-first: New behaviour will be implemented as focused ECS components and systems.
+- Test-first: Each production-facing feature will have unit & integration tests.
 - Observability: Instrumentation hooks and MatchTrace/telemetry events will be added to validate behaviour and determinism.
 
 ## Exit Gates (Pre-Implementation)
@@ -35,39 +35,43 @@ Introduce three types of dynamic arena elements: moving barriers, timed hazard z
 2. Data model & contracts finalized (`data-model.md`, `contracts/*`).
 3. Quickstart/dev harness and test plan established (`quickstart.md`).
 
-------------------------------
+---
 
 ## Phase 0 — Outline & Research
 
 Deliverables: `research.md` (this branch)
 
 Tasks:
+
 - Review `arenaGeometry.ts` and AI sensor/pathing code paths that call `isLineOfSightBlocked` and list all call sites (unit tests will be added).
 - Survey Rapier world usage in runtime and tests; confirm approach for raycasting or collider checks that include dynamic obstacles.
 - Decide concrete ECS component names and property shapes (see `data-model.md`).
 - Prototype small POC in safe sandbox tests: moving barrier motion + a LOS check that accounts for its runtime position.
 
 Success criteria for Phase 0:
+
 - Research doc enumerates integration points and confirms Rapier-based approach or a fallback grid-based approach for LOS and pathing.
 
-------------------------------
+---
 
 ## Phase 1 — Design, Data Model & Contracts
 
 Deliverables: `data-model.md`, `quickstart.md`, `contracts/`
 
 Key decisions (expected):
+
 - Movement style model: deterministic periodic movement (linear path, rotation) with configurable speed/offset/phase.
 - Hazard schedule model: on/off intervals (period + duty), effect types (damage per second, movement penalty), and area shape (circle/rectangle) for detection.
 - Destructible cover model: durability, damage events, removal rules (permanently removed for match).
 - Collision interaction: moving obstacles strictly block (do not displace units).
 
 Design tasks:
+
 - Finalize component shapes & system responsibilities in `data-model.md`.
 - Produce acceptance contracts describing deterministic tests to validate LOS changes, AI reroute, hazard effect application and destructible cover lifecycle.
 - Add quickstart instructions and CI-friendly test commands for the new tests.
 
-------------------------------
+---
 
 ## Phase 2 — Implementation (TDD / small increments)
 
@@ -126,7 +130,7 @@ P3 — Performance testing & polish:
 
 10. Documentation, quickstart and examples updated.
 
-------------------------------
+---
 
 ## Phase 3 — Validation, Tuning & Handoff
 
@@ -164,4 +168,5 @@ CI=true npm run ci:test -- --grep obstacles
 ```
 
 ---
+
 Stop: Phase 2 planning complete. Next recommended command: run `/speckit.tasks` to generate detailed task breakdown and TDD work items.

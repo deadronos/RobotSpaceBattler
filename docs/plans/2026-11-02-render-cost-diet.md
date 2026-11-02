@@ -94,6 +94,7 @@ authoritative for the noise-sensitive numbers (machine noise is ±10%).
 | ---- | ------------------------------------------ | -----: | ---------: | --------: | -----------: | -----------: | ---- |
 | 0    | baseline (`main` content)                  |      3 |        124 |   210 411 |        139.8 |        17.37 | –    |
 | 1    | #231 one shadow light, floor does not cast |      3 |        106 |   196 675 |        140.5 |        18.23 | yes  |
+| 2    | #229 merged arena + unlit neon groups      |      3 |         36 |   197 028 |        147.5 |        18.23 | yes  |
 
 ### Measured scene (baseline `--breakdown`)
 
@@ -101,6 +102,19 @@ authoritative for the noise-sensitive numbers (machine noise is ±10%).
   2 cast shadows.
 - 81 meshes, 77 unique materials, 23 programs.
 - uncapped: 142.7 fps, 7.01 ms per frame, 6.81 ms of it inside `gl.render` (97%).
+
+### Step 2 (#229) arena structure
+
+- The environment is 6 main-pass meshes: floor, one merged solid (walls,
+  pillars, lamp housings) and 4 unlit neon groups (`wall-top`, `wall-bottom`,
+  `pillar-rings`, `lamp-faces`). One environment shadow caster.
+- 23 meshes in the whole scene, 19 unique materials, 24 programs.
+- One `useFrame` drives every neon pulse group (was 34 `NeonGeometry` callbacks).
+- The unlit strips carry `colour × intensity` in vertex colours with
+  `toneMapped: false`, so they land above the bloom threshold like the old
+  emissive materials did. The intensities were re-tuned against screenshots
+  (2.4 / 1.8 / 3.4 / 5.0 instead of the old 2 / 1.5 / 3 / 4.2), because the old
+  lit strips added a diffuse term on top of the emissive one.
 
 ## Tests
 

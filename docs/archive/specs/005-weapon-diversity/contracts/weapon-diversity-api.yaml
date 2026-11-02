@@ -7,7 +7,7 @@ paths:
     post:
       summary: Start a 10v10 automated match (observer mode)
       responses:
-        '200':
+        "200":
           description: Match started
   /telemetry/event:
     post:
@@ -21,7 +21,14 @@ paths:
               properties:
                 type:
                   type: string
-                  enum: [pickup-acquired, weapon-fired, weapon-hit, explosion-aoe, weapon-damage]
+                  enum:
+                    [
+                      pickup-acquired,
+                      weapon-fired,
+                      weapon-hit,
+                      explosion-aoe,
+                      weapon-damage,
+                    ]
                 matchId:
                   type: string
                 weaponProfileId:
@@ -35,7 +42,7 @@ paths:
                 timestampMs:
                   type: number
       responses:
-        '200':
+        "200":
           description: Event recorded
   /duel/run:
     post:
@@ -57,7 +64,7 @@ paths:
                   type: integer
                   minimum: 1
       responses:
-        '200':
+        "200":
           description: Duel results
           content:
             application/json:

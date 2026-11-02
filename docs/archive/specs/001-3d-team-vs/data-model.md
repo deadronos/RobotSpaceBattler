@@ -173,4 +173,3 @@ The project records match telemetry in a Zustand store:
 - aggregates per team: spawns, shots fired, damage dealt/taken, deaths
 
 Defined in `src/state/telemetryStore.ts`.
-

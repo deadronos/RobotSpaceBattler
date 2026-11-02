@@ -21,13 +21,40 @@ The manager owns fixed-capacity pools per category (`bullets`, `rockets`, `laser
 
 Telemetry events (`VFX:Instancing:Alloc/Release/Fallback`) are mirrored to `window.__rendererStats.instancingTelemetry` and the console (`console.debug`) for quick inspection.
 
+## Static arena (#229)
+
+- The arena layout is data in `src/visuals/arena/arenaConfig.ts` (walls,
+  pillars, lamp panels, floor, neon pulse groups). Add static geometry there, not
+  as a new component: `src/components/SpaceStation/ArenaMeshes.tsx` builds the
+  meshes from those arrays.
+- `src/visuals/arena/arenaGeometry.ts` merges them with
+  `BufferGeometryUtils.mergeGeometries`: the floor, **one** solid mesh (walls,
+  pillars and lamp housings, per-part colours in vertex colours) and **one mesh
+  per neon pulse group**. That is 6 environment draw calls in total, and only the
+  solid mesh casts a shadow (#231: the directional light in `visuals/Lighting` is
+  the single shadow caster).
+- Neon is unlit: `MeshBasicMaterial` with `vertexColors`, `toneMapped: false`
+  and `colour × intensity` baked into the vertex colours, with the intensity kept
+  above the bloom threshold (`POSTPROCESSING_PRESETS.bloomThreshold`). Do not
+  convert it back to a lit `MeshStandardMaterial`/`MeshPhysicalMaterial`: a lit
+  strip costs a program and loses the HDR value that feeds bloom.
+- The pulse is one `useFrame` in `ArenaMeshes`, scaling each pulsing group's
+  material colour by `neonPulse(elapsed, flickerSpeed)` (0.8×–1.2×). A new group
+  is an entry in `ARENA_NEON_GROUPS`; `flickerSpeed: 0` means no per-frame write
+  at all. `NeonGeometry` (one `useFrame` and one material per strip) is gone.
+- Tests: `tests/visuals/arenaGeometry.spec.ts` checks merged triangle counts,
+  bounds against the config arrays and the baked vertex colours.
+
 ## Renderer Instrumentation
 
 - `window.__rendererStats` tracks draw calls, triangle counts, and frame times per frame.
 - The instancing perf harness (`npm run perf:vfx-instancing`) builds the app, launches `vite preview`, and captures baseline vs instanced stats headlessly using Playwright.
 - `npm run perf:visuals -- --label=<step>` is the real-GPU harness (#168): draw calls,
   draw calls vs robot count, rAF p95, uncapped fps, console warnings, a mid-match
-  screenshot, bundle gzip and the AI bench. See [testing.md](../agents/testing.md).
+  screenshot, bundle gzip and the AI bench. `--breakdown` adds the scene dump used
+  by the render-cost diet (#229–#233): lights by type, meshes grouped by
+  material/triangles/instances/`castShadow`, program count and the share of the
+  frame inside `gl.render`. See [testing.md](../agents/testing.md).
 - Telemetry from the instanced run is printed in the harness output (last ten events) to highlight exhaustion/fallback patterns.
 
 ## Pools & Object Reuse

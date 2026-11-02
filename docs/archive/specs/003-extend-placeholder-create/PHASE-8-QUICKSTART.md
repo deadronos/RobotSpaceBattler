@@ -14,18 +14,18 @@ Phase 8 successfully refactored three oversized files to meet the constitutional
 
 ### Quick Facts
 
-| Aspect | Detail |
-|--------|--------|
-| **Files Refactored** | 3 primary ✅ |
-| **Target LOC** | ≤ 300 per file |
-| **Progress** | 3/3 primary extractions done ✅ |
-| **useCameraControls** | **299 LOC ✅** (was 343) |
-| **world.ts** | **300 LOC ✅** (was 471) |
-| **matchPlayer.ts** | **288 LOC ✅** (was 391) |
-| **New Modules** | 11 + 2 (13 modules total created) |
-| **Tests Added** | 63 new unit tests (515 total, +4 from Phase 7) |
-| **Regressions** | 0 ✅ |
-| **Breaking Changes** | None ✅ |
+| Aspect                | Detail                                         |
+| --------------------- | ---------------------------------------------- |
+| **Files Refactored**  | 3 primary ✅                                   |
+| **Target LOC**        | ≤ 300 per file                                 |
+| **Progress**          | 3/3 primary extractions done ✅                |
+| **useCameraControls** | **299 LOC ✅** (was 343)                       |
+| **world.ts**          | **300 LOC ✅** (was 471)                       |
+| **matchPlayer.ts**    | **288 LOC ✅** (was 391)                       |
+| **New Modules**       | 11 + 2 (13 modules total created)              |
+| **Tests Added**       | 63 new unit tests (515 total, +4 from Phase 7) |
+| **Regressions**       | 0 ✅                                           |
+| **Breaking Changes**  | None ✅                                        |
 
 ---
 
@@ -35,32 +35,32 @@ Phase 8 successfully refactored three oversized files to meet the constitutional
 
 Create detailed refactor plans with API contracts and test strategies.
 
-| Task | File/Module | Proposal | Effort | Status |
-|------|------------|----------|--------|--------|
-| **T057** | Repo-wide | Create filesize scan artifact | 2h | [x] ✅ 2025-10-19 |
-| **T058** | `world.ts` | Split into 11 modules (createWorld, simulationLoop, etc) | 4h | [x] ✅ 2025-10-19 |
-| **T059** | `matchPlayer.ts` | Split into EventIndex, PlaybackClock (extracted successfully) | 4h | [x] ✅ 2025-10-19 |
-| **T060** | `useCameraControls.ts` | Extract math to `src/utils/cameraMath.ts` | 3h | [x] ✅ 2025-10-19 |
+| Task     | File/Module            | Proposal                                                      | Effort | Status            |
+| -------- | ---------------------- | ------------------------------------------------------------- | ------ | ----------------- |
+| **T057** | Repo-wide              | Create filesize scan artifact                                 | 2h     | [x] ✅ 2025-10-19 |
+| **T058** | `world.ts`             | Split into 11 modules (createWorld, simulationLoop, etc)      | 4h     | [x] ✅ 2025-10-19 |
+| **T059** | `matchPlayer.ts`       | Split into EventIndex, PlaybackClock (extracted successfully) | 4h     | [x] ✅ 2025-10-19 |
+| **T060** | `useCameraControls.ts` | Extract math to `src/utils/cameraMath.ts`                     | 3h     | [x] ✅ 2025-10-19 |
 
 ### Group 8.2: Extractions (T061–T063) — 10 hours, 100% Complete ✅
 
 Execute refactor plans and validate with new unit tests.
 
-| Task | File/Module | Result | Modules | Tests | Status |
-|------|------------|--------|---------|-------|--------|
-| **T061** | `useCameraControls.ts` | 343 → 299 LOC | cameraMath (128 LOC) | 28 tests ✅ | [x] ✅ 2025-10-19 |
-| **T062** | `world.ts` | 471 → 300 LOC | 11 new modules | 11 tests ✅ | [x] ✅ 2025-10-19 |
-| **T063** | `matchPlayer.ts` | 391 → 288 LOC | EventIndex (127 LOC), PlaybackClock (172 LOC) | 63 tests ✅ | [x] ✅ 2025-10-19 |
+| Task     | File/Module            | Result        | Modules                                       | Tests       | Status            |
+| -------- | ---------------------- | ------------- | --------------------------------------------- | ----------- | ----------------- |
+| **T061** | `useCameraControls.ts` | 343 → 299 LOC | cameraMath (128 LOC)                          | 28 tests ✅ | [x] ✅ 2025-10-19 |
+| **T062** | `world.ts`             | 471 → 300 LOC | 11 new modules                                | 11 tests ✅ | [x] ✅ 2025-10-19 |
+| **T063** | `matchPlayer.ts`       | 391 → 288 LOC | EventIndex (127 LOC), PlaybackClock (172 LOC) | 63 tests ✅ | [x] ✅ 2025-10-19 |
 
 ### Group 8.3: Validation (T064–T066) — 2 hours, 90% Complete
 
 Run regression tests and document outcomes.
 
-| Task | Purpose | Result | Status |
-|------|---------|--------|--------|
-| **T064** | Regression testing | 515 tests passing, 1 skipped, 0 regressions ✅ | ✅ |
-| **T065** | Constitution check | All 3 files ≤300 LOC ✅ | ✅ |
-| **T066** | Document outcomes | Create final summary | 🔄 |
+| Task     | Purpose            | Result                                         | Status |
+| -------- | ------------------ | ---------------------------------------------- | ------ |
+| **T064** | Regression testing | 515 tests passing, 1 skipped, 0 regressions ✅ | ✅     |
+| **T065** | Constitution check | All 3 files ≤300 LOC ✅                        | ✅     |
+| **T066** | Document outcomes  | Create final summary                           | 🔄     |
 
 ---
 
@@ -303,8 +303,8 @@ Estimated rollback time: 15–30 minutes per extraction
 
 ---
 
-*Phase 8 started: 2025-10-19*  
-*Progress: 5/10 tasks complete (~5 hours invested)*  
-*Remaining effort: ~16 hours for T062–T066*  
-*Next milestone: Complete T063 (matchPlayer extraction) — ~2–3 hours*  
-*Expected completion: 2025-10-20 (if extractions complete tomorrow)*
+_Phase 8 started: 2025-10-19_  
+_Progress: 5/10 tasks complete (~5 hours invested)_  
+_Remaining effort: ~16 hours for T062–T066_  
+_Next milestone: Complete T063 (matchPlayer extraction) — ~2–3 hours_  
+_Expected completion: 2025-10-20 (if extractions complete tomorrow)_

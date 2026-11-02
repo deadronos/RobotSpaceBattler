@@ -166,4 +166,3 @@ node scripts/duel-matrix/run-duels.js --runs=30
 ```bash
 CI=true npm run ci:test
 ```
-

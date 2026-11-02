@@ -145,4 +145,5 @@ npm run test
 - PR: (if created) reference will include this spec and test additions.
 
 ---
+
 Spec authored: 2025-11-07

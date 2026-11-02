@@ -13,7 +13,7 @@ Important scope notes:
 
 - This module provides NavMesh generation and path calculation utilities.
 - It is not currently wired into the main robot movement loop; live robot
-   navigation still uses reactive steering (`src/simulation/ai/pathing/**`).
+  navigation still uses reactive steering (`src/simulation/ai/pathing/**`).
 
 ## Core API
 
@@ -23,10 +23,10 @@ Generates a `NavigationMesh` from a static `ArenaConfiguration`.
 
 ```ts
 class NavMeshGenerator {
-   generateFromArena(
-      arenaConfig: ArenaConfiguration,
-      clearanceRadius?: number,
-   ): NavigationMesh;
+  generateFromArena(
+    arenaConfig: ArenaConfiguration,
+    clearanceRadius?: number,
+  ): NavigationMesh;
 }
 ```
 
@@ -42,19 +42,19 @@ performance metrics.
 
 ```ts
 class NavMeshResource {
-   constructor(mesh: NavigationMesh, meshInstance?: NavMesh);
+  constructor(mesh: NavigationMesh, meshInstance?: NavMesh);
 
-   get mesh(): NavigationMesh;
-   get metrics(): {
-      totalCalculations: number;
-      averageCalculationTimeMs: number;
-      maxCalculationTimeMs: number;
-      cacheHitRate: number;
-      memoryUsageBytes: number;
-   };
+  get mesh(): NavigationMesh;
+  get metrics(): {
+    totalCalculations: number;
+    averageCalculationTimeMs: number;
+    maxCalculationTimeMs: number;
+    cacheHitRate: number;
+    memoryUsageBytes: number;
+  };
 
-   recordCalculation(calculationTimeMs: number): void;
-   updateCacheHitRate(hitRate: number): void;
+  recordCalculation(calculationTimeMs: number): void;
+  updateCacheHitRate(hitRate: number): void;
 }
 ```
 
@@ -66,17 +66,17 @@ Component shape used by the integration layer.
 type PathComponentStatus = "pending" | "valid" | "invalid" | "failed";
 
 interface PathComponent {
-   path: NavigationPath | null;
-   status: PathComponentStatus;
-   requestedTarget: Point3D | null;
-   currentWaypointIndex: number;
-   lastCalculationTime: number;
+  path: NavigationPath | null;
+  status: PathComponentStatus;
+  requestedTarget: Point3D | null;
+  currentWaypointIndex: number;
+  lastCalculationTime: number;
 
-   // Legacy/back-compat fields
-   needsRecalculation?: boolean;
-   targetPosition?: Point3D | null;
-   lastCalculatedAt?: number;
-   recalculationCount?: number;
+  // Legacy/back-compat fields
+  needsRecalculation?: boolean;
+  targetPosition?: Point3D | null;
+  lastCalculatedAt?: number;
+  recalculationCount?: number;
 }
 ```
 
@@ -86,7 +86,9 @@ Integration helper that mutates a `PathComponent` in-place.
 
 ```ts
 class PathfindingSystem {
-   constructor(navMeshResource: NavMeshResource, options?: {
+  constructor(
+    navMeshResource: NavMeshResource,
+    options?: {
       enableSmoothing?: boolean;
       enableCaching?: boolean;
       maxCacheSize?: number;
@@ -97,19 +99,24 @@ class PathfindingSystem {
       // Present in options, but not currently enforced by implementation
       enableTimeout?: boolean;
       timeoutMs?: number;
-   });
+    },
+  );
 
-   onTelemetry(callback: (event: PathfindingTelemetryEvent) => void): void;
+  onTelemetry(callback: (event: PathfindingTelemetryEvent) => void): void;
 
-   calculatePath(start: Point3D, pathComponent: PathComponent, robotId?: string): void;
+  calculatePath(
+    start: Point3D,
+    pathComponent: PathComponent,
+    robotId?: string,
+  ): void;
 
-   execute(
-      robotsWithPaths: Array<{
-         pathComponent: PathComponent;
-         position: Point3D;
-         id?: string;
-      }>,
-   ): void;
+  execute(
+    robotsWithPaths: Array<{
+      pathComponent: PathComponent;
+      position: Point3D;
+      id?: string;
+    }>,
+  ): void;
 }
 ```
 
@@ -118,7 +125,7 @@ Contracted behavior:
 - `calculatePath(...)` reads `pathComponent.requestedTarget` (if null, no-op).
 - `calculatePath(...)` mutates `pathComponent`.
 - On success: sets `pathComponent.path`, `status = "valid"`, and
-   `lastCalculationTime = Date.now()`.
+  `lastCalculationTime = Date.now()`.
 - On failure: sets `pathComponent.path = null`, `status = "failed"`.
 - Optional nearest-accessible-point fallback is enabled by default
   (`enableNearestFallback = true`).
@@ -133,20 +140,20 @@ Telemetry is callback-based (no direct dependency on the game telemetry port).
 
 ```ts
 type PathfindingTelemetryEvent = {
-   type:
-      | "path-calculation-start"
-      | "path-calculation-complete"
-      | "path-calculation-failed";
-   entityId?: string;
-   timestamp: number;
-   from?: Point3D;
-   to?: Point3D;
-   success?: boolean;
-   durationMs?: number;
-   pathLength?: number;
-   waypointCount?: number;
-   fromCache?: boolean;
-   error?: string;
+  type:
+    | "path-calculation-start"
+    | "path-calculation-complete"
+    | "path-calculation-failed";
+  entityId?: string;
+  timestamp: number;
+  from?: Point3D;
+  to?: Point3D;
+  success?: boolean;
+  durationMs?: number;
+  pathLength?: number;
+  waypointCount?: number;
+  fromCache?: boolean;
+  error?: string;
 };
 ```
 
@@ -157,12 +164,12 @@ Notes:
 ## Current limitations
 
 - Dynamic obstacle invalidation is not implemented. There is no
-   `invalidatePathsNearObstacle(...)` API.
+  `invalidatePathsNearObstacle(...)` API.
 - Although `NavMeshResource.updateMesh(...)` exists, `PathfindingSystem` does not
-   rebuild its internal search state when the mesh changes. Treat the mesh as
-   immutable for a `PathfindingSystem` instance.
+  rebuild its internal search state when the mesh changes. Treat the mesh as
+  immutable for a `PathfindingSystem` instance.
 - Timeout enforcement is not implemented. `enableTimeout`/`timeoutMs` options are
-   present but do not currently abort computations.
+  present but do not currently abort computations.
 
 ## Version History
 

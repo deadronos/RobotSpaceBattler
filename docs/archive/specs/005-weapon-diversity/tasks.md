@@ -68,8 +68,8 @@ Independent Test: `tests/weapon/visuals-smoke.spec.ts` captures a sample run dem
 
 ---
 
-
 ### Phase 3.4: Rendering Instancing & Pooling (Performance & Visuals)
+
 Purpose: Implement GPU-friendly instancing and ECS-light pooling for ephemeral visual entities to reduce draw calls and React component churn while preserving MatchTrace and simulation determinism.
 
 - **Note**: These tasks are dependent on T015 (Weapon profiles), T016 (ProjectileSystem), and T019 (Placeholder visuals) to be implemented first.
@@ -131,10 +131,8 @@ Purpose: Implement GPU-friendly instancing and ECS-light pooling for ephemeral v
   - Update `specs/005-weapon-diversity/quickstart.md` with commands and flags for toggling instancing.
   - Add a `docs/technical/instancing.md` notes file describing instance management and debug flags.
 
-
 - [ ] T045 [P] PR & Release Notes
   - Add `instancing` section to `./docs/RELEASE_NOTES.md` and create a PR with a `CONSTITUTION-CHECK` section and a short exec summary.
-
 
 ### Phase 3.3: User Story 3 — Balance validation & rock-paper-scissors tests (P1) [US3]
 
@@ -166,6 +164,7 @@ Independent Test: `scripts/duel-matrix/run-duels.ts --archetypeA=laser --archety
 - After Phase 2 completes, User Stories (US1, US2, US3) can be implemented in parallel by different engineers, subject to file ownership and collisions.
 
 ### Story Dependencies (high level)
+
 - US1 (10v10) depends on: T004, T005, T006, T007, T009
 - US2 (Visuals & mechanics) depends on: T001, T004, T005, T016, T019
 - US3 (Balance + duel harness) depends on: T001, T004, T005, T003
@@ -177,7 +176,7 @@ Independent Test: `scripts/duel-matrix/run-duels.ts --archetypeA=laser --archety
 
 - Foundation: `T004`, `T005`, `T006`, `T007`, `T008`, `T009` can be worked on in parallel by separate engineers.
 - US2 parallel: `T017` (rocket) and `T018` (laser) and `T019` (visuals) are independent and can be implemented in parallel once weapon types exist.
- - Instancing parallel: `T031` (InstancedProjectiles POC), `T032` (LaserBatchRenderer POC), and `T033` (InstancedEffects POC) can be implemented and validated independently before the final integration tasks T034..T041.
+- Instancing parallel: `T031` (InstancedProjectiles POC), `T032` (LaserBatchRenderer POC), and `T033` (InstancedEffects POC) can be implemented and validated independently before the final integration tasks T034..T041.
 - US3 parallel: writing `T022` (multiplier) and `T023` (damage pipeline integration) can be split: one engineer implements `T022`, another updates pipeline `T023` after API is stable.
 
 ---
@@ -186,7 +185,7 @@ Independent Test: `scripts/duel-matrix/run-duels.ts --archetypeA=laser --archety
 
 - **US1**: `tests/integration/10v10-observer.spec.ts` — Start match, assert 10 red + 10 blue spawn, verify observer cannot control robots, toggle camera modes.
 - **US2**: `tests/weapon/rocket-aoe.test.ts`, `tests/weapon/laser-beam.test.ts` — Rocket AoE emits `explosion-aoe` and `weapon-damage` events with deterministic ordering; Laser beam emits per-tick `weapon-damage` and visuals align within ±16ms.
- - **US2** (Instancing): `tests/perf/instancing.spec.ts` — Run a heavy 10v10 stress scenario with instancing toggled ON/OFF; confirm draw-call reduction and no changes to MatchTrace or telemetry outputs; also assert visual parity for a sample of scenes.
+- **US2** (Instancing): `tests/perf/instancing.spec.ts` — Run a heavy 10v10 stress scenario with instancing toggled ON/OFF; confirm draw-call reduction and no changes to MatchTrace or telemetry outputs; also assert visual parity for a sample of scenes.
 - **US3**: `tests/duel/duel-matrix.spec.ts` — For each pairing (laser/gun, gun/rocket, rocket/laser) run ≥30 duels and assert advantaged archetype ≥70% win rate.
 
 ---
@@ -204,6 +203,7 @@ Independent Test: `scripts/duel-matrix/run-duels.ts --archetypeA=laser --archety
 - `specs/005-weapon-diversity/tasks.md` (this file)
 
 Additional files referenced (instancing & perf):
+
 - `src/components/vfx/InstancedProjectiles.tsx`
 - `src/components/vfx/LaserBatchRenderer.tsx`
 - `src/components/vfx/InstancedEffects.tsx`
@@ -215,5 +215,4 @@ Additional files referenced (instancing & perf):
 ---
 
 End of generated tasks for Weapon Diversity (005).
-
 ```
