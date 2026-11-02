@@ -42,14 +42,14 @@ Single-trial runs unless noted; machine noise dominates M3 (uncapped fps drifts
 ±10% between runs under load), so the authoritative before/after is the paired
 3-trial table in the PR.
 
-| step | change                                                                   | M1 draw calls | M2 robots 20 → 10 → 0 | M4                 | M6 initial gzip | kept |
-| ---- | ------------------------------------------------------------------------ | ------------: | --------------------- | ------------------ | --------------: | ---- |
-| 0    | baseline `main` `9f85b8d`                                                |           204 | 201 → 152 → 108       | `THREE.Clock` only |       408.35 kB | —    |
-| 1    | instanced robots, 4 role geometries                                      |           119 | 119 → 119 → 119       | `THREE.Clock` only |       410.04 kB | yes  |
-| 2    | + health bars (2 draw calls)                                             |           121 | 121 → 120 → 118       | `THREE.Clock` only |       410.66 kB | yes  |
-| 3    | + hit/muzzle flashes (1 draw call)                                       |           122 | 122 → 122 → 119       | `THREE.Clock` only |       411.25 kB | yes  |
-| 4    | role extras (shoulders, barrel, cross), bar size and depth, flash tuning |           122 | 121 → 121 → 119       | `THREE.Clock` only |       411.24 kB | yes  |
-| 5    | docs + committed harness                                                 |           122 | —                     | `THREE.Clock` only |       411.28 kB | yes  |
+| step | change | M1 draw calls | M2 robots 20 → 10 → 0 | M4 | M6 initial gzip | kept |
+| --- | --- | ---: | --- | --- | ---: | --- |
+| 0 | baseline `main` `9f85b8d` | 204 | 201 → 152 → 108 | `THREE.Clock` only | 408.35 kB | — |
+| 1 | instanced robots, 4 role geometries | 119 | 119 → 119 → 119 | `THREE.Clock` only | 410.04 kB | yes |
+| 2 | + health bars (2 draw calls) | 121 | 121 → 120 → 118 | `THREE.Clock` only | 410.66 kB | yes |
+| 3 | + hit/muzzle flashes (1 draw call) | 122 | 122 → 122 → 119 | `THREE.Clock` only | 411.25 kB | yes |
+| 4 | role extras (shoulders, barrel, cross), bar size and depth, flash tuning | 122 | 121 → 121 → 119 | `THREE.Clock` only | 411.24 kB | yes |
+| 5 | docs + committed harness | 122 | — | `THREE.Clock` only | 411.28 kB | yes |
 
 M3 is left out of the per-step table on purpose: on this machine the uncapped
 ceiling swings by ±10% between runs depending on load, so a single run cannot
@@ -59,10 +59,10 @@ band before it was kept.
 
 ### Before/after, paired, 3 trials each (Apple M4, ANGLE Metal)
 
-| build            | draw calls | M2 16 → 8 → 0 robots | p95 frame ms | uncapped fps | initial gzip |
-| ---------------- | ---------: | -------------------- | -----------: | -----------: | -----------: |
-| `main` `9f85b8d` |      200.2 | 191 → 149 → 108      | 18.17 ± 0.05 |  209.3 ± 7.9 |    408.35 kB |
-| this branch      |      122.0 | 121 → 121 → 119      | 18.00 ± 0.45 | 203.2 ± 10.1 |    411.28 kB |
+| build | draw calls | M2 16 → 8 → 0 robots | p95 frame ms | uncapped fps | initial gzip |
+| --- | ---: | --- | ---: | ---: | ---: |
+| `main` `9f85b8d` | 200.2 | 191 → 149 → 108 | 18.17 ± 0.05 | 209.3 ± 7.9 | 408.35 kB |
+| this branch | 122.0 | 121 → 121 → 119 | 18.00 ± 0.45 | 203.2 ± 10.1 | 411.28 kB |
 
 Notes:
 
