@@ -1,4 +1,5 @@
 import type { UnitRole } from "../../ecs/worldTypes";
+import { resolveTeamPalette } from "../../lib/teamPalette";
 import { TEAM_IDENTITIES } from "../../lib/teamConfig";
 import {
   formatMatchDuration,
@@ -7,11 +8,10 @@ import {
   type RoleBreakdown,
   type TeamSummary,
 } from "../../runtime/state/matchSummary";
-import {
-  formatSeriesLine,
-  type SeriesScore,
-} from "../../runtime/state/seriesScore";
+import type { SeriesScore } from "../../runtime/state/seriesScore";
 import { Modal } from "./Modal";
+import { SeriesScoreLine } from "./SeriesScoreLine";
+import { TeamMarker } from "./TeamMarker";
 
 const ROLE_LABELS: Record<UnitRole, string> = {
   assault: "Assault",
@@ -53,14 +53,25 @@ function RoleRows({ roles }: { roles: RoleBreakdown[] }) {
   );
 }
 
-function TeamCard({ team }: { team: TeamSummary }) {
+function TeamCard({
+  team,
+  colorBlindPalette,
+}: {
+  team: TeamSummary;
+  colorBlindPalette: boolean;
+}) {
   const identity = TEAM_IDENTITIES[team.team];
+  const palette = resolveTeamPalette(colorBlindPalette);
   return (
     <div
       className={`match-summary-team match-summary-team-${team.team}`}
       data-testid={`summary-team-${team.team}`}
+      style={{ borderColor: palette.colors[team.team] }}
     >
-      <h3>{identity.label}</h3>
+      <h3>
+        <TeamMarker team={team.team} />
+        {identity.label}
+      </h3>
       <div className="match-summary-stat-grid">
         <Stat label="Kills" value={`${team.kills}`} />
         <Stat label="Damage dealt" value={`${Math.round(team.damageDealt)}`} />
@@ -74,14 +85,23 @@ function TeamCard({ team }: { team: TeamSummary }) {
   );
 }
 
-function MvpCard({ mvp }: { mvp: RobotSummary }) {
+function MvpCard({
+  mvp,
+  colorBlindPalette,
+}: {
+  mvp: RobotSummary;
+  colorBlindPalette: boolean;
+}) {
   return (
     <div className="match-summary-mvp" data-testid="match-summary-mvp">
       <span className="match-summary-mvp-badge">MVP</span>
       <span
         className="match-summary-mvp-team"
-        style={{ color: TEAM_IDENTITIES[mvp.team].color }}
+        style={{
+          color: resolveTeamPalette(colorBlindPalette).colors[mvp.team],
+        }}
       >
+        <TeamMarker team={mvp.team} />
         {`${TEAM_IDENTITIES[mvp.team].label} ${roleLabel(mvp.role)} ${mvp.id}`}
       </span>
       <span className="match-summary-mvp-stats">
@@ -91,7 +111,13 @@ function MvpCard({ mvp }: { mvp: RobotSummary }) {
   );
 }
 
-function RobotTable({ robots }: { robots: RobotSummary[] }) {
+function RobotTable({
+  robots,
+  colorBlindPalette,
+}: {
+  robots: RobotSummary[];
+  colorBlindPalette: boolean;
+}) {
   if (robots.length === 0) {
     return <p className="match-summary-empty">No telemetry was recorded.</p>;
   }
@@ -111,7 +137,12 @@ function RobotTable({ robots }: { robots: RobotSummary[] }) {
         {robots.map((robot) => (
           <tr key={robot.id} data-testid={`summary-robot-${robot.id}`}>
             <th scope="row">{robot.id}</th>
-            <td style={{ color: TEAM_IDENTITIES[robot.team].color }}>
+            <td
+              style={{
+                color: resolveTeamPalette(colorBlindPalette).colors[robot.team],
+              }}
+            >
+              <TeamMarker team={robot.team} />
               {TEAM_IDENTITIES[robot.team].label}
             </td>
             <td>{roleLabel(robot.role)}</td>
@@ -130,6 +161,8 @@ interface MatchSummaryModalProps {
   onClose: () => void;
   summary: MatchSummary | null;
   series: SeriesScore;
+  /** Use the colour-blind-safe team palette (#166). */
+  colorBlindPalette?: boolean;
   onResetSeries: () => void;
 }
 
@@ -143,6 +176,7 @@ export function MatchSummaryModal({
   onClose,
   summary,
   series,
+  colorBlindPalette = false,
   onResetSeries,
 }: MatchSummaryModalProps) {
   if (!isOpen || !summary) {
@@ -172,19 +206,30 @@ export function MatchSummaryModal({
         </p>
       </div>
 
-      {summary.mvp ? <MvpCard mvp={summary.mvp} /> : null}
+      {summary.mvp ? (
+        <MvpCard mvp={summary.mvp} colorBlindPalette={colorBlindPalette} />
+      ) : null}
 
       <div className="match-summary-teams">
-        <TeamCard team={summary.teams.red} />
-        <TeamCard team={summary.teams.blue} />
+        <TeamCard
+          team={summary.teams.red}
+          colorBlindPalette={colorBlindPalette}
+        />
+        <TeamCard
+          team={summary.teams.blue}
+          colorBlindPalette={colorBlindPalette}
+        />
       </div>
 
       <h3 className="match-summary-subtitle">Robots</h3>
-      <RobotTable robots={summary.robots} />
+      <RobotTable
+        robots={summary.robots}
+        colorBlindPalette={colorBlindPalette}
+      />
 
       <div className="match-summary-series">
         <span data-testid="summary-series-score">
-          {formatSeriesLine(series)}
+          <SeriesScoreLine series={series} />
         </span>
         <button
           type="button"

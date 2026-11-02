@@ -10,7 +10,9 @@ import { useSimulation } from "../runtime/simulation/useSimulation";
 import { MatchStateMachine } from "../runtime/state/matchStateMachine";
 import { useQualitySettings } from "../state/quality/QualityManager";
 import { ObstacleVisual } from "../visuals/ObstacleVisual";
+import { resolveMotionEffects } from "../visuals/reducedMotion";
 import { RobotInstances } from "./robots/RobotInstances";
+import { TeamMarkers } from "./robots/TeamMarkers";
 import { Scene } from "./Scene";
 import { useEntityList } from "./useEntityList";
 import { SpaceStation } from "./SpaceStation";
@@ -39,6 +41,10 @@ interface SimulationProps {
   showPerfOverlay?: boolean;
   /** Simulation speed multiplier (#170). */
   speed?: number;
+  /** Reduced motion hides optional flash VFX (#166). */
+  reducedMotion?: boolean;
+  /** Use the colour-blind-safe team palette (#166). */
+  colorBlindPalette?: boolean;
 }
 
 /**
@@ -51,7 +57,10 @@ interface SimulationProps {
  */
 export const Simulation = memo(function Simulation(props: SimulationProps) {
   return (
-    <Scene showPerfOverlay={props.showPerfOverlay}>
+    <Scene
+      showPerfOverlay={props.showPerfOverlay}
+      reducedMotion={props.reducedMotion}
+    >
       <SimulationContent {...props} />
     </Scene>
   );
@@ -68,6 +77,10 @@ function SimulationContent(props: SimulationProps) {
   useSimulation(props);
 
   const qualitySettings = useQualitySettings();
+  const motion = resolveMotionEffects({
+    postprocessingEnabled: qualitySettings.visuals.postprocessing.enabled,
+    reducedMotion: props.reducedMotion ?? false,
+  });
   const instancingEnabled = qualitySettings.visuals.instancing.enabled;
   const shadowsEnabled = qualitySettings.visuals.render.shadowsEnabled;
   const shadowMapSize = qualitySettings.visuals.render.shadowMapSize;
@@ -94,13 +107,22 @@ function SimulationContent(props: SimulationProps) {
             <ObstacleVisual key={obstacle.id} obstacle={obstacle} />
           ))
         : null}
-      <RobotInstances battleWorld={battleWorld} />
-      <RobotHealthBars robots={battleWorld.robots} />
-      <InstancedFlashes
-        robots={battleWorld.robots}
-        instanceManager={instanceManager}
-        getTimeMs={getTimeMs}
+      <RobotInstances
+        battleWorld={battleWorld}
+        colorBlindPalette={props.colorBlindPalette}
       />
+      <RobotHealthBars robots={battleWorld.robots} />
+      <TeamMarkers
+        robots={battleWorld.robots}
+        colorBlindPalette={props.colorBlindPalette}
+      />
+      {motion.hitAndMuzzleFlashes ? (
+        <InstancedFlashes
+          robots={battleWorld.robots}
+          instanceManager={instanceManager}
+          getTimeMs={getTimeMs}
+        />
+      ) : null}
       {instancingEnabled ? (
         <>
           <InstancedProjectiles

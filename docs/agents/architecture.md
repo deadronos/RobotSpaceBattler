@@ -60,6 +60,11 @@
   `src/visuals/robots/robotFeedback.ts`.
 - `ObstacleVisual` still copies ECS positions onto refs in `useFrame`. Geometries
   and materials are shared at module level.
+- `TeamMarkers` (2 draw calls) billboards a per-team shape badge above each
+  health bar: a pyramid for red, a ring for blue. Two instanced meshes total,
+  re-projected from ECS positions every frame; see
+  `src/visuals/robots/teamMarkers.ts`. This keeps team identity readable without
+  relying on hue (#166).
 - `useEntityList` re-renders a layer only when entities are added or removed.
 - The HUD reads mutable ECS and telemetry data on a ~4 Hz tick (`useHudTick`).
 - Telemetry store (`state/telemetryStore.ts`) is append-only and mutated in place (#207).
@@ -100,3 +105,45 @@
   and [technical/instancing.md](../technical/instancing.md).
 - Scale: 1 world unit = 1 metre.
 - Performance background: [r3f-performance.md](../r3f-performance.md).
+
+## Accessibility (#166)
+
+Rendering-only; none of this touches ECS or simulation state.
+
+- **Dialogs:** every modal is built on `components/ui/Modal.tsx`, which sets
+  `role="dialog"`, `aria-modal="true"`, an `aria-labelledby` title, traps Tab and
+  Shift+Tab, closes on Escape and restores focus to the opener. `SettingsModal`
+  and `BattleStatsModal` only supply content.
+- **Keyboard:** Space pauses/resumes, R resets the match (`App.tsx`), and the
+  camera is fully keyboard-operable (`components/CameraKeyboardControls.tsx`):
+  arrow keys orbit, `+`/`-` zoom, `0` resets. Camera keys are ignored while a
+  form field or an open modal owns the keyboard. Camera maths and key mapping
+  live in `visuals/cameraKeyboard.ts`.
+- **Reduced motion:** `useAccessibilitySettings` persists two preferences and
+  defaults reduced motion to `prefers-reduced-motion`. `visuals/reducedMotion.ts`
+  resolves the visual budget: no post-processing composer, no hit/muzzle flash
+  layer and no OrbitControls inertia. CSS animations and transitions are
+  suppressed by the `prefers-reduced-motion` media query and the
+  `[data-reduced-motion="true"]` root attribute. Projectiles, lasers and health
+  bars stay: they carry gameplay information.
+- **Team identity beyond colour:** `lib/teamPalette.ts` owns the default and
+  colour-blind-safe (Okabe-Ito orange/sky blue) palettes plus the shape markers.
+  Robots take their instance colour from the active palette, the HUD strength bar
+  reads it through CSS custom properties, health bars carry the shape badge, and
+  the HUD/list/stats panels show the marker next to the team name. Assistive
+  technology gets the team name; markers are `aria-hidden` decoration.
+- **Match-end UI (#170):** the overlay and summary reuse the shared `Modal` for
+  focus trapping and Escape. The overlay's buttons and the speed control are
+  native buttons, so they are keyboard-operable; `useAppShortcuts` ignores Space
+  while a button or link is focused. Team cards, the MVP and the robot table use
+  the active palette plus `TeamMarker`; the series line keeps
+  `formatSeriesLine`'s exact text and adds team markers/CSS-variable colours as
+  generated content, so its accessible string does not change.
+- **Motion in #170 UI:** the match-end/summary transitions and the speed
+  control's transitions are covered by the global reduced-motion rules (`*`
+  selectors), so new components need no per-component branch.
+- **Checks:** `playwright/tests/a11y.spec.ts` runs axe (`@axe-core/playwright`)
+  with the WCAG 2.0/2.1 A and AA tags and fails on serious or critical
+  violations. It also covers keyboard dialog open/close/focus restore, the
+  preferences round trip, keyboard camera movement, the speed control, and a
+  forced match end (overlay plus summary).

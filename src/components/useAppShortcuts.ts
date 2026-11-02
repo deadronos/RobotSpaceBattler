@@ -10,7 +10,8 @@ interface UseAppShortcutsOptions {
 /**
  * App-level keyboard shortcuts: Space pauses/resumes and R resets (#170 moved
  * this out of `App`). Key repeat is ignored for toggles, and events that come
- * from a text field are skipped.
+ * from a text field or a focused button/link are skipped so native keyboard
+ * activation (the speed control, the match-end buttons) keeps working (#166).
  */
 export function useAppShortcuts({
   enabled,
@@ -32,6 +33,10 @@ export function useAppShortcuts({
           target.tagName === "TEXTAREA" ||
           target.isContentEditable)
       ) {
+        return;
+      }
+      // Let Space/Enter activate a focused button or link instead of pausing.
+      if (target?.closest?.("button, a")) {
         return;
       }
 

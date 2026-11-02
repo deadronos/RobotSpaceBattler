@@ -158,6 +158,22 @@ describe("App Keyboard Shortcuts", () => {
     expect(mockPause).not.toHaveBeenCalled();
   });
 
+  it("does not pause when Space activates a focused button", () => {
+    mockGetSnapshot.mockReturnValue({
+      phase: "running",
+      elapsedMs: 0,
+      restartTimerMs: null,
+      winner: null,
+    });
+    render(<App />);
+
+    const pauseButton = screen.getByTitle("Pause/Resume (Space)");
+    pauseButton.focus();
+    fireEvent.keyDown(pauseButton, { key: " ", bubbles: true });
+
+    expect(mockPause).not.toHaveBeenCalled();
+  });
+
   it("does not trigger shortcuts when typing in an input", () => {
     mockGetSnapshot.mockReturnValue({
       phase: "running",

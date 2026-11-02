@@ -1,14 +1,18 @@
 import { useMemo } from "react";
 
+import { resolveTeamPalette } from "../../lib/teamPalette";
 import { TEAM_IDENTITIES } from "../../lib/teamConfig";
 import { useTelemetryStore } from "../../state/telemetryStore";
 import { Modal } from "./Modal";
+import { TeamMarker } from "./TeamMarker";
 import { useHudTick } from "./useHudTick";
 
 interface BattleStatsModalProps {
   isOpen: boolean;
   onClose: () => void;
   winner?: "red" | "blue" | null;
+  /** Use the colour-blind-safe team palette (#166). */
+  colorBlindPalette?: boolean;
 }
 
 export function BattleStatsModal(props: BattleStatsModalProps) {
@@ -21,7 +25,9 @@ function OpenBattleStatsModal({
   isOpen,
   onClose,
   winner,
+  colorBlindPalette = false,
 }: BattleStatsModalProps) {
+  const palette = resolveTeamPalette(colorBlindPalette);
   // The telemetry aggregates are mutated in place, so their references never
   // change and subscribing to them would never fire (#207). Re-read them on the
   // throttled HUD tick, like the robot list does, so this modal does not hook
@@ -52,13 +58,22 @@ function OpenBattleStatsModal({
     >
       {winner && (
         <div className="battle-stats-winner">
-          <h3>🏆 {TEAM_IDENTITIES[winner].label} Wins!</h3>
+          <h3>
+            <span aria-hidden="true">🏆</span> <TeamMarker team={winner} />
+            {TEAM_IDENTITIES[winner].label} Wins!
+          </h3>
         </div>
       )}
 
       <div className="battle-stats-teams">
-        <div className="battle-stats-team-card battle-stats-team-red">
-          <h3>{TEAM_IDENTITIES.red.label}</h3>
+        <div
+          className="battle-stats-team-card battle-stats-team-red"
+          style={{ borderColor: palette.colors.red }}
+        >
+          <h3>
+            <TeamMarker team="red" />
+            {TEAM_IDENTITIES.red.label}
+          </h3>
           <div className="battle-stats-stat-grid">
             <div className="battle-stats-stat">
               <span className="battle-stats-stat-label">Shots Fired</span>
@@ -85,8 +100,14 @@ function OpenBattleStatsModal({
           </div>
         </div>
 
-        <div className="battle-stats-team-card battle-stats-team-blue">
-          <h3>{TEAM_IDENTITIES.blue.label}</h3>
+        <div
+          className="battle-stats-team-card battle-stats-team-blue"
+          style={{ borderColor: palette.colors.blue }}
+        >
+          <h3>
+            <TeamMarker team="blue" />
+            {TEAM_IDENTITIES.blue.label}
+          </h3>
           <div className="battle-stats-stat-grid">
             <div className="battle-stats-stat">
               <span className="battle-stats-stat-label">Shots Fired</span>
@@ -128,9 +149,10 @@ function OpenBattleStatsModal({
                 <span
                   className="battle-stats-performer-team"
                   style={{
-                    color: TEAM_IDENTITIES[robot.teamId].color,
+                    color: palette.colors[robot.teamId],
                   }}
                 >
+                  <TeamMarker team={robot.teamId} />
                   {TEAM_IDENTITIES[robot.teamId].label}
                 </span>
                 <span className="battle-stats-performer-stats">

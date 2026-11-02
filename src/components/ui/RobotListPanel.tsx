@@ -4,12 +4,16 @@ import Draggable from "react-draggable";
 import type { BattleWorld } from "../../ecs/worldTypes";
 import { isActiveRobot } from "../../lib/robotHelpers";
 import { readStoredBoolean, writeStoredBoolean } from "../../lib/storedBoolean";
+import { resolveTeamPalette } from "../../lib/teamPalette";
 import { TEAM_IDENTITIES, TeamId } from "../../lib/teamConfig";
 import { useTelemetryStore } from "../../state/telemetryStore";
+import { TeamMarker } from "./TeamMarker";
 import { useHudTick } from "./useHudTick";
 
 interface RobotListPanelProps {
   battleWorld: BattleWorld;
+  /** Use the colour-blind-safe team palette (#166). */
+  colorBlindPalette?: boolean;
 }
 
 interface RobotDisplayData {
@@ -36,7 +40,11 @@ function getStoredCollapseState(): Record<TeamId, boolean> {
   };
 }
 
-export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
+export function RobotListPanel({
+  battleWorld,
+  colorBlindPalette = false,
+}: RobotListPanelProps) {
+  const palette = resolveTeamPalette(colorBlindPalette);
   const nodeRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState<Record<TeamId, boolean>>(
     getStoredCollapseState,
@@ -102,19 +110,26 @@ export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
     const robots = robotsByTeam[teamId];
     const isCollapsed = collapsed[teamId];
     const teamConfig = TEAM_IDENTITIES[teamId];
+    const listId = `robot-list-robots-${teamId}`;
 
     return (
       <div key={teamId} className="robot-list-team">
         <button
           className="robot-list-team-header"
+          type="button"
+          aria-expanded={!isCollapsed}
+          aria-controls={listId}
           onClick={() => toggleCollapsed(teamId)}
           style={{
-            borderLeftColor: teamConfig.color,
+            borderLeftColor: palette.colors[teamId],
           }}
         >
           <span className="robot-list-team-title">
-            {teamConfig.label} ({robots.filter((r) => r.isAlive).length}/
-            {robots.length})
+            <TeamMarker team={teamId} />
+            <span>
+              {teamConfig.label} ({robots.filter((r) => r.isAlive).length}/
+              {robots.length})
+            </span>
           </span>
           <span className="robot-list-collapse-icon">
             {isCollapsed ? "▶" : "▼"}
@@ -122,7 +137,7 @@ export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
         </button>
 
         {!isCollapsed && (
-          <div className="robot-list-robots">
+          <div className="robot-list-robots" id={listId}>
             {robots.map((robot) => (
               <div
                 key={robot.id}
@@ -174,8 +189,13 @@ export function RobotListPanel({ battleWorld }: RobotListPanelProps) {
       bounds="parent"
       nodeRef={nodeRef}
     >
-      <div className="robot-list-panel" ref={nodeRef}>
-        <div className="robot-list-drag-handle">
+      <div
+        className="robot-list-panel"
+        ref={nodeRef}
+        role="region"
+        aria-label="Robot status"
+      >
+        <div className="robot-list-drag-handle" aria-hidden="true">
           <span className="robot-list-title">Robot Status</span>
           <span className="robot-list-drag-icon">⋮⋮</span>
         </div>

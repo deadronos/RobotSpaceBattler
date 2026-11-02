@@ -1,12 +1,15 @@
 import { OrbitControls, Stars } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { lazy, ReactNode, Suspense } from "react";
+import { ComponentRef, lazy, ReactNode, Suspense, useRef } from "react";
 
 import { canExposeDebugGlobals } from "../lib/debugFlags";
 import { useQualitySettings } from "../state/quality/QualityManager";
+import { INITIAL_CAMERA_POSITION } from "../visuals/cameraKeyboard";
 import { DynamicResScaler } from "../visuals/DynamicResScaler";
 import { Lighting } from "../visuals/Lighting";
+import { resolveMotionEffects } from "../visuals/reducedMotion";
 import { initializeRendererStats } from "../visuals/rendererStats";
+import { CameraKeyboardControls } from "./CameraKeyboardControls";
 
 const PostProcessing = lazy(async () => {
   const module = await import("../visuals/PostProcessing");
@@ -26,6 +29,8 @@ interface SceneProps {
   children?: ReactNode;
   /** Whether to render the performance overlay (off by default). */
   showPerfOverlay?: boolean;
+  /** Reduced motion disables post-processing and camera inertia (#166). */
+  reducedMotion?: boolean;
 }
 
 /**
@@ -35,18 +40,36 @@ interface SceneProps {
  * @param props - Component props.
  * @returns The rendered scene.
  */
-export function Scene({ children, showPerfOverlay = false }: SceneProps) {
+export function Scene({
+  children,
+  showPerfOverlay = false,
+  reducedMotion = false,
+}: SceneProps) {
   const qualitySettings = useQualitySettings();
   const { postprocessing, render } = qualitySettings.visuals;
   const shadowsEnabled = render.shadowsEnabled;
   const shadowMapSize = render.shadowMapSize;
   const starCount = render.dpr >= 1.5 ? 1500 : 900;
+  const motion = resolveMotionEffects({
+    postprocessingEnabled: postprocessing.enabled,
+    reducedMotion,
+  });
+  const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null);
 
   return (
     <Canvas
+      role="img"
+      aria-label="3D battle arena. Team strength and alive counts are shown in the on-screen HUD. Camera: arrow keys orbit, plus and minus zoom, 0 resets."
       shadows={shadowsEnabled ? "percentage" : false}
       dpr={render.dpr}
-      camera={{ position: [-14, 28, 48], fov: 45 }}
+      camera={{
+        position: [
+          INITIAL_CAMERA_POSITION.x,
+          INITIAL_CAMERA_POSITION.y,
+          INITIAL_CAMERA_POSITION.z,
+        ],
+        fov: 45,
+      }}
       gl={{
         antialias: true,
         powerPreference: "high-performance",
@@ -80,12 +103,19 @@ export function Scene({ children, showPerfOverlay = false }: SceneProps) {
         </Suspense>
       ) : null}
       <Suspense fallback={null}>{children}</Suspense>
-      <OrbitControls enablePan enableZoom enableRotate />
+      <OrbitControls
+        ref={controlsRef}
+        enablePan
+        enableZoom
+        enableRotate
+        enableDamping={motion.cameraDamping}
+      />
+      <CameraKeyboardControls controlsRef={controlsRef} />
 
-      {postprocessing.enabled ? (
+      {motion.postprocessing ? (
         <Suspense fallback={null}>
           <PostProcessing
-            enabled={postprocessing.enabled}
+            enabled={motion.postprocessing}
             quality={postprocessing.quality}
           />
         </Suspense>

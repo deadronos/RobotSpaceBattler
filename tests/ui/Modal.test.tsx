@@ -14,6 +14,14 @@ function renderModal(onClose: () => void, extra: React.ReactNode = null) {
 }
 
 describe("Modal focus management", () => {
+  it("exposes dialog semantics with a labelled title", () => {
+    render(renderModal(() => undefined));
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(dialog).toHaveAccessibleName("Test");
+  });
+
   it("keeps focus where the user put it when the parent re-renders with a new onClose", () => {
     const { rerender } = render(renderModal(() => undefined));
     const second = screen.getByLabelText("second input");

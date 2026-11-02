@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Color, InstancedMesh, Object3D } from "three";
 
 import type { BattleWorld, RobotEntity, UnitRole } from "../../ecs/worldTypes";
-import { TEAM_IDENTITIES } from "../../lib/teamConfig";
+import { teamColor } from "../../lib/teamPalette";
 import { hideAllInstances } from "../../visuals/instanceColorUtils";
 import { hitFlashIntensity } from "../../visuals/robots/robotFeedback";
 import {
@@ -37,7 +37,14 @@ const HIDDEN_Y = -512;
  * the shadow pass. `count` stays at capacity and unused instances are hidden,
  * so adding or removing robots never changes the draw-call count.
  */
-export function RobotInstances({ battleWorld }: { battleWorld: BattleWorld }) {
+export function RobotInstances({
+  battleWorld,
+  colorBlindPalette = false,
+}: {
+  battleWorld: BattleWorld;
+  /** Use the colour-blind-safe team palette (#166). */
+  colorBlindPalette?: boolean;
+}) {
   const visuals = useMemo(() => createRobotRoleVisuals(), []);
   const material = useMemo(() => createRobotMaterial(), []);
   const buffers = useMemo(
@@ -50,10 +57,10 @@ export function RobotInstances({ battleWorld }: { battleWorld: BattleWorld }) {
   const color = useMemo(() => new Color(), []);
   const teamColors = useMemo(
     () => ({
-      red: new Color(TEAM_IDENTITIES.red.color),
-      blue: new Color(TEAM_IDENTITIES.blue.color),
+      red: new Color(teamColor("red", colorBlindPalette)),
+      blue: new Color(teamColor("blue", colorBlindPalette)),
     }),
-    [],
+    [colorBlindPalette],
   );
 
   useEffect(() => {
