@@ -112,6 +112,64 @@ canvas {
   cursor: pointer;
 }
 
+.settings-heading {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #aab4d6;
+}
+
+.settings-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #9aa4c7;
+}
+
+/* Per-team shape cue (#166): colour is never the only team signal. */
+.team-marker {
+  display: inline-block;
+  margin-right: 0.35em;
+  font-size: 0.85em;
+  line-height: 1;
+  color: inherit;
+  opacity: 0.9;
+}
+
+/* Per-team markers in the match-end series line (#166/#170). Generated content
+   keeps the visible text identical to formatSeriesLine for screen readers. */
+.series-score-team {
+  font-weight: 600;
+}
+
+.series-score-team-red {
+  color: var(--team-red, #ff4d5a);
+}
+
+.series-score-team-red::before {
+  content: "▲ ";
+}
+
+.series-score-team-blue {
+  color: var(--team-blue, #4da6ff);
+}
+
+.series-score-team-blue::before {
+  content: "● ";
+}
+
+.app-victory-title[data-team="red"]::before {
+  content: "▲ ";
+  color: var(--team-red, #ff4d5a);
+}
+
+.app-victory-title[data-team="blue"]::before {
+  content: "● ";
+  color: var(--team-blue, #4da6ff);
+}
+
 .settings-button {
   position: absolute;
   top: 16px;
@@ -775,4 +833,23 @@ canvas {
   .match-summary-teams {
     grid-template-columns: 1fr;
   }
+}
+/* Accessibility: honour the OS reduced-motion preference (#166). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* The in-app "Reduce motion" toggle has the same effect on CSS motion. */
+[data-reduced-motion="true"] *,
+[data-reduced-motion="true"] *::before,
+[data-reduced-motion="true"] *::after {
+  animation: none !important;
+  transition: none !important;
 }

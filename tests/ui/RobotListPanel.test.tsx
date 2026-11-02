@@ -28,6 +28,13 @@ describe("RobotListPanel", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText("▶").length).toBeGreaterThan(0);
     expect(screen.queryByText("ROAM")).not.toBeInTheDocument();
+
+    // #166: the collapse control reports state and owns a labelled list, and
+    // the team heading carries a shape marker as well as its colour.
+    const header = screen.getByRole("button", { name: /Crimson Fleet/ });
+    expect(header).toHaveAttribute("aria-expanded", "false");
+    expect(header).toHaveAttribute("aria-controls", "robot-list-robots-red");
+    expect(header.querySelector(".team-marker")).toBeInTheDocument();
   });
 });
 

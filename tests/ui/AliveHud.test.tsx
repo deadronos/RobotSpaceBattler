@@ -72,6 +72,8 @@ describe("Alive HUD", () => {
     expect(strengthBar.textContent).toContain(TEAM_IDENTITIES.red.label);
     expect(strengthBar.textContent).toContain(TEAM_IDENTITIES.blue.label);
     expect(strengthBar.textContent).toContain("1000 HP");
+    // #166: team identity is not colour-only; each segment carries a shape.
+    expect(strengthBar.querySelectorAll(".team-marker")).toHaveLength(2);
 
     act(() => {
       captured.world!.robots.entities[0].health = 0;

@@ -20,7 +20,7 @@
     "test:coverage": "vitest run --coverage",
     "playwright:install": "playwright install",
     "playwright:test": "playwright test",
-    "playwright:preview": "playwright test -c playwright.preview.config.ts smoke pathfinding-worker",
+    "playwright:preview": "playwright test -c playwright.preview.config.ts smoke pathfinding-worker a11y",
     "playwright:smoke:live": "playwright test -c playwright.preview.config.ts smoke",
     "bench": "node ./scripts/perf/ai-bench.js",
     "perf:vfx-instancing": "node ./scripts/perf/measure_drawcalls.js",
@@ -54,6 +54,7 @@
     "zustand": "^5.0.16"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@gltf-transform/cli": "^4.5.1",
     "@gltf-transform/core": "^4.5.1",
     "@gltf-transform/extensions": "^4.5.1",

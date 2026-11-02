@@ -23,8 +23,17 @@ import { useAppShortcuts } from "./components/useAppShortcuts";
 import { TeamHud } from "./components/ui/TeamHud";
 import { createBattleWorld } from "./ecs/world";
 import { MATCH_END_RESTART_DELAY_MS } from "./lib/constants";
+import {
+  AUTO_RESTART_STORAGE_KEY,
+  createIdleSnapshot,
+  formatStatus,
+  readAutoRestartPreference,
+  ROBOT_LIST_STORAGE_KEY,
+} from "./lib/matchStatus";
 import { DEFAULT_SIM_SPEED, type SimSpeed } from "./lib/simSpeed";
 import { readStoredBoolean, writeStoredBoolean } from "./lib/storedBoolean";
+import { teamPaletteCssVariables } from "./lib/teamPalette";
+import { useAccessibilitySettings } from "./state/accessibility/accessibilitySettings";
 import { BattleRunner } from "./runtime/simulation/battleRunner";
 import { createTelemetryPort } from "./runtime/simulation/telemetryAdapter";
 import {
@@ -34,23 +43,6 @@ import {
 import { useMatchSummaryTracker } from "./runtime/state/useMatchSummary";
 import { ObstacleFixture } from "./simulation/match/matchSpawner";
 const OBSTACLE_FIXTURE = sampleObstacleFixture as unknown as ObstacleFixture;
-const ROBOT_LIST_STORAGE_KEY = "hud.showRobotList";
-const AUTO_RESTART_STORAGE_KEY = "hud.autoRestart";
-
-function readAutoRestartPreference(): boolean {
-  return readStoredBoolean(AUTO_RESTART_STORAGE_KEY, true);
-}
-
-function createIdleSnapshot(): MatchStateSnapshot {
-  return {
-    phase: "initializing",
-    elapsedMs: 0,
-    restartTimerMs: null,
-    winner: null,
-    isDraw: false,
-    autoRestartEnabled: readAutoRestartPreference(),
-  };
-}
 
 const ObstacleEditor = lazy(async () => {
   const module = await import("./components/debug/ObstacleEditor");
@@ -67,27 +59,6 @@ const PerfToggles = lazy(async () => {
   return { default: module.PerfToggles };
 });
 
-function formatStatus({
-  phase,
-  winner,
-  isDraw,
-  restartTimerMs,
-}: MatchStateSnapshot): string {
-  switch (phase) {
-    case "running":
-      return "Battle in progress";
-    case "paused":
-      return "Simulation paused";
-    case "victory": {
-      const countdown =
-        restartTimerMs != null ? Math.ceil(restartTimerMs / 1000) : null;
-      return `${isDraw ? "Draw" : `Victory: ${winner ?? "unknown"}`}${countdown != null ? ` · restart in ${countdown}s` : ""}`;
-    }
-    default:
-      return "Initializing space match...";
-  }
-}
-
 export default function App() {
   const battleWorld = useMemo(() => createBattleWorld(), []);
   const telemetryPort = useMemo(() => createTelemetryPort(), []);
@@ -102,6 +73,8 @@ export default function App() {
   const [showRobotList, setShowRobotList] = useState(() =>
     readStoredBoolean(ROBOT_LIST_STORAGE_KEY, true),
   );
+  const { accessibility, updateAccessibility } = useAccessibilitySettings();
+  const { reducedMotion, colorBlindPalette } = accessibility;
 
   const { summary, series, trackSnapshot, resetSeries } =
     useMatchSummaryTracker(battleWorld);
@@ -187,7 +160,11 @@ export default function App() {
       : null;
 
   return (
-    <div className="app-root">
+    <div
+      className="app-root"
+      style={teamPaletteCssVariables(colorBlindPalette)}
+      data-reduced-motion={reducedMotion ? "true" : "false"}
+    >
       <div id="status" className="match-status" role="status">
         {statusText}
       </div>
@@ -209,14 +186,28 @@ export default function App() {
         onTogglePerfOverlay={setShowPerfOverlay}
         showRobotList={showRobotList}
         onToggleRobotList={setShowRobotList}
+        reducedMotion={reducedMotion}
+        onToggleReducedMotion={(value) =>
+          updateAccessibility({ reducedMotion: value })
+        }
+        colorBlindPalette={colorBlindPalette}
+        onToggleColorBlindPalette={(value) =>
+          updateAccessibility({ colorBlindPalette: value })
+        }
       />
 
-      {showRobotList && <RobotListPanel battleWorld={battleWorld} />}
+      {showRobotList && (
+        <RobotListPanel
+          battleWorld={battleWorld}
+          colorBlindPalette={colorBlindPalette}
+        />
+      )}
 
       <BattleStatsModal
         isOpen={isBattleStatsOpen}
         onClose={() => setIsBattleStatsOpen(false)}
         winner={matchSnapshot.phase === "victory" ? matchSnapshot.winner : null}
+        colorBlindPalette={colorBlindPalette}
       />
 
       <Suspense fallback={<div className="match-status">Loading arena...</div>}>
@@ -228,6 +219,8 @@ export default function App() {
           obstacleFixture={OBSTACLE_FIXTURE}
           showPerfOverlay={showPerfOverlay}
           speed={simSpeed}
+          reducedMotion={reducedMotion}
+          colorBlindPalette={colorBlindPalette}
         />
       </Suspense>
       {showDebugUI && (
@@ -242,7 +235,10 @@ export default function App() {
           </div>
         </Suspense>
       )}
-      <TeamHud battleWorld={battleWorld} />
+      <TeamHud
+        battleWorld={battleWorld}
+        colorBlindPalette={colorBlindPalette}
+      />
       {matchSnapshot.phase === "victory" ? (
         <MatchEndOverlay
           winner={matchSnapshot.winner}
@@ -261,6 +257,7 @@ export default function App() {
         onClose={() => setIsSummaryOpen(false)}
         summary={summary}
         series={series}
+        colorBlindPalette={colorBlindPalette}
         onResetSeries={resetSeries}
       />
       <div className="app-controls">

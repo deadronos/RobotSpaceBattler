@@ -1,5 +1,7 @@
 import React from "react";
 
+import { TEAM_MARKERS } from "../../lib/teamPalette";
+import { TEAM_IDENTITIES } from "../../lib/teamConfig";
 import { Modal } from "./Modal";
 
 interface SettingsModalProps {
@@ -11,6 +13,10 @@ interface SettingsModalProps {
   onTogglePerfOverlay: (show: boolean) => void;
   showRobotList: boolean;
   onToggleRobotList: (show: boolean) => void;
+  reducedMotion: boolean;
+  onToggleReducedMotion: (enabled: boolean) => void;
+  colorBlindPalette: boolean;
+  onToggleColorBlindPalette: (enabled: boolean) => void;
 }
 
 export function SettingsModal({
@@ -22,6 +28,10 @@ export function SettingsModal({
   onTogglePerfOverlay,
   showRobotList,
   onToggleRobotList,
+  reducedMotion,
+  onToggleReducedMotion,
+  colorBlindPalette,
+  onToggleColorBlindPalette,
 }: SettingsModalProps) {
   return (
     <Modal
@@ -60,7 +70,43 @@ export function SettingsModal({
         />
       </div>
 
-      {/* Extensible area for more settings */}
+      <h3 className="settings-heading">Accessibility</h3>
+
+      <div className="settings-row">
+        <label htmlFor="reduced-motion-toggle">
+          Reduce motion (fewer effects, no camera inertia)
+        </label>
+        <input
+          id="reduced-motion-toggle"
+          type="checkbox"
+          checked={reducedMotion}
+          onChange={(e) => onToggleReducedMotion(e.target.checked)}
+        />
+      </div>
+
+      <div className="settings-row">
+        <label htmlFor="color-blind-toggle">
+          Colour-blind safe team colours
+        </label>
+        <input
+          id="color-blind-toggle"
+          type="checkbox"
+          checked={colorBlindPalette}
+          onChange={(e) => onToggleColorBlindPalette(e.target.checked)}
+        />
+      </div>
+
+      <p className="settings-hint">
+        Teams also differ by shape, so colour is never the only cue:{" "}
+        <span aria-hidden="true">{TEAM_MARKERS.red.glyph}</span>{" "}
+        {TEAM_IDENTITIES.red.label} and{" "}
+        <span aria-hidden="true">{TEAM_MARKERS.blue.glyph}</span>{" "}
+        {TEAM_IDENTITIES.blue.label}.
+      </p>
+      <p className="settings-hint">
+        Camera: arrow keys orbit, + / − zoom, 0 resets. Space pauses, R resets
+        the match.
+      </p>
     </Modal>
   );
 }

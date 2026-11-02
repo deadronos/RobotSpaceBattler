@@ -63,6 +63,19 @@ describe("MatchEndOverlay (#170)", () => {
     expect(props.onNextRound).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps the series text but adds per-team shape markers (#166)", () => {
+    renderOverlay();
+
+    const series = screen.getByTestId("series-score");
+    expect(series.textContent).toBe(
+      "Series · Crimson Fleet 2 – 1 Azure Vanguard · 1 drawn",
+    );
+    expect(series.querySelectorAll(".series-score-team")).toHaveLength(2);
+    expect(screen.getByText("Crimson Fleet Triumphs!").dataset.team).toBe(
+      "red",
+    );
+  });
+
   it("toggles the auto-restart preference", () => {
     const props = renderOverlay();
 

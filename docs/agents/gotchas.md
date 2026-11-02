@@ -40,3 +40,16 @@ Short, learned lessons. Append new ones.
 - **Victory re-emits:** `matchStateMachine` emits on every whole countdown second and on
   auto-restart toggles, so anything that records a finished round needs its own
   once-per-victory guard (see `useMatchSummaryTracker`).
+- **Team identity is not colour:** red vs blue is not readable for every player.
+  Use `lib/teamPalette.ts` (`TEAM_PALETTES`, `TEAM_MARKERS`) for team colours and
+  keep a shape cue next to any new team label. Never hard-code the team hex in a
+  component (#166).
+- **Reduced motion covers more than CSS:** `visuals/reducedMotion.ts` decides
+  whether post-processing, the flash layer and OrbitControls inertia run. Add any
+  new optional visual layer to that budget instead of checking
+  `prefers-reduced-motion` inline (#166).
+- **Series line text is a contract:** `formatSeriesLine` output is asserted
+  verbatim in tests and read by screen readers. The #166 team markers in
+  `SeriesScoreLine` are CSS `::before` decoration on the team-name spans, so the
+  `textContent` of `series-score`/`summary-series-score` stays identical. Do not
+  put marker glyphs in the DOM there (#166, #170).

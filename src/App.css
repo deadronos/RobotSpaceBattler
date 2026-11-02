@@ -51,11 +51,19 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 0.35em;
   min-width: 0;
   padding: 8px 12px;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.01em;
+  /* #166: palette-driven, so the colour-blind-safe option recolours the bar.
+     The per-team shape marker in the label carries identity beyond colour. */
+  background: linear-gradient(
+    135deg,
+    var(--team-color, #ff4d5a),
+    var(--team-color-dark, #4f1624)
+  );
 }
 
 .app-team-strength-segment span {
@@ -66,12 +74,10 @@
 
 .app-team-strength-red {
   color: #ffd5dc;
-  background: linear-gradient(135deg, rgba(182, 36, 66, 0.85), #4f1624);
 }
 
 .app-team-strength-blue {
   color: #d8e9ff;
-  background: linear-gradient(135deg, rgba(44, 92, 182, 0.85), #132f57);
 }
 
 .app-victory-overlay {

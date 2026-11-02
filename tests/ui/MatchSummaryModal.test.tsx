@@ -142,6 +142,24 @@ describe("MatchSummaryModal (#170)", () => {
     expect(reset.disabled).toBe(true);
   });
 
+  it("shows team markers and honours the colour-blind-safe palette (#166)", () => {
+    renderModal({ colorBlindPalette: true });
+
+    const red = screen.getByTestId("summary-team-red");
+    expect(red.querySelector(".team-marker")).toBeTruthy();
+    expect(red.style.borderColor).toBe("rgb(230, 159, 0)");
+
+    const mvp = screen.getByTestId("match-summary-mvp");
+    expect(mvp.querySelector(".team-marker")).toBeTruthy();
+    expect(mvp.textContent).toContain("Crimson Fleet Assault red-1");
+
+    expect(
+      screen
+        .getByTestId("summary-series-score")
+        .querySelectorAll(".series-score-team"),
+    ).toHaveLength(2);
+  });
+
   it("closes from the dialog close button", () => {
     const { props } = renderModal();
 
