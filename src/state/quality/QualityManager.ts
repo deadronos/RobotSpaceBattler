@@ -10,6 +10,7 @@ export interface InstancingMaxInstancesConfig {
   rockets: number;
   lasers: number;
   effects: number;
+  flashes: number;
 }
 
 /**
@@ -65,18 +66,21 @@ type QualityListener = () => void;
 
 const DEFAULT_SETTINGS: QualitySettings = createDefaultQualitySettings();
 
+function mergeMaxInstances(
+  base: InstancingMaxInstancesConfig,
+  overrides: Partial<InstancingMaxInstancesConfig>,
+): InstancingMaxInstancesConfig {
+  const merged = { ...base };
+  for (const [key, value] of Object.entries(overrides)) {
+    if (value !== undefined) {
+      merged[key as keyof InstancingMaxInstancesConfig] = value;
+    }
+  }
+  return merged;
+}
+
 function cloneSettings(settings: QualitySettings): QualitySettings {
-  return {
-    visuals: {
-      instancing: {
-        enabled: settings.visuals.instancing.enabled,
-        maxInstances: { ...settings.visuals.instancing.maxInstances },
-      },
-      obstacles: { ...settings.visuals.obstacles },
-      postprocessing: { ...settings.visuals.postprocessing },
-      render: { ...settings.visuals.render },
-    },
-  };
+  return structuredClone(settings);
 }
 
 /**
@@ -107,20 +111,10 @@ export class QualityManager {
       visuals: {
         instancing: {
           enabled: instancing?.enabled ?? base.visuals.instancing.enabled,
-          maxInstances: {
-            bullets:
-              maxInstanceOverrides.bullets ??
-              base.visuals.instancing.maxInstances.bullets,
-            rockets:
-              maxInstanceOverrides.rockets ??
-              base.visuals.instancing.maxInstances.rockets,
-            lasers:
-              maxInstanceOverrides.lasers ??
-              base.visuals.instancing.maxInstances.lasers,
-            effects:
-              maxInstanceOverrides.effects ??
-              base.visuals.instancing.maxInstances.effects,
-          },
+          maxInstances: mergeMaxInstances(
+            base.visuals.instancing.maxInstances,
+            maxInstanceOverrides,
+          ),
         },
         obstacles: {
           visualsEnabled:

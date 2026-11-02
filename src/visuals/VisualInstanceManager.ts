@@ -7,14 +7,15 @@ export type VisualInstanceCategory =
   | "bullets"
   | "rockets"
   | "lasers"
-  | "effects";
+  | "effects"
+  | "flashes";
 
 /**
  * Configuration for the visual instance manager.
  */
 export interface VisualInstanceManagerConfig {
-  /** Maximum number of instances per category. */
-  maxInstances: Record<VisualInstanceCategory, number>;
+  /** Maximum number of instances per category; missing categories get 0. */
+  maxInstances: Partial<Record<VisualInstanceCategory, number>>;
 }
 
 /**
@@ -66,6 +67,7 @@ export class VisualInstanceManager {
       rockets: this.createState(config.maxInstances.rockets ?? 0),
       lasers: this.createState(config.maxInstances.lasers ?? 0),
       effects: this.createState(config.maxInstances.effects ?? 0),
+      flashes: this.createState(config.maxInstances.flashes ?? 0),
     };
   }
 
