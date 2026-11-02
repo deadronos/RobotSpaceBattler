@@ -11,6 +11,7 @@ Every tier of the 2026-10-31 plan is closed: the live quick fixes (#153–#156),
 - **#171 (PR #198):** spatial grid for AI targeting, 72–93% less AI allocation, and `npm run bench`.
 - **#201:** allocation-free AI movement planning, in-place team anchors, a cell-indexed static line-of-sight check and count-based spatial-grid queries: ~36 KB/tick at 100 robots (from 331) and 1.7 ms/tick at 200 robots (from 3.0).
 - **#202 + #203 (PR #206):** real-GPU measurement on an M4. React commits went from 120/s to 4/s and scripting dropped 28%. HUD panels no longer re-render on every telemetry event, and the smoke liveness check is now based on `frameIndex`.
+- **#170 (PR #228):** match-end summary, series score, auto-restart switch and 0.5×/1×/2×/4× speed. The speed scales the accumulator input and the substep cap, so a seed produces one digest at every speed.
 
 ## Tier 1: quick wins (S, any order, all parallel-safe)
 
@@ -33,7 +34,7 @@ Every tier of the 2026-10-31 plan is closed: the live quick fixes (#153–#156),
 ## Tier 4: features (L, now unblocked)
 
 10. **#168: robot visuals.** Instanced meshes, health bars, hit flashes. It was blocked on #162, which is now done. Also fix the shadow-map and `THREE.Clock` deprecation warnings (see #185). Ask for real-GPU before/after numbers using the #206 method: headed Chrome, `--use-angle=metal`, and dropping Playwright's `--enable-unsafe-swiftshader`.
-11. ~~**#170: match-end summary, series score and speed control.**~~ Done: 0.5×/1×/2×/4× scales the accumulator input *and* the substep cap (5 × speed), so 4× has headroom and a seed produces the same digest at every speed. The summary, series score and auto-restart switch are runtime state; the parity goldens are unchanged.
+11. ~~**#170: match-end summary, series score and speed control.**~~ Done: 0.5×/1×/2×/4× scales the accumulator input _and_ the substep cap (5 × speed), so 4× has headroom and a seed produces the same digest at every speed. The summary, series score and auto-restart switch are runtime state; the parity goldens are unchanged.
 12. **#166: accessibility pass.** UX polish that can go anytime, alongside #170.
 13. **#163: team builder (XL).** Last. It needs #192 fixed so that balance is meaningful.
 
@@ -48,6 +49,7 @@ Every tier of the 2026-10-31 plan is closed: the live quick fixes (#153–#156),
 `#204 → (#194, #207, #205, #200 in parallel)` → `#192 → #199` → `#201` → `#159 + #184` → `#168 → #170 (+ #166)` → `#163`
 
 Parallel-safe:
+
 - All of Tier 1 touches different files.
 - #192 and #201 both touch `aiSystem.ts` and `combatSystem.ts`, so run them in sequence.
 - #168 touches only rendering and can run alongside Tier 2 and Tier 3.
