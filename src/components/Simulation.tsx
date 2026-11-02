@@ -37,6 +37,8 @@ interface SimulationProps {
   obstacleFixture?: Parameters<typeof createBattleRunner>[1]["obstacleFixture"];
   /** Whether to show the Perf overlay (off by default). */
   showPerfOverlay?: boolean;
+  /** Simulation speed multiplier (#170). */
+  speed?: number;
 }
 
 /**

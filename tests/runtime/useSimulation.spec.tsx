@@ -82,6 +82,7 @@ function HookHarness(props: {
   battleWorld: ReturnType<typeof createBattleWorld>;
   matchMachine: ReturnType<typeof createMatchMachineStub>;
   telemetry: ReturnType<typeof createTelemetryStub>;
+  speed?: number;
 }) {
   useSimulation(props);
   return <div data-testid="ready">ready</div>;
@@ -100,6 +101,8 @@ describe("useSimulation", () => {
       advance: vi.fn<BattleRunner["advance"]>(),
       reset: vi.fn<BattleRunner["reset"]>(),
       dispose: vi.fn<BattleRunner["dispose"]>(),
+      setSpeed: vi.fn<BattleRunner["setSpeed"]>(),
+      getSpeed: vi.fn<BattleRunner["getSpeed"]>(() => 1),
     };
     simulationTestState.mockCreateBattleRunner.mockReturnValueOnce(runner);
 
@@ -123,6 +126,8 @@ describe("useSimulation", () => {
       advance: vi.fn<BattleRunner["advance"]>(),
       reset: vi.fn<BattleRunner["reset"]>(),
       dispose: vi.fn<BattleRunner["dispose"]>(),
+      setSpeed: vi.fn<BattleRunner["setSpeed"]>(),
+      getSpeed: vi.fn<BattleRunner["getSpeed"]>(() => 1),
     };
 
     simulationTestState.mockCreateBattleRunner.mockReturnValue(runner);
@@ -150,5 +155,43 @@ describe("useSimulation", () => {
       5,
     );
     expect(screen.getByTestId("ready")).toHaveTextContent("ready");
+  });
+
+  it("applies the simulation speed without recreating the runner (#170)", () => {
+    const runner = {
+      step: vi.fn<BattleRunner["step"]>(),
+      advance: vi.fn<BattleRunner["advance"]>(),
+      reset: vi.fn<BattleRunner["reset"]>(),
+      dispose: vi.fn<BattleRunner["dispose"]>(),
+      setSpeed: vi.fn<BattleRunner["setSpeed"]>(),
+      getSpeed: vi.fn<BattleRunner["getSpeed"]>(() => 1),
+    };
+    simulationTestState.mockCreateBattleRunner.mockReturnValue(runner);
+
+    const battleWorld = createBattleWorld();
+    const matchMachine = createMatchMachineStub();
+    const telemetry = createTelemetryStub();
+    const view = render(
+      <HookHarness
+        battleWorld={battleWorld}
+        matchMachine={matchMachine}
+        telemetry={telemetry}
+        speed={1}
+      />,
+    );
+    expect(runner.setSpeed).toHaveBeenCalledWith(1);
+
+    view.rerender(
+      <HookHarness
+        battleWorld={battleWorld}
+        matchMachine={matchMachine}
+        telemetry={telemetry}
+        speed={4}
+      />,
+    );
+
+    expect(runner.setSpeed).toHaveBeenLastCalledWith(4);
+    // The runner owns the match, so a speed change must not restart it.
+    expect(simulationTestState.mockCreateBattleRunner).toHaveBeenCalledTimes(1);
   });
 });

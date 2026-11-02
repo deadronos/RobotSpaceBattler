@@ -91,6 +91,8 @@ describe("App Keyboard Shortcuts", () => {
       declareDraw: vi.fn<MatchStateMachine["declareDraw"]>(),
       tick: vi.fn<MatchStateMachine["tick"]>(),
       getSnapshot: mockGetSnapshot as any,
+      setAutoRestartEnabled:
+        vi.fn<MatchStateMachine["setAutoRestartEnabled"]>(),
     });
   });
 

@@ -23,6 +23,12 @@ export interface MatchStateSnapshot {
   winner: TeamId | null;
   /** True when the match ended with no winner (both teams wiped or timeout tie). */
   isDraw: boolean;
+  /**
+   * Whether a finished round restarts by itself (#170). When false the victory
+   * phase lasts until the user starts the next round, so `restartTimerMs` is
+   * null.
+   */
+  autoRestartEnabled: boolean;
 }
 
 /**
@@ -31,6 +37,8 @@ export interface MatchStateSnapshot {
 export interface MatchStateOptions {
   /** Delay in ms before restarting after victory (default 2000). */
   autoRestartDelayMs?: number;
+  /** Whether a finished round restarts by itself (default true). */
+  autoRestartEnabled?: boolean;
   /**
    * Callback triggered on observable state changes: phase transitions, resets,
    * and the whole-second tick of the victory restart countdown. It is NOT
@@ -63,6 +71,12 @@ export interface MatchStateMachine {
   /** Resets the match to the initializing phase. */
   reset: () => void;
   /**
+   * Turns the victory auto-restart countdown on or off. Enabling it during the
+   * victory phase restarts that countdown; disabling it keeps the match frozen
+   * until `reset()` (or the user) starts the next round.
+   */
+  setAutoRestartEnabled: (enabled: boolean) => void;
+  /**
    * Advances the state machine by a time delta.
    * Handles timer countdowns.
    * @param deltaMs - Time elapsed in ms.
@@ -73,13 +87,17 @@ export interface MatchStateMachine {
   getSnapshot: () => MatchStateSnapshot;
 }
 
-const INITIAL_STATE: MatchStateSnapshot = {
+const INITIAL_STATE: Omit<MatchStateSnapshot, "autoRestartEnabled"> = {
   phase: "initializing",
   elapsedMs: 0,
   restartTimerMs: null,
   winner: null,
   isDraw: false,
 };
+
+function createInitialState(autoRestartEnabled: boolean): MatchStateSnapshot {
+  return { ...INITIAL_STATE, autoRestartEnabled };
+}
 
 /**
  * Creates a state machine to manage the lifecycle of a match.
@@ -90,7 +108,13 @@ export function createMatchStateMachine(
   options: MatchStateOptions = {},
 ): MatchStateMachine {
   const autoRestartDelayMs = options.autoRestartDelayMs ?? 2000;
-  let current: MatchStateSnapshot = { ...INITIAL_STATE };
+  let autoRestartEnabled = options.autoRestartEnabled ?? true;
+  let current: MatchStateSnapshot = createInitialState(autoRestartEnabled);
+
+  // Without auto-restart the victory phase has no countdown at all; the world
+  // stays frozen and the summary stays on screen.
+  const victoryTimer = (restartDelayMs?: number): number | null =>
+    autoRestartEnabled ? (restartDelayMs ?? autoRestartDelayMs) : null;
 
   function emit() {
     options.onChange?.(current);
@@ -123,7 +147,7 @@ export function createMatchStateMachine(
         phase: "victory",
         winner,
         isDraw: false,
-        restartTimerMs: restartDelayMs ?? autoRestartDelayMs,
+        restartTimerMs: victoryTimer(restartDelayMs),
       });
     },
     declareDraw: (restartDelayMs) => {
@@ -131,12 +155,27 @@ export function createMatchStateMachine(
         phase: "victory",
         winner: null,
         isDraw: true,
-        restartTimerMs: restartDelayMs ?? autoRestartDelayMs,
+        restartTimerMs: victoryTimer(restartDelayMs),
       });
     },
     reset: () => {
-      current = { ...INITIAL_STATE };
+      current = createInitialState(autoRestartEnabled);
       emit();
+    },
+    setAutoRestartEnabled: (enabled) => {
+      if (autoRestartEnabled === enabled) {
+        return;
+      }
+      autoRestartEnabled = enabled;
+      const inVictory = current.phase === "victory";
+      transition({
+        autoRestartEnabled: enabled,
+        restartTimerMs: inVictory
+          ? enabled
+            ? (current.restartTimerMs ?? autoRestartDelayMs)
+            : null
+          : current.restartTimerMs,
+      });
     },
     tick: (deltaMs: number) => {
       if (current.phase === "running") {
@@ -165,7 +204,7 @@ export function createMatchStateMachine(
           return false;
         }
 
-        current = { ...INITIAL_STATE };
+        current = createInitialState(autoRestartEnabled);
         emit();
         return true;
       }

@@ -13,23 +13,44 @@ import {
 import sampleObstacleFixture from "./simulation/match/fixtures/dynamic-arena-sample.json";
 import { Simulation } from "./components/Simulation";
 import { BattleStatsModal } from "./components/ui/BattleStatsModal";
+import { MatchEndOverlay } from "./components/ui/MatchEndOverlay";
+import { MatchSummaryModal } from "./components/ui/MatchSummaryModal";
 import { RobotListPanel } from "./components/ui/RobotListPanel";
 import { SettingsIcon } from "./components/ui/SettingsIcon";
 import { SettingsModal } from "./components/ui/SettingsModal";
+import { SimSpeedControl } from "./components/ui/SimSpeedControl";
+import { useAppShortcuts } from "./components/useAppShortcuts";
 import { TeamHud } from "./components/ui/TeamHud";
 import { createBattleWorld } from "./ecs/world";
 import { MATCH_END_RESTART_DELAY_MS } from "./lib/constants";
+import { DEFAULT_SIM_SPEED, type SimSpeed } from "./lib/simSpeed";
 import { readStoredBoolean, writeStoredBoolean } from "./lib/storedBoolean";
-import { TEAM_IDENTITIES } from "./lib/teamConfig";
 import { BattleRunner } from "./runtime/simulation/battleRunner";
 import { createTelemetryPort } from "./runtime/simulation/telemetryAdapter";
 import {
   createMatchStateMachine,
   MatchStateSnapshot,
 } from "./runtime/state/matchStateMachine";
+import { useMatchSummaryTracker } from "./runtime/state/useMatchSummary";
 import { ObstacleFixture } from "./simulation/match/matchSpawner";
 const OBSTACLE_FIXTURE = sampleObstacleFixture as unknown as ObstacleFixture;
 const ROBOT_LIST_STORAGE_KEY = "hud.showRobotList";
+const AUTO_RESTART_STORAGE_KEY = "hud.autoRestart";
+
+function readAutoRestartPreference(): boolean {
+  return readStoredBoolean(AUTO_RESTART_STORAGE_KEY, true);
+}
+
+function createIdleSnapshot(): MatchStateSnapshot {
+  return {
+    phase: "initializing",
+    elapsedMs: 0,
+    restartTimerMs: null,
+    winner: null,
+    isDraw: false,
+    autoRestartEnabled: readAutoRestartPreference(),
+  };
+}
 
 const ObstacleEditor = lazy(async () => {
   const module = await import("./components/debug/ObstacleEditor");
@@ -70,28 +91,43 @@ function formatStatus({
 export default function App() {
   const battleWorld = useMemo(() => createBattleWorld(), []);
   const telemetryPort = useMemo(() => createTelemetryPort(), []);
-  const [matchSnapshot, setMatchSnapshot] = useState<MatchStateSnapshot>({
-    phase: "initializing",
-    elapsedMs: 0,
-    restartTimerMs: null,
-    winner: null,
-    isDraw: false,
-  });
+  const [matchSnapshot, setMatchSnapshot] =
+    useState<MatchStateSnapshot>(createIdleSnapshot);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isBattleStatsOpen, setIsBattleStatsOpen] = useState(false);
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  const [simSpeed, setSimSpeed] = useState<SimSpeed>(DEFAULT_SIM_SPEED);
   const [showDebugUI, setShowDebugUI] = useState(false);
   const [showPerfOverlay, setShowPerfOverlay] = useState(false);
   const [showRobotList, setShowRobotList] = useState(() =>
     readStoredBoolean(ROBOT_LIST_STORAGE_KEY, true),
   );
 
+  const { summary, series, trackSnapshot, resetSeries } =
+    useMatchSummaryTracker(battleWorld);
+
+  const handleSnapshotChange = useCallback(
+    (snapshot: MatchStateSnapshot) => {
+      setMatchSnapshot(snapshot);
+      // Opens on a new round only, so closing the summary is not undone by the
+      // victory countdown re-emitting the same snapshot.
+      if (trackSnapshot(snapshot)) {
+        setIsSummaryOpen(true);
+      } else if (snapshot.phase === "running") {
+        setIsSummaryOpen(false);
+      }
+    },
+    [trackSnapshot],
+  );
+
   const matchMachine = useMemo(
     () =>
       createMatchStateMachine({
         autoRestartDelayMs: MATCH_END_RESTART_DELAY_MS,
-        onChange: (snapshot) => setMatchSnapshot(snapshot),
+        autoRestartEnabled: readAutoRestartPreference(),
+        onChange: handleSnapshotChange,
       }),
-    [],
+    [handleSnapshotChange],
   );
 
   useEffect(() => {
@@ -121,39 +157,28 @@ export default function App() {
     runnerRef.current?.reset();
   }, []);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (isSettingsOpen || isBattleStatsOpen) return;
-      if (e.repeat) return;
+  const handleNextRound = useCallback(() => {
+    setIsSummaryOpen(false);
+    runnerRef.current?.reset();
+  }, []);
 
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable
-      ) {
-        return;
-      }
+  const handleAutoRestartChange = useCallback(
+    (enabled: boolean) => {
+      writeStoredBoolean(AUTO_RESTART_STORAGE_KEY, enabled);
+      matchMachine.setAutoRestartEnabled(enabled);
+    },
+    [matchMachine],
+  );
 
-      if (e.key === " " || e.code === "Space") {
-        e.preventDefault();
-        handlePauseResume();
-      } else if (e.key === "r" || e.key === "R") {
-        handleReset();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isSettingsOpen, isBattleStatsOpen, handlePauseResume, handleReset]);
+  useAppShortcuts({
+    enabled: !isSettingsOpen && !isBattleStatsOpen && !isSummaryOpen,
+    onPauseResume: handlePauseResume,
+    onReset: handleReset,
+  });
 
   const statusText = formatStatus(matchSnapshot);
   const pauseLabel = matchSnapshot.phase === "paused" ? "Resume" : "Pause";
 
-  const winnerLabel =
-    matchSnapshot.phase === "victory" && matchSnapshot.winner
-      ? TEAM_IDENTITIES[matchSnapshot.winner].label
-      : null;
   const isDraw = matchSnapshot.phase === "victory" && !!matchSnapshot.isDraw;
 
   const restartSeconds =
@@ -202,6 +227,7 @@ export default function App() {
           onRunnerReady={handleRunnerReady}
           obstacleFixture={OBSTACLE_FIXTURE}
           showPerfOverlay={showPerfOverlay}
+          speed={simSpeed}
         />
       </Suspense>
       {showDebugUI && (
@@ -217,25 +243,26 @@ export default function App() {
         </Suspense>
       )}
       <TeamHud battleWorld={battleWorld} />
-      {matchSnapshot.phase === "victory" && (winnerLabel || isDraw) ? (
-        <div className="app-victory-overlay">
-          <h2 className="app-victory-title">
-            {isDraw ? "Draw!" : `${winnerLabel} Triumphs!`}
-          </h2>
-          {restartSeconds != null ? (
-            <p className="app-victory-subtitle">{`Restarting in ${restartSeconds}s`}</p>
-          ) : null}
-          <button
-            type="button"
-            className="app-button app-victory-button"
-            onClick={() => {
-              setIsBattleStatsOpen(true);
-            }}
-          >
-            View Battle Stats
-          </button>
-        </div>
+      {matchSnapshot.phase === "victory" ? (
+        <MatchEndOverlay
+          winner={matchSnapshot.winner}
+          isDraw={isDraw}
+          restartSeconds={restartSeconds}
+          autoRestartEnabled={matchSnapshot.autoRestartEnabled}
+          series={series}
+          onOpenSummary={() => setIsSummaryOpen(true)}
+          onOpenBattleStats={() => setIsBattleStatsOpen(true)}
+          onNextRound={handleNextRound}
+          onToggleAutoRestart={handleAutoRestartChange}
+        />
       ) : null}
+      <MatchSummaryModal
+        isOpen={isSummaryOpen}
+        onClose={() => setIsSummaryOpen(false)}
+        summary={summary}
+        series={series}
+        onResetSeries={resetSeries}
+      />
       <div className="app-controls">
         <button
           type="button"
@@ -249,6 +276,7 @@ export default function App() {
         <button type="button" onClick={handleReset} title="Reset (R)">
           <span>🔄 Reset</span>
         </button>
+        <SimSpeedControl value={simSpeed} onChange={setSimSpeed} />
       </div>
     </div>
   );

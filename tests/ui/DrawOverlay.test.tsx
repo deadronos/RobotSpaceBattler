@@ -43,7 +43,11 @@ describe("Draw overlay", () => {
       captured.machine!.start();
       captured.machine!.declareDraw(5000);
     });
-    expect(screen.getByText("Draw!")).toBeTruthy();
+    // The match-end card and the auto-opened summary both report the draw.
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Draw!" }),
+    ).toBeTruthy();
     expect(screen.getByText("Restarting in 5s")).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "Match Summary" })).toBeTruthy();
   });
 });
