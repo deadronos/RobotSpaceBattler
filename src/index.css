@@ -590,3 +590,189 @@ canvas {
     min-width: 24px;
   }
 }
+
+/* Match summary modal (#170) */
+.match-summary-content {
+  width: 860px;
+  max-height: 86vh;
+  overflow-y: auto;
+}
+
+.match-summary-result h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.match-summary-meta {
+  margin: 6px 0 0 0;
+  font-size: 13px;
+  color: #aaa;
+}
+
+.match-summary-mvp {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  background: linear-gradient(
+    135deg,
+    rgba(251, 191, 36, 0.15) 0%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
+}
+
+.match-summary-mvp-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fbbf24;
+  color: #1a1d3a;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.match-summary-mvp-team {
+  font-weight: 700;
+}
+
+.match-summary-mvp-stats {
+  font-size: 13px;
+  color: #cfd4ff;
+}
+
+.match-summary-teams {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.match-summary-team {
+  padding: 16px;
+  border-radius: 12px;
+  border: 2px solid;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.match-summary-team-red {
+  border-color: #ef4444;
+}
+
+.match-summary-team-blue {
+  border-color: #3b82f6;
+}
+
+.match-summary-team h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+}
+
+.match-summary-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.match-summary-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.match-summary-stat-label {
+  font-size: 11px;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.match-summary-stat-value {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.match-summary-subtitle {
+  margin: 16px 0 8px 0;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #aab0d8;
+}
+
+.match-summary-roles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.match-summary-roles li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 13px;
+}
+
+.match-summary-role-name {
+  font-weight: 600;
+}
+
+.match-summary-role-stats {
+  color: #aaa;
+}
+
+.match-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.match-summary-table th,
+.match-summary-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+}
+
+.match-summary-table thead th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #aaa;
+}
+
+.match-summary-table tbody th {
+  font-weight: 600;
+}
+
+.match-summary-series {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 13px;
+  color: #cfd4ff;
+}
+
+.match-summary-empty {
+  margin: 0;
+  font-size: 13px;
+  color: #888;
+}
+
+@media (max-width: 720px) {
+  .match-summary-teams {
+    grid-template-columns: 1fr;
+  }
+}

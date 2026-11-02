@@ -9,6 +9,11 @@ import { BattleWorld } from "../../ecs/world";
 import { MATCH_TIME_LIMIT_MS } from "../../lib/constants";
 import { perfMarkEnd, perfMarkStart } from "../../lib/perf";
 import { createFixedStepper } from "../../lib/fixedStepper";
+import {
+  DEFAULT_SIM_SPEED,
+  normalizeSimSpeed,
+  scaledSubstepCap,
+} from "../../lib/simSpeed";
 import { createXorShift32 } from "../../lib/random/xorshift";
 import { generateSeed } from "../../lib/random/seed";
 import {
@@ -29,7 +34,10 @@ import { TelemetryPort } from "./ports";
 
 /** Fixed simulation rate: 60 Hz. */
 export const FIXED_STEP_SECONDS = 1 / 60;
-/** Max fixed steps per rendered frame; excess frame time is dropped. */
+/**
+ * Max fixed steps per rendered frame at 1×; excess frame time is dropped.
+ * Scales with the simulation speed, so 4× keeps the same headroom.
+ */
 export const MAX_SUBSTEPS = 5;
 
 /**
@@ -56,6 +64,13 @@ export interface BattleRunnerOptions {
    * navmesh deterministically.
    */
   pathfindingMode?: "worker" | "inline";
+  /**
+   * Initial simulation speed multiplier (default 1×). Supported speeds are
+   * 0.5×/1×/2×/4×; other values are snapped to the nearest one. The speed only
+   * scales the accumulator input, never the step length, so it cannot change
+   * the outcome of a seed.
+   */
+  speed?: number;
 }
 
 /**
@@ -70,10 +85,14 @@ export interface BattleRunner {
   step: (deltaSeconds: number) => void;
   /**
    * Advances the simulation by a variable frame delta using a fixed-step
-   * accumulator (60 Hz, at most MAX_SUBSTEPS steps per call).
+   * accumulator (60 Hz, at most MAX_SUBSTEPS × speed steps per call).
    * @param frameDeltaSeconds - Wall-clock time elapsed since the last frame.
    */
   advance: (frameDeltaSeconds: number) => void;
+  /** Sets the simulation speed multiplier (normalised to a supported speed). */
+  setSpeed: (speed: number) => void;
+  /** Current simulation speed multiplier. */
+  getSpeed: () => number;
   /** Resets the battle to a new match state. */
   reset: () => void;
   /** Releases resources owned by the runner (pathfinding worker). */
@@ -134,9 +153,12 @@ export function createBattleRunner(
 
   spawnMatch(seed);
 
+  let speed = normalizeSimSpeed(options.speed ?? DEFAULT_SIM_SPEED);
+
   const stepper = createFixedStepper({
     stepSeconds: FIXED_STEP_SECONDS,
-    maxSubSteps: MAX_SUBSTEPS,
+    // The cap follows the speed so 4× still has five frames' worth of headroom.
+    maxSubSteps: () => scaledSubstepCap(MAX_SUBSTEPS, speed),
   });
 
   const runner: BattleRunner = {
@@ -199,8 +221,15 @@ export function createBattleRunner(
       perfMarkEnd("battleRunner.step");
     },
     advance: (frameDeltaSeconds: number) => {
-      stepper.advance(frameDeltaSeconds, runner.step);
+      // Speed only scales the accumulator input: every step is still exactly
+      // FIXED_STEP_SECONDS, so a seed produces the same step sequence at any
+      // speed. A slow machine simply takes fewer steps than real time allows.
+      stepper.advance(frameDeltaSeconds * speed, runner.step);
     },
+    setSpeed: (nextSpeed: number) => {
+      speed = normalizeSimSpeed(nextSpeed);
+    },
+    getSpeed: () => speed,
     reset: () => {
       stepper.reset();
       spawnMatch();

@@ -62,6 +62,7 @@ describe("matchStateMachine", () => {
       restartTimerMs: null,
       winner: null,
       isDraw: false,
+      autoRestartEnabled: true,
     });
   });
 
@@ -78,6 +79,74 @@ describe("matchStateMachine", () => {
     });
     expect(machine.tick(1500)).toBe(true);
     expect(machine.getSnapshot().isDraw).toBe(false);
+  });
+});
+
+describe("matchStateMachine auto restart (#170)", () => {
+  it("can be disabled, which removes the countdown and blocks the restart", () => {
+    const machine = createMatchStateMachine({ autoRestartDelayMs: 1000 });
+    machine.start();
+    machine.setAutoRestartEnabled(false);
+    machine.declareVictory("red");
+
+    expect(machine.getSnapshot()).toMatchObject({
+      phase: "victory",
+      winner: "red",
+      restartTimerMs: null,
+      autoRestartEnabled: false,
+    });
+    for (let i = 0; i < 100; i += 1) {
+      expect(machine.tick(100)).toBe(false);
+    }
+    expect(machine.getSnapshot().phase).toBe("victory");
+  });
+
+  it("starts disabled when the option says so", () => {
+    const machine = createMatchStateMachine({
+      autoRestartEnabled: false,
+      autoRestartDelayMs: 1000,
+    });
+    machine.start();
+    machine.declareDraw();
+
+    expect(machine.getSnapshot().restartTimerMs).toBeNull();
+    expect(machine.getSnapshot().isDraw).toBe(true);
+  });
+
+  it("resumes the countdown when re-enabled during victory", () => {
+    const machine = createMatchStateMachine({ autoRestartDelayMs: 1000 });
+    machine.start();
+    machine.setAutoRestartEnabled(false);
+    machine.declareVictory("blue");
+    expect(machine.getSnapshot().restartTimerMs).toBeNull();
+
+    machine.setAutoRestartEnabled(true);
+    expect(machine.getSnapshot().restartTimerMs).toBe(1000);
+    expect(machine.tick(1000)).toBe(true);
+  });
+
+  it("keeps the setting across a reset", () => {
+    const machine = createMatchStateMachine({ autoRestartDelayMs: 1000 });
+    machine.start();
+    machine.setAutoRestartEnabled(false);
+    machine.reset();
+
+    expect(machine.getSnapshot()).toMatchObject({
+      phase: "initializing",
+      autoRestartEnabled: false,
+    });
+  });
+
+  it("notifies subscribers when toggled", () => {
+    const emitted: MatchStateSnapshot[] = [];
+    const machine = createMatchStateMachine({
+      onChange: (snapshot) => emitted.push(snapshot),
+    });
+    machine.setAutoRestartEnabled(false);
+    machine.setAutoRestartEnabled(false);
+
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0]?.autoRestartEnabled).toBe(false);
   });
 });
 

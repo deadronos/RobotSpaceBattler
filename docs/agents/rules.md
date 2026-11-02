@@ -30,6 +30,8 @@
 ## Simulation
 
 - Deterministic per seed: use the seeded RNG and sim time, never `Math.random()` or `Date.now()`.
+- Runtime controls (speed, summary, series) never feed the simulation. A speed multiplier
+  scales the accumulator input only; the step length stays fixed (#170).
 - Keep iteration and event order stable where tests or replays depend on it.
 - Hot paths (AI, combat, pathfinding) avoid per-tick allocation. Check with `npm run bench`.
 - Logging in hot loops goes behind a debug flag or a rate limit.

@@ -96,6 +96,54 @@
   margin: 12px 0 0 0;
 }
 
+.app-victory-series {
+  margin: 12px 0 0 0;
+  font-size: 13px;
+  color: #b9c0e6;
+}
+
+/* Match-end actions (#170) */
+.app-victory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.app-victory-actions .app-victory-button {
+  margin-top: 0;
+}
+
+.app-secondary-button {
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.12);
+  color: #f4f5ff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.app-secondary-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.app-secondary-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.app-victory-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 13px;
+  color: #b9c0e6;
+  cursor: pointer;
+}
+
 .app-button {
   padding: 12px 24px;
   font-size: 14px;
@@ -158,32 +206,77 @@
   left: 50%;
   transform: translateX(-50%);
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
   gap: 12px;
+  max-width: calc(100vw - 24px);
 }
 
-.app-controls button:nth-child(1) {
+/* Direct children only: the speed buttons own their own styling (#170). */
+.app-controls > button:nth-child(1) {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
 }
 
-.app-controls button:nth-child(1):hover {
+.app-controls > button:nth-child(1):hover {
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
-.app-controls button:nth-child(2) {
+.app-controls > button:nth-child(2) {
   background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   color: white;
 }
 
-.app-controls button:nth-child(2):hover {
+.app-controls > button:nth-child(2):hover {
   background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
   box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
 }
 
-.app-controls button span {
+.app-controls > button span {
   position: relative;
   z-index: 1;
+}
+
+/* Simulation speed selector (#170) */
+.sim-speed-control {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(12, 14, 32, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.sim-speed-button {
+  min-width: 46px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #cfd4ff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.sim-speed-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sim-speed-button[aria-pressed="true"] {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #fff;
+}
+
+.sim-speed-button:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
 }
 
 @media (max-width: 768px) {
@@ -200,5 +293,15 @@
   .app-team-strength-segment {
     font-size: 10px;
     padding: 7px 8px;
+  }
+
+  .app-controls {
+    gap: 8px;
+  }
+
+  .sim-speed-button {
+    min-width: 38px;
+    padding: 7px 6px;
+    font-size: 12px;
   }
 }

@@ -28,3 +28,15 @@ Short, learned lessons. Append new ones.
   `fireCooldown`/`fireRate` pair are enough to time a hit flash and a muzzle flash
   (#168, `src/visuals/robots/robotFeedback.ts`). Do not add effect entities or timers to
   the simulation just to draw feedback.
+
+- **Speed must not change the step length (#170):** the speed control multiplies the
+  frame delta fed to the fixed stepper and scales the substep cap (`5 × speed`). Never
+  pass `dt * speed` into `step()` or into a system: `runHeadlessMatchAtSpeed` proves
+  that seed 7 produces one digest at 0.5×/1×/2×/4× and under a jittery frame rate.
+- **Match-end UI is runtime state only (#170):** the summary and the series score live
+  in React and are built from telemetry plus the ECS robot roles at victory. Do not put
+  them in the ECS, the telemetry store or the RNG, or the parity goldens and the replay
+  digests change.
+- **Victory re-emits:** `matchStateMachine` emits on every whole countdown second and on
+  auto-restart toggles, so anything that records a finished round needs its own
+  once-per-victory guard (see `useMatchSummaryTracker`).

@@ -18,6 +18,9 @@
   (see `tests/determinism.spec.ts`) over timing-based ones. `runHeadlessMatch`
   (`tests/helpers/headlessMatch.ts`) accepts `pauseAtStep`/`pauseSteps` to prove that a
   pause cannot change a match digest.
+- `runHeadlessMatchAtSpeed` (`tests/helpers/speedMatch.ts`) drives `runner.advance`, so
+  the accumulator and substep cap are exercised like the render loop. Use it to prove a
+  digest is independent of the simulation speed and of the frame chunking (#170).
 
 ## Commands
 

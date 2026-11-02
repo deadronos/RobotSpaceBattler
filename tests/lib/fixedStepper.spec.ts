@@ -31,6 +31,28 @@ describe("createFixedStepper", () => {
     expect(stepper.advance(DT * 0.1, fn)).toBe(0);
   });
 
+  it("reads a dynamic substep cap on every advance (#170)", () => {
+    let cap = 2;
+    const stepper = createFixedStepper({
+      stepSeconds: DT,
+      maxSubSteps: () => cap,
+    });
+    const fn = vi.fn<(dt: number) => void>();
+    expect(stepper.advance(0.5, fn)).toBe(2);
+    cap = 8;
+    expect(stepper.advance(0.5, fn)).toBe(8);
+  });
+
+  it("never steps when a dynamic cap is invalid", () => {
+    const stepper = createFixedStepper({
+      stepSeconds: DT,
+      maxSubSteps: () => Number.NaN,
+    });
+    const fn = vi.fn<(dt: number) => void>();
+    // An invalid cap degrades to one step instead of an unbounded loop.
+    expect(stepper.advance(DT * 3, fn)).toBe(1);
+  });
+
   it("ignores non-finite and negative deltas", () => {
     const stepper = createFixedStepper({ stepSeconds: DT, maxSubSteps: 5 });
     const fn = vi.fn<(dt: number) => void>();

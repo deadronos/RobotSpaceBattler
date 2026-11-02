@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 
 import { BattleWorld } from "../../ecs/world";
 import { canExposeDebugGlobals } from "../../lib/debugFlags";
+import { DEFAULT_SIM_SPEED } from "../../lib/simSpeed";
 import { recordRendererFrame } from "../../visuals/rendererStats";
 import { MatchStateMachine } from "../state/matchStateMachine";
 import { BattleRunner, createBattleRunner } from "./battleRunner";
@@ -14,6 +15,8 @@ interface UseSimulationOptions {
   telemetry: TelemetryPort;
   onRunnerReady?: (runner: BattleRunner) => void;
   obstacleFixture?: Parameters<typeof createBattleRunner>[1]["obstacleFixture"];
+  /** Simulation speed multiplier (#170). Applied without recreating the runner. */
+  speed?: number;
 }
 
 /**
@@ -28,6 +31,7 @@ export function useSimulation({
   telemetry,
   onRunnerReady,
   obstacleFixture,
+  speed,
 }: UseSimulationOptions) {
   const runnerRef = useRef<BattleRunner | null>(null);
 
@@ -51,6 +55,20 @@ export function useSimulation({
     };
   }, [battleWorld, matchMachine, obstacleFixture, onRunnerReady, telemetry]);
 
+  // Speed changes only touch the accumulator input, so the runner (and the
+  // match it holds) is reused. Declared after creation so a recreated runner
+  // gets the current speed too.
+  useEffect(() => {
+    runnerRef.current?.setSpeed(speed ?? DEFAULT_SIM_SPEED);
+  }, [
+    speed,
+    battleWorld,
+    matchMachine,
+    obstacleFixture,
+    onRunnerReady,
+    telemetry,
+  ]);
+
   // Expose for debugging
   useEffect(() => {
     if (!canExposeDebugGlobals()) {
@@ -67,7 +85,8 @@ export function useSimulation({
   // Game Loop
   useFrame((state, delta) => {
     recordRendererFrame(state.gl, delta);
-    // Fixed 60 Hz sim with an accumulator + substep cap lives in the runner.
+    // Fixed 60 Hz sim with an accumulator + substep cap lives in the runner;
+    // the speed multiplies the frame delta, never the step length.
     runnerRef.current?.advance(delta);
   });
 

@@ -91,6 +91,17 @@ function hashWorld(world: ReturnType<typeof createBattleWorld>, seed: number) {
 }
 
 /**
+ * FNV-1a digest of the observable world state (sim clock, robot positions and
+ * health, projectile positions). Used by the determinism tests.
+ */
+export function hashBattleWorld(
+  world: ReturnType<typeof createBattleWorld>,
+  seed = 0,
+): string {
+  return hashWorld(world, seed).toString(16);
+}
+
+/**
  * Runs a seeded match to completion with a fixed timestep, no renderer and no
  * physics engine. Telemetry is recorded by counting port calls.
  */
