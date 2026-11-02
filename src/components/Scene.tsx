@@ -1,14 +1,17 @@
 import { OrbitControls, Stars } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { Physics } from "@react-three/rapier";
 import { lazy, ReactNode, Suspense } from "react";
 
 import { canExposeDebugGlobals } from "../lib/debugFlags";
 import { useQualitySettings } from "../state/quality/QualityManager";
 import { DynamicResScaler } from "../visuals/DynamicResScaler";
 import { Lighting } from "../visuals/Lighting";
-import { PostProcessing } from "../visuals/PostProcessing";
 import { initializeRendererStats } from "../visuals/rendererStats";
+
+const PostProcessing = lazy(async () => {
+  const module = await import("../visuals/PostProcessing");
+  return { default: module.PostProcessing };
+});
 
 const PerfMonitorOverlay = lazy(async () => {
   const module = await import("./debug/PerfMonitorOverlay");
@@ -76,17 +79,17 @@ export function Scene({ children, showPerfOverlay = false }: SceneProps) {
           <PerfMonitorOverlay />
         </Suspense>
       ) : null}
-      <Suspense fallback={null}>
-        <Physics gravity={[0, 0, 0]} interpolate={false}>
-          {children}
-        </Physics>
-      </Suspense>
+      <Suspense fallback={null}>{children}</Suspense>
       <OrbitControls enablePan enableZoom enableRotate />
 
-      <PostProcessing
-        enabled={postprocessing.enabled}
-        quality={postprocessing.quality}
-      />
+      {postprocessing.enabled ? (
+        <Suspense fallback={null}>
+          <PostProcessing
+            enabled={postprocessing.enabled}
+            quality={postprocessing.quality}
+          />
+        </Suspense>
+      ) : null}
     </Canvas>
   );
 }

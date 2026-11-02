@@ -3,10 +3,6 @@ import "./obstacleSpawner/obstacleSpawner.css";
 import { useState } from "react";
 
 import type { BattleWorld, ObstacleEntity } from "../../ecs/world";
-import {
-  syncObstaclesToRapier,
-  updateRapierObstacleTransforms,
-} from "../../simulation/obstacles/rapierIntegration";
 import { buildObstacle } from "./obstacleSpawner/buildObstacle";
 import { ObstacleList } from "./obstacleSpawner/ObstacleList";
 import { ObstacleSpawnerForm } from "./obstacleSpawner/ObstacleSpawnerForm";
@@ -30,7 +26,6 @@ export function ObstacleSpawner({ world, onSpawn }: ObstacleSpawnerProps) {
   const handleSpawn = () => {
     const obstacle = buildObstacle(form, new Set(obstacles.map((o) => o.id)));
     world.world.add(obstacle);
-    syncObstaclesToRapier(world);
     onSpawn?.(obstacle);
 
     updateForm({
@@ -43,7 +38,6 @@ export function ObstacleSpawner({ world, onSpawn }: ObstacleSpawnerProps) {
     const obs = obstacles.find((o) => o.id === id);
     if (!obs) return;
     obs.active = obs.active === false ? true : false;
-    updateRapierObstacleTransforms(world);
     refresh();
   };
 
@@ -52,7 +46,6 @@ export function ObstacleSpawner({ world, onSpawn }: ObstacleSpawnerProps) {
     if (!obs || !obs.position) return;
     obs.position.x += dx;
     obs.position.z += dz;
-    updateRapierObstacleTransforms(world);
     refresh();
   };
 

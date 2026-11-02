@@ -38,5 +38,6 @@
 
 - No secrets in the repo.
 - To deprecate something, add a `DEPRECATED:` header and an issue with the migration path.
-- New dependencies need a reason. Check the bundle (`dist/stats.html`) for runtime deps.
+- New dependencies need a reason. Check the bundle (`dist/stats.html`) for runtime deps, and
+  keep `npm run check:bundle` green (see [tooling.md](tooling.md)).
 - Browser baseline: current Chrome/Edge. Node: see `package.json#engines`.

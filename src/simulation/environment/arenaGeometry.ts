@@ -1,11 +1,9 @@
-import { Ray } from "@dimforge/rapier3d-compat";
-
 import {
   Point2D,
   segmentIntersectsAABB,
   segmentIntersectsCircle,
 } from "../../lib/math/geometry";
-import { distanceVec3, Vec3, vec3 } from "../../lib/math/vec3";
+import { Vec3, vec3 } from "../../lib/math/vec3";
 import {
   blocksStaticSegment,
   buildStaticOcclusionIndex,
@@ -73,8 +71,6 @@ export const ARENA_PILLARS: readonly ArenaPillar[] = Object.freeze([
   { x: 30, z: 30, radius: 1.2 },
 ]);
 
-const EPSILON = 1e-3;
-
 // Built once: the AI runs a line-of-sight test per in-range robot pair every
 // tick, so the static walls and pillars are indexed by cell to skip the open
 // parts of the arena instead of testing all 17 shapes.
@@ -120,23 +116,13 @@ export interface RuntimeObstacle {
 
 export interface RuntimeCheckOptions {
   obstacles?: ReadonlyArray<RuntimeObstacle | null | undefined>;
-  rapierWorld?: {
-    castRayAndGetNormal?: (
-      ray: Ray,
-      maxToi: number,
-      solid: boolean,
-    ) => {
-      timeOfImpact: number;
-      normal: { x: number; y: number; z: number };
-    } | null;
-  };
 }
 
 // Reused obstacle-centre point; LOS checks run per robot pair every tick.
 const centerScratch = { x: 0, z: 0 };
 
 /**
- * Helper function to check intersections with dynamic obstacles and rapier world.
+ * Helper function to check intersections with dynamic obstacles.
  */
 function checkIntersectionRuntime(
   start: Vec3,
@@ -144,20 +130,6 @@ function checkIntersectionRuntime(
   options: RuntimeCheckOptions | undefined,
   checkType: "vision" | "movement",
 ): boolean {
-  const rapierWorld = options?.rapierWorld;
-  if (rapierWorld && typeof rapierWorld.castRayAndGetNormal === "function") {
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const dz = end.z - start.z;
-    const maxDist = distanceVec3(start, end);
-    if (maxDist > EPSILON) {
-      const dir = { x: dx / maxDist, y: dy / maxDist, z: dz / maxDist };
-      const ray = new Ray(start, dir);
-      const hit = rapierWorld.castRayAndGetNormal(ray, maxDist, true);
-      if (hit) return true;
-    }
-  }
-
   if (options && Array.isArray(options.obstacles)) {
     const obstacles = options.obstacles as ReadonlyArray<
       RuntimeObstacle | null | undefined

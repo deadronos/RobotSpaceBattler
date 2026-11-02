@@ -1,4 +1,3 @@
-import type { World as RapierWorld } from "@dimforge/rapier3d-compat";
 import type { World as MiniplexWorld } from "miniplex";
 
 import type { Vec3 } from "../lib/math/vec3";
@@ -170,7 +169,6 @@ export interface BattleWorld {
   obstacles: Store<ObstacleEntity>;
   teams: Record<TeamId, TeamConfig>;
   state: BattleWorldState;
-  rapierWorld?: RapierWorld;
   clear: () => void;
   getRobotsByTeam(team: TeamId): RobotEntity[];
   visuals: {

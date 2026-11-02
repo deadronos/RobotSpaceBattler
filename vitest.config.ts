@@ -24,9 +24,12 @@ export default defineConfig({
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],
       reporter: ["text-summary", "text"],
-      // Measured (all src): stmts 65.89, branches 58.44, funcs 57.38, lines
-      // 66.99. Global floors are floor(measured) - 1; per-file floors for the
-      // simulation core are floor(measured) - 2.
+      // Measured (all src): stmts 70.11, branches 62.12, funcs 57.94, lines
+      // 70.95. Global floors are floor(measured) - 1; per-file floors for the
+      // simulation core are floor(measured) - 2. `battleRunner.ts` dropped from
+      // 89.5 to 84.61 branch % in #184 because the deleted Rapier accessors were
+      // covered; the remaining gap is the `?? generateSeed()` fallback, which is
+      // deliberately not exercised.
       thresholds: {
         statements: 64,
         branches: 57,
@@ -40,7 +43,7 @@ export default defineConfig({
         },
         "src/runtime/simulation/battleRunner.ts": {
           statements: 98,
-          branches: 86,
+          branches: 82,
           functions: 98,
           lines: 98,
         },

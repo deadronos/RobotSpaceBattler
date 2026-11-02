@@ -9,7 +9,6 @@ import checker from "vite-plugin-checker";
 import AutoImport from "unplugin-auto-import/vite";
 import { visualizer } from "rollup-plugin-visualizer";
 import { setupPlugins as responsiveSetupPlugins } from "@responsive-image/vite-plugin";
-import { resolveRapierPackageDir } from "./scripts/rapierAlias.ts";
 
 export default defineConfig({
   // Build base for GitHub Pages (repo published at /RobotSpaceBattler/)
@@ -28,22 +27,9 @@ export default defineConfig({
       // keep other default config; customize in future if needed
     }),
   ],
-  optimizeDeps: {
-    // Ensure Vite prebundles the Rapier compat module once so static and
-    // dynamic imports resolve to the same instance (avoids duplicate module
-    // closures where `init` runs in one and `EventQueue` is created in another).
-    include: ["@dimforge/rapier3d-compat", "@react-three/rapier"],
-  },
-  // Force all imports of the rapier compat package to resolve to a single copy of
-  // the package. This avoids multiple different copies being bundled or
-  // prebundled, which would create duplicate WASM runtimes. The path comes from
-  // Node resolution rather than a hard-coded `node_modules` path so the config
-  // also works in git worktrees, which have no `node_modules` of their own and
-  // rely on resolution walking up to the parent checkout (#204).
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
-      "@dimforge/rapier3d-compat": resolveRapierPackageDir(import.meta.url),
     },
   },
   worker: { format: "es" },
@@ -51,26 +37,35 @@ export default defineConfig({
     port: 5173,
   },
   build: {
+    // three.js alone is ~770 kB minified in one chunk, which trips Vite's
+    // generic 500 kB hint. Raw size is the wrong signal here: the gzip budget in
+    // scripts/bundle-budget.json is the gate (`npm run check:bundle`).
+    chunkSizeWarningLimit: 800,
     rollupOptions: {
       output: {
-        // Put all `node_modules` into a single `vendor` chunk. Finer-grained
-        // splits (react/three/debug stacks) caused cross-chunk initialization
-        // races (React runtime undefined) and let rolldown hoist shared deps
-        // into the lazy debug chunk, which then got preloaded at startup.
-        // Only the self-contained Rapier wasm package is split out, so its size
-        // is visible for #159; lazy-loaded debug tooling splits on its own.
-        manualChunks(id) {
-          if (id.includes("/node_modules/@dimforge/rapier3d-compat/")) {
-            return "rapier";
-          }
-          // r3f-perf is only used by the lazy perf overlay; leave it out of
-          // vendor so it ships with that chunk instead of at startup.
-          if (id.includes("/node_modules/r3f-perf/")) {
-            return undefined;
-          }
-          if (id.includes("node_modules")) {
-            return "vendor";
-          }
+        // Split `node_modules` by runtime layer so no single chunk dominates and
+        // a change to one layer does not invalidate the others (#159). Order
+        // matters: the first matching group wins. Debug tooling and `r3f-perf`
+        // are left out so they stay in their own lazy chunks at startup.
+        advancedChunks: {
+          groups: [
+            {
+              name: "react",
+              test: /node_modules[\\/](react|react-dom|scheduler|use-sync-external-store)[\\/]/,
+            },
+            {
+              name: "three",
+              test: /node_modules[\\/](three|three-stdlib)[\\/]/,
+            },
+            {
+              name: "r3f",
+              // `postprocessing` / `@react-three/postprocessing` are left out:
+              // they are only imported by the lazily-loaded PostProcessing
+              // component, so keeping them here would put ~35 kB gzip of
+              // optional visual polish into the initial load.
+              test: /node_modules[\\/](@react-three(?!\/postprocessing)|its-fine)[\\/]/,
+            },
+          ],
         },
         plugins: [visualizer({ filename: "dist/stats.html", open: false })],
       },

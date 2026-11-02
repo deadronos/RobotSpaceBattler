@@ -1,6 +1,4 @@
-import type { World as RapierWorld } from "@dimforge/rapier3d-compat";
 import { useFrame } from "@react-three/fiber";
-import { useRapier } from "@react-three/rapier";
 import { useEffect, useRef } from "react";
 
 import { BattleWorld } from "../../ecs/world";
@@ -32,11 +30,6 @@ export function useSimulation({
   obstacleFixture,
 }: UseSimulationOptions) {
   const runnerRef = useRef<BattleRunner | null>(null);
-  const rapierWorldRef = useRef<RapierWorld | null>(null);
-  const { world: rapierWorld } = useRapier();
-
-  rapierWorldRef.current =
-    (rapierWorld as unknown as RapierWorld | null) ?? null;
 
   // Initialize BattleRunner
   useEffect(() => {
@@ -48,13 +41,9 @@ export function useSimulation({
     });
 
     runnerRef.current = runner;
-    if (rapierWorldRef.current) {
-      runner.setRapierWorld(rapierWorldRef.current);
-    }
     onRunnerReady?.(runner);
 
     return () => {
-      runner.setRapierWorld(null);
       runner.dispose();
       if (runnerRef.current === runner) {
         runnerRef.current = null;
@@ -74,19 +63,6 @@ export function useSimulation({
       delete win.__battleWorld;
     };
   }, [battleWorld]);
-
-  // Sync Rapier World
-  useEffect(() => {
-    const runner = runnerRef.current;
-    if (rapierWorld && runner) {
-      runner.setRapierWorld(rapierWorld as unknown as RapierWorld);
-    }
-    return () => {
-      if (runner) {
-        runner.setRapierWorld(null);
-      }
-    };
-  }, [rapierWorld]);
 
   // Game Loop
   useFrame((state, delta) => {

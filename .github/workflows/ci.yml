@@ -55,6 +55,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Bundle size budget (#159)
+        run: npm run check:bundle
+
   e2e:
     name: E2E smoke (Chromium)
     runs-on: ubuntu-latest

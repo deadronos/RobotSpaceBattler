@@ -1,9 +1,3 @@
-import { CylinderCollider, RigidBody } from "@react-three/rapier";
-
-import {
-  CollisionGroup,
-  interactionGroups,
-} from "../../lib/physics/collisionGroups";
 import { NeonGeometry } from "../vfx/NeonGeometry";
 
 const PILLAR_POSITIONS: [number, number, number][] = [
@@ -36,18 +30,7 @@ interface PillarProps {
  */
 function Pillar({ position }: PillarProps) {
   return (
-    <RigidBody
-      type="fixed"
-      position={position}
-      colliders={false}
-      collisionGroups={interactionGroups(
-        CollisionGroup.PILLAR,
-        CollisionGroup.ROBOT | CollisionGroup.PROJECTILE,
-      )}
-    >
-      {/* Cylinder collider: height 3, radius 1.2 visual mesh
-          Reduced to 99%: half-height 1.485 (99% of 1.5), radius 1.188 (99% of 1.2) for <1cm clearance */}
-      <CylinderCollider args={[1.485, 1.188]} />
+    <group position={position}>
       <mesh receiveShadow castShadow>
         <cylinderGeometry args={[1.2, 1.2, 3, 6]} />
         <meshPhysicalMaterial color="#3a4560" metalness={0.5} roughness={0.5} />
@@ -69,6 +52,6 @@ function Pillar({ position }: PillarProps) {
       >
         <cylinderGeometry args={[1.25, 1.25, 0.1, 16]} />
       </NeonGeometry>
-    </RigidBody>
+    </group>
   );
 }

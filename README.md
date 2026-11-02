@@ -16,7 +16,7 @@ This project simulates a battle between two teams of 10 humanoid robots (Red vs 
   smoothing and caching.
 - **Behavior Blending**: Priority-based weighted blending of pathfinding, combat, and retreat
   behaviors for smooth concurrent AI.
-- **Physics**: Powered by Rapier physics engine via `@react-three/rapier` for realistic movement and collisions.
+- **Deterministic movement**: Fixed-step ECS simulation with 2D occlusion and obstacle tests, no physics engine.
 - **ECS Architecture**: Uses `miniplex` for efficient entity management.
 - **Visuals**: React Three Fiber renderer with shadows, lighting, and instanced visual effects.
 - **Procedural Generation**: Arena and robot meshes are procedurally generated (placeholder visuals).
@@ -97,7 +97,6 @@ The codebase is organized in `src/` as follows:
 
 - **React** + **TypeScript**: UI and logic.
 - **React Three Fiber (@react-three/fiber)**: 3D rendering.
-- **Rapier (@react-three/rapier)**: Physics engine.
 - **Miniplex**: ECS library.
 - **Zustand**: State management.
 - **Vitest**: Unit testing.

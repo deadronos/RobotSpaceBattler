@@ -1,10 +1,5 @@
-import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useMemo } from "react";
 
-import {
-  CollisionGroup,
-  interactionGroups,
-} from "../../lib/physics/collisionGroups";
 import { NeonGeometry } from "../vfx/NeonGeometry";
 
 type WallConfig = {
@@ -38,30 +33,8 @@ export function WallGroup() {
   return (
     <>
       {walls.map((wall, index) => {
-        // Reduce collider size to 99% for <1cm clearance tolerance
-        const colliderDim: [number, number, number] = [
-          wall.dim[0] * 0.99,
-          wall.dim[1] * 0.99,
-          wall.dim[2] * 0.99,
-        ];
         return (
-          <RigidBody
-            key={index}
-            type="fixed"
-            position={wall.pos}
-            colliders={false}
-            collisionGroups={interactionGroups(
-              CollisionGroup.WALL,
-              CollisionGroup.ROBOT | CollisionGroup.PROJECTILE,
-            )}
-          >
-            <CuboidCollider
-              args={[
-                colliderDim[0] / 2,
-                colliderDim[1] / 2,
-                colliderDim[2] / 2,
-              ]}
-            />
+          <group key={index} position={wall.pos}>
             <mesh receiveShadow castShadow>
               <boxGeometry args={wall.dim} />
               <meshPhysicalMaterial
@@ -92,7 +65,7 @@ export function WallGroup() {
                 args={[wall.dim[0] + 0.1, 0.15, wall.dim[2] + 0.1]}
               />
             </NeonGeometry>
-          </RigidBody>
+          </group>
         );
       })}
     </>

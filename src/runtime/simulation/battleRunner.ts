@@ -1,4 +1,3 @@
-import type { World as RapierWorld } from "@dimforge/rapier3d-compat";
 import { NavMesh } from "navmesh";
 
 import { updateAISystem } from "../../ecs/systems/aiSystem";
@@ -24,10 +23,6 @@ import {
 } from "../../simulation/match/matchSpawner";
 import { updateHazardSystem } from "../../simulation/obstacles/hazardSystem";
 import { updateObstacleMovement } from "../../simulation/obstacles/movementSystem";
-import {
-  clearRapierBindings,
-  syncObstaclesToRapier,
-} from "../../simulation/obstacles/rapierIntegration";
 import { MatchStateMachine } from "../state/matchStateMachine";
 import { evaluateMatchOutcome } from "./matchOutcome";
 import { TelemetryPort } from "./ports";
@@ -81,13 +76,6 @@ export interface BattleRunner {
   advance: (frameDeltaSeconds: number) => void;
   /** Resets the battle to a new match state. */
   reset: () => void;
-  /**
-   * injects the Rapier physics world for predictive avoidance queries.
-   * @param rapierWorld - The Rapier world instance.
-   */
-  setRapierWorld: (rapierWorld: RapierWorld | null) => void;
-  /** Gets the current Rapier world instance. */
-  getRapierWorld: () => RapierWorld | undefined;
   /** Releases resources owned by the runner (pathfinding worker). */
   dispose: () => void;
 }
@@ -208,14 +196,6 @@ export function createBattleRunner(
     reset: () => {
       stepper.reset();
       spawnMatch();
-    },
-    setRapierWorld: (rapierWorld: RapierWorld | null) => {
-      world.rapierWorld = rapierWorld ?? undefined;
-      if (rapierWorld) syncObstaclesToRapier(world);
-      else clearRapierBindings(world);
-    },
-    getRapierWorld: () => {
-      return world.rapierWorld;
     },
     dispose: () => {
       pathfindingSystem.dispose();

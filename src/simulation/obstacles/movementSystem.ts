@@ -6,7 +6,6 @@ import {
 } from "../../lib/math/path";
 import { cloneVec3, subtractVec3, vec3 } from "../../lib/math/vec3";
 import { TelemetryPort } from "../../runtime/simulation/ports";
-import { updateRapierObstacleTransforms } from "./rapierIntegration";
 
 function recordObstacleTelemetry(
   obstacle: ObstacleEntity,
@@ -141,12 +140,5 @@ export function updateObstacleMovement(
     obstacle.position = vec3(pos.x, prevY, pos.z);
 
     recordObstacleTelemetry(obstacle, prevPos, world, telemetry);
-  }
-
-  // If a Rapier world is attached, sync obstacle transforms so physics queries see runtime geometry.
-  try {
-    updateRapierObstacleTransforms(world);
-  } catch {
-    // Defensive: avoid throwing from movement update if Rapier binding throws for any reason
   }
 }
