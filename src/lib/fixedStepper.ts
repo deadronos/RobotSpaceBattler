@@ -1,8 +1,11 @@
 export interface FixedStepperOptions {
   /** Fixed simulation step length in seconds (e.g. 1/60). */
   stepSeconds: number;
-  /** Maximum number of steps executed per advance() call. */
-  maxSubSteps: number;
+  /**
+   * Maximum number of steps executed per advance() call. Pass a getter when
+   * the budget can change between frames (e.g. the simulation speed, #170).
+   */
+  maxSubSteps: number | (() => number);
 }
 
 export interface FixedStepper {
@@ -29,6 +32,11 @@ export function createFixedStepper(options: FixedStepperOptions): FixedStepper {
   const { stepSeconds, maxSubSteps } = options;
   let accumulator = 0;
 
+  const currentCap = () => {
+    const cap = typeof maxSubSteps === "function" ? maxSubSteps() : maxSubSteps;
+    return Number.isFinite(cap) ? Math.max(1, Math.floor(cap)) : 1;
+  };
+
   return {
     advance: (frameDeltaSeconds, step) => {
       if (!Number.isFinite(frameDeltaSeconds) || frameDeltaSeconds <= 0) {
@@ -36,8 +44,9 @@ export function createFixedStepper(options: FixedStepperOptions): FixedStepper {
       }
       accumulator += frameDeltaSeconds;
 
+      const cap = currentCap();
       let steps = 0;
-      while (accumulator + EPSILON >= stepSeconds && steps < maxSubSteps) {
+      while (accumulator + EPSILON >= stepSeconds && steps < cap) {
         step(stepSeconds);
         accumulator -= stepSeconds;
         steps += 1;
